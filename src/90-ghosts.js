@@ -2457,11 +2457,128 @@
   // (siehe 05-app-bruecke.js).
   const VERBINDE_NEU_MS = 1000;
   const VERBINDE_NEU_MAX = 5;
+  // ---- VERBINDUNGSFEHLER SICHTBAR, ZWEITER VERSUCH SCHONEND (v1.5, WIP) --------------------
+  // GEMELDET (Pixel 9, App, PS4-Controller): Auto wird gefunden, Lichter 3 s heller, dann "nicht verbunden";
+  // im Browser geht es. Hier nicht nachstellbar, deshalb drei Dinge:
+  //   1. Jeder Schritt des Verbindens steht im Verbindungsprotokoll (OMEGA_BRUECKE.proto, 05-app-bruecke.js),
+  //      und ein Fehlschlag steht SICHTBAR in der Garage und im Fahren-Menue, mit "Protokoll kopieren".
+  //   2. In der App (nur dort, erkannt an gatt.omegaBruecke) folgt auf einen Fehlschlag bei Dienstsuche/Abo
+  //      oder einen Abriss in den ersten VERBINDE_FRUEH_MS genau EIN zweiter Versuch im schonenden Modus
+  //      (600 ms Pause vor der Dienstsuche, keine Prioritaetsanfrage in den ersten 5 s; die Bruecke).
+  //   3. Liegt in der App ein Gamepad an, verbindet die Bruecke von Anfang an schonend.
+  // Der Web-Bluetooth-Weg im Browser bleibt unveraendert (dort wird nur mitgeschrieben).
+  const VERBINDE_FRUEH_MS = 5000;         // Abriss so kurz nach dem Aufbau gilt als gescheiterter Aufbau
+  const VERBINDE_ZWEITER_PAUSE_MS = 1500; // vor dem zweiten Versuch: das Auto muss die Trennung erst bemerken
+  const VERBINDE_ERREICHBAR_MS = 10000;   // connect lief so lange: nicht erreichbar, ein zweiter Versuch hilft nicht
+  const VERB_PROTO_KOPIE_N = 40;
+  // Zeitgeber als Variable: der Selbsttest wartet nicht wirklich.
+  let verbindeWarten = (ms) => new Promise((ok) => setTimeout(ok, ms));
+  function verbProtoName(car) {
+    const b = window.OMEGA_BRUECKE;
+    const d = (car && car.device) || {};
+    const name = (car && (car.alias || car.tag)) || d.name;
+    return b && typeof b.protoName === 'function' ? b.protoName(name, d.id) : String(name || d.id || 'Auto');
+  }
+  function verbProto(car, schritt, ergebnis) {
+    const b = window.OMEGA_BRUECKE;
+    try { if (b && typeof b.proto === 'function') b.proto(verbProtoName(car), schritt, ergebnis); } catch (e) { /* nur Protokoll */ }
+  }
+  const verbFehlerText = (e) => String((e && e.message) || e || 'Fehler');
+  // Die sichtbare Lage: art '' | 'fehler' | 'hinweis'. Gemerkt werden Grund und Umstand, nicht der fertige
+  // Satz - so folgt die Anzeige einem Sprachwechsel.
+  const verbLage = { art: '', grund: '', zweiter: false };
+  const VERB_SCHRITT_NAME = { connect: 'Verbindung', Dienste: 'Dienste', Abo: 'Abo der Meldungen' };
+  function verbGrund(schritt, err) {
+    const n = VERB_SCHRITT_NAME[schritt];
+    return (n ? t(n) + ': ' : '') + verbFehlerText(err);
+  }
+  function verbLageText() {
+    if (verbLage.art === 'fehler') {
+      return t(verbLage.zweiter ? 'Verbinden fehlgeschlagen (zweiter, schonender Versuch): {g}' : 'Verbinden fehlgeschlagen: {g}')
+        .replace('{g}', verbLage.grund);
+    }
+    if (verbLage.art === 'hinweis') return t('Verbunden im zweiten, schonenden Versuch. Erster Versuch: {g}').replace('{g}', verbLage.grund);
+    return '';
+  }
+  function verbLageZeigen() {
+    const text = verbLageText();
+    const el = $('gar-verb-lage'), tx = $('gar-verb-text');
+    if (el && tx) {
+      if (tx.textContent !== text) tx.textContent = text;
+      el.hidden = !text;
+      el.classList.toggle('hinweis', verbLage.art === 'hinweis');
+      if (!text && $('gar-verb-proto-text')) $('gar-verb-proto-text').hidden = true;
+    }
+    if (typeof konsoleVerbLage === 'function') konsoleVerbLage();
+  }
+  function verbLageSetzen(art, grund, zweiter) {
+    verbLage.art = art || ''; verbLage.grund = grund || ''; verbLage.zweiter = !!zweiter;
+    verbLageZeigen();
+  }
+  // Kopf und die letzten Zeilen des Protokolls als Text (fuer die Zwischenablage).
+  function verbProtoText() {
+    const b = window.OMEGA_BRUECKE || {};
+    const zeilen = typeof b.protoZeilen === 'function' ? b.protoZeilen(VERB_PROTO_KOPIE_N) : [];
+    let pad = 'nein';
+    try {
+      const pads = Array.from(navigator.getGamepads ? navigator.getGamepads() : []).filter(Boolean);
+      if (pads.length) pad = 'ja (' + pads.map((x) => x.id).join('; ') + ')';
+      else if (typeof b.gamepadGekoppelt === 'function' && b.gamepadGekoppelt()) pad = 'ja (von der App gemeldet)';
+    } catch (e) { /* ohne Gamepad-API */ }
+    const app = !!(window.OMEGA_APP && window.OMEGA_APP.nativ);
+    const apk = app && $('app-stand-apk') ? String($('app-stand-apk').textContent || '').trim() : '';
+    const lage = verbLageText();
+    const kopf = [
+      'OmegaSim ' + (($('app-version') || {}).textContent || '?') + ' \u00b7 '
+        + (app ? 'Android-App' + (apk ? ' (APK ' + apk + ')' : '') : 'Browser'),
+      navigator.userAgent,
+      'Gamepad verbunden: ' + pad,
+      'Funkpriorität beim Start: ' + (funkPrioAn() ? 'an' : 'aus') + ' \u00b7 Autos in der Garage: ' + garage.filter((c) => c && !c.sim).length,
+    ];
+    if (lage) kopf.push('Anzeige: ' + lage);
+    kopf.push('--- Verbindungsprotokoll (letzte ' + zeilen.length + ' Zeilen) ---');
+    return kopf.concat(zeilen.length ? zeilen : ['(leer)']).join('\n');
+  }
+  // opt.schreiben nur fuer den Selbsttest (statt der Zwischenablage). Rueckgabe: true = kopiert.
+  async function verbProtoKopieren(opt) {
+    const text = verbProtoText();
+    let ok = false;
+    try {
+      if (opt && opt.schreiben) await opt.schreiben(text);
+      else await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch (e) { ok = false; }
+    const feld = $('gar-verb-proto-text');
+    if (ok) {
+      if (feld) feld.hidden = true;
+      showHudToast(t('Verbindungsprotokoll kopiert'));
+    } else {
+      if (feld) { feld.hidden = false; feld.value = text; try { feld.select(); } catch (e) { /* egal */ } }
+      showHudToast(t('Kopieren nicht erlaubt - Text unten markiert, bitte selbst kopieren'));
+    }
+    return ok;
+  }
+  if ($('gar-verb-proto')) $('gar-verb-proto').onclick = () => { verbProtoKopieren(); };
   async function verbindeGatt(car) {
-    const srv = await car.device.gatt.connect();
-    const nus = await srv.getPrimaryService(NUS_SERVICE);
-    const rx = await nus.getCharacteristic(NUS_RX);
-    const tx = await nus.getCharacteristic(NUS_TX);
+    const gatt = car.device.gatt;
+    const t0 = performance.now();
+    const seit = () => Math.round(performance.now() - t0) + ' ms';
+    car.verbSchritt = 'connect';
+    let srv, nus, rx, tx;
+    try {
+      // Schonend kennt nur die Bruecke der App; ein Web-Bluetooth-Geraet bekommt nichts gesetzt.
+      if (car.schonend && gatt && gatt.omegaBruecke) gatt.schonend = true;
+      srv = await gatt.connect();
+      verbProto(car, 'connect', 'ok (' + seit() + ')' + (gatt && gatt.schonendAktiv ? ', schonend' : ''));
+      car.verbSchritt = 'Dienste';
+      nus = await srv.getPrimaryService(NUS_SERVICE);
+      rx = await nus.getCharacteristic(NUS_RX);
+      tx = await nus.getCharacteristic(NUS_TX);
+      verbProto(car, 'Dienste', 'ok (' + seit() + ')');
+    } catch (e) {
+      verbProto(car, car.verbSchritt, 'Fehler nach ' + seit() + ': ' + verbFehlerText(e));
+      throw e;
+    }
     // v1.1.3: den Zuhoerer des alten Merkmals abmelden - sonst lief nach jedem Neuverbinden
     // jedes Paket einmal mehr durch onCarNotify.
     if (car.tx && car.notifyHandler) car.tx.removeEventListener('characteristicvaluechanged', car.notifyHandler);
@@ -2474,8 +2591,17 @@
     car.funkPrioStufe = null;
     car.meldeRingN = 0; car.meldungAt = 0;
     car.notifyHandler = (e) => onCarNotify(car, e);
-    await tx.startNotifications();
+    car.verbSchritt = 'Abo';
+    try {
+      await tx.startNotifications();
+    } catch (e) {
+      verbProto(car, 'Abo', 'Fehler nach ' + seit() + ': ' + verbFehlerText(e));
+      throw e;
+    }
+    verbProto(car, 'Abo', 'ok (' + seit() + ')');
     tx.addEventListener('characteristicvaluechanged', car.notifyHandler);
+    car.verbSchritt = '';
+    car.aufgebautAt = performance.now();
     return car;
   }
   // v1.1.45 GEMELDET: Auto leuchtet hell ("verbunden"), die App ist es aber nicht; nur das Ladegeraet hilft.
@@ -2488,37 +2614,52 @@
     try {
       return await Promise.race([
         verbindeGatt(car),
-        new Promise((_, nein) => { uhr = setTimeout(() => nein(new Error('Zeitueberschreitung beim Verbinden')), VERBINDE_FRIST_MS); }),
+        new Promise((_, nein) => { uhr = setTimeout(() => {
+          verbProto(car, car.verbSchritt || 'Aufbau', 'Zeitüberschreitung nach ' + Math.round(VERBINDE_FRIST_MS / 1000) + ' s');
+          nein(new Error('Zeitüberschreitung beim Verbinden'));
+        }, VERBINDE_FRIST_MS); }),
       ]);
     } catch (e) {
       try { car.device.gatt.disconnect(); } catch (e2) { /* schon weg */ }
       throw e;
     } finally { clearTimeout(uhr); }
   }
+  // Ein Auto endgueltig aufgeben: trennen, aus der Garage nehmen, und der Grund steht sichtbar da.
+  function verbindenAufgeben(car, grund, zweiter) {
+    verbProto(car, 'aufgegeben', grund);
+    car.trennend = true;
+    try { car.device.gatt.disconnect(); } catch (e) { /* schon weg */ }
+    removeCar(car);
+    verbLageSetzen('fehler', grund, zweiter);
+  }
   function reconnectCar(car) {
     if (car.trennend || car.reconnectLaeuft) return;
-    if ((car.reconnectVersuche || 0) >= VERBINDE_NEU_MAX) {
-      log(`${garageLabel(car)}: Neu verbinden nach ${VERBINDE_NEU_MAX} Versuchen fehlgeschlagen.`, 'err');
+    // v1.5: nach einem Abriss in den ersten 5 s (car.fruehAbriss) gibt es genau EINEN, schonenden Versuch.
+    const max = car.fruehAbriss ? 1 : VERBINDE_NEU_MAX;
+    if ((car.reconnectVersuche || 0) >= max) {
+      log(`${garageLabel(car)}: Neu verbinden nach ${max} Versuch${max === 1 ? '' : 'en'} fehlgeschlagen.`, 'err');
       // v1.1.45: auch beim Aufgeben trennen - sonst blieb eine halbe Verbindung stehen.
-      car.trennend = true;
-      try { car.device.gatt.disconnect(); } catch (e) { /* schon weg */ }
-      removeCar(car);
+      // v1.5: und der Grund steht sichtbar in der Garage.
+      verbindenAufgeben(car, car.verbGrundZuletzt || t('Verbindung verloren'), !!car.fruehAbriss);
       return;
     }
     car.reconnectLaeuft = true;
     const versuch = (car.reconnectVersuche || 0) + 1;
     car.reconnectVersuche = versuch;
     const warte = VERBINDE_NEU_MS * versuch;
-    log(`${garageLabel(car)}: Verbinde neu (Versuch ${versuch}/${VERBINDE_NEU_MAX}) in ${Math.round(warte / 1000)} s.`, 'info');
+    log(`${garageLabel(car)}: Verbinde neu (Versuch ${versuch}/${max}${car.schonend ? ', schonend' : ''}) in ${Math.round(warte / 1000)} s.`, 'info');
+    verbProto(car, 'neu verbinden', 'Versuch ' + versuch + '/' + max + (car.fruehAbriss ? ' (zweiter, schonender Versuch)' : car.schonend ? ' (schonend)' : ''));
     setTimeout(async () => {
       if (car.trennend) { car.reconnectLaeuft = false; return; }
       try {
         await verbindeGattSicher(car);
         car.reconnectVersuche = 0;
         log(`${garageLabel(car)} wieder verbunden.`, 'info');
+        if (car.fruehAbriss) verbLageSetzen('hinweis', car.verbGrundZuletzt || '', true);
         funkPrioNachVerbinden(car);
       } catch (e) {
         log(`${garageLabel(car)}: Neu verbinden fehlgeschlagen: ${(e && e.message) || e}`, 'err');
+        car.verbGrundZuletzt = verbGrund(car.verbSchritt, e);
         car.reconnectLaeuft = false;
         reconnectCar(car);
         return;
@@ -2545,8 +2686,14 @@
       });
       await garageGeraetAufnehmen(dev);
     } catch (err) {
-      if (err && err.name === 'NotFoundError') log('Keine Auswahl getroffen.', 'info');
-      else log('Verbinden fehlgeschlagen: ' + (err && err.message), 'err');
+      // v1.5: NotFoundError ohne verbSchritt ist die geschlossene Auswahl; mit verbSchritt kam er aus dem
+      // Aufbau (Dienst nicht gefunden) und ist ein echter Fehlschlag.
+      if (err && err.name === 'NotFoundError' && !err.verbSchritt) log('Keine Auswahl getroffen.', 'info');
+      else {
+        log('Verbinden fehlgeschlagen: ' + (err && err.message), 'err');
+        // v1.5: nicht mehr nur im Live-Log - sichtbar in der Garage und im Fahren-Menue.
+        verbLageSetzen('fehler', verbGrund(err && err.verbSchritt, err), !!(err && err.zweiterVersuch));
+      }
     }
   }
   // v1.1.3: der Teil nach der Auswahl, auch fuer das automatische Verbinden beim Start.
@@ -2573,12 +2720,55 @@
         // Auto-Reconnect (v1.0.73): siehe reconnectCar.
         trennend: false, reconnectLaeuft: false, reconnectVersuche: 0,
       };
-      await verbindeGattSicher(car);
+      // v1.5: scheitert der Aufbau in der App (nicht: Auto gar nicht erreichbar), folgt genau EIN zweiter
+      // Versuch im schonenden Modus. Im Browser (kein gatt.omegaBruecke) wie bisher ein Versuch.
+      let ersterGrund = '';
+      const t0 = performance.now();
+      try {
+        await verbindeGattSicher(car);
+      } catch (e1) {
+        const schritt = car.verbSchritt || 'connect';
+        e1.verbSchritt = schritt;
+        const dauer = performance.now() - t0;
+        const lohnt = !!(dev.gatt && dev.gatt.omegaBruecke) && !(schritt === 'connect' && dauer >= VERBINDE_ERREICHBAR_MS);
+        if (!lohnt) throw e1;
+        ersterGrund = verbGrund(schritt, e1);
+        log(`${garageLabel(car)}: Verbinden fehlgeschlagen (${ersterGrund}) - zweiter, schonender Versuch.`, 'warn');
+        verbProto(car, 'zweiter Versuch', 'schonend, nach Fehler bei ' + schritt);
+        car.schonend = true;
+        await verbindeWarten(VERBINDE_ZWEITER_PAUSE_MS);
+        try {
+          await verbindeGattSicher(car);
+        } catch (e2) {
+          e2.verbSchritt = car.verbSchritt || 'connect';
+          e2.zweiterVersuch = true;
+          verbProto(car, 'aufgegeben', 'auch der zweite, schonende Versuch scheiterte');
+          throw e2;
+        }
+      }
+      car.verbundenAt = performance.now();
       car.trennHandler = () => {
         if (car.trennend) return;
         // v1.1.3: bis zum Neuverbinden nicht mehr schreiben (siehe funkSchreiben) - vorher
         // ~22 Fehlversuche je Sekunde, jeder mit einer Logzeile.
         if (car.rx) car.rx.verbindungWeg = true;
+        // v1.5: wie lange hielt die Verbindung? In der App: ein Abriss in den ersten 5 s ist ein gescheiterter
+        // Aufbau - genau EIN zweiter Versuch, schonend; reisst auch der frueh ab, steht der Fehler sichtbar da.
+        const hielt = car.aufgebautAt ? performance.now() - car.aufgebautAt : -1;
+        verbProto(car, 'getrennt', hielt >= 0 ? 'nach ' + Math.round(hielt) + ' ms' : '');
+        if (dev.gatt && dev.gatt.omegaBruecke && hielt >= 0 && hielt < VERBINDE_FRUEH_MS) {
+          car.verbGrundZuletzt = t('Verbindung nach {n} s abgerissen').replace('{n}', (hielt / 1000).toFixed(1));
+          if (car.fruehAbriss) {
+            log(`${garageLabel(car)}: auch der zweite, schonende Versuch riss nach ${Math.round(hielt)} ms ab.`, 'err');
+            verbindenAufgeben(car, car.verbGrundZuletzt, true);
+            return;
+          }
+          car.fruehAbriss = true; car.schonend = true; car.reconnectVersuche = 0;
+          log(`${garageLabel(car)} nach ${Math.round(hielt)} ms getrennt - zweiter, schonender Versuch.`, 'warn');
+          reconnectCar(car);
+          return;
+        }
+        car.fruehAbriss = false;
         log(`${garageLabel(car)} getrennt - verbinde neu.`, 'warn');
         reconnectCar(car);
       };
@@ -2602,11 +2792,17 @@
         if (typeof gemerkt.fahrhilfe === 'string') car.fahrhilfe = gemerkt.fahrhilfe;
       }
       const frei = gemerkt && garRollenFrei(car).some((r) => r.id === gemerkt.role);
+      // v1.5: VOR der Rolle - setCarRole setzt fuer eine Spielerrolle sonst sofort HOCH, und in den ersten
+      // 5 s einer Verbindung fragt nur funkPrioNachVerbinden an (Stufe der Rolle, die das Auto dann hat).
+      funkPrioNachVerbinden(car);
       if (frei && gemerkt.role !== 'none') setCarRole(car, gemerkt.role);
       else if (!playerCar) setCarRole(car, 'player');
       else setCarRole(car, 'ghost');
-      funkPrioNachVerbinden(car);
-      log(`${garageLabel(car)} verbunden (${garage.length} insgesamt)` + (opt && opt.auto ? ' - automatisch beim Start.' : '.'), 'info');
+      // v1.5: der Fehler vom letzten Mal verschwindet; brauchte es den zweiten Versuch, steht das da.
+      if (ersterGrund) verbLageSetzen('hinweis', ersterGrund, true);
+      else verbLageSetzen('');
+      log(`${garageLabel(car)} verbunden (${garage.length} insgesamt)` + (opt && opt.auto ? ' - automatisch beim Start.' : '.')
+          + (ersterGrund ? ' Zweiter, schonender Versuch.' : ''), 'info');
       playStartFx();
     } finally {
       garVerbindetGerade.delete(String(dev.id));
@@ -2771,6 +2967,7 @@
           log(garageLabel(car) + ': Funkprioritaet ' + (stufe === 'hoch' ? 'HOCH (gesteuert)' : 'AUSGEWOGEN')
               + (ok ? '' : ' - nicht gesetzt (' + ((r && r.grund) || '?') + ')')
               + (r && r.weg ? ' [' + r.weg + ']' : ''), ok ? 'info' : 'warn');
+          verbProto(car, 'Priorität', (stufe === 'hoch' ? 'HOCH' : 'AUSGEWOGEN') + ' (Start)' + (ok ? '' : ' nicht gesetzt: ' + ((r && r.grund) || '?')));
         }, () => {});
       };
       if (i === 0) los(); else planen(los, i * FUNK_PRIO_ABSTAND_MS);
@@ -2793,6 +2990,7 @@
       const ok = !r || r.ok !== false;
       log(garageLabel(car) + ': Funkprioritaet ' + (stufe === 'hoch' ? 'HOCH' : 'AUSGEWOGEN') + ' (' + grund + ')'
           + (ok ? '' : ' - nicht gesetzt (' + ((r && r.grund) || '?') + ')'), ok ? 'info' : 'warn');
+      verbProto(car, 'Priorität', (stufe === 'hoch' ? 'HOCH' : 'AUSGEWOGEN') + ' (' + grund + ')' + (ok ? '' : ' nicht gesetzt: ' + ((r && r.grund) || '?')));
     }, () => {});
     return true;
   }
@@ -2836,16 +3034,23 @@
   // Rollenwechsel: alle verbundenen Autos auf die Stufe ihrer Rolle (nur geaenderte, siehe funkPrioEinzeln).
   // Faehrt etwas, bleibt es beim Stand - der naechste Start (Countdown, Training, Losfahren) setzt ohnehin.
   // Autos im Verbindungsaufbau ueberlaesst es funkPrioNachVerbinden. Rueckgabe: Zahl der Anfragen, -1 = faehrt.
+  // v1.5.3: HOCHSTUFEN GILT SOFORT, auch waehrend der Fahrt. GEMELDET: "bei 2 Spielern ohne Bahn am selben
+  // Handy ist die Verbindung oefter mal schlecht. Das ist neu." Das zweite Auto wird beim Verbinden NPC und
+  // bekommt nach 5 s AUSGEWOGEN; wurde es danach Spieler 2, setzte diese Funktion nichts, solange irgendein
+  // Auto rollte - ohne Ampel oder "Losfahren" blieb Spieler 2 dauerhaft auf AUSGEWOGEN. Jetzt wartet nur noch
+  // das HERABSTUFEN auf den Stillstand (Rueckgabe -1, wenn deshalb etwas offen blieb).
   function funkPrioRolleAnwenden(opt) {
     if (!funkPrioAn()) return 0;
-    if (funkPrioFahrtLaeuft()) return -1;
+    const faehrt = funkPrioFahrtLaeuft();
     const jetzt = performance.now();
-    let n = 0;
+    let n = 0, offen = false;
     for (const car of ((opt && opt.autos) || garage)) {
       if (!car || car.sim || (car.funkPrioNachVerbindenBis && jetzt < car.funkPrioNachVerbindenBis)) continue;
-      if (funkPrioEinzeln(car, funkPrioSollStufe(car), 'Rolle')) n++;
+      const soll = funkPrioSollStufe(car);
+      if (faehrt && soll !== 'hoch') { if (car.funkPrioStufe !== soll) offen = true; continue; }
+      if (funkPrioEinzeln(car, soll, 'Rolle')) n++;
     }
-    return n;
+    return faehrt && !n && offen ? -1 : n;
   }
   let funkPrioRolleUhr = null;
   function funkPrioRolleGeaendert() {
@@ -5808,6 +6013,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     const zeigen = () => { if ($('sc-aus-gas-val')) $('sc-aus-gas-val').textContent = scAusGas().toFixed(1).replace('.', lang === 'de' ? ',' : '.') + '\u00d7'; };
     el.addEventListener('input', zeigen);
     zeigen();
+    // v1.5.3: das Dezimalzeichen folgt der Sprache, also beim Sprachwechsel neu zeigen (Englisch ist Vorgabe).
+    if (typeof i18nNeuzeichnen !== 'undefined') i18nNeuzeichnen.push(zeigen);
   }
   // v1.3.132 BESTELLT: "NPC ausparken zu viel gelenkt, schwaecher und kuerzer" (gemeint: aus der Box; gilt
   // ebenso fuer das Safety Car, das dieselbe Folge faehrt). Lenkwerte UND Zeiten der Aufnahme mal
@@ -7165,6 +7372,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (rel >= n / 2) rel -= n;                                       // -n/2 .. n/2: davor negativ
     // Mindestens bis zum Ende von k: ein verschluckter Zaehler loest dort wie vor 1.3.132 noch aus.
     return rel >= ab - 1e-9 && rel < Math.max(ab + EINPARK_NACHHOL_KACHELN, 1);
+  }
+  // v1.5.3: die Startrunde endet schon SC_START_HEIM_VORLAUF Teile vor dem Parkteil (statt erst an der Linie),
+  // fruehestens nach einer halben Runde. Nur beim Parken auf der Fahrbahn mit bekanntem Ort; sonst bleibt der
+  // alte Weg ueber die Linie (safetyCarLinie). Aufruf nur beim Kachelwechsel, nicht im Takt.
+  const SC_START_HEIM_VORLAUF = 4;
+  function scStartrundeFrueherHeim(car, nk) {
+    const g = car && car.ghost;
+    if (!g || !g.scErsteRunde || g.scHeim || g.randHalt || scNebenModus()) return false;
+    if ((g.scStartKacheln || 0) < Math.max(2, nk / 2)) return false;
+    if (g.tileIndex === null || g.tileIndex === undefined) return false;
+    const d = ((scParkKachel() - g.tileIndex) % nk + nk) % nk;
+    return d === SC_START_HEIM_VORLAUF || d === SC_START_HEIM_VORLAUF - 1;   // -1: der Zaehler hat ein Teil verschluckt
   }
   // Ab zwei Teilen vor dem Parkteil mittig fahren (Querlage 0), solange das Safety Car heimfaehrt.
   function scVorParkMittig(car) {
@@ -10670,6 +10889,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         if (nk && g.scStartKacheln >= nk + 2) {
           g.scErsteRunde = false; g.scHeim = true;
           log(garageLabel(car) + ': Safety Car hat seine Startrunde gefahren, parkt jetzt.', 'info');
+        } else if (nk && scStartrundeFrueherHeim(car, nk)) {
+          // v1.5.3 GEMELDET: "Safety Car einparken nach der Fahrt ist perfekt, aber nach der Einfuehrungsrunde
+          // zu weit hinter der Startgeraden und nicht nah genug am Rand." Nach Gelb steht scHeim viele Teile
+          // vorher (Tempo gedeckelt, mittig, Ausloesen am geplanten Punkt). Nach der Startrunde kam scHeim erst
+          // AN der Linie: der geplante Ausloesepunkt (bis zu zwei Teile vor dem Parkteil) war vorbei, das Tempo
+          // Renntempo, die Seitenlage nicht mittig. Jetzt derselbe Weg wie nach Gelb, sobald das Safety Car
+          // nach mindestens einer halben Runde SC_START_HEIM_VORLAUF Teile vor dem Parkteil ist.
+          g.scErsteRunde = false; g.scHeim = true;
+          log(garageLabel(car) + ': Safety Car beendet seine Startrunde, faehrt heim (noch '
+              + SC_START_HEIM_VORLAUF + ' Teile bis zum Parkteil).', 'info');
         }
       }
       let lmRundeVoll = false;

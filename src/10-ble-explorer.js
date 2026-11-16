@@ -1840,6 +1840,7 @@
     "Leistung": "Power",
     "Setup je Auto (WIP): neu sind Bremsbalance, ABS, TC, Motorkennfeld, Heckflügel und Reifendruck, jeweils mit Erklärung im ⓘ und einer Zeile, was die Einstellung bewirkt. Was im gewählten Fahrgefühl nicht wirkt, ist ausgegraut. Das Motorkennfeld ändert auch den Verbrauch und die Tank-Rundenangabe. Während die Reifenrunden berechnet werden, dreht sich das Streckenteil als Ladesymbol, und das Fenster bleibt bedienbar. Bei vorgegebenem Fahrgefühl fahren alle mit Standard.": "Setup per car (WIP): new are brake balance, ABS, TC, engine map, rear wing and tyre pressure, each with an explanation in the ⓘ and a line showing what the setting does. Settings that have no effect in the chosen driving feel are greyed out. The engine map also changes consumption and the fuel lap figure. While the tyre laps are calculated, the track piece spins as a loading symbol and the window stays usable. With a set driving feel everyone uses the default.",
     "Zurück auf den Stand 1.4.67: Die Versionen 1.4.68 bis 1.4.80 (Quality-Grafik und Regen im virtuellen Fahren, Vorschaubilder, Zwischenreifen, Geist-Linie, fliegender Start, Omega Overdrive) sind zurückgenommen, weil sie Fehler mitbrachten. Fliegender Start, Vorschau und Farbwahl, bessere Quality-Grafik, genauere Kollisionen und der Wetter-Startwert kommen einzeln und geprüft zurück; Zwischenreifen, Geist-Linie und Omega Overdrive entfallen.": "Back to version 1.4.67: versions 1.4.68 to 1.4.80 (quality graphics and rain in virtual driving, preview images, intermediate tyres, ghost line, rolling start, Omega Overdrive) have been withdrawn because they brought bugs. The rolling start, preview and colour choice, better quality graphics, more accurate collisions and the weather seed will return one by one after testing; intermediate tyres, the ghost line and Omega Overdrive are dropped.",
+    "Verbindung und Menü: Zwei Spieler ohne Bahn am selben Handy: Wird ein Auto nach dem Verbinden zu Spieler 2 oder 3, bekommt es jetzt sofort die schnelle Funkpriorität (bisher blieb es ohne Ampel auf der langsamen hängen). Android-App: Scheitert das Verbinden, steht der Grund sichtbar in der Garage und im Fahren-Menü, mit Knopf „Protokoll kopieren“; die App versucht es einmal selbst erneut, schonender (kurze Pause, keine Prioritätsanfrage in den ersten Sekunden), und verbindet mit angeschlossenem Gamepad von Anfang an schonend (WIP). Safety Car: Nach seiner Startrunde fährt es schon vier Teile vor dem Parkteil heim (langsamer, mittig), statt erst an der Linie; es soll so auf dem Parkteil am Rand stehen wie nach einer Gelbphase. Menü: Die obere Leiste ist am PC höher; die zweite Leiste zeigt höchstens vier Reiter und Pfeile, wenn links oder rechts weitere liegen, und rutscht beim Durchschalten mit. Der Sprachknopf sitzt auf der Startseite oben rechts mit „LANGUAGE“ und Flagge; ohne eigene Wahl startet die App auf Englisch. Virtuelles Fahren: neues Auto VW Käfer 1303 RS mit Boxster-Motorklang von Gnen54 (WIP).": "Connection and menu: two players without a track on the same phone: when a car becomes player 2 or 3 after connecting, it now gets the fast radio priority at once (without start lights it used to stay on the slow one). Android app: if connecting fails, the reason is shown in the garage and in the Drive menu, with a button “Copy log”; the app retries once by itself, more gently (short pause, no priority request in the first seconds), and connects gently from the start when a gamepad is attached (WIP). Safety car: after its opening lap it heads home four pieces before the parking piece (slower, centred) instead of only at the line, so it should stand at the edge of the parking piece just like after a yellow phase. Menu: the top bar is taller on a PC; the second bar shows at most four tabs plus arrows when more lie to the left or right, and slides along as you switch. The language button sits at the top right of the start page with “LANGUAGE” and a flag; without a choice of your own the app starts in English. Virtual driving: new car VW Beetle 1303 RS with Boxster engine sound by Gnen54 (WIP).",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -4272,6 +4273,7 @@
     "TANK-LECK: BOX": "FUEL LEAK: PIT",
     "STRAFSTOPP": "PENALTY STOP",
     "Woher die 3D-Modelle kommen": "Where the 3D models come from",
+    "Der VW Käfer 1303 RS ist eine eigene Konstruktion von Gnen54 (OmegaSim CAD) und steht unter Creative Commons Namensnennung 4.0 (CC BY 4.0).": "The VW Beetle 1303 RS is an original design by Gnen54 (OmegaSim CAD), licensed under Creative Commons Attribution 4.0 (CC BY 4.0).",
     "Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 und Boxer 96. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder später. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.": "The cars of the virtual drive come from the free racing game Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 and Boxer 96. Models, textures and vehicle data are licensed under the GNU General Public License, version 2 or later. Converted with tools/sd_auto.py (interior removed, textures downscaled); the license and source notice is in each car's folder.",
     "Grafik verloren: virtuelle Fahrt beendet": "Graphics lost: virtual drive ended",
     "Derby gewonnen: letzter auf der Bahn": "Derby won: last one on the track",
@@ -5864,6 +5866,7 @@
     "MAX: Tempo in Radius-2-Kurven": "MAX: velocidad en curvas de radio 2",
     "Die weite 30-Grad-Kurve (dreifacher Radius). Standard 90 %. Haarnadel und Engstelle fahren MAX-NPCs nach den normalen Regeln: Höchsttempo in der Haarnadel und Mindesttempo gelten weiter.": "La curva amplia de 30 grados (triple radio). Estándar 90 %. Los NPC MAX toman la horquilla y el estrechamiento según las reglas normales: la velocidad máxima en la horquilla y la velocidad mínima siguen vigentes.",
     "Woher die 3D-Modelle kommen": "De dónde vienen los modelos 3D",
+    "Der VW Käfer 1303 RS ist eine eigene Konstruktion von Gnen54 (OmegaSim CAD) und steht unter Creative Commons Namensnennung 4.0 (CC BY 4.0).": "El VW Escarabajo 1303 RS es un diseño propio de Gnen54 (OmegaSim CAD) con licencia Creative Commons Atribución 4.0 (CC BY 4.0).",
     "Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 und Boxer 96. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder später. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.": "Los coches de la conducción virtual proceden del juego de carreras libre Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 y Boxer 96. Modelos, texturas y datos del vehículo están bajo la GNU General Public License, versión 2 o posterior. Convertidos con tools/sd_auto.py (interior eliminado, texturas reducidas); la licencia y la fuente están en la carpeta de cada coche.",
     "Grafik verloren: virtuelle Fahrt beendet": "Gráficos perdidos: conducción virtual terminada",
     "Derby gewonnen: letzter auf der Bahn": "Derby ganado: el último en pista",
@@ -6103,7 +6106,9 @@
     if (typeof fn === 'function') i18nNeuzeichnen.push(fn);
   }
 
-  function setLang(next) {
+  // ohneSpeichern (v1.5.x): die Vorgabe beim ersten Start und der Selbsttest stellen die
+  // Sprache um, ohne die gespeicherte Wahl anzufassen.
+  function setLang(next, ohneSpeichern) {
     if (I18N_LANGS.indexOf(next) < 0 || next === lang) return;
     lang = next;
     // ZUERST neu zeichnen, DANN uebersetzen - die Reihenfolge ist der ganze Punkt.
@@ -6127,12 +6132,70 @@
     i18nBusy = true;
     try { i18nRoots().forEach(i18nApply); } finally { i18nBusy = false; }
     document.documentElement.lang = lang;
-    const lbl = $('lang-label');
-    if (lbl) lbl.textContent = lang === 'de' ? 'DEUTSCH' : lang === 'en' ? 'ENGLISH' : 'ESPAGNOL';
+    sprachKnopfZeigen();
     const sel = $('setting-sprache');
     if (sel) sel.value = lang;
-    try { localStorage.setItem('omegasim-lang', lang); } catch (e) { /* privater Modus */ }
+    if (!ohneSpeichern) {
+      try { localStorage.setItem('omegasim-lang', lang); } catch (e) { /* privater Modus */ }
+    }
     i18nWatch();
+  }
+
+  // ---- SPRACHKNOPF MIT FLAGGE (v1.5.x) ----
+  // BESTELLT: "Sprachbutton auf der Startseite nach oben rechts und LANGUAGE hinschreiben und
+  // daneben die Flagge der aktuellen Sprache (Deutschland, UK, Spanien). Hier sind Emojis
+  // ausnahmsweise erlaubt." Im Knopf steht immer das Emoji. Windows hat in seiner
+  // Emoji-Schrift aber keine Flaggen und zeigt nur die Buchstaben "DE"; dort (einmal beim
+  // Laden geprueft) liegt dieselbe Flagge als kleines gezeichnetes Bild darueber.
+  const SPRACH_INFO = {
+    de: { flagge: '\uD83C\uDDE9\uD83C\uDDEA', name: 'Deutsch', aria: 'Language: Deutsch. Sprache wechseln',
+          bild: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20"><path fill="#000" d="M0 0h30v20H0z"/><path fill="#d00" d="M0 6.67h30V20H0z"/><path fill="#ffce00" d="M0 13.33h30V20H0z"/></svg>' },
+    en: { flagge: '\uD83C\uDDEC\uD83C\uDDE7', name: 'English', aria: 'Language: English. Switch language',
+          bild: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 40"><path fill="#012169" d="M0 0h60v40H0z"/><path stroke="#fff" stroke-width="8" d="M0 0l60 40M60 0L0 40"/><path stroke="#c8102e" stroke-width="3" d="M0 0l60 40M60 0L0 40"/><path stroke="#fff" stroke-width="13" d="M30 0v40M0 20h60"/><path stroke="#c8102e" stroke-width="7" d="M30 0v40M0 20h60"/></svg>' },
+    es: { flagge: '\uD83C\uDDEA\uD83C\uDDF8', name: 'Español', aria: 'Language: Español. Cambiar idioma',
+          bild: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20"><path fill="#aa151b" d="M0 0h30v20H0z"/><path fill="#f1bf00" d="M0 5h30v10H0z"/></svg>' },
+  };
+  let flaggenEmojiDa = null;
+  // Zeichnet die Emoji-Schrift eine FARBIGE Flagge? Die Ersatzdarstellung sind einfarbige
+  // Buchstaben. Ein winziges Canvas, einmal; ohne Canvas gilt das Emoji.
+  function flaggenEmojiGeht() {
+    if (flaggenEmojiDa !== null) return flaggenEmojiDa;
+    flaggenEmojiDa = true;
+    try {
+      const c = document.createElement('canvas');
+      c.width = 40; c.height = 26;
+      const g = c.getContext('2d', { willReadFrequently: true });
+      g.textBaseline = 'top'; g.font = '18px "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif';
+      g.fillStyle = '#000';
+      g.fillText(SPRACH_INFO.de.flagge, 1, 2);
+      const d = g.getImageData(0, 0, 40, 26).data;
+      let bunt = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i + 3] > 60 && (Math.abs(d[i] - d[i + 1]) > 50 || Math.abs(d[i + 1] - d[i + 2]) > 50)) bunt++;
+      }
+      flaggenEmojiDa = bunt > 12;
+    } catch (e) { flaggenEmojiDa = true; }
+    return flaggenEmojiDa;
+  }
+  function sprachKnopfZeigen() {
+    const info = SPRACH_INFO[lang] || SPRACH_INFO.en;
+    const knopf = $('lang-toggle'), fl = $('lang-flagge');
+    if (fl) {
+      fl.textContent = info.flagge;
+      fl.dataset.lang = lang;
+      const bild = !flaggenEmojiGeht();
+      fl.classList.toggle('lang-flagge-bild', bild);
+      fl.style.backgroundImage = bild ? 'url("data:image/svg+xml,' + encodeURIComponent(info.bild) + '")' : '';
+    }
+    if (knopf) { knopf.setAttribute('aria-label', info.aria); knopf.title = info.name; }
+  }
+
+  // ENGLISCH ALS STANDARD (v1.5.x, BESTELLT). Ohne gespeicherte Wahl startet die App auf
+  // Englisch; wer schon gewaehlt hat, behaelt seine Sprache. Die Tabellen sind nach dem
+  // deutschen Text geschluesselt, deshalb beginnt lang weiter als 'de' und wird beim Laden
+  // umgestellt (unten, nach dem Aufbau).
+  function sprachStart(gespeichert) {
+    return I18N_LANGS.indexOf(gespeichert) >= 0 ? gespeichert : 'en';
   }
 
   // Durch alle Sprachen zykeln - der einzige Umschalter auf dem Titelbildschirm.
@@ -6152,16 +6215,19 @@
   if ($('lang-toggle')) {
     $('lang-toggle').addEventListener('click', wechsleSprache);
   }
-  if ($('lang-label')) $('lang-label').textContent = 'DEUTSCH';
+  sprachKnopfZeigen();
   if ($('setting-sprache')) {
     $('setting-sprache').addEventListener('change', (e) => setLang(e.target.value));
   }
   // Gemerkte Sprache. Erst NACH dem Aufbau, damit der Beobachter alles sieht, was die App
   // beim Laden selbst eingefuegt hat.
-  try {
-    const saved = localStorage.getItem('omegasim-lang');
-    if (saved && saved !== lang) setLang(saved);
-  } catch (e) { /* privater Modus */ }
+  // Die Vorgabe (Englisch) wird NICHT gespeichert: gespeichert ist nur, was jemand gewaehlt hat.
+  {
+    let saved = null;
+    try { saved = localStorage.getItem('omegasim-lang'); } catch (e) { /* privater Modus */ }
+    const start = sprachStart(saved);
+    setLang(start, start !== saved);
+  }
 
   // ---- Tabs ----
   // Pulled out of the click handler so the Garage's "Losfahren" and the controller

@@ -424,6 +424,29 @@
     el.hidden = !text;
   }
 
+  // ---- Verbindungsfehler in der Autos-Kachel (v1.5, WIP) ------------------------------
+  // "Verbinden fehlgeschlagen: <Grund>" unter dem Status, bis zum naechsten erfolgreichen Verbinden. Die
+  // Lage kommt aus 90-ghosts.js (verbLage). Nur Text setzen - gerufen, wenn sie sich aendert und beim
+  // Zeichnen der Kachel, nie im Takt. Antippen oeffnet den Dialog mit "Protokoll kopieren".
+  function konsoleVerbLage() {
+    const el = $('fa-verb-lage');
+    if (!el) return;
+    let text = '', hinweis = false;
+    try { text = verbLageText(); hinweis = verbLage.art === 'hinweis'; } catch (e) { text = ''; }
+    if (el.textContent !== text) el.textContent = text;
+    el.classList.toggle('hinweis', hinweis);
+    el.hidden = !text;
+  }
+  function konsoleVerbFrage() {
+    let text = '';
+    try { text = verbLageText(); } catch (e) { text = ''; }
+    if (!text) return false;
+    konsoleFrage(t(verbLage.art === 'hinweis' ? 'Schonend verbunden' : 'Verbinden fehlgeschlagen'), text,
+      [[t('Protokoll kopieren'), async () => { if (!(await verbProtoKopieren())) konsoleZeige('garage'); }],
+       [t('Nochmal verbinden'), () => konsoleVerbinden()], [t('Schließen'), null]], true);
+    return true;
+  }
+
   // ---- Fahren: Start und Auto --------------------------------------------------------
   async function konsoleAuto() {
     if (!playerCar && !garage.some((c) => c.device)) {
@@ -436,6 +459,8 @@
       }
       // Nach dem Verbinden auf RENNEN STARTEN, wie bestellt: wenige Klicks bis zum Fahren.
       if (playerCar) konsoleFokusAuf('fa-start');
+      // v1.5: kein Auto und ein Fehlschlag - der Grund kommt als Dialog, nicht nur ins Live-Log.
+      else if (verbLage.art === 'fehler') konsoleVerbFrage();
       return;
     }
     konsoleZeige('garage');
@@ -452,6 +477,8 @@
       return;
     }
     if (kAutos().length > vorher) konsoleFokusAuf('fa-start');
+    // v1.5: Fehlschlag (kein neues Auto, aber ein Grund) - als Dialog mit "Protokoll kopieren".
+    else if (verbLage.art === 'fehler') konsoleVerbFrage();
   }
   // RENNEN STARTEN: fehlt das Auto, erst die Bluetooth-Auswahl, dann ins Cockpit und die
   // Startampel. Freies Training startet genauso (die Ampel gibt den Beginn der Sitzung).
@@ -647,6 +674,88 @@
     if (b) b.hidden = false;
   }
 
+  // ---- Reiterleisten fuellen, zweite Leiste als Fenster (v1.5.x) ----------------------
+  // BESTELLT: "Darstellung der Submenü-Leiste: hier sind vor allem bei den Optionen zu viele
+  // Reiter nebeneinander. Zeige immer nur 3 oder 4 und dann gib mit Pfeilen an, ob links und
+  // rechts auch noch Tabs sind. Und dann rutschen die durch beim Durchschalten."
+  //
+  // konsoleZeichnen() laeuft oft (auf dem Fahren-Schirm alle 1,5 s, dazu bei jedem Wechsel).
+  // Gebaut wird deshalb nur, wenn sich die BESCHRIFTUNGEN aendern; sonst wechselt hoechstens
+  // die Markierung und die Lage des Fensters. Die Klicks haengen an der Leiste (ein Zuhoerer,
+  // konsoleEinrichten) und lesen die aktuelle Liste aus kLeisteStand, nicht aus einer alten
+  // Huelle - so bleibt ein nicht neu gebauter Knopf richtig verdrahtet.
+  const K_FENSTER_MAX = 4;
+  const kLeisteStand = { eins: { sig: null, r: null }, zwei: { sig: null, r: null, start: 0, an: false, sicht: 0 } };
+  let kSchmalMq = null;
+  // Wie viele Reiter das Fenster fasst: 4, im Hochformat und in schmalen Fenstern 3. Die
+  // Medienabfrage wird einmal angelegt und meldet Drehen/Groessenwechsel selbst.
+  function kFensterSicht() {
+    if (!kSchmalMq && window.matchMedia) {
+      kSchmalMq = window.matchMedia('(orientation: portrait), (max-width: 620px)');
+      const neu = () => { try { konsoleZeichnen(); } catch (e) { /* Ladefolge */ } };
+      if (kSchmalMq.addEventListener) kSchmalMq.addEventListener('change', neu);
+    }
+    return kSchmalMq && kSchmalMq.matches ? K_FENSTER_MAX - 1 : K_FENSTER_MAX;
+  }
+  // Der erste sichtbare Reiter. Der aktive steht moeglichst mittig (bei 4 an zweiter Stelle),
+  // an den Enden liegt das Fenster buendig. Ohne aktiven Reiter bleibt es, wo es war.
+  function kFensterStart(n, aktiv, sicht, vorher) {
+    if (n <= sicht) return 0;
+    const max = n - sicht;
+    if (aktiv < 0) return Math.max(0, Math.min(max, vorher || 0));
+    return Math.max(0, Math.min(max, aktiv - Math.floor((sicht - 1) / 2)));
+  }
+  function kLeisteFuellen(name, leiste, host, r, fenster) {
+    if (!leiste) return;
+    const st = kLeisteStand[name];
+    const warZu = leiste.hidden;
+    if (leiste.hidden !== !r) leiste.hidden = !r;
+    st.r = r;
+    if (!r || !host) return;
+    let sig = '';
+    for (let i = 0; i < r.length; i++) sig += r[i].text + '\n';
+    const neuGebaut = sig !== st.sig;
+    if (neuGebaut) {
+      st.sig = sig;
+      host.textContent = '';
+      r.forEach((x, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = x.text;
+        b.dataset.i = i;
+        if (x.an) b.className = 'an';
+        host.appendChild(b);
+      });
+    } else {
+      const kn = host.children;
+      for (let i = 0; i < kn.length && i < r.length; i++) {
+        const an = !!r[i].an;
+        if (kn[i].classList.contains('an') !== an) kn[i].classList.toggle('an', an);
+      }
+    }
+    if (!fenster) return;
+    const n = r.length, sicht = kFensterSicht();
+    const an = n > sicht;
+    const aktiv = r.findIndex((x) => x.an);
+    const start = kFensterStart(n, aktiv, sicht, st.start);
+    if (!neuGebaut && !warZu && st.an === an && st.sicht === sicht && st.start === start) return;
+    // Rutschen nur beim Durchschalten: erscheint die Leiste gerade erst oder ist sie neu
+    // gebaut, steht das Fenster sofort richtig.
+    const springen = neuGebaut || warZu || st.an !== an || st.sicht !== sicht;
+    st.an = an; st.sicht = sicht; st.start = start;
+    leiste.classList.toggle('k-fenster-an', an);
+    leiste.style.setProperty('--k-sicht', String(sicht));
+    host.style.transition = springen ? 'none' : '';
+    host.style.transform = an && start ? 'translateX(' + (-start * 100 / sicht).toFixed(4) + '%)' : '';
+    // Reiter ausserhalb des Fensters nimmt die Tab-Taste nicht: ein Fokus dort wuerde das
+    // Fenster von selbst verschieben.
+    const kn = host.children;
+    for (let i = 0; i < kn.length; i++) kn[i].tabIndex = !an || (i >= start && i < start + sicht) ? 0 : -1;
+    const pl = $('k-pfeil-l'), pr = $('k-pfeil-r');
+    if (pl) { pl.hidden = !an; pl.disabled = !an || start <= 0; }
+    if (pr) { pr.hidden = !an; pr.disabled = !an || start + sicht >= n; }
+  }
+
   // ---- Zeichnen: Kopf, Reiter, Beschreibung, Fuss, Hintergrund -----------------------
   function konsoleZeichnen() {
     const tab = kAktiverTab();
@@ -679,22 +788,8 @@
     // Reiter: oben die Ebene 1, darunter die innere Leiste, falls es eine gibt.
     const r1 = konsoleReiterEbene1();
     const r2 = konsoleReiterInnen();
-    const fuell = (leiste, host, r) => {
-      if (!leiste) return;
-      leiste.hidden = !r;
-      if (!r || !host) return;
-      host.innerHTML = '';
-      r.forEach((x) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.textContent = x.text;
-        if (x.an) b.className = 'an';
-        b.addEventListener('click', () => x.wahl());
-        host.appendChild(b);
-      });
-    };
-    fuell($('k-leiste'), $('k-reiter'), r1);
-    fuell($('k-leiste2'), $('k-reiter2'), r2);
+    kLeisteFuellen('eins', $('k-leiste'), $('k-reiter'), r1, false);
+    kLeisteFuellen('zwei', $('k-leiste2'), $('k-band2'), r2, true);
     document.body.classList.toggle('k-innen', !!r2);
     // Immer, nicht nur auf dem Fahren-Schirm: sonst stuenden seine Kacheln nach einem
     // Sprachwechsel anderswo noch in der alten Sprache da ("Härte 50 %" im Englischen).
@@ -794,6 +889,7 @@
       ab.dataset.bild = abNeu;
     }
     konsoleMpStatus();
+    konsoleVerbLage();
     kZeilen($('fa-auto-info'), autos.length
       ? autos.map((c) => [kPunkt(carColor(c).hex, garageLabel(c)), t(K_ROLLE[c.role] || c.role)])
       : [[t('Status'), t('nicht verbunden')]]);
@@ -1085,7 +1181,12 @@
 
   function konsoleEinrichten() {
     const kn = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', fn); };
-    kn('fa-auto', (e) => { if (!e.target.closest('.k-knopf')) konsoleAuto(); });
+    kn('fa-auto', (e) => {
+      if (e.target.closest('.k-knopf')) return;
+      // v1.5: ein Tipp auf die Fehlerzeile oeffnet den Dialog dazu statt der Kachel.
+      if (e.target.closest('#fa-verb-lage') && konsoleVerbFrage()) return;
+      konsoleAuto();
+    });
     kn('fa-verbinden', () => { konsoleVerbinden(); });
     kn('fa-garage', () => konsoleZeige('garage'));
     kn('fa-mp', () => konsoleZeige('mp'));
@@ -1126,6 +1227,20 @@
       });
     });
     kn('race-menue', () => konsoleZumMenue());
+    // Reiterleisten (v1.5.x): ein Zuhoerer je Leiste statt einem je Knopf (kLeisteFuellen baut
+    // nicht mehr bei jedem Zeichnen neu). Die Pfeile der zweiten Leiste schalten wie L1/R1.
+    [['k-reiter', 'eins'], ['k-band2', 'zwei']].forEach(([id, name]) => {
+      const h = $(id);
+      if (!h) return;
+      h.addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        const r = kLeisteStand[name].r;
+        const x = b && r ? r[parseInt(b.dataset.i, 10)] : null;
+        if (x) x.wahl();
+      });
+    });
+    kn('k-pfeil-l', () => { konsoleReiterSchritt(-1); });
+    kn('k-pfeil-r', () => { konsoleReiterSchritt(1); });
     document.querySelectorAll('.info-open').forEach((el) => el.addEventListener('click', () => konsoleZeige('info', el.dataset.sub)));
     kn('mp-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Beitreten und Rangliste'), $('mp-erkl').innerHTML); });
     kn('mp-app-erkl-knopf', (e) => { e.stopPropagation(); optInfoOeffnen(t('Host'), $('mp-app-erkl').innerHTML); });
@@ -1153,7 +1268,12 @@
     // SOFORT und nicht verzoegert: setLang() ruft diese Neuzeichner VOR dem Uebersetzen der
     // Textknoten, und Pfad/Status/Fussleiste sind zusammengesetzt - verzoegert stuenden sie
     // im englischen Modus einen Takt lang deutsch da (der Sprachtest hat "HAUPTMENÜ" gefunden).
-    if (typeof i18nOnLangChange === 'function') i18nOnLangChange(konsoleZeichnen);
+    // v1.5.x: und danach noch einmal. Die zweite Leiste liest ihre Beschriftung von den
+    // Kacheln, und die sind beim ersten Aufruf noch nicht uebersetzt - sie blieb sonst bis
+    // zum naechsten Wechsel in der alten Sprache stehen.
+    if (typeof i18nOnLangChange === 'function') {
+      i18nOnLangChange(() => { konsoleZeichnen(); setTimeout(konsoleZeichnen, 0); });
+    }
     // Der Status (Autos) und die Fahren-Kacheln aendern sich auch ohne Tab-Wechsel.
     setInterval(() => {
       const tab = kAktiverTab();

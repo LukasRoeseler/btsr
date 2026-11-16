@@ -18,6 +18,7 @@
   const ST_TESTS = [];
 
   function stAdd(name, fn) { ST_TESTS.push({ name, fn }); }
+  var stLadeSprache = null;   // v1.5.3: Sprache vor dem Lauf (runSelfTest), siehe Test "Reglertexte"
 
   // Einmal dem Browser Luft lassen, ohne einen Zeitgeber zu benutzen. Der Kanal wird EINMAL
   // angelegt und nicht je Test: hundert MessageChannel hintereinander sind hundert Paare von
@@ -6657,6 +6658,14 @@
       sp.funkPrioNachVerbindenBis = 0; npc.funkPrioNachVerbindenBis = 0; sc.funkPrioNachVerbindenBis = 0;
       raceState = 'racing';
       if (funkPrioRolleAnwenden({ autos: [sp, npc, sc] }) !== -1 || aufrufe.length) f.push('Rollenwechsel verhandelt waehrend der Fahrt');
+      // 5b. v1.5.3: HOCHSTUFEN gilt sofort, auch waehrend der Fahrt (ein NPC wird Spieler 2 und haengt sonst
+      // ohne Ampel dauerhaft auf AUSGEWOGEN). Das Herabstufen des NPCs wartet weiter.
+      sp.funkPrioStufe = 'ausgewogen';
+      const nHoch = funkPrioRolleAnwenden({ autos: [sp, npc, sc] });
+      if (nHoch !== 1 || aufrufe.length !== 1 || aufrufe[0].id !== 'st-lp-sp' || aufrufe[0].stufe !== 'hoch') {
+        f.push('Hochstufen waehrend der Fahrt: ' + nHoch + ' Anfragen, ' + JSON.stringify(aufrufe));
+      }
+      aufrufe.length = 0;
       raceState = 'idle';
       const n = funkPrioRolleAnwenden({ autos: [sp, npc, sc] });
       if (n !== 1 || stufe('st-lp-npc') !== 'ausgewogen') f.push('Rollenwechsel: ' + n + ' Anfragen, NPC ' + stufe('st-lp-npc'));
@@ -11522,12 +11531,22 @@
     if (!window.OMEGA_TEST || !OMEGA_TEST.reglerTexteProbe) {
       return { skip: true, mass: 'reglerTexteProbe nicht vorhanden' };
     }
-    const r = OMEGA_TEST.reglerTexteProbe();
+    // v1.5.3: ENGLISCH IST VORGABE, der Lauf selbst ist deutsch. Hat die Seite nicht deutsch geladen, stehen
+    // sprachabhaengige Anzeigen ("voll ab 90%", "aus", Dezimalkomma) noch in der Ladesprache, bis ihr Regler
+    // einmal gemeldet hat - das waere hier ein Uebersetzungs- und kein Reglerfehler. Die Probe meldet jeden
+    // Regler einmal; bleibt eine zweite Probe ohne Abweichung, war es nur die Sprache. Mit deutscher
+    // Ladesprache (gespeicherte Wahl) gilt die strenge Pruefung "schon beim Laden" unveraendert.
+    let r = OMEGA_TEST.reglerTexteProbe();
     if (!r || !r.geprueft) return { skip: true, mass: 'keine Regler mit Zahlenanzeige' };
+    let sprachHinweis = '';
+    if (r.falsch.length && stLadeSprache && stLadeSprache !== 'de') {
+      const r2 = OMEGA_TEST.reglerTexteProbe();
+      if (r2 && !r2.falsch.length) { sprachHinweis = ' (' + r.falsch.length + ' nur in der Ladesprache ' + stLadeSprache + ')'; r = r2; }
+    }
     const fehler = r.falsch.map((x) => x.id + ' steht auf ' + x.stand
                                      + ', zeigt "' + x.vorher + '" statt "' + x.nachher + '"');
     return { ok: !fehler.length,
-             mass: r.geprueft + ' Zahlenanzeigen geprueft, ' + r.falsch.length + ' falsch'
+             mass: r.geprueft + ' Zahlenanzeigen geprueft, ' + r.falsch.length + ' falsch' + sprachHinweis
                  + (fehler.length ? ' || ' + fehler.join('; ') : '') };
   });
 
@@ -26379,6 +26398,14 @@
     // der Wert des Benutzers. Programmatisches Setzen loest kein change-Ereignis aus - gespeichert wird nichts.
     const parkEl = $('sc-parkplatz');
     const parkMerk = parkEl ? parkEl.value : null;
+    // v1.5.3: ENGLISCH IST VORGABE, die Tests erwarten aber deutsche Texte. Fuer die Dauer des Laufs auf
+    // Deutsch, danach die vorige Sprache UND die gespeicherte Wahl zurueck (einzelne Tests schalten selbst
+    // um und speichern dabei).
+    const sprachMerk = lang;
+    stLadeSprache = lang;
+    let sprachGespeichert = null;
+    try { sprachGespeichert = localStorage.getItem('omegasim-lang'); } catch (e) { /* privat */ }
+    if (lang !== 'de') setLang('de', true);
     for (let i = 0; i < liste.length; i++) {
       const t = liste[i];
       let r;
@@ -26420,6 +26447,11 @@
       await stLuft();
     }
     if (parkEl && parkMerk !== null) parkEl.value = parkMerk;
+    if (lang !== sprachMerk) setLang(sprachMerk, true);
+    try {
+      if (sprachGespeichert === null) localStorage.removeItem('omegasim-lang');
+      else localStorage.setItem('omegasim-lang', sprachGespeichert);
+    } catch (e) { /* privat */ }
     $('st-run').disabled = false;
     $('st-status').textContent = gut + ' ok, ' + schlecht + ' Fehler'
                                 + (offen ? ', ' + offen + ' nicht prüfbar' : '');
@@ -26429,6 +26461,104 @@
   }
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
+
+  // v1.5.3: Die Bruecke der Android-App mit einer Attrappe von Capacitor. Vorher gab es fuer diesen Weg keinen
+  // Test; er ist der einzige Weg, auf dem die App ein Auto verbindet.
+  stAdd('App-Brücke v1.5.3: verbinden, Priorität erst nach dem Abo, schonender Modus, Fehler räumt auf', async () => {
+    if (!window.OMEGA_BRUECKE || typeof window.OMEGA_BRUECKE.bauen !== 'function') return { skip: true, mass: 'Bruecke nicht baubar' };
+    const f = [];
+    const bau = (o) => {
+      const rufe = [], geplant = [], gewartet = [];
+      let aboFehler = o && o.aboFehler;
+      const C = {
+        isPluginAvailable: () => false,
+        addListener: () => ({ remove() {} }),
+        nativePromise: (plugin, methode, opt) => {
+          rufe.push(methode);
+          if (methode === 'requestDevice') return Promise.resolve({ deviceId: 'ST:BR:01', name: 'HYBRID-ST' });
+          if (methode === 'getConnectedDevices') return Promise.resolve({ devices: [] });
+          if (methode === 'getServices') {
+            return Promise.resolve({ services: [{ uuid: NUS_SERVICE, characteristics: [
+              { uuid: NUS_RX, properties: { write: true, writeWithoutResponse: true } },
+              { uuid: NUS_TX, properties: { notify: true } }] }] });
+          }
+          if (methode === 'startNotifications' && aboFehler) { aboFehler = false; return Promise.reject(new Error('Setting notification failed')); }
+          if (methode === 'isEnabled') return Promise.resolve({ value: true });
+          return Promise.resolve({});
+        },
+      };
+      const bt = window.OMEGA_BRUECKE.bauen(C, window.OMEGA_BRUECKE, {
+        planen: (fn, ms) => { geplant.push(ms); return 0; },
+        warten: (ms) => { gewartet.push(ms); return Promise.resolve(); },
+        gamepad: () => !!(o && o.pad),
+      });
+      return { bt, rufe, geplant, gewartet };
+    };
+    const verbinde = async (x, schonend) => {
+      const dev = await x.bt.requestDevice({ filters: [{ namePrefix: 'HYBRID' }], optionalServices: [NUS_SERVICE] });
+      const car = { device: dev, role: 'ghost', tag: 'ST', schonend: !!schonend };
+      let fehler = null;
+      try { await verbindeGatt(car); } catch (e) { fehler = e; }
+      try { if (car.tx && car.notifyHandler) car.tx.removeEventListener('characteristicvaluechanged', car.notifyHandler); } catch (e) { /* egal */ }
+      return { car, dev, fehler };
+    };
+    const vor = (liste, a, b) => liste.indexOf(a) >= 0 && (liste.indexOf(b) < 0 || liste.indexOf(a) < liste.indexOf(b));
+    // 1. Normaler Weg.
+    const n = bau();
+    const r1 = await verbinde(n);
+    if (r1.fehler) f.push('normal: ' + r1.fehler.message);
+    if (!r1.dev.gatt.connected) f.push('normal: nicht verbunden');
+    if (!r1.car.rx || !r1.car.tx) f.push('normal: Merkmale fehlen');
+    if (!vor(n.rufe, 'connect', 'getServices') || !vor(n.rufe, 'getServices', 'startNotifications')) f.push('normal: Reihenfolge ' + n.rufe.join('>'));
+    if (!vor(n.rufe, 'startNotifications', 'requestConnectionPriority')) f.push('normal: Prioritaet vor dem Abo (' + n.rufe.join('>') + ')');
+    if (n.gewartet.indexOf(600) >= 0) f.push('normal: schonende Pause ohne Grund');
+    // 2. Schonend (zweiter Versuch) und mit Gamepad: Pause vor der Dienstsuche, keine Prioritaet sofort.
+    for (const fall of [{ name: 'zweiter Versuch', schonend: true }, { name: 'Gamepad', pad: true }]) {
+      const s2 = bau({ pad: fall.pad });
+      const r2 = await verbinde(s2, fall.schonend);
+      if (r2.fehler) f.push(fall.name + ': ' + r2.fehler.message);
+      if (!r2.dev.gatt.schonendAktiv) f.push(fall.name + ': nicht schonend');
+      if (s2.gewartet.indexOf(600) < 0) f.push(fall.name + ': keine Pause vor der Dienstsuche');
+      if (s2.rufe.indexOf('requestConnectionPriority') >= 0) f.push(fall.name + ': Prioritaet sofort angefragt');
+    }
+    // 3. Abo scheitert: Fehler kommt an, die Verbindung wird aufgeraeumt, ein neuer Versuch gelingt.
+    const k = bau({ aboFehler: true });
+    const r3 = await verbinde(k);
+    if (!r3.fehler) f.push('Abo-Fehler nicht gemeldet');
+    if (r3.car.verbSchritt !== 'Abo') f.push('Schritt beim Fehler: ' + r3.car.verbSchritt);
+    const r4 = await verbinde(k, true);
+    if (r4.fehler) f.push('zweiter Versuch nach Abo-Fehler: ' + r4.fehler.message);
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'normal ' + n.rufe.filter((x) => x !== 'initialize' && x !== 'isEnabled').join('>') + ' | schonend mit Pause, ohne sofortige Prioritaet | Abo-Fehler, dann zweiter Versuch' };
+  });
+
+  // v1.5.3: Die Startrunde des Safety Cars endet schon vor dem Parkteil (derselbe Heimweg wie nach Gelb).
+  stAdd('Safety Car v1.5.3: Startrunde endet 4 Teile vor dem Parkteil, nicht erst an der Linie', () => {
+    const f = [];
+    const merk = { tiles: currentTrackTiles, park: $('sc-parkplatz') ? $('sc-parkplatz').value : null };
+    try {
+      currentTrackTiles = codeToTrack('SG3R2G3R2').tiles; lineCache = null;
+      const nk = currentTrackTiles.length, k = scParkKachel();
+      const mk = (ti, gefahren, extra) => ({ role: 'safetycar', ghost: Object.assign({ scErsteRunde: true, scHeim: false,
+        randHalt: null, tileIndex: ((ti % nk) + nk) % nk, scStartKacheln: gefahren }, extra || {}) });
+      const halb = Math.ceil(Math.max(2, nk / 2));
+      if (!scStartrundeFrueherHeim(mk(k - 4, halb), nk)) f.push('4 Teile vorher nach halber Runde: kein Heimweg');
+      if (!scStartrundeFrueherHeim(mk(k - 3, halb), nk)) f.push('3 Teile vorher (Zaehler verschluckt): kein Heimweg');
+      if (scStartrundeFrueherHeim(mk(k - 4, 1), nk)) f.push('direkt nach dem Start schon Heimweg');
+      if (scStartrundeFrueherHeim(mk(k - 6, halb), nk)) f.push('6 Teile vorher schon Heimweg');
+      if (scStartrundeFrueherHeim(mk(k - 1, halb), nk)) f.push('1 Teil vorher noch Heimweg (zu spaet fuer den Plan)');
+      if (scStartrundeFrueherHeim(mk(k - 4, halb, { scErsteRunde: false }), nk)) f.push('ohne Startrunde Heimweg');
+      if (scStartrundeFrueherHeim(mk(k - 4, halb, { randHalt: {} }), nk)) f.push('waehrend einer Parkfolge Heimweg');
+      // Der Plan des Heimwegs beginnt nie frueher als der Vorlauf: sonst waere der Ausloesepunkt schon vorbei.
+      const plan = scEinPassend(k, scParkTempo());
+      if (!(plan.ab >= -(SC_START_HEIM_VORLAUF - 1))) f.push('Plan beginnt ' + plan.ab.toFixed(2) + ' Teile vorher, Vorlauf nur ' + SC_START_HEIM_VORLAUF);
+      // Und mittig wird ab dem Heimweg gefahren, sobald das Safety Car nah genug ist.
+      const heim = mk(k - 2, halb, { scErsteRunde: false, scHeim: true });
+      if (!scVorParkMittig(heim)) f.push('2 Teile vor dem Parkteil nicht mittig');
+      return { ok: !f.length, mass: f.length ? f.join('; ') : 'Heimweg ab ' + SC_START_HEIM_VORLAUF + ' Teilen vorher (Plan ' + plan.ab.toFixed(2) + '), frueh und spaet nicht' };
+    } finally {
+      currentTrackTiles = merk.tiles; lineCache = null;
+    }
+  });
 
 
   stAdd('Rennstand: Start/Ziel ist keine Ueberrundung', () => {

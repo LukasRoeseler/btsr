@@ -462,6 +462,13 @@
     border: 1px solid var(--bad); background: rgba(200, 60, 60, .08);
     color: var(--text); font-size: 12.5px; line-height: 1.45;
   }
+  /* v1.5: der Verbindungsfehler der Garage, mit dem Knopf "Protokoll kopieren". Als Hinweis (zweiter,
+     schonender Versuch hat geklappt) gelb statt rot. */
+  .gar-verb-lage { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .gar-verb-lage[hidden] { display: none; }
+  .gar-verb-lage.hinweis { border-color: var(--warn, #ffb02e); background: rgba(255, 176, 46, .08); }
+  .gar-verb-lage > span { flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; }
+  .gar-verb-lage > textarea { flex: 1 1 100%; font: 11px/1.35 ui-monospace, Consolas, monospace; }
   .wip-tag { display: inline-block; font-size: 9.5px; letter-spacing: .1em;
     padding: 1px 5px; border-radius: 3px; vertical-align: 2px;
     background: #4a3c00; color: #ffd83d; font-weight: 700; }
@@ -2551,6 +2558,10 @@
     letter-spacing: .03em; color: var(--k-blau, #00a3e0); text-shadow: 0 1px 3px rgba(0,0,0,.95);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .k-mp-status[hidden] { display: none; }
+  /* v1.5: Verbindungsfehler in der Autos-Kachel, zwei Zeilen statt einer, rot (Hinweis: gelb). */
+  .k-verb-lage { color: #ff8a80; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    cursor: pointer; }
+  .k-verb-lage.hinweis { color: #ffd83d; }
   #fa-mp .wip-tag { font-size: 8px; padding: 0 3px; margin-left: 4px; vertical-align: 1px; }
   .k-knopf { background: var(--k-grau); color: #fff; border: 2px solid transparent; border-radius: 0; padding: 7px 12px;
     font-family: var(--k-font); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
@@ -2630,9 +2641,20 @@
   .k-titel .home-titel { padding: 0; }
   .k-titel .home-titel-text { font-size: clamp(40px, 8.2vw, 150px); }
   .k-slogan { font-size: clamp(14px, 2vw, 28px); letter-spacing: .06em; font-weight: 400; margin: 0; max-width: 900px; }
-  #tab-home #lang-toggle { display: flex; gap: 0; padding: 0; background: transparent; border: 0; }
-  #tab-home #lang-toggle b { padding: 8px 22px; font-size: 15px; letter-spacing: .14em; color: var(--k-tinte);
-    background: #fff; border: 2px solid #fff; }
+  /* SPRACHKNOPF OBEN RECHTS (v1.5.x): fest in der Ecke wie der Patchnotes-Knopf unten rechts,
+     ausserhalb der Titelspalte, damit er dort keinen Platz kostet. */
+  #tab-home #lang-toggle { position: fixed; z-index: 300;
+    top: max(12px, calc(env(safe-area-inset-top) + 8px)); right: max(14px, calc(env(safe-area-inset-right) + 10px));
+    display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 40px; padding: 0 14px;
+    background: rgba(12,14,20,.72); border: 2px solid rgba(255,255,255,.5); border-radius: 0;
+    font-family: var(--k-font); color: #fff; }
+  #tab-home #lang-toggle:hover, #tab-home #lang-toggle:focus-visible { background: var(--k-blau); border-color: #fff; }
+  #tab-home #lang-toggle b { padding: 0; font-size: 14px; letter-spacing: .16em; color: inherit; background: none;
+    border: 0; text-shadow: none; }
+  #lang-flagge { font-size: 22px; line-height: 1; font-family: "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif; }
+  /* Ohne Flaggen in der Emoji-Schrift (Windows zeigt dort nur "DE") ein gezeichnetes Bild. */
+  #lang-flagge.lang-flagge-bild { display: inline-block; width: 30px; height: 20px; font-size: 0; color: transparent;
+    background: center / cover no-repeat; box-shadow: 0 0 0 1px rgba(255,255,255,.45); }
   .k-druecken { font-size: clamp(14px, 1.8vw, 24px); letter-spacing: .3em; text-transform: uppercase;
     animation: k-blink 1.6s ease-in-out infinite; margin-top: 3vh; }
   @keyframes k-blink { 50% { opacity: .3; } }
@@ -2760,7 +2782,10 @@
     .k-titel { gap: 1.8vh; padding: 2vh 10px; }
     .k-titel .home-titel-text { font-size: clamp(30px, min(8vw, 17vh), 150px); }
     .k-slogan { font-size: clamp(12px, 4.2vh, 22px); }
-    #tab-home #lang-toggle b { padding: 5px 14px; font-size: 12px; }
+    #tab-home #lang-toggle { top: max(6px, calc(env(safe-area-inset-top) + 4px)); min-height: 30px; padding: 0 10px; gap: 7px; }
+    #tab-home #lang-toggle b { font-size: 11px; }
+    #lang-flagge { font-size: 16px; }
+    #lang-flagge.lang-flagge-bild { width: 22px; height: 15px; }
     .k-druecken { font-size: clamp(11px, 4vh, 20px); margin-top: 1vh; }
     .k-titel-fuss { margin-top: 1.5vh; font-size: 10.5px; }
     #tab-home.active { min-height: 0; }
@@ -2921,6 +2946,39 @@
     #k-leiste .k-reiter button { min-height: 46px; padding: 0 4px; font-size: clamp(10px, 2.9vw, 13px); letter-spacing: .02em;
       white-space: normal; line-height: 1.1; text-overflow: clip; }
   }
+  /* AM PC DEUTLICH HOEHER (v1.5.x). BESTELLT: "Darstellung des Menüs auf PC verbessern: die
+     obere Zeile mit Fahren, Challenges, Optionen ist dort zu flach." Nur mit Maus und in einem
+     grossen Fenster; Handy (pointer: coarse) und kleine Fenster (800 x 370) bleiben, wie sie
+     sind. An die Fensterhoehe gebunden: 56 px bei 800, 64 px ab rund 1070 px Hoehe. Der Regler
+     unter Optionen > Allgemein (zoom, --reiter1/--reiter2) wirkt weiter obendrauf. */
+  @media (pointer: fine) and (min-width: 1000px) and (min-height: 600px) {
+    header#k-kopf { gap: 0 14px; }
+    #k-kopf .hdr-logo { padding: 0 8px; }
+    #k-kopf .hdr-logo svg { width: clamp(30px, 3.6vh, 36px); height: clamp(30px, 3.6vh, 36px); }
+    #k-leiste .k-reiter button { min-height: clamp(56px, 6vh, 64px); padding: 0 18px;
+      font-size: clamp(16px, 1.7vh, 18px); letter-spacing: .1em; }
+    .k-status { font-size: 13px; }
+    .k-leiste2 .k-reiter button { min-height: clamp(36px, 3.9vh, 42px); padding: 0 12px;
+      font-size: clamp(13.5px, 1.45vh, 15.5px); letter-spacing: .07em; border-bottom-width: 3px; }
+    .k-leiste2 .k-pfeil { flex-basis: 44px; font-size: 26px; }
+  }
+  /* ZWEITE LEISTE ALS FENSTER (v1.5.x, 51-konsole.js): hoechstens --k-sicht Reiter (4, im
+     Hochformat 3) sind zu sehen, die Reihe (.k-band) rutscht per transform darunter durch.
+     Ohne .k-fenster-an (weniger Reiter als das Fenster fasst) teilen sie sich die Breite wie
+     bisher, und die Pfeile fehlen. */
+  .k-leiste2 .k-band { flex: 1; display: flex; min-width: 0; }
+  .k-leiste2.k-fenster-an .k-band { flex: 0 0 100%; transition: transform .15s ease-out; will-change: transform; }
+  .k-leiste2.k-fenster-an .k-band > button { flex: 0 0 calc(100% / var(--k-sicht, 4)); }
+  @media (prefers-reduced-motion: reduce) { .k-leiste2.k-fenster-an .k-band { transition: none; } }
+  .k-pfeil { flex: 0 0 30px; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0;
+    padding: 0; background: transparent; border: 0; border-radius: 0; color: #fff; font-family: var(--k-font);
+    font-size: 15px; font-weight: 800; line-height: 1; cursor: pointer; }
+  .k-pfeil:hover { background: rgba(255,255,255,.12); color: var(--k-blau); }
+  /* Ein Pfeil ohne weitere Reiter dahinter behaelt seinen Platz (die Reihe springt nicht),
+     ist aber weder zu sehen noch zu treffen. */
+  .k-pfeil:disabled { visibility: hidden; }
+  .k-pfeil[hidden] { display: none; }
+  @media (pointer: coarse) { .k-pfeil { flex-basis: 40px; font-size: 18px; } }
   /* Offene Unterseite mit zweiter Leiste: die Ueberschrift steht dort schon, der
      Zurueck-Knopf wird eine knappe Zeile. */
   body.k-innen .subpage.on > h2 { display: none; }
@@ -5665,8 +5723,14 @@
   </div>
   <!-- Die INNEREN Reiter (Optionen-Kategorien, Mehrspieler-Modi, BLE-Werkbank, ...) in einer
        zweiten, flachen Zeile; L1/R1 wirken auf die innerste sichtbare Leiste. -->
+  <!-- v1.5.x BESTELLT: "bei den Optionen zu viele Reiter nebeneinander. Zeige immer nur 3 oder 4
+       und dann gib mit Pfeilen an, ob links und rechts auch noch Tabs sind. Und dann rutschen
+       die durch beim Durchschalten." #k-reiter2 ist das Fenster, #k-band2 die Reihe darin
+       (51-konsole.js, kFensterStart). Die Pfeile schalten wie L1/R1 einen Reiter weiter. -->
   <nav class="k-leiste k-leiste2" id="k-leiste2" hidden>
-    <div class="k-reiter" id="k-reiter2"></div>
+    <button type="button" class="k-pfeil" id="k-pfeil-l" aria-label="Vorheriger Reiter" hidden disabled>&lsaquo;</button>
+    <div class="k-reiter" id="k-reiter2"><div class="k-band" id="k-band2"></div></div>
+    <button type="button" class="k-pfeil" id="k-pfeil-r" aria-label="Nächster Reiter" hidden disabled>&rsaquo;</button>
   </nav>
 </header>
 <div id="k-bg" aria-hidden="true"></div>
@@ -5692,6 +5756,14 @@
          irgendeine Taste zum bestätigen" - Name heisst hier der Programmname (Nutzerentscheid).
          Jede Taste, jeder Klick ausserhalb von Sprache und Links fuehrt ins Hauptmenue
          (51-konsole.js). #lang-toggle, #app-version und #home-install behalten ihre ids. -->
+    <!-- v1.5.x BESTELLT: "Sprachbutton auf der Startseite nach oben rechts und LANGUAGE
+         hinschreiben und daneben die Flagge der aktuellen Sprache (Deutschland, UK, Spanien).
+         Hier sind Emojis ausnahmsweise erlaubt." Die Aufschrift bleibt in jeder Sprache
+         LANGUAGE (data-i18n-skip); Flagge und aria-label setzt sprachKnopfZeigen()
+         (10-ble-explorer.js). Ein Tipp schaltet wie bisher zyklisch weiter. -->
+    <button type="button" id="lang-toggle" data-i18n-skip aria-label="Language: Deutsch. Sprache wechseln">
+      <b id="lang-label">LANGUAGE</b><span id="lang-flagge" aria-hidden="true">&#x1F1E9;&#x1F1EA;</span>
+    </button>
     <div class="k-titel">
     <div class="home-titel" aria-label="OMEGA SIM" data-i18n-skip>
       <span class="home-omega" data-t="&Omega;" aria-hidden="true">&Omega;</span>
@@ -5702,9 +5774,6 @@
         class="home-titel-text k-glitch-rot" data-text="SIM">SIM</span>
     </div>
       <h2 class="k-slogan">Vollst&auml;ndige Gestaltungsfreiheit f&uuml;r deine Carrera Hybrid&nbsp;Bahn</h2>
-      <button type="button" id="lang-toggle" aria-label="Sprache wechseln / switch language / cambiar idioma">
-        <b id="lang-label">DEUTSCH</b>
-      </button>
       <!-- TUTORIAL (51b-tutorial.js): Klick, Dreieck oder T. -->
       <div class="k-tutorial-reihe">
         <!-- BESTELLT: "Wiki" links neben Tutorial/Steuerung/Starten, so gross wie ein
@@ -5752,7 +5821,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.2</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.5</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5791,6 +5860,9 @@
         <span class="k-kb" id="fa-auto-bild" style="background-image:url(img/garage.jpg)"></span>
         <span class="k-ki" id="fa-auto-info"></span>
         <span class="k-mp-status" id="fa-mp-status" data-i18n-skip hidden></span>
+        <!-- v1.5 (WIP): Verbinden fehlgeschlagen, mit Grund. Antippen oeffnet den Dialog mit
+             "Protokoll kopieren" (konsoleVerbLage, 51-konsole.js). -->
+        <span class="k-mp-status k-verb-lage" id="fa-verb-lage" data-i18n-skip hidden></span>
         <!-- BESTELLT: "Autos-Menü sollte auch Option für Garage haben zum Einstellen" - auch
              ohne verbundenes Auto (gemerkte Autos, Farben, Rollen). -->
         <span class="k-knopfreihe">
@@ -6966,6 +7038,7 @@
          target="_blank" rel="noopener noreferrer">github.com/ange-yaghi/engine-sim</a> &middot; audio/CREDITS.md</p>
       <h3 style="font-size:14px; margin:18px 0 6px 0">Woher die 3D-Modelle kommen</h3>
       <p class="muted">Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 und Boxer 96. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder sp&auml;ter. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.</p>
+      <p class="muted">Der VW K&auml;fer 1303 RS ist eine eigene Konstruktion von Gnen54 (OmegaSim CAD) und steht unter Creative Commons Namensnennung 4.0 (CC BY 4.0).</p>
       <p class="dank-quelle" data-i18n-skip><a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html" target="_blank" rel="noopener noreferrer">gnu.org/licenses/old-licenses/gpl-2.0</a> &middot; img/autos/*/LIZENZ.txt</p>
       <!-- BESTELLT: "in den Credits das GitHub von engine sim verlinken und ggf. die wiss.
            Artikel zu den Funktionen - aber nichts halluzinieren!" Nur Modelle, die im Code
@@ -6993,6 +7066,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Verbindung und Men&#252;: Zwei Spieler ohne Bahn am selben Handy: Wird ein Auto nach dem Verbinden zu Spieler 2 oder 3, bekommt es jetzt sofort die schnelle Funkpriorit&#228;t (bisher blieb es ohne Ampel auf der langsamen h&#228;ngen). Android-App: Scheitert das Verbinden, steht der Grund sichtbar in der Garage und im Fahren-Men&#252;, mit Knopf &#8222;Protokoll kopieren&#8220;; die App versucht es einmal selbst erneut, schonender (kurze Pause, keine Priorit&#228;tsanfrage in den ersten Sekunden), und verbindet mit angeschlossenem Gamepad von Anfang an schonend (WIP). Safety Car: Nach seiner Startrunde f&#228;hrt es schon vier Teile vor dem Parkteil heim (langsamer, mittig), statt erst an der Linie; es soll so auf dem Parkteil am Rand stehen wie nach einer Gelbphase. Men&#252;: Die obere Leiste ist am PC h&#246;her; die zweite Leiste zeigt h&#246;chstens vier Reiter und Pfeile, wenn links oder rechts weitere liegen, und rutscht beim Durchschalten mit. Der Sprachknopf sitzt auf der Startseite oben rechts mit &#8222;LANGUAGE&#8220; und Flagge; ohne eigene Wahl startet die App auf Englisch. Virtuelles Fahren: neues Auto VW K&#228;fer 1303 RS mit Boxster-Motorklang von Gnen54 (WIP).</li>
         <li>Zur&#252;ck auf den Stand 1.4.67: Die Versionen 1.4.68 bis 1.4.80 (Quality-Grafik und Regen im virtuellen Fahren, Vorschaubilder, Zwischenreifen, Geist-Linie, fliegender Start, Omega Overdrive) sind zur&#252;ckgenommen, weil sie Fehler mitbrachten. Fliegender Start, Vorschau und Farbwahl, bessere Quality-Grafik, genauere Kollisionen und der Wetter-Startwert kommen einzeln und gepr&#252;ft zur&#252;ck; Zwischenreifen, Geist-Linie und Omega Overdrive entfallen.</li>
       </ul>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
@@ -9185,6 +9259,11 @@
         <div class="snd-row"><audio controls preload="none" src="audio/kaefer1300_mid.ogg"></audio><div><b>VW K&auml;fer 1300 (1.3 Boxer-4, luftgek&uuml;hlt), Mittelband (2800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Geometrie recherchiert statt aus einer Tabelle uebernommen, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/kaefer1300_high.ogg"></audio><div><b>VW K&auml;fer 1300 (1.3 Boxer-4, luftgek&uuml;hlt), oberes Band (4200/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Geometrie recherchiert statt aus einer Tabelle uebernommen, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/kaefer1300_over.ogg"></audio><div><b>VW K&auml;fer 1300 (1.3 Boxer-4, luftgek&uuml;hlt), Schub (2800/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, Geometrie recherchiert statt aus einer Tabelle uebernommen, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/boxster986_idle.ogg"></audio><div><b>Porsche Boxster 986 (2.5 Boxer-6, Saugmotor), Leerlauf (850/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/boxster986_low.ogg"></audio><div><b>Porsche Boxster 986 (2.5 Boxer-6, Saugmotor), Zwischenband (1844/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/boxster986_mid.ogg"></audio><div><b>Porsche Boxster 986 (2.5 Boxer-6, Saugmotor), Mittelband (4000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/boxster986_high.ogg"></audio><div><b>Porsche Boxster 986 (2.5 Boxer-6, Saugmotor), oberes Band (6600/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/boxster986_over.ogg"></audio><div><b>Porsche Boxster 986 (2.5 Boxer-6, Saugmotor), Schub (4000/min)</b><br><span class="muted" style="font-size:11px">vollst&auml;ndig synthetisiert, nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_v8gt_idle.ogg"></audio><div><b>Speed Dreams: Nissan GT-R GT500 2013 (3,4 l V8, Vorbeifahrt), Leerlauf (1800/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/sound/v8_formula.wav): Heigh-hoo, Freesound 128611 (CC0), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_v8gt_low.ogg"></audio><div><b>Speed Dreams: Nissan GT-R GT500 2013 (3,4 l V8, Vorbeifahrt), Zwischenband (3078/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/sound/v8_formula.wav): Heigh-hoo, Freesound 128611 (CC0), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_v8gt_mid.ogg"></audio><div><b>Speed Dreams: Nissan GT-R GT500 2013 (3,4 l V8, Vorbeifahrt), Mittelband (5263/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/sound/v8_formula.wav): Heigh-hoo, Freesound 128611 (CC0), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
@@ -9930,6 +10009,14 @@
            das soll er sehen, bevor er dreimal auf "Auto verbinden" drueckt. Leer und
            unsichtbar, solange alles in Ordnung ist. -->
       <p id="gar-bt-lage" class="gar-warnung" hidden data-i18n-skip></p>
+      <!-- v1.5 (WIP): ein gescheiterter Verbindungsversuch stand nur im Live-Log. Jetzt hier (und im
+           Fahren-Menue), mit dem Verbindungsprotokoll fuer die Zwischenablage. Verschwindet beim
+           naechsten erfolgreichen Verbinden (verbLageZeigen, 90-ghosts.js). -->
+      <div id="gar-verb-lage" class="gar-warnung gar-verb-lage" hidden>
+        <span id="gar-verb-text" data-i18n-skip></span>
+        <button type="button" id="gar-verb-proto">Protokoll kopieren <span class="wip-tag">WIP</span></button>
+        <textarea id="gar-verb-proto-text" readonly hidden rows="6" data-i18n-skip></textarea>
+      </div>
       <div class="row gar-alt-aktionen" style="gap:8px; margin-bottom:14px">
         <button class="primary" id="gar-connect">Auto verbinden</button>
         <button id="gar-disconnect-all">Alle trennen</button>
@@ -11823,6 +11910,7 @@
           <optgroup label="Alltagsklassiker vor 1970 (WIP)">
           <option value="fordtudor37">Ford Tudor Slantback 1937: Flathead-V8, 3,6 l</option>
           <option value="kaefer1300">VW K&auml;fer 1300: Boxer-4, luftgek&uuml;hlt</option>
+          <option value="boxster986">Porsche Boxster 986: 2,5 l Boxer-6 (WIP)</option>
           </optgroup>
           <!-- v1.0.13 BESTELLT: Klaenge aus Speed Dreams. Echte Aufnahmen (CC0), anders als alle
                Gruppen darueber - deshalb eine eigene Gruppe. tools/sd_engines.py, audio/CREDITS.md. -->
