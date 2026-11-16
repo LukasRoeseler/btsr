@@ -5060,6 +5060,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                                   lastActed: 0, lastCount: null };
       car.race.offLap = (car.race.offLap || 0) + 1;
       if (typeof knockoutGeistRaus === 'function') knockoutGeistRaus(car);
+      // v1.5 (WIP): Vorfallkarte (98g-telemetrie-seite.js).
+      if (typeof vorfallMerkenAuto === 'function') vorfallMerkenAuto('off', car);
     }
     log(garageLabel(car) + ': steht (' + reason + '). Auto anheben, zur\u00fcckstellen und '
         + 'kurz sch\u00fctteln, dann f\u00e4hrt es weiter.', 'err');

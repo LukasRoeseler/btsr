@@ -22937,6 +22937,45 @@
   });
 
   // v1.5 (WIP): Analyse aus Hybrid-Dash 4.0 (Mo Kamit, MIT): Zeitabstand, Kurvenminima, Gas/Bremse von B, Sektor-Matrix.
+  stAdd('Telemetrie v1.5: Vorfallkarte merkt Kontakt und Abkommen mit Ort, nur im Rennen, loeschbar', () => {
+    const f = [];
+    const tiles = codeToTrack('SG4R4G4').tiles, n = tiles.length;
+    const merk = { tiles: currentTrackTiles, st: localStorage.getItem(TELE_STORE), vf: localStorage.getItem(VORFALL_STORE),
+                   fid: teleFahrtId, wahl: Object.assign({}, teleWahl), rs: raceState };
+    try {
+      localStorage.removeItem(TELE_STORE); localStorage.removeItem(VORFALL_STORE);
+      currentTrackTiles = tiles; teleFahrtId = 4714;
+      raceState = 'idle';
+      vorfallBei('crash', 'p1', 1.5);
+      if (Object.keys(vorfallLesen()).length) f.push('ausserhalb des Rennens gemerkt');
+      raceState = 'racing';
+      vorfallBei('crash', 'p1', 1.5); vorfallBei('off', 'npc', 3.25); vorfallBei('off', 'p1', NaN);
+      const key = bestzeitSchluessel(tiles);
+      const e = vorfallLesen()[key];
+      if (!e || e.liste.length !== 2 || e.liste[1].o !== 3.25) f.push('Liste ' + JSON.stringify(e && e.liste));
+      raceState = merk.rs;
+      const code = trackToCode(tiles, 0);
+      const spur = (ms, r) => ({ v: 1, code, n, ms, teile: Array.from({ length: n }, (_, k) => Math.round(k * ms / n)), proben: [], datum: 5000 + r, runde: r });
+      [9000, 8000].forEach((ms, j) => teleMerken(spur(ms, j + 1), null));
+      teleWahl = { strecke: null, a: 'letzte', b: 'beste' };
+      if ($('tele-inhalt')) {
+        teleSeiteZeichnen();
+        const box = $('tele-inhalt');
+        const punkte = box.querySelectorAll('svg.tele-vorfaelle circle').length;
+        if (punkte !== 3) f.push(punkte + ' Kreise statt 2 Vorfaelle + Start');
+        const weg = $('tele-vorfall-weg');
+        if (!weg) f.push('kein Loeschknopf');
+        else { weg.click(); if (vorfallLesen()[key]) f.push('Loeschen loescht nicht'); if (box.querySelector('svg.tele-vorfaelle')) f.push('Karte nach Loeschen noch da'); }
+      }
+    } finally {
+      currentTrackTiles = merk.tiles; teleFahrtId = merk.fid; teleWahl = merk.wahl; raceState = merk.rs;
+      if (merk.st === null) localStorage.removeItem(TELE_STORE); else localStorage.setItem(TELE_STORE, merk.st);
+      if (merk.vf === null) localStorage.removeItem(VORFALL_STORE); else localStorage.setItem(VORFALL_STORE, merk.vf);
+      if ($('tele-inhalt')) $('tele-inhalt').innerHTML = '';
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'nur im Rennen, zwei Vorfaelle mit Ort, Karte mit Kreisen, Loeschen leert' };
+  });
+
   stAdd('Telemetrie v1.5: Zeitabstand, Kurvenminima, Sektor-Matrix mit Streuung', () => {
     const f = [];
     const tiles = codeToTrack('SG4R4G4').tiles, n = tiles.length;

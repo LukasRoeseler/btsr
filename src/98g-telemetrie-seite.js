@@ -147,7 +147,8 @@
         + '<h3 class="tele-kopf">' + teleEsc(t('Zeitabstand A − B über die Runde')) + ' <span class="wip-tag">WIP</span></h3>'
         + teleDeltaSvg(dA, dB)
         + '<p class="muted tele-legende">' + teleEsc(t('Steigt die Linie, verliert A dort Zeit; fällt sie, holt A auf.')) + '</p>'
-        + teleSektorMatrix(e, teleWahl.a, tiles);
+        + teleSektorMatrix(e, teleWahl.a, tiles)
+        + teleVorfallBlock(teleWahl.strecke);
     }
     box.innerHTML = h;
     teleWahlVerdrahten();
@@ -157,6 +158,82 @@
       const el = $(id);
       if (el) el.addEventListener('change', () => { teleWahl[k] = el.value; teleSeiteZeichnen(); });
     });
+    const weg = $('tele-vorfall-weg');
+    if (weg) weg.addEventListener('click', () => { vorfallLoeschen(teleWahl.strecke); teleSeiteZeichnen(); });
+  }
+
+  // ---- VORFALLKARTE (v1.5, WIP, nach Hybrid-Dash 4.0 von Mo Kamit, MIT) ------------------------------
+  // Jeder Kontakt (Crash-Erkennung, 70-race.js) und jedes Abkommen (Spieler: 50-drive.js, NPCs: parkCar in
+  // 90-ghosts.js) waehrend eines Rennens wird mit dem Ort gemerkt (Teil + Anteil). Die Karte zeigt, wo es
+  // sich haeuft. Je Strecke hoechstens 500 Eintraege, die 12 zuletzt gefahrenen Strecken.
+  const VORFALL_STORE = 'omegasim-vorfaelle.v1';
+  const VORFALL_ART = { crash: { name: 'Kontakt', farbe: '#ff5c5c' }, off: { name: 'Neben der Bahn', farbe: '#ffb02e' } };
+  function vorfallLesen() {
+    try { const d = JSON.parse(localStorage.getItem(VORFALL_STORE) || '{}'); return d && typeof d === 'object' ? d : {}; } catch (e) { return {}; }
+  }
+  function vorfallSchreiben(d) {
+    const keys = Object.keys(d).sort((a, b) => (d[b].datum || 0) - (d[a].datum || 0));
+    keys.slice(12).forEach((k) => delete d[k]);
+    try { localStorage.setItem(VORFALL_STORE, JSON.stringify(d)); } catch (e) { /* voll oder privat */ }
+  }
+  function vorfallOrt(wer) {
+    try {
+      if (wer >= 2) { const z = zusatzPlatz(wer); return z && z.car ? ghostOrt(z.car) : null; }
+      return dashMinimapIndex === null || dashMinimapIndex === undefined ? null : dashMinimapIndex + dashTilePhase();
+    } catch (e) { return null; }
+  }
+  function vorfallBei(art, wer, ort) {
+    if (!VORFALL_ART[art] || ort === null || ort === undefined || !Number.isFinite(ort)) return;
+    if (raceState !== 'racing' && raceState !== 'finishing') return;
+    if (!currentTrackTiles || currentTrackTiles.length < 3) return;
+    let key, code;
+    try { key = bestzeitSchluessel(currentTrackTiles); code = trackToCode(currentTrackTiles, 0); } catch (e) { return; }
+    const d = vorfallLesen();
+    let e = d[key];
+    if (!e || e.code !== code) e = d[key] = { code, liste: [] };
+    e.datum = Date.now();
+    e.liste.push({ a: art, w: wer, o: Math.round(ort * 100) / 100, t: Date.now() });
+    if (e.liste.length > 500) e.liste.splice(0, e.liste.length - 500);
+    vorfallSchreiben(d);
+  }
+  function vorfallMerken(art, wer) { vorfallBei(art, 'p' + (wer || 1), vorfallOrt(wer || 1)); }
+  function vorfallMerkenAuto(art, car) { let o = null; try { o = ghostOrt(car); } catch (e) { o = null; } vorfallBei(art, 'npc', o); }
+  function vorfallLoeschen(key) { const d = vorfallLesen(); if (d[key]) { delete d[key]; vorfallSchreiben(d); } }
+  // Punkt auf der Mittellinie zum Ort (Teil + Anteil).
+  function vorfallPunkt(pts, tab, n, ort) {
+    const k = ((Math.floor(ort) % n) + n) % n, frac = Math.max(0, Math.min(1, ort - Math.floor(ort)));
+    const a = tab.start[k], b = k + 1 < n ? tab.start[k + 1] : pts.length - 1;
+    return pts[Math.min(pts.length - 1, Math.round(a + frac * (b - a)))];
+  }
+  function teleVorfallBlock(key) {
+    const e = vorfallLesen()[key];
+    if (!e || !e.liste || !e.liste.length) return '';
+    let tiles;
+    try { tiles = codeToTrack(e.code).tiles; } catch (err) { return ''; }
+    const pts = trackCenterline(tiles), n = tiles.length, tab = trackKachelTabelle(pts, n);
+    const xs = pts.map((q) => q.x), ys = pts.map((q) => q.y);
+    const pad = TRACK_HALF_W * 1.5;
+    const x0 = Math.min(...xs) - pad, y0 = Math.min(...ys) - pad;
+    const w = Math.max(...xs) - Math.min(...xs) + 2 * pad, hh = Math.max(...ys) - Math.min(...ys) + 2 * pad;
+    const sw = (TRACK_HALF_W * 2).toFixed(1), r = (TRACK_HALF_W * 0.38).toFixed(1);
+    let svg = '<svg class="tele-karte tele-vorfaelle" viewBox="' + [x0, y0, w, hh].map((v) => v.toFixed(1)).join(' ') + '" role="img">'
+      + '<path d="M ' + pts.map((q) => q.x.toFixed(1) + ' ' + q.y.toFixed(1)).join(' L ') + '" fill="none" stroke="var(--border)" stroke-width="' + sw + '" stroke-linejoin="round"/>';
+    const zahl = { crash: 0, off: 0 }, wer = { spieler: 0, npc: 0 };
+    e.liste.forEach((v) => {
+      const art = VORFALL_ART[v.a];
+      if (!art) return;
+      zahl[v.a]++; wer[v.w === 'npc' ? 'npc' : 'spieler']++;
+      const q = vorfallPunkt(pts, tab, n, v.o);
+      // NPCs hohl, Spieler gefuellt.
+      svg += '<circle cx="' + q.x.toFixed(1) + '" cy="' + q.y.toFixed(1) + '" r="' + r + '" fill="' + (v.w === 'npc' ? 'none' : art.farbe)
+        + '" fill-opacity=".75" stroke="' + art.farbe + '" stroke-width="' + (TRACK_HALF_W * 0.12).toFixed(1) + '"><title>' + teleEsc(t(art.name)) + ' · ' + (Math.floor(v.o) + 1) + '</title></circle>';
+    });
+    const p0 = pts[0];
+    svg += '<circle cx="' + p0.x.toFixed(1) + '" cy="' + p0.y.toFixed(1) + '" r="' + (TRACK_HALF_W * 0.5).toFixed(1) + '" fill="var(--ink, #fff)"/></svg>';
+    return '<h3 class="tele-kopf">' + teleEsc(t('Vorfälle auf dieser Strecke')) + ' <span class="wip-tag">WIP</span></h3>' + svg
+      + '<p class="muted tele-legende">' + Object.keys(VORFALL_ART).map((k) => '<span style="color:' + VORFALL_ART[k].farbe + '">●</span> ' + teleEsc(t(VORFALL_ART[k].name)) + ' ' + zahl[k]).join(' &nbsp; ')
+      + ' &nbsp; · ' + teleEsc(t('gefüllt: Spieler ({s}), hohl: NPCs ({n})').replace('{s}', wer.spieler).replace('{n}', wer.npc)) + '</p>'
+      + '<div class="opt-row opt-breit"><button type="button" id="tele-vorfall-weg">' + teleEsc(t('Vorfälle dieser Strecke löschen')) + '</button></div>';
   }
   // Farbe fuer einen Unterschied: gruen schneller, rot langsamer, Deckkraft mit der Groesse.
   function teleFarbe(dd, max) {

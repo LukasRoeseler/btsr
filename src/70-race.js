@@ -6062,6 +6062,8 @@
       const richtung = crashRichtung(d1, d3);
       crashEreignis(wer >= 2 ? zusatzPlatz(wer).car : playerCar, richtung);
       registerCrash(wer, { richtung });
+      // v1.5 (WIP): Vorfallkarte (98g-telemetrie-seite.js).
+      if (typeof vorfallMerken === 'function') vorfallMerken('crash', wer || 1);
     }
   }
 

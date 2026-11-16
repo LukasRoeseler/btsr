@@ -3403,6 +3403,7 @@
         if (a.seit === null) a.seit = jetzt;
         if (!a.aktiv && jetzt - a.seit >= offtrackEinMs) {
           a.aktiv = true; a.zaehler++;
+          if (typeof vorfallMerken === 'function') vorfallMerken('off', wer);
           if (typeof knockoutLebenVerlieren === 'function') knockoutLebenVerlieren(wer);
         }
       } else {
@@ -3420,6 +3421,8 @@
       if (!offtrackAktiv && jetzt - offtrackSeit >= offtrackEinMs) {
         offtrackAktiv = true;
         offtrackZaehler++;
+        // v1.5 (WIP): Vorfallkarte (98g-telemetrie-seite.js).
+        if (typeof vorfallMerken === 'function') vorfallMerken('off', 1);
         if (typeof knockoutLebenVerlieren === 'function') knockoutLebenVerlieren(1);
       }
     } else {
