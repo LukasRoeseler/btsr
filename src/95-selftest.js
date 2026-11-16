@@ -2475,7 +2475,9 @@
         return Math.abs(A[0] - B[0]) + Math.abs(A[1] - B[1]) + Math.abs(A[2] - B[2]);
       };
 
-      const werte = Array.prototype.map.call(sel.options, o => o.value);
+      // v1.5.32: 'mokamit' ist eine eigene Tafel UEBER dem Cockpit (Test "Cockpit v1.5.32"); darunter bleibt das
+      // Standard-Cockpit unveraendert, darum zaehlt sie hier nicht mit.
+      const werte = Array.prototype.map.call(sel.options, o => o.value).filter((v) => v !== 'mokamit');
       if (werte.length < 3) schlecht.push('nur ' + werte.length + ' Ansichten');
       const proben = werte.map(messe);
 

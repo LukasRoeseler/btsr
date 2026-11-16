@@ -186,7 +186,9 @@
     const wechsel = modus === 'wechsel';
     if (modus === 'rain') nass = true;
     const wetterTxt = wechsel ? t('wechselhaft') : nass ? t('Regen') : t('Trocken');
-    if ($('hd-cp-wetter-txt').textContent !== wetterTxt) {
+    // OmegaSim: am Merker statt am Text pruefen - sonst bleibt das Zeichen leer, wenn der Starttext schon stimmt.
+    if ($('hd-cp-wetter-txt').dataset.w !== wetterTxt) {
+      $('hd-cp-wetter-txt').dataset.w = wetterTxt;
       hdSetz('wetter-txt', wetterTxt);
       $('hd-cp-wetter-ico').innerHTML = nass || wechsel
         ? '<path d="M7 15 C4 15 3 12.5 4.5 10.8 C5 8 8 7 10 8.3 C11.3 5.5 16.5 5.5 17.3 9.4 C20 9.6 21 12 20 13.8 C19.5 14.7 18.6 15 17.6 15 Z" fill="none" stroke="#5aa9ff" stroke-width="1.8"/><path d="M8 18 L7 20.5 M12 18 L11 20.5 M16 18 L15 20.5" stroke="#5aa9ff" stroke-width="1.8" stroke-linecap="round"/>'
