@@ -5827,7 +5827,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.12</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.15</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7072,6 +7072,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Virtuelles Fahren (WIP): Zusammenst&#246;&#223;e mit NPC-Autos sind jetzt wie in einem Rennspiel gerechnet: Die Autos haben gedrehte K&#228;sten mit ihren echten Ma&#223;en und stecken nicht mehr ineinander, sondern werden auseinandergeschoben. Der Sto&#223; nimmt Tempo (frontal gegen ein stehendes Auto etwa drei Viertel), schiebt das eigene Auto seitlich und dreht es je nach Trefferstelle (ein Treffer vorn dreht die Nase weg, einer hinten schiebt sie herum); der NPC verliert etwas Tempo. Der Schaden h&#228;ngt von der Aufprallst&#228;rke ab (3 % bis 30 %) statt pauschal 10 %.</li>
         <li>Virtuelles Fahren (WIP): In der Garage zeigt das Fenster &#8222;Virtuell fahren&#8220; jetzt ein Vorschaubild des gew&#228;hlten Autos und eine Lackfarbe (Original, Rot, Blau, Wei&#223;, Schwarz, Gelb, Violett, Gr&#252;n, Orange). Die Karosserie wird in der Fahrt umgef&#228;rbt (Helligkeit des Lacks mal Farbe, die Details bleiben), Scheiben, R&#228;der und Leuchten bleiben unver&#228;ndert. Die Vorschaubilder sind Aufnahmen genau dieser Darstellung, eines je Auto und Farbe.</li>
         <li>Regen beim echten Fahren ist jetzt bin&#228;r: Die Front mit Ton, Tropfen und Regenlicht bleibt, aber der Griff ist nur noch trocken oder nass. Nass wird er, sobald die Front die H&#228;lfte erreicht hat (rund 5 s nach dem Regenbeginn), trocken wieder darunter. Slicks im Nassen sind deutlich langsamer und rutschig, Regenreifen im Trockenen etwas langsamer; es gibt keine Zwischenstufe. Das gilt f&#252;r dein Auto, Spieler 2 und 3 und die NPCs gleich. Neu (WIP): Wetter-Startwert in den Renneinstellungen: ein Wort oder eine Zahl macht den Wetterplan wiederholbar, dieselbe Strecke und derselbe Startwert geben dieselben Wechsel zur selben Zeit.</li>
         <li>Akku: Bei einem Rohwert von 140 oder weniger zeigen Garage und Cockpit &#8222;niedrig&#8220; statt einer Prozentzahl. Die Skala ist unten flach, &#8222;12 %&#8220; stand lange, obwohl das Auto noch fuhr; eine echte Kennlinie folgt aus einer aufgezeichneten Akkuladung. Die Gl&#228;ttung im Cockpit beginnt beim Wechsel des Fahrerautos neu, statt f&#252;nf Sekunden lang mit dem Vorg&#228;nger zu mischen. Startaufstellung: Hat ein Auto seinen Haltepunkt mitten im Teil verpasst (Platz 4 und weiter hinten), f&#228;hrt es die Einparkfolge um den Vorsprung k&#252;rzer (bis zu 30 %), damit es nicht auf dem Platz des Autos davor steht. Das Live-Log nennt je Auto Platz, Ort und Haltepunkt, damit sich jede Aufstellung nachvollziehen l&#228;sst.</li>
@@ -16971,6 +16972,7 @@
     "Grün": "Green",
     "Orange": "Orange",
     "Virtuelles Fahren (WIP): In der Garage zeigt das Fenster „Virtuell fahren“ jetzt ein Vorschaubild des gewählten Autos und eine Lackfarbe (Original, Rot, Blau, Weiß, Schwarz, Gelb, Violett, Grün, Orange). Die Karosserie wird in der Fahrt umgefärbt (Helligkeit des Lacks mal Farbe, die Details bleiben), Scheiben, Räder und Leuchten bleiben unverändert. Die Vorschaubilder sind Aufnahmen genau dieser Darstellung, eines je Auto und Farbe.": "Virtual driving (WIP): in the garage the “Drive virtually” window now shows a preview image of the chosen car and a paint colour (original, red, blue, white, black, yellow, purple, green, orange). The body is recoloured in the drive (brightness of the paint times colour, the details stay); windows, wheels and lights stay unchanged. The preview images are captures of exactly this rendering, one per car and colour.",
+    "Virtuelles Fahren (WIP): Zusammenstöße mit NPC-Autos sind jetzt wie in einem Rennspiel gerechnet: Die Autos haben gedrehte Kästen mit ihren echten Maßen und stecken nicht mehr ineinander, sondern werden auseinandergeschoben. Der Stoß nimmt Tempo (frontal gegen ein stehendes Auto etwa drei Viertel), schiebt das eigene Auto seitlich und dreht es je nach Trefferstelle (ein Treffer vorn dreht die Nase weg, einer hinten schiebt sie herum); der NPC verliert etwas Tempo. Der Schaden hängt von der Aufprallstärke ab (3 % bis 30 %) statt pauschal 10 %.": "Virtual driving (WIP): collisions with NPC cars are now calculated like in a racing game: the cars have rotated boxes with their real dimensions and no longer get stuck inside each other but are pushed apart. The impact takes speed (head-on into a standing car about three quarters), pushes your car sideways and turns it depending on where it was hit (a hit at the front turns the nose away, one at the rear swings it round); the NPC loses some speed. The damage depends on the impact strength (3 % to 30 %) instead of a flat 10 %.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -43400,6 +43402,55 @@
   // Kollision mit NPCs: Schaden, Abbremsen, Rumpeln; und Windschatten (dreckige Luft): dicht hinter
   // einem NPC in der Spur verliert das eigene Auto Grip vorn (wie dirtyAirLevel in 90-ghosts.js).
   // Seit v1.3.95 wertet die Kollision auch Derby (Health) und NPC-Knockout (Leben) aus.
+  // ---- KOLLISION NACH ART VON LIBRECORSA (v1.5.11, WIP) --------------------------------------------------
+  // BESTELLT: "virtuelles Fahren: Kollisionen wie in LibreCorsa". Bis 1.5.10 war es ein Kasten-Test ohne Wirkung auf
+  // die Lage: das Tempo wurde halbiert, die Autos blieben ineinander stecken (Treffer nach Treffer alle 1,5 s).
+  // Jetzt: (1) zwei gedrehte Kaesten (SAT) mit den echten Massen, (2) ein Stoss mit Impuls: aus der Annaeherung
+  // entlang der Kontaktnormalen folgt eine Tempoaenderung, ein Seitenstoss (dyn.vy) und ein Giermoment (dyn.r) - ein
+  // Treffer vorn dreht die Nase weg, einer hinten schiebt sie herum -, (3) Auseinanderschieben: das eigene Auto
+  // wird bis zur Beruehrung herausgesetzt (die NPCs fahren auf der Schiene und bleiben, wo sie sind), (4) Schaden
+  // nach Aufprallstaerke statt pauschal 10. Der NPC verliert etwas Tempo. Eine Wand gibt es im virtuellen Fahren
+  // nicht (neben der Bahn wirkt die Abseitsbremse), dafuer ist hier nichts zu tun.
+  const VF_STOSS_E = 0.25;            // Rueckfederung: 0 = klebt, 1 = voll elastisch
+  const VF_STOSS_M = 0.6;             // Anteil des Impulses, den das eigene Auto aufnimmt (der NPC auf der Schiene ist "schwerer")
+  const VF_KASTEN = 0.92;             // die Kaesten sind etwas kleiner als das gezeichnete Auto (Spiegel, Spoiler)
+  // Zwei gleich grosse gedrehte Kaesten (Mittelpunkt, Kurs in Grad, Laenge L, Breite B). Rueckgabe: null oder
+  // { pen, nx, ny }: Eindringtiefe und Normale, die vom ZWEITEN Kasten zum ERSTEN zeigt (in Streckeneinheiten).
+  function vfKontakt(ax, ay, ah, bx, by, bh, L, B) {
+    const hl = L * 0.5 * VF_KASTEN, hb = B * 0.5 * VF_KASTEN;
+    const ra = ah * Math.PI / 180, rb = bh * Math.PI / 180;
+    const fa = [Math.sin(ra), -Math.cos(ra)], la = [Math.cos(ra), Math.sin(ra)];
+    const fb = [Math.sin(rb), -Math.cos(rb)], lb = [Math.cos(rb), Math.sin(rb)];
+    const dx = bx - ax, dy = by - ay;
+    let best = Infinity, bnx = 0, bny = 0;
+    for (const a of [fa, la, fb, lb]) {
+      const ext = (f, l) => hl * Math.abs(f[0] * a[0] + f[1] * a[1]) + hb * Math.abs(l[0] * a[0] + l[1] * a[1]);
+      const abstand = dx * a[0] + dy * a[1];
+      const ueber = ext(fa, la) + ext(fb, lb) - Math.abs(abstand);
+      if (ueber <= 0) return null;
+      if (ueber < best) { best = ueber; const sg = abstand > 0 ? -1 : 1; bnx = a[0] * sg; bny = a[1] * sg; }
+    }
+    return { pen: best, nx: bnx, ny: bny };
+  }
+  // Der Stoss selbst, rein gerechnet: eigenes Auto (Tempo kmhP, Kurs hP), NPC (kmhN, hN), Normale n vom NPC zum
+  // eigenen Auto, vorn = Treffer in der vorderen Haelfte. Rueckgabe: neues Tempo, Seitenstoss und Giermoment des
+  // eigenen Autos (Einheiten der Fahrdynamik: m/s und rad/s eines GT3) und die Annaeherung vn in m/s.
+  function vfStossRechnen(kmhP, hP, kmhN, hN, nx, ny, vorn) {
+    const k = 100 * TRACK_UNITS_PER_CM / 3.6, c = REAL_SCALE / (100 * TRACK_UNITS_PER_CM);
+    const rp = hP * Math.PI / 180, rn = hN * Math.PI / 180;
+    const fp = [Math.sin(rp), -Math.cos(rp)], lp = [Math.cos(rp), Math.sin(rp)];
+    const vp = [fp[0] * kmhP * k, fp[1] * kmhP * k], vn2 = [Math.sin(rn) * kmhN * k, -Math.cos(rn) * kmhN * k];
+    const vn = -((vp[0] - vn2[0]) * nx + (vp[1] - vn2[1]) * ny);   // > 0: sie nahern sich
+    if (!(vn > 0.02 * k)) return { kmhNeu: kmhP, dvy: 0, dr: 0, vnMs: 0 };
+    const j = (1 + VF_STOSS_E) * vn * VF_STOSS_M;
+    const dvx = nx * j, dvy = ny * j;
+    const vfx = vp[0] + dvx, vfy = vp[1] + dvy;
+    const dLong = (dvx * fp[0] + dvy * fp[1]), dLat = (dvx * lp[0] + dvy * lp[1]);
+    const kmhNeu = (vfx * fp[0] + vfy * fp[1]) / k;
+    const seite = vorn ? 1 : -1;
+    const dr = Math.max(-0.9, Math.min(0.9, dLat * c * seite * 0.02));
+    return { kmhNeu: kmhNeu, dvy: Math.max(-12, Math.min(12, dLat * c)), dr: dr, vnMs: vn * c, dLong: dLong };
+  }
   function vfVerkehr(dt) {
     const h = VF.h * Math.PI / 180;
     const fwdX = Math.sin(h), fwdY = -Math.cos(h), latX = Math.cos(h), latY = Math.sin(h);
@@ -43416,13 +43467,35 @@
         const d = Math.hypot(dx, dy);
         if (d < 14) dirty = Math.max(dirty, Math.pow(1 - d / 14, 2));
       }
-      if (rennZeitJetzt() >= VF.kollisionsBis && Math.abs(long) < VF_AUTO.L * 0.6 && Math.abs(lat) < VF_AUTO.B * 0.6) {
+      // Grobe Vorauswahl, dann der Kastentest.
+      if (Math.abs(long) > VF_AUTO.L * 1.6 || Math.abs(lat) > VF_AUTO.L * 1.6) { npc.kontakt = false; continue; }
+      const k = vfKontakt(VF.x, VF.y, VF.h, npc.x, npc.y, npc.h, VF_AUTO.L, VF_AUTO.B);
+      if (!k) { npc.kontakt = false; continue; }
+      // Auseinanderschieben: jedes Bild, solange sie sich durchdringen.
+      VF.x += k.nx * k.pen; VF.y += k.ny * k.pen;
+      const neuerKontakt = !npc.kontakt;
+      npc.kontakt = true;
+      if (neuerKontakt && physEngine.state.speedKmh > 0) {
+        const st = vfStossRechnen(physEngine.state.speedKmh, VF.h, npc.kmh || 0, npc.h, k.nx, k.ny, long > 0);
+        if (st.vnMs > 0) {
+          physEngine.state.speedKmh = Math.max(0, st.kmhNeu);
+          if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
+          VF.dyn.vy += st.dvy; VF.dyn.r += st.dr;
+          if (npc.motor && npc.motor.state) npc.motor.state.speedKmh = Math.max(0, (npc.motor.state.speedKmh || 0) * (1 - Math.min(0.3, st.vnMs * 0.012)));
+          padRumble(Math.min(1, 0.2 + st.vnMs * 0.03), Math.min(1, 0.2 + st.vnMs * 0.03), 40, 'crash', 1);
+          npc.stossMs = st.vnMs;
+        }
+      }
+      if (rennZeitJetzt() >= VF.kollisionsBis && neuerKontakt) {
         VF.kollisionsBis = rennZeitJetzt() + frist;
-        physEngine.state.speedKmh *= (VF.modus === 'derby' || VF.modus === 'knockout') ? 0.85 : 0.5;
-        padRumble(0.4, 0.4, 40, 'crash', 1);
+        const ms = npc.stossMs || 0;
         if (VF.modus === 'derby') vfDerbyTreffer(npc, long, lat, vAbs);
         else if (VF.modus === 'knockout') vfKnockoutTreffer(npc, vAbs);
-        else { if (typeof damage === 'number') damage = Math.min(100, damage + 10); showHudToast(t('Zusammenstoß')); }
+        else {
+          // Schaden nach Aufprallstaerke (m/s eines GT3): leichtes Anstupsen 3 %, harter Aufprall bis 30 %.
+          if (typeof damage === 'number') damage = Math.min(100, damage + Math.min(30, 3 + ms * 0.9));
+          showHudToast(t('Zusammenstoß'));
+        }
       }
     }
     if (physEngine.state) physEngine.state.dirtyAir += (dirty - (physEngine.state.dirtyAir || 0)) * Math.min(1, (dt || 0) * 4);
@@ -115904,6 +115977,64 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
+
+  // v1.5.11: Kollision im virtuellen Fahren mit gedrehten Kaesten und Impuls.
+  stAdd('Virtuell v1.5.11: Kastenkontakt, Stoss mit Impuls und Giermoment', () => {
+    const f = [];
+    const L = VF_AUTO.L, B = VF_AUTO.B;
+    // 1. Kontakt: Kurs 0 = nach "oben" (x gleich, y kleiner). NPC genau vor dem Auto.
+    const weit = vfKontakt(0, 0, 0, 0, -L * 1.2, 0, L, B);
+    if (weit) f.push('Autos mit Luft dazwischen beruehren sich');
+    const nah = vfKontakt(0, 0, 0, 0, -L * 0.8, 0, L, B);
+    if (!nah) f.push('ueberlappende Autos beruehren sich nicht');
+    else {
+      const soll = L * VF_KASTEN - L * 0.8;
+      if (Math.abs(nah.pen - soll) > 1e-6) f.push('Eindringtiefe ' + nah.pen.toFixed(3) + ' statt ' + soll.toFixed(3));
+      if (!(nah.ny > 0.99 && Math.abs(nah.nx) < 1e-6)) f.push('Normale vorn nicht nach hinten: ' + nah.nx.toFixed(2) + ',' + nah.ny.toFixed(2));
+      // Der erste Kasten wird um pen entlang n herausgesetzt: danach beruehren sie sich nicht mehr.
+      const draussen = vfKontakt(nah.nx * (nah.pen + 1e-6), nah.ny * (nah.pen + 1e-6), 0, 0, -L * 0.8, 0, L, B);
+      if (draussen) f.push('nach dem Auseinanderschieben noch Kontakt');
+    }
+    // Seitlich versetzt, ohne Beruehrung in der Breite.
+    if (vfKontakt(0, 0, 0, B * 1.2, 0, 0, L, B)) f.push('nebeneinander mit Luft beruehren sich');
+    // Seitenkontakt: Normale zeigt zur Seite.
+    const seit = vfKontakt(0, 0, 0, B * 0.8, 0, 0, L, B);
+    if (!seit || !(Math.abs(seit.nx) > 0.99)) f.push('Seitenkontakt ohne seitliche Normale');
+    // Gedreht: ein Kasten im 45-Grad-Winkel schneidet dort, wo die achsenparallelen Kaesten sich nicht schneiden wuerden.
+    const diag = vfKontakt(0, 0, 0, L * 0.62, -L * 0.62, 45, L, B);
+    const diagAchs = vfKontakt(0, 0, 0, L * 0.62, -L * 0.62, 0, L, B);
+    if (!diag) f.push('gedrehter Kasten schneidet nicht');
+    if (diagAchs) f.push('Gegenprobe: ungedreht waere es frei');
+    // Vertauscht gibt dieselbe Tiefe mit umgekehrter Normale.
+    const a = vfKontakt(0, 0, 10, 3, -8, 30, L, B), b = vfKontakt(3, -8, 30, 0, 0, 10, L, B);
+    if (!a || !b) f.push('vertauscht: Kontakt fehlt'); else if (Math.abs(a.pen - b.pen) > 1e-9 || a.nx * b.nx + a.ny * b.ny > -0.999) f.push('vertauscht nicht symmetrisch');
+    // 2. Stoss: frontal auf einen stehenden NPC.
+    const frontal = vfStossRechnen(60, 0, 0, 0, 0, 1, true);          // n zeigt vom NPC (vorn) nach hinten
+    if (!(frontal.kmhNeu < 60 && frontal.kmhNeu >= 0)) f.push('frontal: Tempo ' + frontal.kmhNeu);
+    if (!(frontal.vnMs > 0)) f.push('frontal: keine Annaeherung');
+    if (Math.abs(frontal.dvy) > 1e-6) f.push('frontal: Seitenstoss ' + frontal.dvy);
+    // Auffahren auf einen schnelleren NPC: kein Stoss.
+    const weg = vfStossRechnen(40, 0, 80, 0, 0, 1, true);
+    if (weg.vnMs !== 0 || weg.kmhNeu !== 40) f.push('Auto entfernt sich, aber Stoss');
+    // Hart gegen weich: der Aufprall bei 120 ist deutlich haerter als bei 30.
+    const hart = vfStossRechnen(120, 0, 0, 0, 0, 1, true), weich = vfStossRechnen(30, 0, 0, 0, 0, 1, true);
+    if (!(hart.vnMs > 3 * weich.vnMs)) f.push('Aufprallstaerke waechst nicht mit dem Tempo');
+    // Seitenstoss: NPC links daneben (x = -), n zeigt vom NPC zum Auto = nach rechts (+x): das Auto wird nach rechts geschoben.
+    const seitlich = vfStossRechnen(60, 0, 60, 0.0, 1, 0, true);
+    // beide fahren gleich schnell nach oben: keine Annaeherung entlang n -> kein Stoss
+    if (seitlich.vnMs !== 0) f.push('parallel fahrend: Stoss');
+    const schraeg = vfStossRechnen(60, 0, 0, 90, 1, 0, true);         // NPC steht quer? Kurs 90, Tempo 0: Auto faehrt "nach oben", n nach rechts: keine Annaeherung
+    if (schraeg.vnMs !== 0) f.push('Stoss ohne Annaeherung entlang der Normalen');
+    // Vorn links angestossen (n zeigt nach rechts-hinten): Nase wird nach rechts gedreht (dr > 0), hinten umgekehrt.
+    const nvl = Math.SQRT1_2;
+    const vornTreffer = vfStossRechnen(60, 0, 0, 0, nvl, nvl, true), hintenTreffer = vfStossRechnen(60, 0, 0, 0, nvl, nvl, false);
+    if (!(vornTreffer.dr > 0 && vornTreffer.dvy > 0)) f.push('Treffer vorn links: dr ' + vornTreffer.dr.toFixed(3) + ', dvy ' + vornTreffer.dvy.toFixed(2));
+    if (!(hintenTreffer.dr < 0)) f.push('Treffer hinten: dr nicht umgekehrt');
+    if (!(Math.abs(vornTreffer.dr) <= 0.9 && Math.abs(vornTreffer.dvy) <= 12)) f.push('Giermoment oder Seitenstoss unbegrenzt');
+    // Der Stoss nimmt Tempo, aber das Auto bleibt nie rueckwaerts im Spiel (der Aufrufer klemmt auf 0): kmhNeu endlich.
+    if (![frontal, hart, vornTreffer].every((x) => isFinite(x.kmhNeu))) f.push('kmhNeu nicht endlich');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Kasten mit Normale und Tiefe, Stoss: frontal ' + frontal.kmhNeu.toFixed(1) + ' km/h von 60, Giermoment vorn ' + vornTreffer.dr.toFixed(2) + ' rad/s' };
+  });
 
   // v1.5.10: Lackfarbe und Vorschaubilder des virtuellen Fahrens (WIP).
   stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto und Farbe', async () => {
