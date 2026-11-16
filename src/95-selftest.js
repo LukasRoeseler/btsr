@@ -26463,6 +26463,43 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  // v1.5.10: Lackfarbe und Vorschaubilder des virtuellen Fahrens (WIP).
+  stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto und Farbe', async () => {
+    const f = [];
+    // Daten: acht Farben plus Original, eindeutige Kennungen, jede Farbe wird gefunden.
+    const ids = VF_LACK_FARBEN.map((x) => x.id);
+    if (new Set(ids).size !== ids.length) f.push('Kennungen nicht eindeutig');
+    if (VF_LACK_FARBEN.length !== 9 || VF_LACK_FARBEN[0].v !== '') f.push('Farbliste: ' + VF_LACK_FARBEN.length);
+    for (const x of VF_LACK_FARBEN) if (vfLackId(x.v) !== x.id) f.push('vfLackId(' + x.v + ') = ' + vfLackId(x.v));
+    if (vfLackTint('')[0] !== 1 || vfLackTint('')[1] !== 1) f.push('ohne Farbe getoent');
+    const rot = vfLackTint('#c8102e');
+    if (!(rot[0] > 0.7 && rot[1] < 0.1 && rot[2] < 0.25)) f.push('Rot ist ' + rot.map((x) => x.toFixed(2)).join(','));
+    // Speicher: nur bekannte Farben werden gelesen.
+    const merk = (() => { try { return localStorage.getItem(VF_LACK_STORE); } catch (e) { return null; } })();
+    try {
+      vfLackSetzen('#0057b8'); if (vfLack() !== '#0057b8') f.push('Blau nicht gemerkt');
+      vfLackSetzen('#123456'); if (vfLack() !== '') f.push('unbekannte Farbe wird gelesen: ' + vfLack());
+      vfLackSetzen(''); if (vfLack() !== '') f.push('Original nicht gemerkt');
+    } finally {
+      try { if (merk === null) localStorage.removeItem(VF_LACK_STORE); else localStorage.setItem(VF_LACK_STORE, merk); } catch (e) { /* privat */ }
+    }
+    // Der Shader kennt das Umfaerben (beide Varianten) - ohne den Wert fiele die Farbe stillschweigend weg.
+    const quelle = Array.from(document.scripts).map((x) => x.text).join(' ');
+    if ((quelle.match(/uniform float lack;/g) || []).length < 2) f.push('Shader ohne uniform lack in beiden Varianten');
+    // Vorschaubilder: jedes Auto in jeder Farbe.
+    const fehlt = [];
+    for (const m of Object.keys(VF_MODELL_PFADE)) {
+      for (const id of ids) {
+        try {
+          const r = await fetch(VF_MODELL_PFADE[m] + 'vorschau_' + id + '.jpg', { method: 'HEAD', cache: 'no-store' });
+          if (!r.ok) fehlt.push(m + '/' + id);
+        } catch (e) { fehlt.push(m + '/' + id); }
+      }
+    }
+    if (fehlt.length) f.push(fehlt.length + ' Vorschaubilder fehlen: ' + fehlt.slice(0, 6).join(', '));
+    return { ok: !f.length, mass: f.length ? f.join('; ') : ids.length + ' Farben, Umfaerben im Shader, ' + Object.keys(VF_MODELL_PFADE).length * ids.length + ' Vorschaubilder vorhanden' };
+  });
+
   // v1.5.3: Die Bruecke der Android-App mit einer Attrappe von Capacitor. Vorher gab es fuer diesen Weg keinen
   // Test; er ist der einzige Weg, auf dem die App ein Auto verbindet.
   stAdd('App-Brücke v1.5.3: verbinden, Priorität erst nach dem Abo, schonender Modus, Fehler räumt auf', async () => {

@@ -939,6 +939,26 @@
   function vfModellPfad(auto) { return VF_MODELL_PFADE[auto || vfAutoWahl()] || 'img/autos/v5r/'; }
   const VF_FEDER_STORE = 'omegasim-vf-feder';
   const VF_FEDER_WERTE = [1, 2, 3, 5, 8];
+  // v1.5.10 BESTELLT: "Vorschau vom Auto, Farbwahl". Lackfarbe der virtuellen Fahrt (WIP): eine eigene Wahl, unabhaengig
+  // von der echten Fahrzeugfarbe. Die Karosserie wird umgefaerbt (Helligkeit des Texels mal Farbe, die Texturen behalten ihre
+  // Details); Scheiben, Raeder und Leuchten bleiben unveraendert. '' = die Farbe des Modells.
+  // Die Vorschaubilder (img/autos/<modell>/vorschau_<id>.jpg) sind Aufnahmen genau dieser Darstellung
+  // (tools/vorschau_bilder.py), eines je Auto und Farbe.
+  const VF_LACK_STORE = 'omegasim-vf-lack';
+  const VF_LACK_FARBEN = [
+    { id: 'auto', v: '', n: 'Original' },
+    { id: 'rot', v: '#c8102e', n: 'Rot' }, { id: 'blau', v: '#0057b8', n: 'Blau' }, { id: 'weiss', v: '#e8e8e8', n: 'Weiß' },
+    { id: 'schwarz', v: '#1b1b1b', n: 'Schwarz' }, { id: 'gelb', v: '#f5a800', n: 'Gelb' }, { id: 'violett', v: '#7a1f7a', n: 'Violett' },
+    { id: 'gruen', v: '#0a7a3d', n: 'Grün' }, { id: 'orange', v: '#d35400', n: 'Orange' },
+  ];
+  function vfLack() {
+    try { const v = localStorage.getItem(VF_LACK_STORE); return v && VF_LACK_FARBEN.some((f) => f.v === v) ? v : ''; } catch (e) { return ''; }
+  }
+  function vfLackSetzen(hex) { try { localStorage.setItem(VF_LACK_STORE, hex || ''); } catch (e) { /* egal */ } }
+  function vfLackId(hex) { const f = VF_LACK_FARBEN.find((x) => x.v === (hex || '')); return f ? f.id : 'auto'; }
+  // Die Farbe der Karosserie: Der Shader faerbt sie um (Helligkeit des Texels mal Lackfarbe, uniform lack = 1), statt zu
+  // multiplizieren - sonst wuerde Rot auf einem gelben Auto Orange. Ohne Farbe bleibt das Modell, wie es ist.
+  function vfLackTint(hex) { return hex ? vfHex(hex) : VF_WEISS; }
   // Eine gespeicherte Wahl, die es nicht mehr gibt (z. B. 'porsche', 1.3.94-1.3.131, entfernt), faellt
   // still auf den Vulture V5.R zurueck - kein 404 beim Laden und kein Absturz.
   function vfAutoWahl() {
@@ -1429,10 +1449,10 @@
         + 'void main(){ vec4 q = w * vec4(p, 1.0); gl_Position = m * q; vuv = uv; vn = nm * n; vd = gl_Position.w; }'));
       gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
         'precision mediump float; varying vec2 vuv; varying vec3 vn; varying float vd;'
-        + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
-        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 N = normalize(vn);'
+        + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel; uniform float lack;'
+        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7), lack); vec3 N = normalize(vn);'
         + ' float d = max(dot(N, normalize(vec3(0.35, 0.9, 0.25))), 0.0); float s = pow(max(dot(N, normalize(vec3(0.2, 0.75, -0.6))), 0.0), 24.0);'
-        + ' float l = mix(1.0, 0.42 + 0.66 * d, licht); vec3 c = t.rgb * tint * (l + emis) + vec3(s * 0.35 * licht);'
+        + ' float l = mix(1.0, 0.42 + 0.66 * d, licht); vec3 c = tb * tint * (l + emis) + vec3(s * 0.35 * licht);'
         + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, nebel, f), mix(alpha, alpha * t.a, am)); }'));
     } else {
       gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
@@ -1444,15 +1464,15 @@
         'precision mediump float;\n' + VF_HP
         + 'varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vv; varying HP vec3 vsp;'
         + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
-        + 'uniform float klar; uniform float glas; uniform sampler2D sch; uniform float schatt; uniform HP float bias;'
+        + 'uniform float klar; uniform float glas; uniform sampler2D sch; uniform float schatt; uniform HP float bias; uniform float lack;'
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
         + 'HP float schTiefe(HP vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
-        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
+        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7), lack); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
         + ' vec3 V = normalize(vv); float d = max(dot(N, L), 0.0); vec3 R = reflect(-L, N); float rv = max(dot(R, V), 0.0);'
         + ' vec3 amb = mix(vec3(0.30, 0.27, 0.23), vec3(0.55, 0.68, 0.90), N.y * 0.5 + 0.5);'
         + ' float sheen = pow(max(dot(N, normalize(L + V)), 0.0), 64.0) * 0.45;'
         + ' float l = mix(1.0, 0.30 + 0.72 * d, licht);'
-        + ' vec3 c = pow(t.rgb, vec3(2.2)) * tint * (amb * 0.55 + l + emis);'
+        + ' vec3 c = pow(tb, vec3(2.2)) * tint * (amb * 0.55 + l + emis);'
         + ' c += vec3(pow(rv, 24.0) * 0.60 * licht + sheen * licht);'
         + ' c += vec3(0.05, 0.06, 0.07) * klar * pow(rv, 6.0) * 1.2;'
         + ' c += vec3(pow(1.0 - max(dot(N, V), 0.0), 5.0) * glas * 0.9);'
@@ -1465,7 +1485,7 @@
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'lack'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     // Feste Zwischenspeicher fuer die Matrizen je Teil (keine Float32Array je Teil und Bild).
     return { p, u, qual: !!qual, f16: new Float32Array(16), f9: new Float32Array(9), pv: new Float32Array(16), schM: new Float32Array(16),
              ap: gl.getAttribLocation(p, 'p'), an: gl.getAttribLocation(p, 'n'), auv: gl.getAttribLocation(p, 'uv') };
@@ -2322,11 +2342,11 @@
   function vfModellMalen(gl, pv, blick, auge) {
     vfModellZeichnen(gl, pv, blick, VF.modell, VF.tprog, VF.x, VF.y, VF.h, VF.feder, VF.lenkWinkel, VF.raddreh, VF.radModell,
       (typeof headlightsOn === 'undefined' ? true : !!headlightsOn),
-      !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake), vfFederSicht(), VF.pitch || 0, auge);
+      !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake), vfFederSicht(), VF.pitch || 0, auge, vfLack());
   }
   // Ein Modell an einer Stelle zeichnen. Wird fuer das Spielerauto und fuer jeden NPC benutzt:
   // M ist das gebaute Modell (vfModellBauen), T das Texturprogramm, fe der Federungszustand.
-  function vfModellZeichnen(gl, pv, blick, M, T, x, y, h, fe, lenkWinkel, raddreh, radModell, licht, bremst, fs, nick, auge) {
+  function vfModellZeichnen(gl, pv, blick, M, T, x, y, h, fe, lenkWinkel, raddreh, radModell, licht, bremst, fs, nick, auge, lackHex) {
     const d = M.d, u = T.u;
     const s = VF_AUTO.L / d.laenge;
     const lage = vfMal(vfLage(x, y, h), vfS(s, s, s));
@@ -2355,14 +2375,14 @@
       gl.activeTexture(gl.TEXTURE0);
     }
     gl.enableVertexAttribArray(T.ap); gl.enableVertexAttribArray(T.an); gl.enableVertexAttribArray(T.auv);
-    const setze = (w, tint, emis, alpha, am, hell, klar, glas) => {
+    const setze = (w, tint, emis, alpha, am, hell, klar, glas, lackF) => {
       for (let i = 0; i < 16; i++) T.f16[i] = w[i];
       gl.uniformMatrix4fv(u.w, false, T.f16);
       const nm = vfNormalen(w);
       for (let i = 0; i < 9; i++) T.f9[i] = nm[i];
       gl.uniformMatrix3fv(u.nm, false, T.f9);
       gl.uniform3f(u.tint, tint[0], tint[1], tint[2]); gl.uniform1f(u.emis, emis);
-      gl.uniform1f(u.alpha, alpha); gl.uniform1f(u.am, am); gl.uniform1f(u.licht, hell);
+      gl.uniform1f(u.alpha, alpha); gl.uniform1f(u.am, am); gl.uniform1f(u.licht, hell); gl.uniform1f(u.lack, lackF || 0);
       if (T.qual) { gl.uniform1f(u.klar, klar || 0); gl.uniform1f(u.glas, glas || 0); }
     };
     const teil = (t) => {
@@ -2399,10 +2419,13 @@
     }
     // 2. Aufbau, undurchsichtige Teile; Scheinwerfer und Ruecklicht leuchten selbst
     const ruecklichtEmis = bremst ? 1.7 : (licht ? 0.55 : 0);
+    const lackTint = vfLackTint(lackHex);
     for (const t of M.aufbauTeile) {
       const emis = t.rolle === 'scheinwerfer' ? (licht ? 1.3 : 0) : t.rolle === 'ruecklicht' ? ruecklichtEmis : 0;
       // Karosserie mit leichtem Clear-Coat-Glanz (klar, nur Quality), Scheiben/Glas dagegen nicht.
-      setze(aufbau, VF_WEISS, emis, 1, 0, 1, 0.3, 0);
+      // Der Lack betrifft nur Karosserieteile: Scheinwerfer, Ruecklichter und Scheiben bleiben unveraendert.
+      const lackTeil = !t.rolle || t.rolle === 'karosserie' || t.rolle === 'lack';
+      setze(aufbau, lackTeil ? lackTint : VF_WEISS, emis, 1, 0, 1, 0.3, 0, lackTeil && lackHex ? 1 : 0);
       teil(t);
     }
     // 3. Raeder: Mitte auf Reifenradius, vorn eingeschlagen, alle drehen; rechts gespiegelt (Muttern aussen)
@@ -2916,6 +2939,38 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Auto'), autos[ja].name, () => autoWahl(-1), () => autoWahl(1)));
+    // v1.5.10 (WIP): Vorschau des gewaehlten Autos in der gewaehlten Farbe (eine Aufnahme der echten Darstellung) und
+    // die Lackfarbe. Der Kasten hat keine Vorschau; fehlt ein Bild, verschwindet die Zeile still.
+    {
+      const jl = Math.max(0, VF_LACK_FARBEN.findIndex((f) => f.v === vfLack()));
+      const lackWahl = (dd) => { vfLackSetzen(VF_LACK_FARBEN[(jl + dd + VF_LACK_FARBEN.length) % VF_LACK_FARBEN.length].v); renderGarage(); };
+      const zeile = garWertZeile(t('Lackfarbe'), t(VF_LACK_FARBEN[jl].n), () => lackWahl(-1), () => lackWahl(1));
+      zeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+      const palette = document.createElement('span');
+      palette.className = 'vf-lack-palette';
+      VF_LACK_FARBEN.forEach((f, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'vf-lack' + (i === jl ? ' aktiv' : '');
+        b.style.background = f.v || 'linear-gradient(135deg,#c8102e 0%,#0057b8 50%,#e8e8e8 100%)';
+        b.title = t(f.n); b.setAttribute('aria-label', t(f.n));
+        b.onclick = (e) => { e.stopPropagation(); vfLackSetzen(f.v); renderGarage(); };
+        palette.appendChild(b);
+      });
+      zeile.querySelector('.gk-w').appendChild(palette);
+      if (autos[ja].v !== 'kasten') {
+        const vor = document.createElement('div');
+        vor.className = 'opt-row opt-breit vf-vorschau';
+        const img = document.createElement('img');
+        img.className = 'vf-vorschau-bild';
+        img.alt = autos[ja].name;
+        img.src = vfModellPfad(autos[ja].v) + 'vorschau_' + vfLackId(vfLack()) + '.jpg';
+        img.onerror = () => { vor.remove(); };
+        vor.appendChild(img);
+        rechts.appendChild(vor);
+      }
+      rechts.appendChild(zeile);
+    }
     // v1.3.39 (WIP): der Fussboden unter der Bahn, Dielen in echten Massen (siehe VF_BOEDEN).
     const jb = Math.max(0, VF_BOEDEN.findIndex((b) => b.id === vfBodenWahl()));
     const bodenWahl = (dd) => { vfBodenSetzen(VF_BOEDEN[(jb + dd + VF_BOEDEN.length) % VF_BOEDEN.length].id); renderGarage(); };
