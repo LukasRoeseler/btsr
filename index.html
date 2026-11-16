@@ -5827,7 +5827,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.18</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.21</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7072,6 +7072,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Virtuelles Fahren: Regen ist jetzt dreidimensional (WIP): Tropfen fallen als Striche im Raum um die Kamera, werden beim Fahren schr&#228;g gezogen, und ein grauer Schleier legt sich mit der Regenst&#228;rke &#252;ber das Bild. Der Regen kommt aus dem Wetter des Rennens (Startwetter Regen). Performance zeichnet 700 Tropfen, Quality 2000. Behoben (Quality): Die R&#228;der warfen drehende, flache oder spitze Schatten; sie werfen jetzt keinen Kartenschatten mehr, unter dem Auto bleibt der weiche Kontaktschatten.</li>
         <li>Virtuelles Fahren: Die Renneinstellungen gelten jetzt weiter: Startwetter Regen macht die Bahn nass (derselbe bin&#228;re Griff wie beim echten Fahren), nach der Fahrt ist es wieder wie vorher. Was virtuell noch nicht geht (wechselhaftes Wetter, fliegender Start, Pflichtboxenstopps, Zufallsevents, automatische Gelbe Flagge), nennt der Start einmal, statt es still zu &#252;bergehen. Der Schalter &#8222;Schaden bei Zusammenst&#246;&#223;en&#8220; gilt auch virtuell.</li>
         <li>Virtuelles Fahren (WIP): Zusammenst&#246;&#223;e mit NPC-Autos sind jetzt wie in einem Rennspiel gerechnet: Die Autos haben gedrehte K&#228;sten mit ihren echten Ma&#223;en und stecken nicht mehr ineinander, sondern werden auseinandergeschoben. Der Sto&#223; nimmt Tempo (frontal gegen ein stehendes Auto etwa drei Viertel), schiebt das eigene Auto seitlich und dreht es je nach Trefferstelle (ein Treffer vorn dreht die Nase weg, einer hinten schiebt sie herum); der NPC verliert etwas Tempo. Der Schaden h&#228;ngt von der Aufprallst&#228;rke ab (3 % bis 30 %) statt pauschal 10 %.</li>
         <li>Virtuelles Fahren (WIP): In der Garage zeigt das Fenster &#8222;Virtuell fahren&#8220; jetzt ein Vorschaubild des gew&#228;hlten Autos und eine Lackfarbe (Original, Rot, Blau, Wei&#223;, Schwarz, Gelb, Violett, Gr&#252;n, Orange). Die Karosserie wird in der Fahrt umgef&#228;rbt (Helligkeit des Lacks mal Farbe, die Details bleiben), Scheiben, R&#228;der und Leuchten bleiben unver&#228;ndert. Die Vorschaubilder sind Aufnahmen genau dieser Darstellung, eines je Auto und Farbe.</li>
@@ -16979,6 +16980,7 @@
     "automatische Gelbe Flagge": "automatic yellow flag",
     "Im virtuellen Fahren nicht verfügbar: {l}": "Not available in virtual driving: {l}",
     "Virtuelles Fahren: Die Renneinstellungen gelten jetzt weiter: Startwetter Regen macht die Bahn nass (derselbe binäre Griff wie beim echten Fahren), nach der Fahrt ist es wieder wie vorher. Was virtuell noch nicht geht (wechselhaftes Wetter, fliegender Start, Pflichtboxenstopps, Zufallsevents, automatische Gelbe Flagge), nennt der Start einmal, statt es still zu übergehen. Der Schalter „Schaden bei Zusammenstößen“ gilt auch virtuell.": "Virtual driving: the race settings now apply further: starting weather rain makes the track wet (the same binary grip as in real driving), after the drive it is back as before. What does not work virtually yet (changeable weather, rolling start, mandatory pit stops, random events, automatic yellow flag) is named once at the start instead of being skipped silently. The switch “Damage in collisions” also applies virtually.",
+    "Virtuelles Fahren: Regen ist jetzt dreidimensional (WIP): Tropfen fallen als Striche im Raum um die Kamera, werden beim Fahren schräg gezogen, und ein grauer Schleier legt sich mit der Regenstärke über das Bild. Der Regen kommt aus dem Wetter des Rennens (Startwetter Regen). Performance zeichnet 700 Tropfen, Quality 2000. Behoben (Quality): Die Räder warfen drehende, flache oder spitze Schatten; sie werfen jetzt keinen Kartenschatten mehr, unter dem Auto bleibt der weiche Kontaktschatten.": "Virtual driving: rain is now three-dimensional (WIP): drops fall as streaks in the space around the camera, are drawn at an angle while driving, and a grey veil covers the image according to the rain strength. The rain comes from the race weather (starting weather rain). Performance draws 700 drops, Quality 2000. Fixed (Quality): the wheels cast spinning, flat or pointed shadows; they no longer cast a map shadow, the soft contact shadow under the car remains.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -43067,6 +43069,7 @@
   }
   // Ein Modell in die Schattenkarte zeichnen (nur die undurchsichtigen Karosserie- und Radteile). Die
   // Teillisten sind beim Bauen sortiert (M.aufbauTeile, M.radTeile), die Matrix geht ueber SP.f16.
+  const VF_RAD_KARTENSCHATTEN = false;   // v1.5.19: Raeder ohne Schatten in der Schattenkarte (siehe unten)
   function vfModellSchatten(gl, SP, M, x, y, h, fe, lenkWinkel, raddreh, radModell, fs, nick, schM) {
     const d = M.d;
     const s = VF_AUTO.L / d.laenge;
@@ -43083,6 +43086,12 @@
     gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
     for (const t of M.aufbauTeile) gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
+    // v1.5.19 GEMELDET: "entferne die komischen sich drehenden flachen/spitzen Schatten der Raeder im Quality-Modus".
+    // Die Raeder gingen DREHEND in die Schattenkarte; bei der steilen Sonne sieht die Karte die Felge fast von der
+    // Kante, und Speichen oder Ventil warfen eine flache bzw. spitze Silhouette, die mitlief. Auch ohne Drehung blieben
+    // lange spitze Streifen (gemessen im Bild). Darum werfen die Raeder GAR KEINEN Kartenschatten mehr: den Boden
+    // unter ihnen dunkelt der weiche Kontaktschatten des Autos (M.schatten), der Aufbau wirft weiter seinen Schatten.
+    if (VF_RAD_KARTENSCHATTEN) {
     const radTeile = M.radTeile;
     const halbW = d.breite / 2;
     for (let k = 0; k < 4; k++) {
@@ -43090,19 +43099,20 @@
       const r = d.reifen[ax];
       const dreh = vfRy(ax === 'vorn' ? -(lenkWinkel || 0) : 0);
       if (radTeile.length) {
-        matrix(vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), dreh, vfRx(raddreh || 0), vfS(seite * r.breite, 2 * r.radius, 2 * r.radius)));
+        matrix(vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), dreh, vfRx(0), vfS(seite * r.breite, 2 * r.radius, 2 * r.radius)));
         gl.bindBuffer(gl.ARRAY_BUFFER, M.vbo);
         gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, 0);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
         for (const t of radTeile) gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
       } else if (radModell && radModell.teile.length) {
         const xW = seite * Math.max(r.spur / 2, halbW + 0.12 - 0.5 * r.breite);
-        matrix(vfKette(lage, vfT(xW, r.radius, z), dreh, vfRx(raddreh || 0), vfS(seite * r.breite, 2 * r.radius, 2 * r.radius)));
+        matrix(vfKette(lage, vfT(xW, r.radius, z), dreh, vfRx(0), vfS(seite * r.breite, 2 * r.radius, 2 * r.radius)));
         gl.bindBuffer(gl.ARRAY_BUFFER, radModell.vbo);
         gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, 0);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, radModell.ibo);
         for (const t of radModell.teile) gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
       }
+    }
     }
     gl.disableVertexAttribArray(SP.ap);
   }
@@ -43694,6 +43704,108 @@
           !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, k.auge);
       }
     }
+    // v1.5.19: Regen zuletzt (durchsichtig, ohne Tiefe zu schreiben).
+    try { vfRegenMalen(gl, pv, k.auge, VF.dtBild || 0.016); } catch (e) { VF.regen = null; }
+  }
+  // ---- 3D-REGEN (v1.5.19, WIP) -------------------------------------------------------------------------
+  // BESTELLT: "mache 3D-Regeneffekte (aktuell ist der Regen nicht schoen)". Regen kommt aus dem Wetter des Rennens
+  // (wxRainLevel, dieselbe Front wie beim echten Fahren). Die Tropfen sind kurze Striche IM RAUM: ein Kasten um die
+  // Kamera, in dem jeder Tropfen faellt und vom Fahrtwind schraeg gezogen wird; verlaesst er den Kasten, kommt er auf
+  // der anderen Seite wieder herein (mod im Vertex-Shader). Die CPU rechnet je Bild nichts ausser drei Zahlen; die
+  // Zahl der gezeichneten Tropfen folgt der Regenstaerke (Performance 700, Quality 2000). Dazu ein grauer Schleier
+  // ueber dem Bild (Vollbild-Viereck), der mit der Staerke dichter wird.
+  const VF_REGEN_N = { perf: 700, qual: 2000 };
+  const VF_REGEN_KASTEN = [70, 34, 70];       // Streckeneinheiten (1 Einheit ~ 0,48 m eines GT3)
+  const VF_REGEN_FALL = 26;                   // Einheiten je s (~12 m/s, Regentropfen)
+  function vfRegenBauen(gl, n) {
+    const p = gl.createProgram();
+    gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
+      'attribute vec4 a; uniform mat4 m; uniform vec3 auge; uniform vec3 kasten; uniform vec3 fall; uniform vec3 strich; uniform float t;'
+      + 'varying float va;'
+      + 'void main(){ vec3 lo = auge - kasten * 0.5; vec3 q = a.xyz * kasten + fall * t;'
+      + ' q = mod(q - lo, kasten) + lo; q -= strich * a.w;'
+      + ' gl_Position = m * vec4(q, 1.0); va = 1.0 - a.w * 0.85; }'));
+    gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
+      'precision mediump float; varying float va; uniform float staerke;'
+      + 'void main(){ gl_FragColor = vec4(0.82, 0.87, 0.94, 0.62 * va * staerke); }'));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const d = new Float32Array(n * 8);
+    for (let i = 0; i < n; i++) {
+      const x = Math.random(), y = Math.random(), z = Math.random();
+      d.set([x, y, z, 0, x, y, z, 1], i * 8);
+    }
+    const b = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, d, gl.STATIC_DRAW);
+    const u = {};
+    ['m', 'auge', 'kasten', 'fall', 'strich', 't', 'staerke'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    return { p, b, n, u, a: gl.getAttribLocation(p, 'a'), m16: new Float32Array(16), t: 0 };
+  }
+  function vfRegenStaerke() {
+    try { return typeof wxRainLevel === 'function' ? Math.max(0, Math.min(1, wxRainLevel())) : 0; } catch (e) { return 0; }
+  }
+  function vfRegenMalen(gl, pv, auge, dt) {
+    const st = vfRegenStaerke();
+    if (st < 0.02) return;
+    vfRegenSchleier(gl, st);        // erst der Schleier, dann die Tropfen darueber (sonst verschwinden sie im Grau)
+    if (!VF.regen) VF.regen = vfRegenBauen(gl, VF.grafik ? VF_REGEN_N.qual : VF_REGEN_N.perf);
+    const R = VF.regen;
+    R.t = (R.t + Math.min(0.1, dt || 0.016)) % 1000;
+    // Fahrtwind: die Tropfen bewegen sich relativ zum Auto rueckwaerts; der Strich zeigt die Bewegung im Bild.
+    const kmh = Math.max(0, (physEngine && physEngine.state && physEngine.state.speedKmh) || 0);
+    const vE = kmh / 3.6 * 100 * TRACK_UNITS_PER_CM;
+    const hr = (VF.h || 0) * Math.PI / 180;
+    const vx = Math.sin(hr) * vE, vz = -Math.cos(hr) * vE;
+    const fall = [0, -VF_REGEN_FALL, 0];
+    // Strich: Weg in 0,05 s relativ zur Kamera (Fall minus eigene Bewegung), mindestens 0,8 Einheiten lang.
+    let sx = (fall[0] - vx) * 0.05, sy = fall[1] * 0.05, sz = (fall[2] - vz) * 0.05;
+    const sl = Math.hypot(sx, sy, sz) || 1, ml = Math.max(0.8, sl);
+    sx *= ml / sl; sy *= ml / sl; sz *= ml / sl;
+    gl.useProgram(R.p);
+    for (let i = 0; i < 16; i++) R.m16[i] = pv[i];
+    gl.uniformMatrix4fv(R.u.m, false, R.m16);
+    gl.uniform3f(R.u.auge, auge[0], auge[1], auge[2]);
+    gl.uniform3f(R.u.kasten, VF_REGEN_KASTEN[0], VF_REGEN_KASTEN[1], VF_REGEN_KASTEN[2]);
+    gl.uniform3f(R.u.fall, fall[0], fall[1], fall[2]);
+    gl.uniform3f(R.u.strich, sx, sy, sz);
+    gl.uniform1f(R.u.t, R.t);
+    gl.uniform1f(R.u.staerke, 0.4 + 0.6 * st);
+    gl.bindBuffer(gl.ARRAY_BUFFER, R.b);
+    gl.enableVertexAttribArray(R.a);
+    gl.vertexAttribPointer(R.a, 4, gl.FLOAT, false, 16, 0);
+    gl.enable(gl.BLEND); gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE); gl.depthMask(false);
+    gl.drawArrays(gl.LINES, 0, Math.max(2, Math.round(R.n * st) * 2));
+    gl.depthMask(true); gl.disable(gl.BLEND);
+    gl.disableVertexAttribArray(R.a);
+  }
+  // Grauer Schleier ueber dem Bild: ein Vollbild-Viereck im selben Kontext (ein DOM-Schleier ueber dem Canvas war
+  // im Bild nicht zu sehen). Gemischt wird nur die Farbe (blendFuncSeparate, Ziel-Alpha bleibt 1): mit dem
+  // einfachen blendFunc wurde der Canvas halb durchsichtig, und der helle Seitenhintergrund wusch das Bild aus. Zwei Dreiecke, eine Farbe, Deckkraft mit der Regenstaerke.
+  function vfRegenSchleier(gl, st) {
+    if (st < 0.02) return;
+    if (!VF.schleier) {
+      const p = gl.createProgram();
+      gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER, 'attribute vec2 a; varying float vy; void main(){ vy = a.y; gl_Position = vec4(a, 0.0, 1.0); }'));
+      gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER, 'precision mediump float; varying float vy; uniform float st;'
+        + 'void main(){ gl_FragColor = vec4(mix(vec3(0.16, 0.19, 0.24), vec3(0.30, 0.35, 0.42), vy * 0.5 + 0.5), 0.38 * st); }'));
+      gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+      const b = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, b);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
+      VF.schleier = { p, b, a: gl.getAttribLocation(p, 'a'), st: gl.getUniformLocation(p, 'st') };
+    }
+    const S = VF.schleier;
+    gl.useProgram(S.p);
+    gl.uniform1f(S.st, st);
+    gl.bindBuffer(gl.ARRAY_BUFFER, S.b);
+    gl.enableVertexAttribArray(S.a);
+    gl.vertexAttribPointer(S.a, 2, gl.FLOAT, false, 8, 0);
+    gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.disable(gl.BLEND); gl.enable(gl.DEPTH_TEST);
+    gl.disableVertexAttribArray(S.a);
   }
   // ---- Kamera (v1.1.11) --------------------------------------------------------------------
   // BESTELLT: "Wenn ich den rechten Stick reindruecke im virtuellen Fahren, aendere die Kamera zu
@@ -44744,7 +44856,7 @@
     }
     VF.aktiv = false;
     VF.npcs = null; VF.npcBogen = null; VF.npcRunde = 0;
-    VF.schatte = null; VF.schatteProg = null; VF.grafik = false;
+    VF.schatte = null; VF.schatteProg = null; VF.grafik = false; VF.regen = null; VF.schleier = null;
     // Was die virtuelle Fahrt am echten Fahren veraendert hat, zuruecknehmen: Schaden wie beim Start,
     // eine hier gesetzte gelbe Flagge (Knopf "Gelbe Flagge") aufheben, gehaltene Touch-Eingaben loslassen
     // (die Schicht verschwindet, ein pointerup kaeme nie mehr) und keine dreckige Luft mitnehmen.
@@ -116016,6 +116128,28 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
+
+  // v1.5.19: Regen im virtuellen Fahren, Raeder ohne Kartenschatten.
+  stAdd('Virtuell v1.5.19: 3D-Regen folgt dem Wetter, Raeder ohne drehenden Kartenschatten', () => {
+    const f = [];
+    if (VF_RAD_KARTENSCHATTEN !== false) f.push('Raeder werfen weiter Kartenschatten');
+    const quelle = vfModellSchatten.toString();
+    if (quelle.indexOf('vfRx(raddreh') >= 0) f.push('Schattenkarte dreht die Raeder noch');
+    if (!(VF_REGEN_N.perf > 0 && VF_REGEN_N.qual >= VF_REGEN_N.perf && VF_REGEN_N.qual <= 4000)) f.push('Tropfenzahl ' + JSON.stringify(VF_REGEN_N));
+    const merk = { front: wxFront, to: wxFrontTo, w: weather };
+    try {
+      wxFront = -1; wxFrontTo = -1;
+      if (vfRegenStaerke() !== 0) f.push('trocken, aber Regen ' + vfRegenStaerke());
+      wxFront = 0; wxFrontTo = 0;
+      if (vfRegenStaerke() !== 1) f.push('volle Front, aber Regen ' + vfRegenStaerke());
+      wxFront = -0.5;
+      if (Math.abs(vfRegenStaerke() - 0.5) > 1e-9) f.push('halbe Front, aber Regen ' + vfRegenStaerke());
+    } finally { wxFront = merk.front; wxFrontTo = merk.to; }
+    // Der Schleier und die Tropfen mischen nur die Farbe (Ziel-Alpha bleibt), sonst wuerde der Canvas durchsichtig.
+    const rq = vfRegenMalen.toString() + vfRegenSchleier.toString();
+    if (rq.indexOf('gl.blendFunc(') >= 0 || rq.indexOf('blendFuncSeparate') < 0) f.push('Regen mischt das Ziel-Alpha mit');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Regenstaerke = Wetterfront, Tropfen ' + VF_REGEN_N.perf + '/' + VF_REGEN_N.qual + ', Raeder ohne Kartenschatten' };
+  });
 
   // v1.5.16: Renneinstellungen im virtuellen Fahren.
   stAdd('Virtuell v1.5.16: Startwetter aus den Renneinstellungen, nicht Verfuegbares wird genannt, Schaden-Schalter', () => {
