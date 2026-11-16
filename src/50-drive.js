@@ -2066,7 +2066,7 @@
     // eine gemessene Groesse und keine gerechnete. Ohne Auto oder ohne Meldung: ein Strich,
     // und keine erfundene Zahl.
     const roh = car && car.battery !== undefined && car.battery !== null ? car.battery : null;
-    schreibeWert($(pre + '-batt'), roh === null ? '\u2013' : batteryPercent(roh) + ' %', true);
+    schreibeWert($(pre + '-batt'), akkuAnzeige(roh, true), true);
   }
 
   function p2ScreenRender() {
@@ -2414,7 +2414,7 @@
     // Prozentzahl. null heisst "noch kein Dashboard-Byte gelesen" (siehe dashBattery in
     // 60-track.js), der Balken bleibt dann leer statt eine falsche Zahl zu zeigen.
     const battPct = dashBattery === null ? null : batteryPercent(dashBattery);
-    $('race-batt').textContent = battPct === null ? '\u2013' : battPct + '%';
+    $('race-batt').textContent = akkuAnzeige(dashBattery, false);
     $('race-batt-bar').style.height = (battPct === null ? 0 : battPct) + '%';
     $('race-batt-bar').style.background = battPct !== null && battPct < 20 ? '#ffb02e' : '#2ee06a';
 

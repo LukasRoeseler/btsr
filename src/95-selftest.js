@@ -26531,6 +26531,79 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'normal ' + n.rufe.filter((x) => x !== 'initialize' && x !== 'isEnabled').join('>') + ' | schonend mit Pause, ohne sofortige Prioritaet | Abo-Fehler, dann zweiter Versuch' };
   });
 
+  // v1.5.6: Aufstellung, Platz 4: wurde der Haltepunkt (mitten im Teil) verpasst, faehrt die Folge kuerzer.
+  stAdd('Aufstellung v1.5.6: verpasster Haltepunkt kuerzt die Folge, Platz auf Zielteil unveraendert', () => {
+    const f = [];
+    const merk = currentTrackTiles;
+    try {
+      currentTrackTiles = codeToTrack('SG3R2G3R2G').tiles; lineCache = null;
+      const n = currentTrackTiles.length;
+      const platz4 = 3, platz1 = 0;
+      const ziel4 = aufstellZielKachel(platz4, n), bruch4 = aufstellHaltBruch(platz4);
+      // genau am Haltepunkt: kein Vorsprung, volle Folge
+      const v0 = aufstellVorsprung(ziel4 + bruch4, ziel4, platz4);
+      if (Math.abs(v0) > 1e-6) f.push('am Haltepunkt Vorsprung ' + v0);
+      if (aufstellNachholFaktor(v0, aufstellSkript(1)) !== 1) f.push('am Haltepunkt gekuerzt');
+      // im Nachholfenster (naechster Teil, Anteil 0,1): Vorsprung = 1 + 0,1 - Bruch
+      const o = ((ziel4 + 1 + 0.1) % n);
+      const v = aufstellVorsprung(o, ziel4, platz4);
+      if (Math.abs(v - (1.1 - bruch4)) > 1e-6) f.push('Vorsprung ' + v.toFixed(3) + ' statt ' + (1.1 - bruch4).toFixed(3));
+      const sk = aufstellSkript(-1);
+      const roll = scRollweg(sk, null);
+      const fk = aufstellNachholFaktor(v, sk);
+      if (!(fk < 1 && fk >= AUFSTELL_NACHHOL_MIN)) f.push('Faktor ' + fk.toFixed(3) + ' nicht in [' + AUFSTELL_NACHHOL_MIN + ', 1)');
+      // die gekuerzte Folge rollt um etwa den Vorsprung weniger (Modell, ohne Untergrenze)
+      const kurz = scRollweg(aufstellSkript(-1, fk), null);
+      if (fk > AUFSTELL_NACHHOL_MIN + 1e-9 && Math.abs((roll - kurz) - v) > 0.12) f.push('Rollweg kuerzer um ' + (roll - kurz).toFixed(2) + ', Vorsprung ' + v.toFixed(2));
+      // der Zusatzfaktor wirkt nur aufs Gas, nicht auf Lenkung und Zeiten
+      const a1 = aufstellSkript(1), a2 = aufstellSkript(1, 0.8);
+      if (a1.some((x, i) => x[0] !== a2[i][0] || x[1] !== a2[i][1])) f.push('Zusatzfaktor aendert Zeiten oder Lenkung');
+      if (Math.abs(a2[3][2] / a1[3][2] - 0.8) > 1e-9) f.push('Zusatzfaktor ' + (a2[3][2] / a1[3][2]));
+      // Platz 1 (Teilkante): ein verschluckter Zaehler (Ort schon im naechsten Teil) kuerzt NICHT unbegrenzt
+      const fk1 = aufstellNachholFaktor(aufstellVorsprung(((aufstellZielKachel(platz1, n) + 1 + 0.45) % n), aufstellZielKachel(platz1, n), platz1), aufstellSkript(1));
+      if (fk1 < AUFSTELL_NACHHOL_MIN - 1e-9) f.push('Platz 1 unter der Untergrenze: ' + fk1);
+      // aufstellAmPunkt bleibt wie vorher: am Haltepunkt ja, im Nachholfenster ja, davor nein
+      if (!aufstellAmPunkt(ziel4 + bruch4, ziel4, platz4)) f.push('am Haltepunkt nicht ausgeloest');
+      if (!aufstellAmPunkt(o, ziel4, platz4)) f.push('Nachholfenster nicht ausgeloest');
+      if (aufstellAmPunkt(ziel4 + bruch4 - 0.2, ziel4, platz4)) f.push('vor dem Haltepunkt ausgeloest');
+      return { ok: !f.length, mass: f.length ? f.join('; ') : 'Platz 4: Haltepunkt ' + bruch4.toFixed(2) + ' im Teil ' + ziel4 + ', Vorsprung ' + v.toFixed(2) + ' -> Folge x ' + fk.toFixed(2) + ' (Rollweg ' + roll.toFixed(2) + ')' };
+    } finally {
+      currentTrackTiles = merk; lineCache = null;
+    }
+  });
+
+  // v1.5.6: Akku bei Rohwert <= 140 als "niedrig" statt Scheinprozent; Glaettung des Cockpits je Fahrerauto.
+  stAdd('Akku v1.5.6: niedrig statt Scheinzahl, Glättung je Fahrerauto', () => {
+    const f = [];
+    if (akkuAnzeige(null, true) !== '–') f.push('ohne Wert kein Strich');
+    if (akkuAnzeige(AKKU_NIEDRIG_ROH, true) !== t('niedrig')) f.push('Rohwert ' + AKKU_NIEDRIG_ROH + ' zeigt ' + akkuAnzeige(AKKU_NIEDRIG_ROH, true));
+    if (akkuAnzeige(AKKU_LEER, false) !== t('niedrig')) f.push('leer zeigt keinen Text');
+    const ueber = akkuAnzeige(AKKU_NIEDRIG_ROH + 1, false);
+    if (!/^\d+%$/.test(ueber)) f.push('knapp ueber der Grenze: ' + ueber);
+    if (!/^100/.test(akkuAnzeige(AKKU_VOLL, false))) f.push('voll zeigt ' + akkuAnzeige(AKKU_VOLL, false));
+    // Je Auto geglaettet: ein Wechsel des Fahrerautos darf den Speicher des Vorgaengers nicht erben.
+    const merk = { halter: Object.assign({}, dashAkkuHalter), pc: playerCar };
+    try {
+      const a1 = { id: 'st-akku-a' }, a2 = { id: 'st-akku-b' };
+      playerCar = a1; dashAkkuHalter.akkuHist = []; dashAkkuHalter.car = undefined;
+      const h1 = dashAkkuFuerAuto();
+      akkuGlaetten(h1, 152, 1000);
+      playerCar = a2;
+      const h2 = dashAkkuFuerAuto();
+      const m = akkuGlaetten(h2, 141, 2000);
+      if (m !== 141) f.push('Wechsel des Fahrerautos erbt den Wert des Vorgaengers: ' + m);
+      playerCar = a2;
+      akkuGlaetten(dashAkkuFuerAuto(), 150, 2500);
+      const m2 = akkuGlaetten(dashAkkuFuerAuto(), 141, 3000);
+      if (m2 !== 150) f.push('Glaettung (Maximum 5 s) im selben Auto kaputt: ' + m2);
+    } finally {
+      playerCar = merk.pc;
+      for (const k of Object.keys(dashAkkuHalter)) delete dashAkkuHalter[k];
+      Object.assign(dashAkkuHalter, merk.halter);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'bis Rohwert ' + AKKU_NIEDRIG_ROH + ' "niedrig", darueber Prozent, Glaettung je Fahrerauto' };
+  });
+
   // v1.5.3: Die Startrunde des Safety Cars endet schon vor dem Parkteil (derselbe Heimweg wie nach Gelb).
   stAdd('Safety Car v1.5.3: Startrunde endet 4 Teile vor dem Parkteil, nicht erst an der Linie', () => {
     const f = [];

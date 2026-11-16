@@ -1748,7 +1748,7 @@
   function garAkkuText(car) {
     if (car.battery === null || car.battery === undefined || typeof batteryPercent !== 'function') return '';
     const p = batteryPercent(car.battery);
-    return ' &middot; <span class="gar-akku' + (p < 25 ? ' knapp' : '') + '">' + t('Akku') + ' ' + p + '&nbsp;%'
+    return ' &middot; <span class="gar-akku' + (p < 25 ? ' knapp' : '') + '">' + t('Akku') + ' ' + akkuAnzeige(car.battery, true).replace('\u00a0', '&nbsp;')
       + (car.akkuMinRoh !== undefined ? ' (min ' + car.akkuMinRoh + ')' : '') + '</span>';
   }
   function garWertZeile(titel, wert, zurueck, vor, extra) {
@@ -3632,9 +3632,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // ohne Spur-Bytes, damit die Spurfuehrung das Auto nicht wieder zur Mitte zieht.
     const staerke = einparkStaerke();
     if (aufstellArt() === 'aufnahme') {
-      const sk = aufstellSkript(seite);
+      const vors = aufstellVorsprung(o, g.aufstellZiel, platz);
+      const nachholF = aufstellNachholFaktor(vors, aufstellSkript(seite));
+      const sk = aufstellSkript(seite, nachholF);
       log(garageLabel(car) + ': parkt auf Teil ' + g.aufstellZiel + ' mit der Safety-Car-Folge ' + (seite > 0 ? 'rechts' : 'links (gespiegelt)')
-          + ', Gas ' + Math.round(aufstellScGas() * 100) + ' %.', 'info');
+          + ', Gas ' + Math.round(aufstellScGas() * nachholF * 100) + ' %'
+          + ' (Platz ' + (platz + 1) + ', Ort ' + (o === null ? '?' : o.toFixed(2)) + ', Haltepunkt '
+          + (g.aufstellZiel + aufstellHaltBruch(platz)).toFixed(2)
+          + (nachholF < 1 ? ', Vorsprung ' + vors.toFixed(2) + ' Teile, Folge um ' + Math.round((1 - nachholF) * 100) + ' % gekuerzt' : '') + ').', 'info');
       randHaltStarten(car, { phase: 'skript', quer: 0, skript: sk, anpassMs: MANOEVER_ANPASS_MS,
                              vonDrive: letztesGas(car, sk[0][2]), haltMs: AUFSTELL_HALT_MS, sofort: true,
                              fertig: (c) => {
@@ -6071,9 +6076,33 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   const AUFSTELL_SC_GAS = 0.70, AUFSTELL_SC_GAS_STORE = 'omegasim-aufstell-sc-gas-v2';
   const AUFSTELL_BODEN = 0.28;
   function aufstellScGas() { return einparkWert('race-einpark-sc-gas', AUFSTELL_SC_GAS, 0.4, 1); }
-  function aufstellSkript(seite) {
-    const f = aufstellScGas(), s = seite > 0 ? 1 : -1;
+  function aufstellSkript(seite, extra) {
+    const f = aufstellScGas() * (extra || 1), s = seite > 0 ? 1 : -1;
     return MANOEVER.scEin.map(([ms, lenk, gas]) => [ms, s * lenk, gas * f]);
+  }
+  // v1.5.6 GEMELDET: "Aufstellen klappt nach dem Rennen bei Autos 1 bis 3 gut, Auto 4 parkt daneben." Platz 4
+  // (links, zweite Reihe) haelt im Teil s-2 bei Anteil 0,5, mitten im Teil, wo der Ort nur geschaetzt ist. Erreicht
+  // die Schaetzung 0,5 nicht, bevor der Zaehler weiterspringt, loest aufstellAmPunkt erst im NAECHSTEN Teil (bis
+  // zu einer halben Kachel danach) aus - das Auto hat dann bis zu 1 Teil Vorsprung auf seinen Haltepunkt und rollt
+  // die Folge (Rollweg rund 1,5 Teile, scRollweg) bis auf den Platz des Autos davor. Jetzt wird die Folge in diesem
+  // Fall um den Vorsprung kuerzer gefahren: das Gas (und damit der Rollweg, der etwa linear mit dem Gas waechst) mal
+  // 1 - Vorsprung / Rollweg, nie unter AUFSTELL_NACHHOL_MIN (der Querweg waechst mit dem Gas zum Quadrat, zu wenig
+  // Gas liesse das Auto zu weit in der Mitte stehen).
+  const AUFSTELL_NACHHOL_MIN = 0.7;
+  function aufstellVorsprung(o, ziel, platz) {
+    if (o === null || o === undefined) return 0;
+    const n = currentTrackTiles ? currentTrackTiles.length : 0;
+    if (!n) return 0;
+    let v = o - (ziel + aufstellHaltBruch(platz));
+    v = ((v % n) + n) % n;
+    if (v > n / 2) v -= n;
+    return v;
+  }
+  function aufstellNachholFaktor(vorsprung, skript) {
+    if (!(vorsprung > 0.05)) return 1;
+    const roll = scRollweg(skript, null);
+    if (!(roll > 0.5)) return 1;
+    return Math.max(AUFSTELL_NACHHOL_MIN, Math.min(1, 1 - vorsprung / roll));
   }
   if ($('race-einpark-sc-gas')) {
     const el = $('race-einpark-sc-gas');

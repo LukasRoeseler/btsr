@@ -61,6 +61,22 @@
     return m;
   }
   const dashAkkuHalter = {};
+  // v1.5.6 GEMELDET: "Akku war bei mir laenger auf 12 %, aber das Auto fuhr immer noch." Die Skala ist linear,
+  // ein Rohschritt sind rund 6 %, und die Entladekurve ist unten flach: "12 %" ist Rohwert 140, und dort faehrt
+  // das Auto noch lange. Eine Scheinzahl dort ist schlechter als der ehrliche Text. Bis eine echte Kennlinie aus
+  // einer aufgezeichneten Akkuladung steht, zeigen die Anzeigen bei Rohwert <= AKKU_NIEDRIG_ROH "niedrig".
+  const AKKU_NIEDRIG_ROH = 140;
+  function akkuAnzeige(roh, mitEinheit) {
+    if (roh === null || roh === undefined) return '–';
+    if (roh <= AKKU_NIEDRIG_ROH) return t('niedrig');
+    return batteryPercent(roh) + (mitEinheit ? ' %' : '%');
+  }
+  // Das Cockpit liest EINEN Halter (das Fahrerauto). Wechselt das Fahrerauto, mischte sich der Glaettungsspeicher
+  // 5 s lang mit dem Vorgaenger (Maximum der letzten 5 s): neu anfangen.
+  function dashAkkuFuerAuto() {
+    if (dashAkkuHalter.car !== playerCar) { dashAkkuHalter.car = playerCar; dashAkkuHalter.akkuHist = []; }
+    return dashAkkuHalter;
+  }
 
   function batteryPercent(raw) {
     return Math.max(0, Math.min(100,
@@ -3256,7 +3272,7 @@
 
   function handleDashboardBytes(bytes) {
     if (rennPauseAktiv()) {
-      dashBattery = akkuGlaetten(dashAkkuHalter, bytes[10], rennZeitJetzt());
+      dashBattery = akkuGlaetten(dashAkkuFuerAuto(), bytes[10], rennZeitJetzt());
       dashLastTileCounter = bytes[11];
       dashOnMarker = (bytes[15] & 0x08) !== 0;
       dashMarkerPrev = dashOnMarker;
@@ -3269,7 +3285,7 @@
     }
     // dashBattery wird weiter gebraucht: die Akkukachel im Cockpit liest ihn. Die Zeile
     // darunter schrieb in #dash-battery, ein Element der entfernten alten Karte.
-    dashBattery = akkuGlaetten(dashAkkuHalter, bytes[10], rennZeitJetzt());
+    dashBattery = akkuGlaetten(dashAkkuFuerAuto(), bytes[10], rennZeitJetzt());
 
     // Byte 15 was read as "off track". The 2026-08-19 snoop logs disprove that: on a PRINTED
     // sheet it rises in the same packet as the start pattern. On the RAIL (logs 16.-21.08.)
