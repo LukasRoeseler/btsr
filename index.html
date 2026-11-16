@@ -1485,7 +1485,15 @@
   .tele-kopf { font-size: 14px; margin: 14px 0 6px; }
   .tele-karte { display: block; width: 100%; max-height: 300px; }
   .tele-balken, .tele-tempo { display: block; width: 100%; height: 140px; }
-  .tele-tempo { height: 180px; }
+  .tele-tempo { height: 196px; }
+  /* v1.5 (WIP): Kurvenminima, Zeitabstand, Sektor-Matrix (aus Hybrid-Dash von Mo Kamit). */
+  .tele-tempo-box { position: relative; }
+  .tele-min { position: absolute; transform: translate(-50%, -110%); font-size: 10.5px; font-weight: 700;
+    color: var(--k-blau, #3d8bff); pointer-events: none; white-space: nowrap; }
+  .tele-delta { display: block; width: 100%; height: 120px; }
+  .tele-sektoren { font-size: 13px; font-variant-numeric: tabular-nums; border-collapse: collapse; }
+  .tele-sektoren th, .tele-sektoren td { padding: 3px 10px; text-align: right; border-bottom: 1px solid var(--border); }
+  .tele-sektoren .tele-streu td { font-weight: 700; border-bottom: 0; }
   .tele-achse { display: flex; justify-content: space-between; font-size: 11.5px; }
   .tele-gut { color: var(--good); } .tele-schlecht { color: var(--bad); }
   .tele-a { color: var(--k-blau, #3d8bff); } .tele-b { color: var(--muted); }
@@ -5855,7 +5863,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.44</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.46</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7128,6 +7136,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Telemetrie-Analyse erweitert (WIP, nach Hybrid-Dash von Mo Kamit, MIT-Lizenz): In der Tempokurve sind die Kurvenminima von A markiert. Gas und Bremse stehen jetzt f&#252;r A und B (B als schmaler Streifen darunter). Neu ist der Zeitabstand A minus B &#252;ber die ganze Runde: steigt die Linie, verliert A dort Zeit. Dazu kommt die Sektor-Matrix der Fahrt von A mit bis zu 20 Runden in drei Sektoren, bestem Wert je Sektor und Streuung, die zeigt, wo die Runden am wenigsten gleich sind. Optionen &gt; Telemetrie.</li>
         <li>KI-Pers&#246;nlichkeit der NPCs (WIP, aus Hybrid-Dash von Mo Kamit, MIT-Lizenz): In der Garage hat jedes NPC-Auto einen Knopf &#8222;KI-Pers&#246;nlichkeit&#8220;. Darin gibt es den Schalter &#8222;Menschliche KI&#8220; (ab Werk aus) und f&#252;nf Eigenschaften: Mut, Konstanz, Nerven, Lerntempo, Reifenschonung. Die Werte kommen aus dem Namen und lassen sich einzeln verstellen. Ist die KI an, lernt der NPC jede Strecke Kachel f&#252;r Kachel, merkt sich Abfl&#252;ge und &#220;berholstellen je Gegner und f&#228;hrt mit Formwellen, Z&#246;gern unter Druck und ruhigem Rhythmus allein auf der Strecke. Das Tempo bleibt zwischen 85 und 104 % der eingestellten Stufe und gilt nicht unter Gelb, in der Box und in der Startrunde.</li>
         <li>Onboard-Kamera (WIP): Livebild aus dem Auto als Cockpit-Schirm &#8222;Onboard&#8220;, mit Aufnahme als Video (Grundlage: gnen54s Zweig onboard, danke). Eingeschaltet wird sie in der Garage unter &#8222;Onboard-Kamera&#8220;. Quelle ist eine USB-Kamera bzw. ein FPV-Empf&#228;nger oder neu eine M5Stack Timer Camera im WLAN (MJPEG, Adresse eintragen). Die Anzeige im Bild ist im Stil des virtuellen Fahrens: Zeiten oben links, Tempo, Gang und Tank unten in der Mitte. Auf der https-Webseite l&#228;dt das WLAN-Bild nicht, in der App und &#252;ber Start OmegaSim.bat schon. Video speichern in der App braucht die neue APK.</li>
         <li>Safety Car: Ist an Start/Ziel zu wenig Platz zum Einparken (Kurve direkt vor und nach einer kurzen Startgeraden), parkt es auf dem n&#228;chsten Teil, wo der Platz reicht, bevorzugt bis drei Teile vor Start/Ziel und nie in einer Kurve; das Live-Log nennt das Teil. Ein ausdr&#252;cklich gew&#228;hltes Teil bleibt, mit Hinweis, wenn der Platz nicht reicht. Dazu: K&#228;fer-Name und Boxster-H&#246;rproben &#252;bersetzt.</li>
@@ -17135,6 +17144,13 @@
     "Eigenschaften aus dem Namen": "Traits from the name",
     "Strecke vergessen": "Forget this track",
     "KI-Persönlichkeit der NPCs (WIP, aus Hybrid-Dash von Mo Kamit, MIT-Lizenz): In der Garage hat jedes NPC-Auto einen Knopf „KI-Persönlichkeit“. Darin gibt es den Schalter „Menschliche KI“ (ab Werk aus) und fünf Eigenschaften: Mut, Konstanz, Nerven, Lerntempo, Reifenschonung. Die Werte kommen aus dem Namen und lassen sich einzeln verstellen. Ist die KI an, lernt der NPC jede Strecke Kachel für Kachel, merkt sich Abflüge und Überholstellen je Gegner und fährt mit Formwellen, Zögern unter Druck und ruhigem Rhythmus allein auf der Strecke. Das Tempo bleibt zwischen 85 und 104 % der eingestellten Stufe und gilt nicht unter Gelb, in der Box und in der Startrunde.": "NPC AI personality (WIP, from Hybrid-Dash by Mo Kamit, MIT licence): in the Garage every NPC car has an “AI personality” button. It holds the switch “Human-like AI” (off by default) and five traits: courage, consistency, nerves, learning speed, tyre care. The values come from the name and can be adjusted one by one. With the AI on, the NPC learns each track piece by piece, remembers offs and passing places per rival, and drives with form waves, hesitation under pressure and a calm rhythm when alone on track. The pace stays between 85 and 104 % of the set level and does not apply under yellow, in the pit or on the formation lap.",
+    "je oben A, darunter B": "A on top, B below",
+    "Kurvenminimum von A (Tempo in %)": "corner minimum of A (speed in %)",
+    "Zeitabstand A − B über die Runde": "Time gap A − B over the lap",
+    "Steigt die Linie, verliert A dort Zeit; fällt sie, holt A auf.": "Where the line rises, A loses time; where it falls, A gains.",
+    "Sektoren der Fahrt von A": "Sectors of A's session",
+    "Sektoren sind Drittel der Teile. Grün: bester Wert je Sektor. ±: Streuung (Standardabweichung); rot ist der Sektor, in dem die Runden am wenigsten gleich sind.": "Sectors are thirds of the pieces. Green: best value per sector. ±: spread (standard deviation); red is the sector where the laps differ most.",
+    "Telemetrie-Analyse erweitert (WIP, nach Hybrid-Dash von Mo Kamit, MIT-Lizenz): In der Tempokurve sind die Kurvenminima von A markiert. Gas und Bremse stehen jetzt für A und B (B als schmaler Streifen darunter). Neu ist der Zeitabstand A minus B über die ganze Runde: steigt die Linie, verliert A dort Zeit. Dazu kommt die Sektor-Matrix der Fahrt von A mit bis zu 20 Runden in drei Sektoren, bestem Wert je Sektor und Streuung, die zeigt, wo die Runden am wenigsten gleich sind. Optionen > Telemetrie.": "Telemetry analysis extended (WIP, after Hybrid-Dash by Mo Kamit, MIT licence): the speed trace marks A's corner minimums. Throttle and brake are now shown for A and B (B as a narrow strip below). New is the time gap A minus B over the whole lap: where the line rises, A loses time. There is also a sector matrix for A's session with up to 20 laps in three sectors, the best value per sector and the spread, which shows where the laps are least consistent. Options > Telemetry.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20005,6 +20021,12 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "je oben A, darunter B": "A arriba, B debajo",
+    "Kurvenminimum von A (Tempo in %)": "mínimo en curva de A (velocidad en %)",
+    "Zeitabstand A − B über die Runde": "Diferencia A − B a lo largo de la vuelta",
+    "Steigt die Linie, verliert A dort Zeit; fällt sie, holt A auf.": "Donde la línea sube, A pierde tiempo; donde baja, A recupera.",
+    "Sektoren der Fahrt von A": "Sectores de la sesión de A",
+    "Sektoren sind Drittel der Teile. Grün: bester Wert je Sektor. ±: Streuung (Standardabweichung); rot ist der Sektor, in dem die Runden am wenigsten gleich sind.": "Los sectores son tercios de las piezas. Verde: mejor valor por sector. ±: dispersión (desviación típica); en rojo, el sector donde las vueltas varían más.",
     "KI-Persönlichkeit": "Personalidad IA",
     "Mut": "Valor",
     "Spät bremsen, früh angreifen. Hebt auch die Obergrenze des Streckentempos.": "Frenar tarde, atacar pronto. También sube el límite del ritmo aprendido en el circuito.",
@@ -114153,6 +114175,45 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'erst nach Abgleich, mittig, Rechts ' + scAusfahrtMs() + ' / Links ' + scAusfahrtLinksMs() + ' ms bei ' + Math.round(scParkTempo() * 100) + ' %, sofort stehen' };
   });
 
+  // v1.5 (WIP): Analyse aus Hybrid-Dash 4.0 (Mo Kamit, MIT): Zeitabstand, Kurvenminima, Gas/Bremse von B, Sektor-Matrix.
+  stAdd('Telemetrie v1.5: Zeitabstand, Kurvenminima, Sektor-Matrix mit Streuung', () => {
+    const f = [];
+    const tiles = codeToTrack('SG4R4G4').tiles, n = tiles.length;
+    const merk = { tiles: currentTrackTiles, st: localStorage.getItem(TELE_STORE), fid: teleFahrtId, wahl: Object.assign({}, teleWahl) };
+    try {
+      // Rechnungen.
+      const pk = teleDeltaPunkte([100, 200, 300], [150, 150, 300]);
+      if (pk.join(',') !== '0,-50,0,0') f.push('Zeitabstand ' + pk.join(','));
+      const tal = { ms: 3000, proben: [[0, 90], [500, 60], [1000, 30], [1500, 60], [2000, 90], [2500, 85], [2900, 88]] };
+      const mins = teleKurvenMinima(tal, [0, 1000, 2000]);
+      if (mins.length !== 1 || mins[0].v !== 30) f.push('Minima ' + JSON.stringify(mins));
+      if (Math.abs(teleStreuung([1, 2, 3]) - 1) > 1e-9) f.push('Streuung');
+      // Seite mit vier Runden.
+      localStorage.removeItem(TELE_STORE);
+      currentTrackTiles = tiles; teleFahrtId = 4713;
+      const code = trackToCode(tiles, 0);
+      const spur = (ms, r) => ({ v: 1, code, n, ms, teile: Array.from({ length: n }, (_, k) => Math.round(k * ms / n)),
+        proben: Array.from({ length: 30 }, (_, i) => [Math.round(i * ms / 30), 60 + 30 * Math.cos(i / 3), 50, i % 7 === 0 ? 80 : 0]), datum: 2000 + r, runde: r });
+      [9000, 8000, 8500, 7800].forEach((ms, j) => teleMerken(spur(ms, j + 1), null));
+      const zeilen = teleSektoren(teleLesen()[bestzeitSchluessel(tiles)].fahrer.spieler1.fahrt.runden, tiles);
+      if (zeilen.length !== 4 || zeilen.some((z) => Math.abs(z.s[0] + z.s[1] + z.s[2] - z.ms) > 1)) f.push('Sektoren ergeben nicht die Rundenzeit');
+      teleWahl = { strecke: null, a: 'letzte', b: 'beste' };
+      if ($('tele-inhalt')) {
+        teleSeiteZeichnen();
+        const box = $('tele-inhalt');
+        if (!box.querySelector('svg.tele-delta')) f.push('kein Zeitabstand');
+        if (!box.querySelector('.tele-tempo-box .tele-min')) f.push('keine Kurvenminima');
+        if (!box.querySelector('table.tele-sektoren') || box.querySelectorAll('table.tele-sektoren tbody tr').length !== 5) f.push('Sektor-Matrix fehlt oder nicht 4 Runden + Streuung');
+        if (box.querySelectorAll('.wip-tag').length < 2) f.push('neue Bloecke ohne WIP');
+      }
+    } finally {
+      currentTrackTiles = merk.tiles; teleFahrtId = merk.fid; teleWahl = merk.wahl;
+      if (merk.st === null) localStorage.removeItem(TELE_STORE); else localStorage.setItem(TELE_STORE, merk.st);
+      if ($('tele-inhalt')) $('tele-inhalt').innerHTML = '';
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Zeitabstand als Summe, ein Tal erkannt, Sektoren = Rundenzeit, Seite zeigt alle drei Bloecke' };
+  });
+
   stAdd('Telemetrie v1.0.28: alle Runden der Fahrt waehlbar, A und B nicht dieselbe Runde', () => {
     const f = [];
     const tiles = codeToTrack('SG4R4G4').tiles, n = tiles.length;
@@ -115099,7 +115160,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       teleSeiteZeichnen();
       const box = $('tele-inhalt');
       const svgs = box ? box.querySelectorAll('svg').length : 0;
-      if (svgs !== 3) f.push(svgs + ' Grafiken statt 3');
+      // v1.5: dazu der Zeitabstand ueber die Runde (vierte Grafik).
+      if (svgs !== 4) f.push(svgs + ' Grafiken statt 4');
       if (box && box.querySelectorAll('.tele-balken rect').length !== n) f.push('nicht ' + n + ' Balken');
       if (box && !/\+0\.72/.test(box.textContent)) f.push('Unterschied A-B fehlt: ' + box.textContent.slice(0, 120));
       const sp = mach(1);
@@ -126538,8 +126600,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         + '<h3 class="tele-kopf">' + teleEsc(t('Tempo über die Runde')) + '</h3>'
         + teleTempoSvg(A, tA, B.code === A.code ? B : null, tB)
         + '<p class="muted tele-legende"><span class="tele-a">━</span> A &nbsp; <span class="tele-b">┅</span> B &nbsp; '
-        + '<span class="tele-gas">■</span> ' + teleEsc(t('Gas')) + ' &nbsp; <span class="tele-bremse">■</span> ' + teleEsc(t('Bremse')) + ' (A)'
-        + (B.code === A.code ? '' : ' &nbsp; ' + teleEsc(t('B gespiegelt gefahren: nur Zeiten, keine Tempokurve.'))) + '</p>';
+        + '<span class="tele-gas">■</span> ' + teleEsc(t('Gas')) + ' &nbsp; <span class="tele-bremse">■</span> ' + teleEsc(t('Bremse'))
+        + ' (' + teleEsc(t('je oben A, darunter B')) + ') &nbsp; ▼ ' + teleEsc(t('Kurvenminimum von A (Tempo in %)'))
+        + (B.code === A.code ? '' : ' &nbsp; ' + teleEsc(t('B gespiegelt gefahren: nur Zeiten, keine Tempokurve.'))) + '</p>'
+        // v1.5 (WIP, aus Hybrid-Dash 4.0 von Mo Kamit, MIT): Zeitabstand ueber den Rundenweg und die Sektor-Matrix.
+        + '<h3 class="tele-kopf">' + teleEsc(t('Zeitabstand A − B über die Runde')) + ' <span class="wip-tag">WIP</span></h3>'
+        + teleDeltaSvg(dA, dB)
+        + '<p class="muted tele-legende">' + teleEsc(t('Steigt die Linie, verliert A dort Zeit; fällt sie, holt A auf.')) + '</p>'
+        + teleSektorMatrix(e, teleWahl.a, tiles);
     }
     box.innerHTML = h;
     teleWahlVerdrahten();
@@ -126592,7 +126660,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return s + '</svg><div class="tele-achse muted"><span>' + teleEsc(t('Start')) + '</span><span>±' + (max / 1000).toFixed(2) + ' s</span><span>' + teleEsc(t('Ziel')) + '</span></div>';
   }
   function teleTempoSvg(A, tA, B, tB) {
-    const n = tA.length, W = 600, H = 180, oben = 130;
+    const n = tA.length, W = 600, H = 196, oben = 130;
     const xVon = (weg) => (weg / n * W).toFixed(1);
     const linie = (spur, teile) => (spur.proben || []).map((p, i) => (i ? 'L ' : 'M ') + xVon(teleWeg(teile, spur.ms, p[0]))
       + ' ' + (oben - Math.min(100, p[1]) / 100 * (oben - 6)).toFixed(1)).join(' ');
@@ -126600,16 +126668,100 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     for (let k = 1; k < n; k++) s += '<line x1="' + xVon(k) + '" y1="0" x2="' + xVon(k) + '" y2="' + oben + '" stroke="var(--border)" stroke-opacity=".5"/>';
     if (B && tB) s += '<path d="' + linie(B, tB) + '" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>';
     s += '<path d="' + linie(A, tA) + '" fill="none" stroke="var(--k-blau, #3d8bff)" stroke-width="2" vector-effect="non-scaling-stroke"/>';
-    // Gas (oben) und Bremse (unten) von A als Streifen.
-    const pr = A.proben || [];
-    pr.forEach((p, i) => {
-      const x0 = +xVon(teleWeg(tA, A.ms, p[0]));
-      const x1 = i + 1 < pr.length ? +xVon(teleWeg(tA, A.ms, pr[i + 1][0])) : x0 + 2;
-      const bw = Math.max(0.5, x1 - x0).toFixed(1);
-      if (p[2] > 2) s += '<rect x="' + x0.toFixed(1) + '" y="' + (oben + 8) + '" width="' + bw + '" height="16" fill="var(--good)" fill-opacity="' + (p[2] / 100).toFixed(2) + '"/>';
-      if (p[3] > 2) s += '<rect x="' + x0.toFixed(1) + '" y="' + (oben + 28) + '" width="' + bw + '" height="16" fill="var(--bad)" fill-opacity="' + (p[3] / 100).toFixed(2) + '"/>';
+    // Gas und Bremse als Streifen: je A (oben, 10 hoch) und B (darunter, 5 hoch). v1.5: B dazu, aus Hybrid-Dash.
+    const streifen = (spur, teile, yGas, yBremse, hoch) => {
+      const pr = spur.proben || [];
+      pr.forEach((p, i) => {
+        const x0 = +xVon(teleWeg(teile, spur.ms, p[0]));
+        const x1 = i + 1 < pr.length ? +xVon(teleWeg(teile, spur.ms, pr[i + 1][0])) : x0 + 2;
+        const bw = Math.max(0.5, x1 - x0).toFixed(1);
+        if (p[2] > 2) s += '<rect x="' + x0.toFixed(1) + '" y="' + yGas + '" width="' + bw + '" height="' + hoch + '" fill="var(--good)" fill-opacity="' + (p[2] / 100).toFixed(2) + '"/>';
+        if (p[3] > 2) s += '<rect x="' + x0.toFixed(1) + '" y="' + yBremse + '" width="' + bw + '" height="' + hoch + '" fill="var(--bad)" fill-opacity="' + (p[3] / 100).toFixed(2) + '"/>';
+      });
+    };
+    streifen(A, tA, oben + 8, oben + 34, 10);
+    if (B && tB) streifen(B, tB, oben + 19, oben + 45, 5);
+    s += '</svg>';
+    // Kurvenminima von A: als HTML ueber dem SVG, weil Text im gestreckten SVG (preserveAspectRatio none) verzerrt.
+    const marken = teleKurvenMinima(A, tA).map((m) => '<span class="tele-min" style="left:' + (m.weg / n * 100).toFixed(2)
+      + '%;top:' + ((oben - Math.min(100, m.v) / 100 * (oben - 6)) / H * 100).toFixed(2) + '%">▼' + Math.round(m.v) + '</span>').join('');
+    return '<div class="tele-tempo-box">' + s + marken + '</div>';
+  }
+  // Talsohlen der Tempokurve: ein Minimum, das auf beiden Seiten um mindestens TIEFE Prozentpunkte
+  // ueberragt wird (sonst waere jedes Rauschen eine Kurve). Hoechstens 12, die tiefsten zuerst.
+  const TELE_MIN_TIEFE = 8;
+  function teleKurvenMinima(A, tA) {
+    const pr = (A && A.proben) || [];
+    const v = pr.map((p) => p[1]);
+    const out = [];
+    for (let i = 1; i + 1 < v.length; i++) {
+      if (!(v[i] <= v[i - 1] && v[i] < v[i + 1])) continue;
+      let l = v[i], r = v[i];
+      for (let j = i - 1; j >= 0 && v[j] >= v[i]; j--) l = Math.max(l, v[j]);
+      for (let j = i + 1; j < v.length && v[j] >= v[i]; j++) r = Math.max(r, v[j]);
+      if (Math.min(l, r) - v[i] >= TELE_MIN_TIEFE) out.push({ weg: teleWeg(tA, A.ms, pr[i][0]), v: v[i] });
+    }
+    return out.sort((a, b) => a.v - b.v).slice(0, 12).sort((a, b) => a.weg - b.weg);
+  }
+  // Zeitabstand A - B an jeder Teilgrenze (Summe der Teil-Unterschiede): steigt = A verliert dort.
+  function teleDeltaPunkte(dA, dB) {
+    const out = [0];
+    let sum = 0;
+    dA.forEach((x, k) => { sum += x - dB[k]; out.push(sum); });
+    return out;
+  }
+  function teleDeltaSvg(dA, dB) {
+    const pk = teleDeltaPunkte(dA, dB), n = dA.length, W = 600, H = 120, m = H / 2;
+    const max = Math.max(50, ...pk.map(Math.abs));
+    const y = (d) => (m - d / max * (m - 6)).toFixed(1);
+    const pfad = pk.map((d, k) => (k ? 'L ' : 'M ') + (k / n * W).toFixed(1) + ' ' + y(d)).join(' ');
+    let s = '<svg class="tele-delta" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img">'
+      + '<line x1="0" y1="' + m + '" x2="' + W + '" y2="' + m + '" stroke="var(--border)"/>'
+      + '<path d="' + pfad + ' L ' + W + ' ' + m + ' L 0 ' + m + ' Z" fill="var(--bad)" fill-opacity=".12"/>'
+      + '<path d="' + pfad + '" fill="none" stroke="var(--k-blau, #3d8bff)" stroke-width="2" vector-effect="non-scaling-stroke"/>';
+    pk.forEach((d, k) => { s += '<circle cx="' + (k / n * W).toFixed(1) + '" cy="' + y(d) + '" r="2" fill="var(--k-blau, #3d8bff)"><title>' + k + ': ' + teleDeltaText(d) + ' s</title></circle>'; });
+    return s + '</svg><div class="tele-achse muted"><span>' + teleEsc(t('Start')) + '</span><span>±' + (max / 1000).toFixed(2)
+      + ' s</span><span>' + teleEsc(t('Ziel')) + ' ' + teleDeltaText(pk[pk.length - 1]) + ' s</span></div>';
+  }
+  // Sektorzeiten der Runden einer Fahrt: drei Sektoren als Drittel der Teile. [[s1, s2, s3], ...] in ms.
+  function teleSektoren(runden, tiles) {
+    const n = tiles.length;
+    const g1 = Math.round(n / 3), g2 = Math.round(2 * n / 3);
+    const out = [];
+    (runden || []).forEach((sp) => {
+      const te = teleAusrichten(sp, tiles);
+      if (!te || te.length !== n) return;
+      out.push({ runde: sp.runde, ms: sp.ms, s: [te[g1] - te[0], te[g2] - te[g1], sp.ms - te[g2]] });
     });
-    return s + '</svg>';
+    return out.slice(-20);
+  }
+  function teleStreuung(xs) {
+    if (xs.length < 2) return 0;
+    const mw = xs.reduce((a, b) => a + b, 0) / xs.length;
+    return Math.sqrt(xs.reduce((a, b) => a + (b - mw) * (b - mw), 0) / (xs.length - 1));
+  }
+  function teleSektorMatrix(e, wahlA, tiles) {
+    const w = String(wahlA).split('|')[0];
+    const fw = e && e.fahrer[w];
+    if (!fw || w.indexOf('fremd:') === 0 || !fw.fahrt) return '';
+    const zeilen = teleSektoren(fw.fahrt.runden, tiles);
+    if (zeilen.length < 2) return '';
+    const spalte = (j) => zeilen.map((z) => z.s[j]);
+    const beste = [0, 1, 2].map((j) => Math.min(...spalte(j)));
+    const sek = (ms) => (ms / 1000).toFixed(2);
+    let h = '<h3 class="tele-kopf">' + teleEsc(t('Sektoren der Fahrt von A')) + ' <span class="wip-tag">WIP</span></h3>'
+      + '<div class="doc-table-wrap"><table class="tele-sektoren"><thead><tr><th>' + teleEsc(t('Runde')) + '</th><th>S1</th><th>S2</th><th>S3</th><th>'
+      + teleEsc(t('Zeit')) + '</th></tr></thead><tbody>';
+    zeilen.forEach((z, i) => {
+      h += '<tr><td>' + (z.runde || i + 1) + '</td>' + z.s.map((x, j) => '<td' + (x === beste[j] ? ' class="tele-gut"' : '') + '>' + sek(x) + '</td>').join('')
+        + '<td>' + teleEsc(formatLapTime(z.ms)) + '</td></tr>';
+    });
+    const streu = [0, 1, 2].map((j) => teleStreuung(spalte(j)));
+    const schlecht = streu.indexOf(Math.max(...streu));
+    h += '<tr class="tele-streu"><td>±</td>' + streu.map((x, j) => '<td' + (j === schlecht ? ' class="tele-schlecht"' : '') + '>' + sek(x) + '</td>').join('')
+      + '<td>' + sek(teleStreuung(zeilen.map((z) => z.ms))) + '</td></tr></tbody></table></div>'
+      + '<p class="muted tele-legende">' + teleEsc(t('Sektoren sind Drittel der Teile. Grün: bester Wert je Sektor. ±: Streuung (Standardabweichung); rot ist der Sektor, in dem die Runden am wenigsten gleich sind.')) + '</p>';
+    return h;
   }
 
   // UI erst nach allen Modulen initialisieren, keine TDZ beim Laden.
