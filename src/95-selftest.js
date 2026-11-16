@@ -26463,6 +26463,39 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  // v1.5.22: Fahrgefuehl LibreCorsa GT3 im virtuellen Fahren, gemessen wie das Vorbild (stationaere Kreisfahrt).
+  stAdd('Virtuell v1.5.22: LibreCorsa GT3 trifft die Quer-g des Vorbilds und den Untersteuergradienten', () => {
+    const f = [];
+    if (!VF_HANDLING_MODI.some((m) => m.id === 'librecorsa')) f.push('Modus fehlt');
+    const merk = vfHandling();
+    let P;
+    try { vfHandlingSetzen('librecorsa'); P = vfHandlingProfil(VF_GT3); } finally { vfHandlingSetzen(merk); }
+    const stationaer = (vx, lenk) => {
+      const z = { vy: 0, r: 0 };
+      for (let i = 0; i < 200; i++) vfDynamik(z, vx, 0, 0, lenk, 0.02, 1, P);
+      return { ay: vx * z.r / 9.81, z };
+    };
+    const ziel = { 81: 1.71, 99: 1.75, 117: 1.80, 153: 1.92, 171: 1.98 };
+    const mess = {};
+    for (const kmh of Object.keys(ziel)) {
+      const vx = kmh / 3.6;
+      let best = 0;
+      for (let i = 1; i <= 40; i++) best = Math.max(best, stationaer(vx, i / 40).ay);
+      mess[kmh] = best;
+      if (Math.abs(best - ziel[kmh]) / ziel[kmh] > 0.06) f.push(kmh + ' km/h: ' + best.toFixed(2) + ' g statt ' + ziel[kmh]);
+    }
+    // Abtrieb: oben mehr Quer-g als unten.
+    if (!(mess[171] > mess[81] + 0.15)) f.push('kein Abtrieb ueber dem Tempo');
+    // Untersteuergradient bei 100 km/h aus drei kleinen Lenkwinkeln.
+    const vx = 100 / 3.6, L = P.a + P.b;
+    const pk = [0.02, 0.06].map((lenk) => { const r = stationaer(vx, lenk); return { ay: r.ay, d: lenk * P.lenkGrad - (L * r.z.r / vx) * 180 / Math.PI }; });
+    const K = (pk[1].d - pk[0].d) / (pk[1].ay - pk[0].ay);
+    if (Math.abs(K - 1.42) > 0.15) f.push('Untersteuergradient ' + K.toFixed(2) + ' Grad/g statt 1,42');
+    // Reifenfenster wie Assetto Carrera: kalt weniger, im Fenster mehr Griff.
+    if (!(vfReifenGriff(0.1, 'librecorsa') < vfReifenGriff(0.575, 'librecorsa'))) f.push('kein Reifenfenster');
+    return { ok: !f.length, mass: Object.keys(mess).map((k) => k + ' km/h ' + mess[k].toFixed(2) + ' g').join(', ') + ', ' + K.toFixed(2) + ' Grad/g' + (f.length ? ' || ' + f.join('; ') : '') };
+  });
+
   // v1.5.19: Regen im virtuellen Fahren, Raeder ohne Kartenschatten.
   stAdd('Virtuell v1.5.19: 3D-Regen folgt dem Wetter, Raeder ohne drehenden Kartenschatten', () => {
     const f = [];

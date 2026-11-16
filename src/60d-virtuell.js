@@ -1025,7 +1025,8 @@
   // v1.3.5: 'gran' heisst Gran Hybrismo (wie Gran Turismo Sport), neu 'acc' Assetto Carrera (wie
   // ACC). Die Kennung 'gran' bleibt, damit eine gespeicherte Wahl weiter gilt.
   const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Schnell' },
-                            { id: 'gran', name: 'Gran Hybrismo' }, { id: 'acc', name: 'Assetto Carrera' }];
+                            { id: 'gran', name: 'Gran Hybrismo' }, { id: 'acc', name: 'Assetto Carrera' },
+                            { id: 'librecorsa', name: 'LibreCorsa GT3 (WIP)' }];
   // Abtrieb fuer Profile ohne eigene Werte (VF_GT3 hat kein kV/kH): N je (m/s)^2 je Achse, etwa
   // 19 % des Gewichts bei 216 km/h. Bis 1.3.4 rechnete Gran mit (P.kV || 0) * 1,5 - beim
   // Standardauto also mit null Abtrieb.
@@ -1319,9 +1320,22 @@
   }
   // Die schnellere Abstimmung auf ein Fahrprofil anwenden: mehr Grip, mehr Einschlag und eine
   // schnellere Gierantwort. Bei "GT3" bleibt das Profil unveraendert (P zurueck).
+  // ---- LIBRECORSA GT3 (v1.5.22, WIP) -------------------------------------------------------------------
+  // BESTELLT: "Fuege ein Fahrgefuehl ein, das sich exakt so wie der GT3 BMW M4 bei LibreCorsa anfuehlt."
+  // LibreCorsa (librecorsa.org, AGPL-3.0) wird NICHT kopiert: nachgebaut nach den veroeffentlichten Messwerten des
+  // GT3 (docs/physics/README.md dort, Mercedes-AMG GT3 gegen MoTeC; der BMW M4 GT3 faehrt dort auf derselben Physik):
+  //   dauerhafte Quer-g  81 km/h 1,71 | 99 1,75 | 117 1,80 | 153 1,92 | 171 1,98   (Abtrieb waechst mit dem Tempo)
+  //   Untersteuergradient 1,42 Grad/g, Reifenfenster 70-85 Grad C
+  // Abgestimmt mit einem Python-Nachbau von vfDynamik (stationaere Kreisfahrt, Lenkung bis zum Maximum): Griff vorn/hinten,
+  // Schraeglaufsteifigkeit vorn und Abtrieb je Achse. Ergebnis 1,66 | 1,72 | 1,77 | 1,87 | 1,93 g und 1,39 Grad/g, also
+  // jeweils innerhalb von 3 % (LibreCorsa selbst liegt bis 10 % neben dem echten Auto). Laengs (Antritt, Bremsen) kommt
+  // wie bei allen Modi aus dem Fahrgefuehl des echten Autos; der Modus fuer echte Autos folgt (Paket 5).
+  // Unabhaengig vom gewaehlten Modell: Geometrie und Masse des GT3 (VF_GT3), nur die abgestimmten Werte darueber.
+  const VF_LC_GT3 = { muV: 1.81, muH: 2.32, BV: 8.55, BH: 11.0, kV: 0.5, kH: 0.625 };
   function vfHandlingProfil(P) {
     if (!P) return P;
     const h = vfHandling();
+    if (h === 'librecorsa') return Object.assign({}, VF_GT3, VF_LC_GT3);
     if (h === 'schnell') {
       return Object.assign({}, P, {
         muV: P.muV * 1.35,
@@ -1376,7 +1390,7 @@
     if (T < 0.5) f = 0.85 + 0.15 * (T / 0.5);
     else if (T <= 0.65) f = 1.0;
     else f = Math.max(0.85, 1 - (T - 0.65) * 0.5);
-    if (hand === 'acc') {
+    if (hand === 'acc' || hand === 'librecorsa') {
       const d = (T - 0.575) / 0.1;
       return f * (1 + 0.04 * Math.exp(-d * d));
     }
@@ -1807,7 +1821,7 @@
     }
     const kmh = (st.speedKmh || 0) * (VF.tempoFaktor || 1);
     const hand = vfHandling();
-    const reifenModus = hand === 'gran' || hand === 'acc';
+    const reifenModus = hand === 'gran' || hand === 'acc' || hand === 'librecorsa';
     // v1.1.11 GEMELDET: "Virtuelles Fahren ruckelt und ist sehr traege." Bisher lenkte das Auto mit
     // physEngine.state.dampedSteering: das rechnet die Physik nur alle 45 ms (Treppenstufen in der
     // Gierrate = Ruckeln), mit der Servodaempfung und der Lenkbegrenzung bei Tempo des ECHTEN Autos
