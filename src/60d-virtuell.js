@@ -1025,8 +1025,9 @@
   // v1.3.5: 'gran' heisst Gran Hybrismo (wie Gran Turismo Sport), neu 'acc' Assetto Carrera (wie
   // ACC). Die Kennung 'gran' bleibt, damit eine gespeicherte Wahl weiter gilt.
   const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Schnell' },
-                            { id: 'gran', name: 'Gran Hybrismo' }, { id: 'acc', name: 'Assetto Carrera' },
                             { id: 'librecorsa', name: 'LibreCorsa GT3 (WIP)' }];
+  // v1.5.25: Gran Hybrismo und Assetto Carrera sind entfernt; eine gespeicherte Wahl faehrt als LibreCorsa GT3.
+  const VF_HANDLING_ENTFERNT = { gran: 'librecorsa', acc: 'librecorsa' };
   // Abtrieb fuer Profile ohne eigene Werte (VF_GT3 hat kein kV/kH): N je (m/s)^2 je Achse, etwa
   // 19 % des Gewichts bei 216 km/h. Bis 1.3.4 rechnete Gran mit (P.kV || 0) * 1,5 - beim
   // Standardauto also mit null Abtrieb.
@@ -1040,6 +1041,7 @@
     if (vfHandlingCache === null) {
       let v = null;
       try { v = localStorage.getItem(VF_HANDLING_STORE); } catch (e) { /* privat */ }
+      if (VF_HANDLING_ENTFERNT[v]) v = VF_HANDLING_ENTFERNT[v];
       vfHandlingCache = VF_HANDLING_MODI.some((m) => m.id === v) ? v : 'gt3';
     }
     return vfHandlingCache;

@@ -492,6 +492,18 @@
            granC: 1.7, granE: -1.0, granGripPlus: 1.0, granHeckReserve: 1.08, granHeck: 1,
            granStabi: 0, granLastGier: 0.5, granVornMin: 0.5, granHintenMax: 1.9, granAbs: 0,
            granTempEinfluss: 1.2, granTempOpt: 0.06 },
+    // v1.5.25 BESTELLT: "mache einen LibreCorsa-Fahrmodus, der sich mit den echten Autos moeglichst genau so anfuehlt.
+    // Uebersteuern wieder ausschaltbar. Entferne die Gran-Hybrismo- und Assetto-Carrera-Modi." Grundlage ist der
+    // Schritt von Assetto Carrera (Lastverlagerung lenkt mit, Reifenfenster), abgestimmt auf den GT3 aus LibreCorsa
+    // (nach dessen veroeffentlichten Messwerten, kein Code): mehr Abtrieb (Quer-g steigt von 1,7 auf 2,0 g mit dem
+    // Tempo), ein etwas weicherer Scheitel, ABS und Traktionskontrolle wie ab Werk im GT3 (granAbs: beim Bremsen
+    // bleibt Lenkung), etwas Stabilitaet. Das Heck kommt NICHT von selbst (granHeck 0): es folgt dem Schalter
+    // "Uebersteuern", Vorgabe aus.
+    librecorsa: { granArt: 'librecorsa', granAeroK: 0.22, granLenkTempo: 0.25, granZentrier: 0.08, granGier: 0.45,
+           granLastEmpf: 0.12, granTauUeber: 0.25, granYawTau: 0.24, granYawFeed: 0.25,
+           granC: 1.55, granE: -0.6, granGripPlus: 1.04, granHeckReserve: 1.15, granHeck: 0,
+           granStabi: 0.2, granLastGier: 0.35, granVornMin: 0.55, granHintenMax: 1.8, granAbs: 0.7,
+           granTempEinfluss: 1.0, granTempOpt: 0.05 },
   };
   // Bisheriger Name fuer die Hybrismo-Werte (Selbsttests, Schnappschuss-Pruefung).
   const GRAN_AN = GRAN_WERTE.gran;
@@ -502,9 +514,13 @@
                      granTempEinfluss: 1, granTempOpt: 0 };
   // Die Physikmodi, die mit granStep() rechnen. Alias: der alte Anzeigename "Gran Accelerato"
   // (und seine Schreibweisen) ist Gran Hybrismo.
-  const GRAN_MODI = ['gran', 'acc'];
+  const GRAN_MODI = ['gran', 'acc', 'librecorsa'];
   const PHYS_MODUS_ALIAS = { 'Gran Accelerato': 'gran', 'gran accelerato': 'gran', granaccelerato: 'gran',
-                             'Gran Hybrismo': 'gran', 'Assetto Carrera': 'acc', assettocarrera: 'acc' };
+                             'Gran Hybrismo': 'gran', 'Assetto Carrera': 'acc', assettocarrera: 'acc', LibreCorsa: 'librecorsa' };
+  // v1.5.25: Gran Hybrismo und Assetto Carrera sind entfernt. Ein gespeicherter Stand (Preset, Sicherung, Profil,
+  // Challenge) mit diesen Modi faehrt im Auswahlfeld als LibreCorsa weiter. Die Werte GRAN_WERTE.gran/acc bleiben fuer
+  // alte Aufrufer und Tests, auswaehlbar sind sie nicht mehr.
+  const PHYS_MODUS_ENTFERNT = { gran: 'librecorsa', acc: 'librecorsa' };
   function physModusNormal(v) { return PHYS_MODUS_ALIAS[v] || v; }
   // Rechnet dieser Steuerungsmodus mit der Physik-Kette (Physik, Pacejka, Gran Hybrismo, Assetto Carrera)?
   function physModusIstPhysik(v) { v = physModusNormal(v); return v === 'physik' || v === 'pacejka' || GRAN_MODI.includes(v); }
@@ -520,6 +536,7 @@
     let v = $('phys-mode') ? $('phys-mode').value : 'physik';
     // Ein alter Name im Auswahlfeld (Sicherung, Profil) wird auf den Wert umgestellt.
     if (PHYS_MODUS_ALIAS[v] && $('phys-mode')) { v = PHYS_MODUS_ALIAS[v]; $('phys-mode').value = v; }
+    if (PHYS_MODUS_ENTFERNT[v] && $('phys-mode')) { v = PHYS_MODUS_ENTFERNT[v]; $('phys-mode').value = v; }
     driftModus = (v === 'drift');
     physicsEnabled = physModusIstPhysik(v);
     physEngine.config.pacejka = physEngine2.config.pacejka = (v === 'pacejka' || GRAN_MODI.includes(v));
@@ -531,6 +548,7 @@
                              : v === 'pacejka' ? 'Pacejka (experimentell)'
                              : v === 'gran' ? 'Gran Hybrismo'
                              : v === 'acc' ? 'Assetto Carrera'
+                             : v === 'librecorsa' ? 'LibreCorsa'
                              : 'RC (Auslaufen, Bremse zweimal = rueckwaerts)'), 'info');
     }
   }
