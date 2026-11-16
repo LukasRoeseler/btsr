@@ -196,6 +196,45 @@
   }
   setInterval(dsTick, 60);
   if ($('ds-verbinden')) $('ds-verbinden').addEventListener('click', dsVerbinden);
+
+  // ---- v1.5 (WIP, Plan Paket 6): TRIGGER UEBER USB IN DER ANDROID-APP, Stufe 1: Pruefknopf ----------------
+  // Die WebView hat kein WebHID. OmegaDsUsbPlugin.java schreibt denselben USB-Bericht (0x02, 63 Bytes: Kennung,
+  // die 47 Bytes aus dsGemeinsam, Rest 0) ueber die USB-Host-API. Erst wenn der Nutzer meldet, dass die Trigger
+  // reagieren UND die Tasten danach noch gehen, wird daraus der Dauerbetrieb im Fahren.
+  function dsUsbApp() { const C = window.Capacitor; return !!(C && C.isNativePlatform && C.isNativePlatform()); }
+  function dsUsbPlugin() { const C = window.Capacitor; return dsUsbApp() && C.isPluginAvailable && C.isPluginAvailable('OmegaDsUsb'); }
+  function dsUsbBericht(links, rechts) {
+    const b = dsBericht(links, rechts, false, 0);
+    const out = new Uint8Array(63);
+    out[0] = b.id;
+    out.set(b.daten, 1);
+    return out;
+  }
+  function dsUsbBase64(bytes) { let s = ''; bytes.forEach((x) => { s += String.fromCharCode(x); }); return btoa(s); }
+  // Die Probe: 3 s Widerstand (beide fest), 2 s Vibration (links ABS, rechts durchdrehend), aus.
+  function dsUsbFolge() {
+    return [
+      { bericht: dsUsbBase64(dsUsbBericht(dsWiderstand(1, 8, 8), dsWiderstand(1, 8, 8))), ms: 3000 },
+      { bericht: dsUsbBase64(dsUsbBericht(dsVibration(2, 7, DS_HZ.abs), dsVibration(1, 6, DS_HZ.spin))), ms: 2000 },
+      { bericht: dsUsbBase64(dsUsbBericht(dsAus(), dsAus())), ms: 0 },
+    ];
+  }
+  function dsUsbLage(text) { const el = $('ds-usb-lage'); if (el) el.textContent = text; }
+  async function dsUsbTest() {
+    if (!dsUsbPlugin()) { dsUsbLage(t('Braucht die neue APK.')); return; }
+    const C = window.Capacitor;
+    dsUsbLage(t('Läuft …'));
+    try {
+      const r = await C.nativePromise('OmegaDsUsb', 'test', { folge: dsUsbFolge() });
+      log('DualSense USB-Probe:\n' + ((r && r.protokoll) || ''), r && r.ok ? 'ok' : 'err');
+      dsUsbLage(r && r.ok ? t('Gesendet ({w}). Haben die Trigger reagiert?').replace('{w}', r.weg || '?') : t('Fehler, siehe Live-Log.'));
+    } catch (e) {
+      log('DualSense USB-Probe: ' + ((e && e.message) || e), 'err');
+      dsUsbLage((e && e.message) || String(e));
+    }
+  }
+  if ($('ds-usb-zeile')) $('ds-usb-zeile').hidden = !dsUsbApp();
+  if ($('ds-usb-test')) $('ds-usb-test').addEventListener('click', dsUsbTest);
   if ('hid' in navigator) {
     navigator.hid.addEventListener('disconnect', (e) => { if (e.device === dsGeraet) { dsGeraet = null; dsLageZeigen(); } });
   }
