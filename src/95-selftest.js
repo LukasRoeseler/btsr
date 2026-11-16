@@ -22936,6 +22936,45 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'erst nach Abgleich, mittig, Rechts ' + scAusfahrtMs() + ' / Links ' + scAusfahrtLinksMs() + ' ms bei ' + Math.round(scParkTempo() * 100) + ' %, sofort stehen' };
   });
 
+  // v1.5 (WIP): Analyse aus Hybrid-Dash 4.0 (Mo Kamit, MIT): Zeitabstand, Kurvenminima, Gas/Bremse von B, Sektor-Matrix.
+  stAdd('Telemetrie v1.5: Zeitabstand, Kurvenminima, Sektor-Matrix mit Streuung', () => {
+    const f = [];
+    const tiles = codeToTrack('SG4R4G4').tiles, n = tiles.length;
+    const merk = { tiles: currentTrackTiles, st: localStorage.getItem(TELE_STORE), fid: teleFahrtId, wahl: Object.assign({}, teleWahl) };
+    try {
+      // Rechnungen.
+      const pk = teleDeltaPunkte([100, 200, 300], [150, 150, 300]);
+      if (pk.join(',') !== '0,-50,0,0') f.push('Zeitabstand ' + pk.join(','));
+      const tal = { ms: 3000, proben: [[0, 90], [500, 60], [1000, 30], [1500, 60], [2000, 90], [2500, 85], [2900, 88]] };
+      const mins = teleKurvenMinima(tal, [0, 1000, 2000]);
+      if (mins.length !== 1 || mins[0].v !== 30) f.push('Minima ' + JSON.stringify(mins));
+      if (Math.abs(teleStreuung([1, 2, 3]) - 1) > 1e-9) f.push('Streuung');
+      // Seite mit vier Runden.
+      localStorage.removeItem(TELE_STORE);
+      currentTrackTiles = tiles; teleFahrtId = 4713;
+      const code = trackToCode(tiles, 0);
+      const spur = (ms, r) => ({ v: 1, code, n, ms, teile: Array.from({ length: n }, (_, k) => Math.round(k * ms / n)),
+        proben: Array.from({ length: 30 }, (_, i) => [Math.round(i * ms / 30), 60 + 30 * Math.cos(i / 3), 50, i % 7 === 0 ? 80 : 0]), datum: 2000 + r, runde: r });
+      [9000, 8000, 8500, 7800].forEach((ms, j) => teleMerken(spur(ms, j + 1), null));
+      const zeilen = teleSektoren(teleLesen()[bestzeitSchluessel(tiles)].fahrer.spieler1.fahrt.runden, tiles);
+      if (zeilen.length !== 4 || zeilen.some((z) => Math.abs(z.s[0] + z.s[1] + z.s[2] - z.ms) > 1)) f.push('Sektoren ergeben nicht die Rundenzeit');
+      teleWahl = { strecke: null, a: 'letzte', b: 'beste' };
+      if ($('tele-inhalt')) {
+        teleSeiteZeichnen();
+        const box = $('tele-inhalt');
+        if (!box.querySelector('svg.tele-delta')) f.push('kein Zeitabstand');
+        if (!box.querySelector('.tele-tempo-box .tele-min')) f.push('keine Kurvenminima');
+        if (!box.querySelector('table.tele-sektoren') || box.querySelectorAll('table.tele-sektoren tbody tr').length !== 5) f.push('Sektor-Matrix fehlt oder nicht 4 Runden + Streuung');
+        if (box.querySelectorAll('.wip-tag').length < 2) f.push('neue Bloecke ohne WIP');
+      }
+    } finally {
+      currentTrackTiles = merk.tiles; teleFahrtId = merk.fid; teleWahl = merk.wahl;
+      if (merk.st === null) localStorage.removeItem(TELE_STORE); else localStorage.setItem(TELE_STORE, merk.st);
+      if ($('tele-inhalt')) $('tele-inhalt').innerHTML = '';
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Zeitabstand als Summe, ein Tal erkannt, Sektoren = Rundenzeit, Seite zeigt alle drei Bloecke' };
+  });
+
   stAdd('Telemetrie v1.0.28: alle Runden der Fahrt waehlbar, A und B nicht dieselbe Runde', () => {
     const f = [];
     const tiles = codeToTrack('SG4R4G4').tiles, n = tiles.length;
@@ -23882,7 +23921,8 @@
       teleSeiteZeichnen();
       const box = $('tele-inhalt');
       const svgs = box ? box.querySelectorAll('svg').length : 0;
-      if (svgs !== 3) f.push(svgs + ' Grafiken statt 3');
+      // v1.5: dazu der Zeitabstand ueber die Runde (vierte Grafik).
+      if (svgs !== 4) f.push(svgs + ' Grafiken statt 4');
       if (box && box.querySelectorAll('.tele-balken rect').length !== n) f.push('nicht ' + n + ' Balken');
       if (box && !/\+0\.72/.test(box.textContent)) f.push('Unterschied A-B fehlt: ' + box.textContent.slice(0, 120));
       const sp = mach(1);

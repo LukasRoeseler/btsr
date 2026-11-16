@@ -1485,7 +1485,15 @@
   .tele-kopf { font-size: 14px; margin: 14px 0 6px; }
   .tele-karte { display: block; width: 100%; max-height: 300px; }
   .tele-balken, .tele-tempo { display: block; width: 100%; height: 140px; }
-  .tele-tempo { height: 180px; }
+  .tele-tempo { height: 196px; }
+  /* v1.5 (WIP): Kurvenminima, Zeitabstand, Sektor-Matrix (aus Hybrid-Dash von Mo Kamit). */
+  .tele-tempo-box { position: relative; }
+  .tele-min { position: absolute; transform: translate(-50%, -110%); font-size: 10.5px; font-weight: 700;
+    color: var(--k-blau, #3d8bff); pointer-events: none; white-space: nowrap; }
+  .tele-delta { display: block; width: 100%; height: 120px; }
+  .tele-sektoren { font-size: 13px; font-variant-numeric: tabular-nums; border-collapse: collapse; }
+  .tele-sektoren th, .tele-sektoren td { padding: 3px 10px; text-align: right; border-bottom: 1px solid var(--border); }
+  .tele-sektoren .tele-streu td { font-weight: 700; border-bottom: 0; }
   .tele-achse { display: flex; justify-content: space-between; font-size: 11.5px; }
   .tele-gut { color: var(--good); } .tele-schlecht { color: var(--bad); }
   .tele-a { color: var(--k-blau, #3d8bff); } .tele-b { color: var(--muted); }
@@ -7128,6 +7136,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Telemetrie-Analyse erweitert (WIP, nach Hybrid-Dash von Mo Kamit, MIT-Lizenz): In der Tempokurve sind die Kurvenminima von A markiert. Gas und Bremse stehen jetzt f&#252;r A und B (B als schmaler Streifen darunter). Neu ist der Zeitabstand A minus B &#252;ber die ganze Runde: steigt die Linie, verliert A dort Zeit. Dazu kommt die Sektor-Matrix der Fahrt von A mit bis zu 20 Runden in drei Sektoren, bestem Wert je Sektor und Streuung, die zeigt, wo die Runden am wenigsten gleich sind. Optionen &gt; Telemetrie.</li>
         <li>KI-Pers&#246;nlichkeit der NPCs (WIP, aus Hybrid-Dash von Mo Kamit, MIT-Lizenz): In der Garage hat jedes NPC-Auto einen Knopf &#8222;KI-Pers&#246;nlichkeit&#8220;. Darin gibt es den Schalter &#8222;Menschliche KI&#8220; (ab Werk aus) und f&#252;nf Eigenschaften: Mut, Konstanz, Nerven, Lerntempo, Reifenschonung. Die Werte kommen aus dem Namen und lassen sich einzeln verstellen. Ist die KI an, lernt der NPC jede Strecke Kachel f&#252;r Kachel, merkt sich Abfl&#252;ge und &#220;berholstellen je Gegner und f&#228;hrt mit Formwellen, Z&#246;gern unter Druck und ruhigem Rhythmus allein auf der Strecke. Das Tempo bleibt zwischen 85 und 104 % der eingestellten Stufe und gilt nicht unter Gelb, in der Box und in der Startrunde.</li>
         <li>Onboard-Kamera (WIP): Livebild aus dem Auto als Cockpit-Schirm &#8222;Onboard&#8220;, mit Aufnahme als Video (Grundlage: gnen54s Zweig onboard, danke). Eingeschaltet wird sie in der Garage unter &#8222;Onboard-Kamera&#8220;. Quelle ist eine USB-Kamera bzw. ein FPV-Empf&#228;nger oder neu eine M5Stack Timer Camera im WLAN (MJPEG, Adresse eintragen). Die Anzeige im Bild ist im Stil des virtuellen Fahrens: Zeiten oben links, Tempo, Gang und Tank unten in der Mitte. Auf der https-Webseite l&#228;dt das WLAN-Bild nicht, in der App und &#252;ber Start OmegaSim.bat schon. Video speichern in der App braucht die neue APK.</li>
         <li>Safety Car: Ist an Start/Ziel zu wenig Platz zum Einparken (Kurve direkt vor und nach einer kurzen Startgeraden), parkt es auf dem n&#228;chsten Teil, wo der Platz reicht, bevorzugt bis drei Teile vor Start/Ziel und nie in einer Kurve; das Live-Log nennt das Teil. Ein ausdr&#252;cklich gew&#228;hltes Teil bleibt, mit Hinweis, wenn der Platz nicht reicht. Dazu: K&#228;fer-Name und Boxster-H&#246;rproben &#252;bersetzt.</li>
