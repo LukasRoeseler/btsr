@@ -2219,6 +2219,8 @@
       kam.appendChild(kamKnopf);
       links.appendChild(kam);
     }
+    // v1.5 (WIP): Showroom (98k-showroom.js), Sammelkarten aller bekannten Autos.
+    if (typeof showGarageZeile === 'function') links.appendChild(showGarageZeile());
     // Rechte Seite: das gewaehlte Auto, oder die Optionen der virtuellen Fahrt.
     const car = (garVirtuellAuf || garKameraAuf) ? null : garAufAuto;
     if (garVirtuellAuf && typeof vfGarageOptionen === 'function') {

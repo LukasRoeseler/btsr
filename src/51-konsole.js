@@ -165,6 +165,7 @@
     // v1.4.33: Kreis schliesst das Setup-Fenster (98i-setup.js) und bleibt in der Garage.
     if (typeof setupFensterOffen === 'function' && setupFensterOffen()) { setupSchliessen(); return true; }
     if (typeof kiFensterOffen === 'function' && kiFensterOffen()) { kiSchliessen(); return true; }
+    if (typeof showFensterOffen === 'function' && showFensterOffen()) { showSchliessen(); return true; }
     // Challenge-Karte im Vollbild: Kreis verkleinert sie, statt die Unterseite zu schliessen.
     if (typeof chKarteVollOffen === 'function' && chKarteVollOffen()) {
       if (typeof chKarteVoll === 'function') chKarteVoll();

@@ -96,6 +96,7 @@
     if (typeof setupFensterOffen === 'function' && setupFensterOffen()) return $('setup-fenster');
     // v1.5: das Fenster der KI-Persoenlichkeit eines NPCs (98j-ki-persoenlichkeit.js), ebenso.
     if (typeof kiFensterOffen === 'function' && kiFensterOffen()) return $('ki-fenster');
+    if (typeof showFensterOffen === 'function' && showFensterOffen()) return $('show-fenster');
     // Die Mehrspieler-Anzeige "Info-Screen" liegt ueber allem (v0.8.41): sonst lief die Auswahl
     // unsichtbar darunter weiter.
     const mi = $('mp-info');
@@ -251,7 +252,7 @@
   // Zeile gemerkt, beim Zurueckkommen steht die Auswahl wieder dort. Nicht fuer Dialoge
   // (#k-frage, Tutorial): die fangen immer oben an.
   const menuNavMerk = {};
-  const MENU_NAV_OHNE_MERK = ['k-frage', 'k-tour-karte', 'mp-ready-screen', 'setup-fenster', 'ki-fenster'];
+  const MENU_NAV_OHNE_MERK = ['k-frage', 'k-tour-karte', 'mp-ready-screen', 'setup-fenster', 'ki-fenster', 'show-fenster'];
   function menuNavMerkLeeren() { Object.keys(menuNavMerk).forEach((k) => { delete menuNavMerk[k]; }); }
   function menuNavEnsureContext() {
     const key = menuNavContextNow();
