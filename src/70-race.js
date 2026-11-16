@@ -1464,29 +1464,11 @@
   const WX_REGEN_MIN_MS = 30000;
   const WX_REGEN_MAX_MS = 90000;
   let wxWechselAt = null;
-  // Wetter mit Startwert (v1.5.x): ein fester Seed (Konsole: omegasim-wx-seed) macht den Wetterplan
-  // reproduzierbar - dieselbe Strecke, dasselbe Wetter. Seed 0 = zufaellig wie bisher. mulberry32 wie in
-  // 60d-virtuell.js (vfZufall), damit es derselbe Zahlenstrom ist.
-  let wxSeed = (() => { try { const v = +localStorage.getItem('omegasim-wx-seed'); return Number.isFinite(v) && v > 0 ? v : 0; } catch (e) { return 0; } })();
-  let wxRng = null;
-  function wxZufall() {
-    if (!wxSeed) return Math.random();
-    if (!wxRng) {
-      let a = wxSeed >>> 0;
-      wxRng = () => {
-        a = (a + 0x6D2B79F5) >>> 0;
-        let t = Math.imul(a ^ (a >>> 15), a | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-      };
-    }
-    return wxRng();
-  }
 
   function wxWechselPlanen(nass) {
     const min = nass ? WX_REGEN_MIN_MS : WX_TROCKEN_MIN_MS;
     const max = nass ? WX_REGEN_MAX_MS : WX_TROCKEN_MAX_MS;
-    wxWechselAt = rennZeitJetzt() + min + wxZufall() * (max - min);
+    wxWechselAt = rennZeitJetzt() + min + Math.random() * (max - min);
   }
 
   // Ein eigener Takt, unabhaengig vom Rennen. Der Aufruf aus raceClockTick() bleibt, er
@@ -1520,7 +1502,7 @@
       while (t < total && liste.length < 200) {
         const min = nass ? WX_REGEN_MIN_MS : WX_TROCKEN_MIN_MS;
         const max = nass ? WX_REGEN_MAX_MS : WX_TROCKEN_MAX_MS;
-        let d = min + wxZufall() * (max - min);
+        let d = min + Math.random() * (max - min);
         if (erste && zeitRennen) d = Math.min(d, raceLimit * 60000 * 0.5);
         erste = false;
         t += d;
@@ -1529,7 +1511,7 @@
       }
     } else if (raceWxChange) {
       const total = zeitRennen ? raceLimit * 60000 : 5 * 60000;
-      liste.push({ abMs: Math.round(total * (0.35 + wxZufall() * 0.3)), wetter: raceWxStart === 'rain' ? 'dry' : 'rain' });
+      liste.push({ abMs: Math.round(total * (0.35 + Math.random() * 0.3)), wetter: raceWxStart === 'rain' ? 'dry' : 'rain' });
     }
     return liste;
   }
@@ -2321,13 +2303,6 @@
     const ampelBeginnen = () => {
       if (ampelGestartet || raceState !== 'countdown') return;
       ampelGestartet = true;
-      // Fliegender Start: kein stehender Countdown. Das Feld rollt sofort in Formation,
-      // die Ampel steht auf Rot (raceGreen) und geht beim ersten Auto ueber die Linie auf
-      // Gruen (endFormationLap -> setRaceLights('go')).
-      if (raceFlying) {
-        raceGreen();
-        return;
-      }
       $('race-status').textContent = 'Countdown…';
       // Zufaellige 1-3 s Pause vor dem Start; im Mehrspieler gibt der Host sie im Plan vor,
       // damit alle gleichzeitig losfahren (sonst wuerde jedes Telefon anders wuerfeln).
@@ -2457,9 +2432,6 @@
       // Der Flaggenstreifen haengt sonst nur an Flaggenwechseln, und die Einfuehrungsrunde
       // ist keiner - ohne diesen Aufruf faehrt das Auto von selbst und nichts sagt es.
       updateFlagUi();
-      // Fliegender Start: die Ampel steht auf Rot, solange das Feld in Formation rollt.
-      // endFormationLap() macht daraus beim ersten Auto ueber der Linie Gruen ('go').
-      setRaceLights(5);
       showHudToast(t('Einführungsrunde'));
     }
     // KEIN SPRUNG MEHR ZUR UEBERSICHT bei Gruen (v0.8.24, vom Nutzer bestaetigt: "alles so
@@ -4245,11 +4217,11 @@
         // DOPPELTE GROESSE, wie gewuenscht. Und bei den Regenformen ist sie zugleich das
         // Mittel gegen Luecken: zwei Formen im Abstand 0,18 mit Radius um 0,25 ueberlappen
         // sich sicher.
-        basis: (regen ? 0.2 : 0.17) + wxZufall() * (regen ? 0.15 : 0.11),
-        l: regen ? -WX_AUS - i * WX_ABSTAND : wxZufall() * 2 - 1,
-        quer: (wxZufall() * 2 - 1) * (regen ? 0.7 : 1.0),
-        tempo: regen ? WX_REGEN_V : 0.055 + wxZufall() * 0.05,
-        deck: regen ? 1 : 0.09 + wxZufall() * 0.07,
+        basis: (regen ? 0.2 : 0.17) + Math.random() * (regen ? 0.15 : 0.11),
+        l: regen ? -WX_AUS - i * WX_ABSTAND : Math.random() * 2 - 1,
+        quer: (Math.random() * 2 - 1) * (regen ? 0.7 : 1.0),
+        tempo: regen ? WX_REGEN_V : 0.055 + Math.random() * 0.05,
+        deck: regen ? 1 : 0.09 + Math.random() * 0.07,
         // Regenformen ziehen nur, wenn sie geschickt wurden. Ohne dieses Flag stehen sie
         // vor dem ersten Klick im Bild - genau der gemeldete Fehler.
         aktiv: !regen,

@@ -3356,15 +3356,6 @@
     border-bottom: 1px solid rgba(255,255,255,.06); }
   .gk-w { display: flex; align-items: center; gap: 6px; font-weight: 800; }
   .gk-w > button:not(.gar-speed-reset) { background: none; border: 0; color: var(--k-blau); padding: 2px 6px; min-height: 0; }
-  /* Vorschau des gewaehlten Autos (gerendertes Bild auf grauem Boden) und die Lackfarben-Palette. */
-  .vf-vorschau { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 6px 4px;
-    border-bottom: 1px solid rgba(255,255,255,.06); }
-  .vf-vorschau-bild { display: block; width: 100%; max-height: 120px; object-fit: contain;
-    border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
-  .vf-lack-palette { display: inline-flex; gap: 4px; flex-wrap: wrap; }
-  .vf-lack { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,.25);
-    cursor: pointer; padding: 0; min-height: 0; }
-  .vf-lack.aktiv { border-color: var(--k-blau); box-shadow: 0 0 0 2px rgba(0,163,224,.35); }
   .gk-hinweis { color: var(--muted); font-size: 12px; padding: 4px; }
   .gk-aufzeile .gar-speed { padding: 3px 4px; }
   /* Zwischenueberschrift fuer Kachelgruppen (Optionen: Einstellungen / Info). */
@@ -5761,7 +5752,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.4.80</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.2</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7000,11 +6991,12 @@
     <div class="card subpage" id="sub-patchnotes">
       <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Patchnotes</h2>
+      <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
+      <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Zur&#252;ck auf den Stand 1.4.67: Die Versionen 1.4.68 bis 1.4.80 (Quality-Grafik und Regen im virtuellen Fahren, Vorschaubilder, Zwischenreifen, Geist-Linie, fliegender Start, Omega Overdrive) sind zur&#252;ckgenommen, weil sie Fehler mitbrachten. Fliegender Start, Vorschau und Farbwahl, bessere Quality-Grafik, genauere Kollisionen und der Wetter-Startwert kommen einzeln und gepr&#252;ft zur&#252;ck; Zwischenreifen, Geist-Linie und Omega Overdrive entfallen.</li>
+      </ul>
       <p class="muted"><b><span data-i18n-skip>1.4</span></b></p>
       <ul class="muted" id="patchnotes-14" style="padding-left:20px; line-height:1.7">
-        <li>Virtuelles Fahren (Quality, Garage &#8594; Virtuelles Auto &#8594; Grafik): Die Szene ist deutlich sch&#246;ner. Neu sind eine Tageszeit mit Sonne, Horizont und Sternen (Morgen, Mittag, Abend, Nacht, in der Garage w&#228;hlbar), Bloom und ein AgX-Tonemapping mit Vignette als Nachbearbeitung, Umgebungsreflexionen im Lack, ein Regen-Schalter mit nassem Glanz der Bahn und Regenstreifen im Bild, eine Livery-Einf&#228;rbung der Karosserie je Fahrzeugfarbe, eine TV-Kamera, Reifenverformung in Kurven (das &#228;u&#223;ere Rad staucht sich) und Kontaktschatten unter den R&#228;dern sowie Frustum-Culling und LOD f&#252;r ferne NPCs. Scheitert die Nachbearbeitung (etwa ohne Framebuffer), f&#228;hrt die App mit dem direkten Bild weiter.</li>
-        <li>Wetter: Ein fester Startwert (Konsole: omegasim-wx-seed) macht den Wetterplan reproduzierbar &#8211; dieselbe Strecke, dasselbe Wetter.</li>
-        <li>Virtuelles Fahren: Der Geist speichert die aufgezeichnete Linie und l&#228;sst sie exportieren (JSON) und wieder einlesen; eingelesen f&#228;hrt der Geist sie sofort ab (Linie exportieren / Linie einlesen in der Garage).</li>
         <li>Setup je Auto (WIP): neu sind Bremsbalance, ABS, TC, Motorkennfeld, Heckfl&#252;gel und Reifendruck, jeweils mit Erkl&#228;rung im &#9432; und einer Zeile, was die Einstellung bewirkt. Was im gew&#228;hlten Fahrgef&#252;hl nicht wirkt, ist ausgegraut. Das Motorkennfeld &#228;ndert auch den Verbrauch und die Tank-Rundenangabe. W&#228;hrend die Reifenrunden berechnet werden, dreht sich das Streckenteil als Ladesymbol, und das Fenster bleibt bedienbar. Bei vorgegebenem Fahrgef&#252;hl fahren alle mit Standard.</li>
         <li>Meisterschaft: Behoben, dass ein NPC, der hinter der Startlinie losfuhr, eine Runde zu wenig bekam und Spieler 1 deshalb gewann; auch die Auslaufrunde nach der Zielflagge z&#228;hlt jetzt. Bei gleicher Rundenzahl gewinnt, wer zuerst &#252;ber die Linie kommt (Ergebnis, &#220;bersicht und Meisterschaft gleich). Neu (WIP): kurze Einblendung je Event mit vorbeifahrenden Autos, Ansagen &#8222;Willkommen zur Meisterschaft&#8220; mit Anzahl der Events, Event-Intro, Sieger je Rennen und am Ende Fanfare mit dem Meister; einzeln schaltbar unter Optionen &gt; Ansagen.</li>
         <li>Einparken neu abgestimmt: Safety Car und NPC-Box parken etwas weiter innen (etwa ein Viertel weniger zum Rand) und lenken am Ende l&#228;nger gegen, damit sie gerade stehen. Beim Tankort &#8222;Streckenrand &#252;ber Querlage&#8220; ebenfalls weniger weit an den Rand. NPCs fahren in Kurven innen nicht mehr ganz bis an die Kante (h&#246;chstens 95 %), damit sie dort seltener abfliegen.</li>
