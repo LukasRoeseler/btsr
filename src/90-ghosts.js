@@ -2248,6 +2248,8 @@
       rechts.appendChild(zb);
       // v1.4.33 (WIP): Setup je Spielerauto (98i-setup.js) - eigenes Fenster mit Reifentyp und Starttank.
       if (typeof setupGarageZeile === 'function') { const zs = setupGarageZeile(car); if (zs) rechts.appendChild(zs); }
+      // v1.5 (WIP): KI-Persoenlichkeit je NPC (98j-ki-persoenlichkeit.js), an derselben Stelle wie das Setup.
+      if (typeof kiGarageZeile === 'function') { const zk = kiGarageZeile(car); if (zk) rechts.appendChild(zk); }
       // Name
       const zn = document.createElement('div');
       zn.className = 'opt-row gk-zeile gar-a-name';
@@ -11360,6 +11362,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!ghostIstMax(car)) {
         target = Math.max(0.05, Math.min(1, target * learnFactors(car).pace));
         target *= ghostStreuFaktor(car);
+        // v1.5 (WIP): KI-Persoenlichkeit je NPC (98j-ki-persoenlichkeit.js), ab Werk aus. Vor der
+        // gelben Flagge: unter Gelb gibt kiTempo() ohnehin 1, und das Gelb-Tempo hat das letzte Wort.
+        if (typeof kiTempo === 'function') target = Math.min(1, target * kiTempo(car));
       }
       // Gelbe Flagge: alle auf denselben Wert, und zwar bevor irgendetwas anderes daran
       // dreht. Gleiches Tempo fuer alle heisst von selbst "kein Ueberholen".
