@@ -5996,7 +5996,7 @@
               +ghostReifenTempo({ ghost: { reifen } }).toFixed(4);
           }
         }
-        return { faktor: aus, nass: +(wxRainLevel() * wxRainLevel()).toFixed(4) };
+        return { faktor: aus, nass: +wxGriff(wxRainLevel()).toFixed(4) };
       } finally {
         ghostCfg.pitAn = merkAn;
         setWeather(merkW);

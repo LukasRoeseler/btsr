@@ -12278,7 +12278,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function ghostNassAnteil(car) {
     const lvl = typeof wxRainLevel === 'function' ? wxRainLevel()
               : (weather === 'rain' ? 1 : 0);
-    const n = lvl * lvl;
+    const n = wxGriff(lvl);
     return (zevAktiv !== null && car) ? Math.max(n, zevNassVon(car)) : n;
   }
 

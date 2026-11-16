@@ -1434,7 +1434,33 @@
   // One weather change per race, at a random moment in the middle third — early enough to
   // matter, late enough not to make the chosen starting weather pointless. In free practice
   // there is no known end time, so a fixed window from the start is used instead.
+  // v1.5.9 (WIP): WETTER-STARTWERT. Mit einem Startwert (Feld in den Renneinstellungen, gemerkt unter
+  // omegasim-wx-seed) kommt der Wetterplan aus einem festen Zufallsstrom, der zu Rennbeginn von vorn anfaengt:
+  // dieselbe Strecke und derselbe Wert, dasselbe Wetter. Ohne Wert Math.random wie bisher.
+  const WX_SEED_STORE = 'omegasim-wx-seed';
+  let wxRngZustand = null;
+  function wxSeedLesen() {
+    try { return String(localStorage.getItem(WX_SEED_STORE) || '').trim(); } catch (e) { return ''; }
+  }
+  function wxSeedZahl(text) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return h >>> 0;
+  }
+  function wxRngNeu() {
+    const t = wxSeedLesen();
+    wxRngZustand = t ? wxSeedZahl(t) : null;
+  }
+  function wxZufall() {
+    if (wxRngZustand === null) return Math.random();
+    wxRngZustand = (wxRngZustand + 0x6D2B79F5) >>> 0;       // mulberry32
+    let z = wxRngZustand;
+    z = Math.imul(z ^ (z >>> 15), z | 1);
+    z ^= z + Math.imul(z ^ (z >>> 7), z | 61);
+    return ((z ^ (z >>> 14)) >>> 0) / 4294967296;
+  }
   function scheduleRaceWeatherChange() {
+    wxRngNeu();
     raceWxSwitchAt = null;
     wxWechselAt = null;
     // WECHSELHAFT GEWINNT. Der einmalige Wechsel bleibt aus, siehe die Begruendung bei
@@ -1452,7 +1478,7 @@
     const total = RACE_MODES[raceMode].timed && raceMode !== 'laps'
       ? raceLimit * 60000
       : 5 * 60000;   // practice / lap races: assume a five-minute window
-    raceWxSwitchAt = rennZeitJetzt() + total * (0.35 + Math.random() * 0.3);
+    raceWxSwitchAt = rennZeitJetzt() + total * (0.35 + wxZufall() * 0.3);
   }
 
   // ---- WECHSELHAFT ------------------------------------------------------------------
@@ -1484,7 +1510,7 @@
   function wxWechselPlanen(nass) {
     const min = nass ? WX_REGEN_MIN_MS : WX_TROCKEN_MIN_MS;
     const max = nass ? WX_REGEN_MAX_MS : WX_TROCKEN_MAX_MS;
-    wxWechselAt = rennZeitJetzt() + min + Math.random() * (max - min);
+    wxWechselAt = rennZeitJetzt() + min + wxZufall() * (max - min);
   }
 
   // Ein eigener Takt, unabhaengig vom Rennen. Der Aufruf aus raceClockTick() bleibt, er
@@ -1510,6 +1536,7 @@
   // schickt ihn mit; alle Telefone folgen ihm ab derselben Gruenzeit, statt selbst zu wuerfeln.
   let mpWetter = null;   // { gruen, liste: [{ abMs, wetter }], i }
   function wetterPlanBauen() {
+    wxRngNeu();
     const liste = [];
     const zeitRennen = RACE_MODES[raceMode].timed && raceMode !== 'laps';
     if (raceWxStart === 'wechsel') {
@@ -1518,7 +1545,7 @@
       while (t < total && liste.length < 200) {
         const min = nass ? WX_REGEN_MIN_MS : WX_TROCKEN_MIN_MS;
         const max = nass ? WX_REGEN_MAX_MS : WX_TROCKEN_MAX_MS;
-        let d = min + Math.random() * (max - min);
+        let d = min + wxZufall() * (max - min);
         if (erste && zeitRennen) d = Math.min(d, raceLimit * 60000 * 0.5);
         erste = false;
         t += d;
@@ -1527,7 +1554,7 @@
       }
     } else if (raceWxChange) {
       const total = zeitRennen ? raceLimit * 60000 : 5 * 60000;
-      liste.push({ abMs: Math.round(total * (0.35 + Math.random() * 0.3)), wetter: raceWxStart === 'rain' ? 'dry' : 'rain' });
+      liste.push({ abMs: Math.round(total * (0.35 + wxZufall() * 0.3)), wetter: raceWxStart === 'rain' ? 'dry' : 'rain' });
     }
     return liste;
   }
@@ -2858,6 +2885,13 @@
     if (raceWxStart !== 'wechsel') wxWechselAt = null;
   });
   $('race-wx-change').addEventListener('change', (e) => { raceWxChange = e.target.checked; });
+  if ($('race-wx-seed')) {
+    $('race-wx-seed').value = wxSeedLesen();
+    $('race-wx-seed').addEventListener('change', (e) => {
+      const v = String(e.target.value || '').trim().slice(0, 20);
+      try { if (v) localStorage.setItem(WX_SEED_STORE, v); else localStorage.removeItem(WX_SEED_STORE); } catch (err) { /* privat */ }
+    });
+  }
   $('race-pit-required').addEventListener('change', (e) => {
     racePitRequired = parseInt(e.target.value, 10) || 0;
   });
@@ -4152,6 +4186,13 @@
   let wxTickAt = 0;
 
   function wxRainLevel() { return Math.max(0, 1 - Math.abs(wxFront)); }
+  // v1.5.9 BESTELLT: Regen beim echten Fahren BINAER, "ich will keine Zwischenreifen, das wird zu komplex". Die
+  // Front und ihre Rampe (Ton, Tropfen, Regenlicht) bleiben, aber der GRIFF ist nur noch trocken (0) oder nass (1):
+  // nass ab der halben Rampe, also rund 5 s nach dem Regenbeginn (die alte Vorgabe "erst nach 5 s soll das
+  // Handling reagieren"), und trocken, sobald die Front unter die Haelfte faellt. Statt lvl * lvl gibt es ueberall
+  // wxGriff(lvl). WX_NASS_AB ist der einzige Schwellenwert.
+  const WX_NASS_AB = 0.5;
+  function wxGriff(lvl) { return lvl >= WX_NASS_AB ? 1 : 0; }
 
   // ---- Das Regenradar ---------------------------------------------------------------
   //
@@ -4617,7 +4658,7 @@
     // trocken - nach 2,5 s ein Viertel des Effekts. Genau darum ging es bei "erst nach 5 s
     // soll das Handling reagieren".
     const lvl = wxRainLevel();
-    const griff = lvl * lvl;
+    const griff = wxGriff(lvl);
     // v1.3.88: ueber zevMischung(): steht das Auto in einem Zufallsevent (Verschmutzung/Oel), gilt dort
     // die volle Naesse bzw. das Oel (74-zufallsevents.js); sonst genau mischungAnwenden() wie vorher.
     zevMischung(physEngine, tyres, griff, 1);
@@ -4741,7 +4782,7 @@
     if (typeof zusatzPlaetze === 'function') {
       for (const z of zusatzPlaetze()) {
         if (z.mischungWunsch === 'weich') z.mischungWunsch = 'mittel';
-        if (z.reifen === 'weich' && z.motor) { z.reifen = 'mittel'; mischungAnwenden(z.motor, z.reifen, wxRainLevel() * wxRainLevel()); }
+        if (z.reifen === 'weich' && z.motor) { z.reifen = 'mittel'; mischungAnwenden(z.motor, z.reifen, wxGriff(wxRainLevel())); }
       }
     }
   }
@@ -5742,7 +5783,7 @@
         const neu = mischungErlaubt(pitMischungWahlVon(z));
         if (neu !== z.reifen) {
           z.reifen = neu;
-          mischungAnwenden(z.motor, z.reifen, wxRainLevel() * wxRainLevel());
+          mischungAnwenden(z.motor, z.reifen, wxGriff(wxRainLevel()));
           log('P' + z.nr + ': ' + TYRE_MIX[z.reifen].name + ' montiert.', 'info');
         }
         z.mischungWunsch = null;

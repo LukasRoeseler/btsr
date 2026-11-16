@@ -9915,15 +9915,16 @@
   // WARUM DAS EINE PRUEFUNG WERT IST: wer den Faktor spaeter "aufraeumt" und den falschen
   // Reifen pauschal langsamer macht, loescht diese Eigenschaft, ohne es zu merken. Sie steht
   // hier als Zusicherung, nicht als Kuriositaet.
-  stAdd('NPC-Regenreifen: bei leichtem Regen sind Slicks noch vorn', () => {
+  stAdd('NPC-Regenreifen: unter der halben Front sind Slicks noch vorn, darueber im Nachteil (binaer, v1.5.9)', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.reifenTempoProbe) {
       return { skip: true, mass: 'reifenTempoProbe nicht vorhanden' };
     }
-    const leicht = OMEGA_TEST.reifenTempoProbe(-0.5, { pitAn: true });
+    // v1.5.9: der Griff ist binaer (wxGriff): trocken unter der halben Front (Staerke < 0,5), nass darueber.
+    const leicht = OMEGA_TEST.reifenTempoProbe(-0.6, { pitAn: true });
     const voll = OMEGA_TEST.reifenTempoProbe(0, { pitAn: true });
     if (!leicht || !voll) return { skip: true, mass: 'kein Faktor' };
     const fehler = [];
-    // Bei halber Front: der Slick mindestens gleichwertig.
+    // Unter der halben Front (Staerke 0,4): trocken, der Slick mindestens gleichwertig.
     if (!(leicht.faktor['rain/trocken'] >= leicht.faktor['rain/regen'] - 1e-4)) {
       fehler.push('bei halber Front ist der Slick schon im Nachteil ('
                   + leicht.faktor['rain/trocken'] + ' gegen '
@@ -9935,6 +9936,9 @@
     }
     // Und die Naesse muss sich zwischen den beiden Messungen ueberhaupt geaendert haben,
     // sonst prueft der Test zwei identische Laeufe.
+    if (!(leicht.nass === 0 && voll.nass === 1)) {
+      fehler.push('Naesse nicht binaer: ' + leicht.nass + ' / ' + voll.nass);
+    }
     if (!(voll.nass > leicht.nass + 0.5)) {
       fehler.push('die Rampe bewegt sich nicht (' + leicht.nass + ' -> ' + voll.nass + ')');
     }
@@ -19477,46 +19481,42 @@
   // Sekunden stehen in einer Konstanten, und ein Test, der sie abschreibt, prueft die
   // Konstante. Was er pruefen soll: dass der Ton VOR dem Griff kommt. Genau das war der
   // Wunsch - erst hoert und sieht man Regen, dann faehrt man ihn.
-  stAdd('Wetterfront: Ton vor Griff, und beides stetig', () => {
+  stAdd('Wetterfront: Ton vor Griff, Griff binaer (v1.5.9)', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.wxSet) {
       return { skip: true, mass: 'wxSet nicht vorhanden' };
     }
     const merk = OMEGA_TEST.wxProbe();
     try {
       const reihe = [];
-      for (let f = -1; f <= 0.0001; f += 0.1) reihe.push(OMEGA_TEST.wxSet(f));
+      for (let f = -1; f <= 0.0001; f += 0.05) reihe.push(OMEGA_TEST.wxSet(f));
       const fehler = [];
       // 1. Anfang und Ende: trocken und voll nass.
       const a = reihe[0], e = reihe[reihe.length - 1];
       if (!(a.staerke === 0 && a.grip > 0.999)) fehler.push('Anfang nicht trocken');
       if (!(e.staerke > 0.999)) fehler.push('Ende nicht voll');
-      // 2. STETIG: kein Sprung groesser als ein Fuenftel im Griff. Das schliesst den
-      //    Schalter aus, der hier vorher stand - der sprang um 0,55 auf einmal.
-      let sprung = 0;
-      for (let i = 1; i < reihe.length; i++) {
-        sprung = Math.max(sprung, Math.abs(reihe[i].grip - reihe[i - 1].grip));
-      }
-      if (sprung > 0.2) fehler.push('Griffsprung ' + sprung.toFixed(3));
-      // 3. DER TON KOMMT VOR DEM GRIFF. Auf der halben Strecke muss der Ton schon halb da
-      //    sein, der Griff aber noch kaum: quadratisch heisst bei 0,5 nur ein Viertel.
-      const mitte = reihe.find(x => Math.abs(x.staerke - 0.5) < 0.02);
-      if (!mitte) fehler.push('kein Messpunkt auf halber Strecke');
+      // 2. BINAER (v1.5.9, "keine Zwischenreifen, es wird zu komplex"): der Griff hat genau zwei Werte, wechselt
+      //    genau einmal, und zwar bei der halben Front. Davor trocken, danach nass.
+      const nassGrip = e.grip;
+      const trocken = (x) => Math.abs(x.grip - a.grip) < 1e-6, nass = (x) => Math.abs(x.grip - nassGrip) < 1e-6;
+      if (!reihe.every((x) => trocken(x) || nass(x))) fehler.push('Zwischenwerte im Griff: ' + reihe.filter((x) => !trocken(x) && !nass(x)).map((x) => x.grip.toFixed(3)).join(','));
+      let wechsel = 0;
+      for (let i = 1; i < reihe.length; i++) if (trocken(reihe[i - 1]) && nass(reihe[i])) wechsel++;
+      if (wechsel !== 1) fehler.push('Griffwechsel ' + wechsel + 'x statt einmal');
+      const erstNass = reihe.find(nass);
+      if (!erstNass || !(erstNass.staerke >= WX_NASS_AB - 0.001 && erstNass.staerke <= WX_NASS_AB + 0.06)) fehler.push('nass ab Staerke ' + (erstNass ? erstNass.staerke.toFixed(2) : '?') + ' statt ' + WX_NASS_AB);
+      // 3. DER TON KOMMT VOR DEM GRIFF: wenn der Ton schon da ist (Staerke 0,3), ist der Griff noch trocken.
+      const frueh = reihe.find((x) => x.staerke >= 0.3);
+      if (!frueh) fehler.push('kein Messpunkt bei Staerke 0,3');
       else {
-        if (!(mitte.regenTon > 0.4)) fehler.push('Ton auf halber Strecke nur ' + mitte.regenTon);
-        // Griffanteil: wie weit ist der Griff auf dem Weg von trocken nach nass?
-        const weg = (a.grip - mitte.grip) / (a.grip - e.grip);
-        if (!(weg < 0.35)) fehler.push('Griff auf halber Strecke schon ' + (weg * 100).toFixed(0) + ' %');
+        if (!(frueh.regenTon > 0.15)) fehler.push('Ton bei Staerke 0,3 nur ' + frueh.regenTon);
+        if (!trocken(frueh)) fehler.push('Griff bei Staerke 0,3 schon nass');
       }
       // 4. Und hinter der Front ist es wieder trocken - sie zieht durch, nicht zurueck.
       const durch = OMEGA_TEST.wxSet(1);
       if (!(durch.staerke === 0 && durch.grip > 0.999)) fehler.push('hinter der Front nicht trocken');
-      const mitteTxt = mitte
-        ? 'auf halber Strecke Ton ' + mitte.regenTon.toFixed(2) + ', Griff '
-          + (100 * (a.grip - mitte.grip) / (a.grip - e.grip)).toFixed(0) + ' % des Wegs'
-        : '?';
       return { ok: !fehler.length,
-               mass: reihe.length + ' Messpunkte, groesster Griffsprung ' + sprung.toFixed(3)
-                   + ', ' + mitteTxt
+               mass: reihe.length + ' Messpunkte, ein Wechsel trocken -> nass bei Staerke ' + (erstNass ? erstNass.staerke.toFixed(2) : '?')
+                   + ', Ton bei 0,3: ' + (frueh ? frueh.regenTon.toFixed(2) : '?')
                    + (fehler.length ? ' || ' + fehler.join('; ') : '') };
     } finally {
       // Zuruecklegen, sonst faehrt der Nutzer nach einem Testlauf im Regen.
@@ -19549,7 +19549,8 @@
     //    Schritt, der groesser ist als plausibel fuer 250-ms-Schritte einer zehn Sekunden
     //    langen, quadratischen Rampe - probehalber bei 250 ms gemessen 0,027, reichlich
     //    Abstand zu dieser Schranke.
-    if (!(r.maxSchrittSonstwo < 0.08)) fehler.push('Schritt sonstwo: ' + r.maxSchrittSonstwo);
+    // v1.5.9: der Griff ist binaer, je Rampe gibt es genau EINEN Sprung (trocken 1,00 -> nass 0,45 = 0,55).
+    if (!(r.maxSchrittSonstwo <= 0.6)) fehler.push('Schritt sonstwo: ' + r.maxSchrittSonstwo);
     // 3. Und die Rampe erreicht wirklich beide Enden - trocken (1) und nass (deutlich
     //    darunter) -, sonst waere "kein Sprung" nur, weil sich nichts bewegt hat.
     if (!(r.endeAus > 0.999)) fehler.push('am Ende nicht trocken: ' + r.endeAus);
@@ -26569,6 +26570,37 @@
       return { ok: !f.length, mass: f.length ? f.join('; ') : 'Platz 4: Haltepunkt ' + bruch4.toFixed(2) + ' im Teil ' + ziel4 + ', Vorsprung ' + v.toFixed(2) + ' -> Folge x ' + fk.toFixed(2) + ' (Rollweg ' + roll.toFixed(2) + ')' };
     } finally {
       currentTrackTiles = merk; lineCache = null;
+    }
+  });
+
+  // v1.5.9: Wetter-Startwert und binaerer Griff.
+  stAdd('Wetter v1.5.9: Startwert macht den Plan wiederholbar, binaerer Griff', () => {
+    const f = [];
+    const merk = { wx: raceWxStart, mode: raceMode, lim: raceLimit, seed: null };
+    try { merk.seed = localStorage.getItem(WX_SEED_STORE); } catch (e) { /* privat */ }
+    const setze = (v) => { try { if (v === null) localStorage.removeItem(WX_SEED_STORE); else localStorage.setItem(WX_SEED_STORE, v); } catch (e) { /* privat */ } };
+    try {
+      raceWxStart = 'wechsel'; raceMode = 'laps'; raceLimit = 10;
+      setze('Spa');
+      const a1 = JSON.stringify(wetterPlanBauen()), a2 = JSON.stringify(wetterPlanBauen());
+      if (a1 !== a2) f.push('derselbe Startwert, verschiedener Plan');
+      setze('Monza');
+      const b1 = JSON.stringify(wetterPlanBauen());
+      if (b1 === a1) f.push('anderer Startwert, derselbe Plan');
+      // Der Zufallsstrom beginnt je Plan von vorn UND laeuft danach weiter (kein Dauerwert).
+      setze('Spa'); wxRngNeu();
+      const r1 = wxZufall(), r2 = wxZufall();
+      if (r1 === r2) f.push('Zufallsstrom steht still');
+      wxRngNeu();
+      if (wxZufall() !== r1) f.push('Neustart gibt nicht denselben Anfang');
+      setze(null); wxRngNeu();
+      if (wxRngZustand !== null) f.push('ohne Startwert nicht zufaellig');
+      // Binaerer Griff: trocken bis unter der halben Front, nass ab dort.
+      if (wxGriff(0) !== 0 || wxGriff(0.49) !== 0 || wxGriff(0.5) !== 1 || wxGriff(1) !== 1) f.push('wxGriff nicht binaer: ' + [0, 0.49, 0.5, 1].map(wxGriff).join(','));
+      return { ok: !f.length, mass: f.length ? f.join('; ') : 'Plan mit Startwert wiederholbar, anderer Wert anderer Plan, Griff 0/1 an der halben Front' };
+    } finally {
+      raceWxStart = merk.wx; raceMode = merk.mode; raceLimit = merk.lim;
+      setze(merk.seed); wxRngNeu();
     }
   });
 
