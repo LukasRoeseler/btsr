@@ -26267,6 +26267,65 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  // v1.5.36: Safety Car parkt bei zu wenig Platz an Start/Ziel auf dem naechsten Teil mit genug Platz.
+  stAdd('Safety Car v1.5.36: zu wenig Platz an Start/Ziel - Parkteil wandert, ausdrueckliche Wahl bleibt', () => {
+    const f = [];
+    const el = $('sc-ausfahrt-teil');
+    if (!el) return { skip: true, mass: 'Auswahl fehlt' };
+    const merk = { tiles: currentTrackTiles, wert: el.value };
+    try {
+      // Lange Gerade vor Start/Ziel: Start/Ziel reicht, kein Wandern.
+      currentTrackTiles = codeToTrack('SG4R2G3R2G3R2').tiles; lineCache = null; scParkPlatzMerk.tiles = null;
+      el.value = 'start';
+      const s0 = (ortStartIndices(currentTrackTiles)[0]) || 0;
+      if (scEinPassend(s0, scParkTempo()).faktor < 1) f.push('Testbahn 1: Start/Ziel sollte reichen');
+      else if (scParkKachel() !== s0) f.push('genug Platz, trotzdem verlegt: ' + scParkKachel());
+      // Kurve direkt vor und nach Start/Ziel.
+      currentTrackTiles = codeToTrack('SR2G3R2G4R2').tiles; lineCache = null; scParkPlatzMerk.tiles = null;
+      const s1 = (ortStartIndices(currentTrackTiles)[0]) || 0;
+      const k1 = scParkKachel();
+      if (scEinPassend(s1, scParkTempo()).faktor >= 1) f.push('Testbahn 2: Start/Ziel hat unerwartet genug Platz');
+      else {
+        if (k1 === s1) f.push('zu wenig Platz, aber nicht verlegt');
+        const pk = scEinPassend(k1, scParkTempo());
+        if (pk.faktor < 1 || pk.gerade < 1) f.push('verlegt auf Teil ' + k1 + ', dort reicht es nicht oder es ist eine Kurve');
+        if (!(((s1 - k1 + currentTrackTiles.length) % currentTrackTiles.length) <= 3)) f.push('verlegt weiter als drei Teile vor Start/Ziel: ' + k1);
+      }
+      // Ausdrueckliche Wahl bleibt (mit Hinweis).
+      const n = currentTrackTiles.length;
+      el.innerHTML += '<option value="' + s1 + '/' + n + '">x</option>';
+      el.value = s1 + '/' + n; scParkPlatzMerk.tiles = null;
+      if (scParkKachel() !== s1) f.push('ausdrueckliche Wahl verlegt');
+    } finally {
+      currentTrackTiles = merk.tiles; lineCache = null; scParkPlatzMerk.tiles = null;
+      el.value = merk.wert;
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Start/Ziel bleibt mit Platz, wandert ohne Platz auf ein Teil mit Platz, ausdrueckliche Wahl bleibt' };
+  });
+
+  // v1.5.36: die zweite Menueleiste zeigt ein Fenster von hoechstens K_FENSTER_MAX Reitern (1.5.5).
+  stAdd('ACC-Menue v1.5.36: Fenster der zweiten Leiste (hoechstens 4 Reiter, aktiver immer sichtbar, Pfeile)', () => {
+    const f = [];
+    if (K_FENSTER_MAX !== 4) f.push('Fenster ' + K_FENSTER_MAX + ' statt 4');
+    // 15 Reiter (Optionen), Fenster 4: der aktive Reiter liegt immer im Fenster, an den Enden buendig.
+    const n = 15, sicht = 4;
+    for (let aktiv = 0; aktiv < n; aktiv++) {
+      const st = kFensterStart(n, aktiv, sicht, 0);
+      if (!(aktiv >= st && aktiv < st + sicht)) f.push('Reiter ' + aktiv + ' ausserhalb [' + st + ',' + (st + sicht) + ')');
+      if (st < 0 || st > n - sicht) f.push('Start ' + st + ' fuer Reiter ' + aktiv);
+    }
+    if (kFensterStart(n, 0, sicht, 7) !== 0) f.push('Anfang nicht buendig');
+    if (kFensterStart(n, n - 1, sicht, 0) !== n - sicht) f.push('Ende nicht buendig');
+    // Weniger Reiter als das Fenster: immer ab 0.
+    if (kFensterStart(3, 2, sicht, 5) !== 0) f.push('kurze Leiste verschoben');
+    // Ohne aktiven Reiter bleibt das Fenster, wo es war (begrenzt).
+    if (kFensterStart(n, -1, sicht, 6) !== 6) f.push('ohne aktiven Reiter gesprungen');
+    if (kFensterStart(n, -1, sicht, 99) !== n - sicht) f.push('ohne aktiven Reiter nicht begrenzt');
+    // Die Pfeile gibt es im Markup.
+    if (!$('k-pfeil-l') || !$('k-pfeil-r')) f.push('Pfeile fehlen');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Fenster 4, aktiver Reiter immer sichtbar, Enden buendig, Pfeile vorhanden' };
+  });
+
   // v1.5.32: Cockpit-Ansicht Mokamit (Digital Dash aus Hybrid-Dash, MIT).
   stAdd('Cockpit v1.5.32: Ansicht Mokamit im Cockpit-Menue, nur auf dem Haupt-Schirm, liest das Standard-Cockpit', () => {
     const f = [];

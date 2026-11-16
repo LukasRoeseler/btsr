@@ -7277,9 +7277,41 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function scParkKachel() {
     const n = currentTrackTiles ? currentTrackTiles.length : 0;
     const w = n ? scTeilWahl(n) : null;
-    if (w !== null) return w;
+    if (w !== null) return scParkPlatzPruefen(w);
     const s = typeof ortStartIndices === 'function' ? ortStartIndices(currentTrackTiles || []) : [];
-    return s.length ? s[0] : 0;
+    return scParkPlatzPruefen(s.length ? s[0] : 0);
+  }
+  // v1.5.36 BESTELLT: "Safety Car einparken muss auch klappen, wenn ich vor und nach der Startgeraden Kurven habe."
+  // Reicht der freie Platz am Parkteil nicht fuer den Rollweg der Einparkfolge (scEinPassend staucht dann das Gas, das
+  // Auto bleibt schief und zu weit in der Mitte stehen), parkt das Safety Car bei der Vorgabe "Start/Ziel" auf dem
+  // naechsten Teil, wo der Platz reicht: zuerst bis drei Teile VOR Start/Ziel (dort wartet es nicht im Feld), dann die
+  // naechste Stelle ueberhaupt. Eine ausdrueckliche Wahl eines Teils bleibt, bekommt aber einen Hinweis im Live-Log.
+  // Einmal je Strecke gerechnet (Zwischenspeicher), nie im Takt.
+  let scParkPlatzMerk = { tiles: null, wahl: -1, ergebnis: -1, hinweis: '' };
+  function scParkPlatzPruefen(k) {
+    const tiles = currentTrackTiles || [], n = tiles.length;
+    if (!n || typeof scEinPassend !== 'function') return k;
+    const el = $('sc-ausfahrt-teil');
+    const vorgabe = !el || el.value === 'start' || el.value === '';
+    if (scParkPlatzMerk.tiles === tiles && scParkPlatzMerk.wahl === k && scParkPlatzMerk.vorgabe === vorgabe) return scParkPlatzMerk.ergebnis;
+    let ergebnis = k, hinweis = '';
+    // Passt: der Rollweg reicht (kein Stauchen) UND das Teil selbst ist frei (nicht in einer Kurve parken).
+    const passt = (i) => { const p = scEinPassend(i, scParkTempo()); return p.faktor >= 1 && p.gerade >= 1; };
+    if (!passt(k)) {
+      if (vorgabe) {
+        const kandidaten = [];
+        for (let d = 1; d <= 3; d++) kandidaten.push((k - d + n) % n);
+        for (let d = 1; d < n; d++) { kandidaten.push((k + d) % n); kandidaten.push((k - 3 - d + 2 * n) % n); }
+        const gut = kandidaten.find((i) => passt(i));
+        if (gut !== undefined) {
+          ergebnis = gut;
+          hinweis = 'Safety Car: an Start/Ziel ist zu wenig Platz zum Einparken, es parkt auf Teil ' + gut + '.';
+        } else hinweis = 'Safety Car: auf der ganzen Strecke reicht der Platz zum Einparken nicht ganz, es parkt gestaucht an Start/Ziel.';
+      } else hinweis = 'Safety Car: auf dem gewaehlten Teil ' + k + ' ist zu wenig Platz zum Einparken, die Folge wird gestaucht.';
+    }
+    scParkPlatzMerk = { tiles, wahl: k, vorgabe, ergebnis, hinweis };
+    if (hinweis && typeof log === 'function') log(hinweis, 'warn');
+    return ergebnis;
   }
   function scParkTempo() { return scEinfahrtTempo(); }
   function scParkTick(car) {
