@@ -5638,6 +5638,12 @@
     background: var(--acc-feld-klick); box-shadow: inset 0 -2px 0 var(--acc-blau), inset 0 0 0 1px rgba(255, 255, 255, .12);
     font-size: clamp(9px, 1.2vw, 15px); font-size: clamp(9px, 3cqh, 15px); padding: .5em 1.1em .45em; }
   body[data-cockpit="acc"] #race-dash #race-ovscreen > .ov-nochmal[hidden] { display: none; }
+  /* v1.5.10: Vorschau und Lackfarbe im Virtuell-Fenster der Garage (WIP) */
+  .vf-vorschau { justify-content: center; padding: 6px 0; }
+  .vf-vorschau-bild { width: 100%; max-width: 420px; height: auto; border-radius: 6px; display: block; background: #3a3f46; }
+  .vf-lack-palette { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
+  .vf-lack { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); cursor: pointer; }
+  .vf-lack.aktiv { border-color: #fff; box-shadow: 0 0 0 2px rgba(0,160,230,.9); }
 </style>
 <style>
   .stat-clean { margin-top:20px; border:1px solid var(--line,#454b57); border-radius:8px; padding:12px; }
@@ -5821,7 +5827,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.9</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.12</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7066,6 +7072,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Virtuelles Fahren (WIP): In der Garage zeigt das Fenster &#8222;Virtuell fahren&#8220; jetzt ein Vorschaubild des gew&#228;hlten Autos und eine Lackfarbe (Original, Rot, Blau, Wei&#223;, Schwarz, Gelb, Violett, Gr&#252;n, Orange). Die Karosserie wird in der Fahrt umgef&#228;rbt (Helligkeit des Lacks mal Farbe, die Details bleiben), Scheiben, R&#228;der und Leuchten bleiben unver&#228;ndert. Die Vorschaubilder sind Aufnahmen genau dieser Darstellung, eines je Auto und Farbe.</li>
         <li>Regen beim echten Fahren ist jetzt bin&#228;r: Die Front mit Ton, Tropfen und Regenlicht bleibt, aber der Griff ist nur noch trocken oder nass. Nass wird er, sobald die Front die H&#228;lfte erreicht hat (rund 5 s nach dem Regenbeginn), trocken wieder darunter. Slicks im Nassen sind deutlich langsamer und rutschig, Regenreifen im Trockenen etwas langsamer; es gibt keine Zwischenstufe. Das gilt f&#252;r dein Auto, Spieler 2 und 3 und die NPCs gleich. Neu (WIP): Wetter-Startwert in den Renneinstellungen: ein Wort oder eine Zahl macht den Wetterplan wiederholbar, dieselbe Strecke und derselbe Startwert geben dieselben Wechsel zur selben Zeit.</li>
         <li>Akku: Bei einem Rohwert von 140 oder weniger zeigen Garage und Cockpit &#8222;niedrig&#8220; statt einer Prozentzahl. Die Skala ist unten flach, &#8222;12 %&#8220; stand lange, obwohl das Auto noch fuhr; eine echte Kennlinie folgt aus einer aufgezeichneten Akkuladung. Die Gl&#228;ttung im Cockpit beginnt beim Wechsel des Fahrerautos neu, statt f&#252;nf Sekunden lang mit dem Vorg&#228;nger zu mischen. Startaufstellung: Hat ein Auto seinen Haltepunkt mitten im Teil verpasst (Platz 4 und weiter hinten), f&#228;hrt es die Einparkfolge um den Vorsprung k&#252;rzer (bis zu 30 %), damit es nicht auf dem Platz des Autos davor steht. Das Live-Log nennt je Auto Platz, Ort und Haltepunkt, damit sich jede Aufstellung nachvollziehen l&#228;sst.</li>
         <li>Verbindung und Men&#252;: Zwei Spieler ohne Bahn am selben Handy: Wird ein Auto nach dem Verbinden zu Spieler 2 oder 3, bekommt es jetzt sofort die schnelle Funkpriorit&#228;t (bisher blieb es ohne Ampel auf der langsamen h&#228;ngen). Android-App: Scheitert das Verbinden, steht der Grund sichtbar in der Garage und im Fahren-Men&#252;, mit Knopf &#8222;Protokoll kopieren&#8220;; die App versucht es einmal selbst erneut, schonender (kurze Pause, keine Priorit&#228;tsanfrage in den ersten Sekunden), und verbindet mit angeschlossenem Gamepad von Anfang an schonend (WIP). Safety Car: Nach seiner Startrunde f&#228;hrt es schon vier Teile vor dem Parkteil heim (langsamer, mittig), statt erst an der Linie; es soll so auf dem Parkteil am Rand stehen wie nach einer Gelbphase. Men&#252;: Die obere Leiste ist am PC h&#246;her; die zweite Leiste zeigt h&#246;chstens vier Reiter und Pfeile, wenn links oder rechts weitere liegen, und rutscht beim Durchschalten mit. Der Sprachknopf sitzt auf der Startseite oben rechts mit &#8222;LANGUAGE&#8220; und Flagge; ohne eigene Wahl startet die App auf Englisch. Virtuelles Fahren: neues Auto VW K&#228;fer 1303 RS mit Boxster-Motorklang von Gnen54 (WIP).</li>
@@ -16953,6 +16960,17 @@
     "Wetter-Startwert": "Weather seed",
     "Ein Wort oder eine Zahl macht den Wetterplan wiederholbar: dieselbe Strecke und derselbe Startwert geben jedes Mal dieselben Wechsel zur selben Zeit. Leer lässt das Wetter wie bisher zufällig.": "A word or a number makes the weather plan repeatable: the same track and the same seed give the same changes at the same time every time. Empty leaves the weather random as before.",
     "Regen beim echten Fahren ist jetzt binär: Die Front mit Ton, Tropfen und Regenlicht bleibt, aber der Griff ist nur noch trocken oder nass. Nass wird er, sobald die Front die Hälfte erreicht hat (rund 5 s nach dem Regenbeginn), trocken wieder darunter. Slicks im Nassen sind deutlich langsamer und rutschig, Regenreifen im Trockenen etwas langsamer; es gibt keine Zwischenstufe. Das gilt für dein Auto, Spieler 2 und 3 und die NPCs gleich. Neu (WIP): Wetter-Startwert in den Renneinstellungen: ein Wort oder eine Zahl macht den Wetterplan wiederholbar, dieselbe Strecke und derselbe Startwert geben dieselben Wechsel zur selben Zeit.": "Rain in real driving is now binary: the front with its sound, drops and rain light stays, but the grip is only dry or wet. It turns wet as soon as the front has reached half strength (about 5 s after the rain starts) and dry again below it. Slicks in the wet are much slower and slippery, rain tyres in the dry are a little slower; there is no intermediate step. This applies equally to your car, players 2 and 3 and the NPCs. New (WIP): weather seed in the race settings: a word or a number makes the weather plan repeatable, the same track and the same seed give the same changes at the same time.",
+    "Lackfarbe": "Paint colour",
+    "Original": "Original",
+    "Rot": "Red",
+    "Blau": "Blue",
+    "Weiß": "White",
+    "Schwarz": "Black",
+    "Gelb": "Yellow",
+    "Violett": "Purple",
+    "Grün": "Green",
+    "Orange": "Orange",
+    "Virtuelles Fahren (WIP): In der Garage zeigt das Fenster „Virtuell fahren“ jetzt ein Vorschaubild des gewählten Autos und eine Lackfarbe (Original, Rot, Blau, Weiß, Schwarz, Gelb, Violett, Grün, Orange). Die Karosserie wird in der Fahrt umgefärbt (Helligkeit des Lacks mal Farbe, die Details bleiben), Scheiben, Räder und Leuchten bleiben unverändert. Die Vorschaubilder sind Aufnahmen genau dieser Darstellung, eines je Auto und Farbe.": "Virtual driving (WIP): in the garage the “Drive virtually” window now shows a preview image of the chosen car and a paint colour (original, red, blue, white, black, yellow, purple, green, orange). The body is recoloured in the drive (brightness of the paint times colour, the details stay); windows, wheels and lights stay unchanged. The preview images are captures of exactly this rendering, one per car and colour.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -19786,6 +19804,16 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Lackfarbe": "Color de pintura",
+    "Original": "Original",
+    "Rot": "Rojo",
+    "Blau": "Azul",
+    "Weiß": "Blanco",
+    "Schwarz": "Negro",
+    "Gelb": "Amarillo",
+    "Violett": "Violeta",
+    "Grün": "Verde",
+    "Orange": "Naranja",
     "Wetter-Startwert": "Semilla del tiempo",
     "Ein Wort oder eine Zahl macht den Wetterplan wiederholbar: dieselbe Strecke und derselbe Startwert geben jedes Mal dieselben Wechsel zur selben Zeit. Leer lässt das Wetter wie bisher zufällig.": "Una palabra o un número hace repetible el plan del tiempo: la misma pista y la misma semilla dan los mismos cambios en el mismo momento. Vacío deja el tiempo aleatorio como antes.",
     "niedrig": "bajo",
@@ -42399,6 +42427,26 @@
   function vfModellPfad(auto) { return VF_MODELL_PFADE[auto || vfAutoWahl()] || 'img/autos/v5r/'; }
   const VF_FEDER_STORE = 'omegasim-vf-feder';
   const VF_FEDER_WERTE = [1, 2, 3, 5, 8];
+  // v1.5.10 BESTELLT: "Vorschau vom Auto, Farbwahl". Lackfarbe der virtuellen Fahrt (WIP): eine eigene Wahl, unabhaengig
+  // von der echten Fahrzeugfarbe. Die Karosserie wird umgefaerbt (Helligkeit des Texels mal Farbe, die Texturen behalten ihre
+  // Details); Scheiben, Raeder und Leuchten bleiben unveraendert. '' = die Farbe des Modells.
+  // Die Vorschaubilder (img/autos/<modell>/vorschau_<id>.jpg) sind Aufnahmen genau dieser Darstellung
+  // (tools/vorschau_bilder.py), eines je Auto und Farbe.
+  const VF_LACK_STORE = 'omegasim-vf-lack';
+  const VF_LACK_FARBEN = [
+    { id: 'auto', v: '', n: 'Original' },
+    { id: 'rot', v: '#c8102e', n: 'Rot' }, { id: 'blau', v: '#0057b8', n: 'Blau' }, { id: 'weiss', v: '#e8e8e8', n: 'Weiß' },
+    { id: 'schwarz', v: '#1b1b1b', n: 'Schwarz' }, { id: 'gelb', v: '#f5a800', n: 'Gelb' }, { id: 'violett', v: '#7a1f7a', n: 'Violett' },
+    { id: 'gruen', v: '#0a7a3d', n: 'Grün' }, { id: 'orange', v: '#d35400', n: 'Orange' },
+  ];
+  function vfLack() {
+    try { const v = localStorage.getItem(VF_LACK_STORE); return v && VF_LACK_FARBEN.some((f) => f.v === v) ? v : ''; } catch (e) { return ''; }
+  }
+  function vfLackSetzen(hex) { try { localStorage.setItem(VF_LACK_STORE, hex || ''); } catch (e) { /* egal */ } }
+  function vfLackId(hex) { const f = VF_LACK_FARBEN.find((x) => x.v === (hex || '')); return f ? f.id : 'auto'; }
+  // Die Farbe der Karosserie: Der Shader faerbt sie um (Helligkeit des Texels mal Lackfarbe, uniform lack = 1), statt zu
+  // multiplizieren - sonst wuerde Rot auf einem gelben Auto Orange. Ohne Farbe bleibt das Modell, wie es ist.
+  function vfLackTint(hex) { return hex ? vfHex(hex) : VF_WEISS; }
   // Eine gespeicherte Wahl, die es nicht mehr gibt (z. B. 'porsche', 1.3.94-1.3.131, entfernt), faellt
   // still auf den Vulture V5.R zurueck - kein 404 beim Laden und kein Absturz.
   function vfAutoWahl() {
@@ -42889,10 +42937,10 @@
         + 'void main(){ vec4 q = w * vec4(p, 1.0); gl_Position = m * q; vuv = uv; vn = nm * n; vd = gl_Position.w; }'));
       gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
         'precision mediump float; varying vec2 vuv; varying vec3 vn; varying float vd;'
-        + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
-        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 N = normalize(vn);'
+        + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel; uniform float lack;'
+        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7), lack); vec3 N = normalize(vn);'
         + ' float d = max(dot(N, normalize(vec3(0.35, 0.9, 0.25))), 0.0); float s = pow(max(dot(N, normalize(vec3(0.2, 0.75, -0.6))), 0.0), 24.0);'
-        + ' float l = mix(1.0, 0.42 + 0.66 * d, licht); vec3 c = t.rgb * tint * (l + emis) + vec3(s * 0.35 * licht);'
+        + ' float l = mix(1.0, 0.42 + 0.66 * d, licht); vec3 c = tb * tint * (l + emis) + vec3(s * 0.35 * licht);'
         + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, nebel, f), mix(alpha, alpha * t.a, am)); }'));
     } else {
       gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
@@ -42904,15 +42952,15 @@
         'precision mediump float;\n' + VF_HP
         + 'varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vv; varying HP vec3 vsp;'
         + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
-        + 'uniform float klar; uniform float glas; uniform sampler2D sch; uniform float schatt; uniform HP float bias;'
+        + 'uniform float klar; uniform float glas; uniform sampler2D sch; uniform float schatt; uniform HP float bias; uniform float lack;'
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
         + 'HP float schTiefe(HP vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
-        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
+        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7), lack); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
         + ' vec3 V = normalize(vv); float d = max(dot(N, L), 0.0); vec3 R = reflect(-L, N); float rv = max(dot(R, V), 0.0);'
         + ' vec3 amb = mix(vec3(0.30, 0.27, 0.23), vec3(0.55, 0.68, 0.90), N.y * 0.5 + 0.5);'
         + ' float sheen = pow(max(dot(N, normalize(L + V)), 0.0), 64.0) * 0.45;'
         + ' float l = mix(1.0, 0.30 + 0.72 * d, licht);'
-        + ' vec3 c = pow(t.rgb, vec3(2.2)) * tint * (amb * 0.55 + l + emis);'
+        + ' vec3 c = pow(tb, vec3(2.2)) * tint * (amb * 0.55 + l + emis);'
         + ' c += vec3(pow(rv, 24.0) * 0.60 * licht + sheen * licht);'
         + ' c += vec3(0.05, 0.06, 0.07) * klar * pow(rv, 6.0) * 1.2;'
         + ' c += vec3(pow(1.0 - max(dot(N, V), 0.0), 5.0) * glas * 0.9);'
@@ -42925,7 +42973,7 @@
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'lack'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     // Feste Zwischenspeicher fuer die Matrizen je Teil (keine Float32Array je Teil und Bild).
     return { p, u, qual: !!qual, f16: new Float32Array(16), f9: new Float32Array(9), pv: new Float32Array(16), schM: new Float32Array(16),
              ap: gl.getAttribLocation(p, 'p'), an: gl.getAttribLocation(p, 'n'), auv: gl.getAttribLocation(p, 'uv') };
@@ -43782,11 +43830,11 @@
   function vfModellMalen(gl, pv, blick, auge) {
     vfModellZeichnen(gl, pv, blick, VF.modell, VF.tprog, VF.x, VF.y, VF.h, VF.feder, VF.lenkWinkel, VF.raddreh, VF.radModell,
       (typeof headlightsOn === 'undefined' ? true : !!headlightsOn),
-      !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake), vfFederSicht(), VF.pitch || 0, auge);
+      !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake), vfFederSicht(), VF.pitch || 0, auge, vfLack());
   }
   // Ein Modell an einer Stelle zeichnen. Wird fuer das Spielerauto und fuer jeden NPC benutzt:
   // M ist das gebaute Modell (vfModellBauen), T das Texturprogramm, fe der Federungszustand.
-  function vfModellZeichnen(gl, pv, blick, M, T, x, y, h, fe, lenkWinkel, raddreh, radModell, licht, bremst, fs, nick, auge) {
+  function vfModellZeichnen(gl, pv, blick, M, T, x, y, h, fe, lenkWinkel, raddreh, radModell, licht, bremst, fs, nick, auge, lackHex) {
     const d = M.d, u = T.u;
     const s = VF_AUTO.L / d.laenge;
     const lage = vfMal(vfLage(x, y, h), vfS(s, s, s));
@@ -43815,14 +43863,14 @@
       gl.activeTexture(gl.TEXTURE0);
     }
     gl.enableVertexAttribArray(T.ap); gl.enableVertexAttribArray(T.an); gl.enableVertexAttribArray(T.auv);
-    const setze = (w, tint, emis, alpha, am, hell, klar, glas) => {
+    const setze = (w, tint, emis, alpha, am, hell, klar, glas, lackF) => {
       for (let i = 0; i < 16; i++) T.f16[i] = w[i];
       gl.uniformMatrix4fv(u.w, false, T.f16);
       const nm = vfNormalen(w);
       for (let i = 0; i < 9; i++) T.f9[i] = nm[i];
       gl.uniformMatrix3fv(u.nm, false, T.f9);
       gl.uniform3f(u.tint, tint[0], tint[1], tint[2]); gl.uniform1f(u.emis, emis);
-      gl.uniform1f(u.alpha, alpha); gl.uniform1f(u.am, am); gl.uniform1f(u.licht, hell);
+      gl.uniform1f(u.alpha, alpha); gl.uniform1f(u.am, am); gl.uniform1f(u.licht, hell); gl.uniform1f(u.lack, lackF || 0);
       if (T.qual) { gl.uniform1f(u.klar, klar || 0); gl.uniform1f(u.glas, glas || 0); }
     };
     const teil = (t) => {
@@ -43859,10 +43907,13 @@
     }
     // 2. Aufbau, undurchsichtige Teile; Scheinwerfer und Ruecklicht leuchten selbst
     const ruecklichtEmis = bremst ? 1.7 : (licht ? 0.55 : 0);
+    const lackTint = vfLackTint(lackHex);
     for (const t of M.aufbauTeile) {
       const emis = t.rolle === 'scheinwerfer' ? (licht ? 1.3 : 0) : t.rolle === 'ruecklicht' ? ruecklichtEmis : 0;
       // Karosserie mit leichtem Clear-Coat-Glanz (klar, nur Quality), Scheiben/Glas dagegen nicht.
-      setze(aufbau, VF_WEISS, emis, 1, 0, 1, 0.3, 0);
+      // Der Lack betrifft nur Karosserieteile: Scheinwerfer, Ruecklichter und Scheiben bleiben unveraendert.
+      const lackTeil = !t.rolle || t.rolle === 'karosserie' || t.rolle === 'lack';
+      setze(aufbau, lackTeil ? lackTint : VF_WEISS, emis, 1, 0, 1, 0.3, 0, lackTeil && lackHex ? 1 : 0);
       teil(t);
     }
     // 3. Raeder: Mitte auf Reifenradius, vorn eingeschlagen, alle drehen; rechts gespiegelt (Muttern aussen)
@@ -44376,6 +44427,38 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Auto'), autos[ja].name, () => autoWahl(-1), () => autoWahl(1)));
+    // v1.5.10 (WIP): Vorschau des gewaehlten Autos in der gewaehlten Farbe (eine Aufnahme der echten Darstellung) und
+    // die Lackfarbe. Der Kasten hat keine Vorschau; fehlt ein Bild, verschwindet die Zeile still.
+    {
+      const jl = Math.max(0, VF_LACK_FARBEN.findIndex((f) => f.v === vfLack()));
+      const lackWahl = (dd) => { vfLackSetzen(VF_LACK_FARBEN[(jl + dd + VF_LACK_FARBEN.length) % VF_LACK_FARBEN.length].v); renderGarage(); };
+      const zeile = garWertZeile(t('Lackfarbe'), t(VF_LACK_FARBEN[jl].n), () => lackWahl(-1), () => lackWahl(1));
+      zeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+      const palette = document.createElement('span');
+      palette.className = 'vf-lack-palette';
+      VF_LACK_FARBEN.forEach((f, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'vf-lack' + (i === jl ? ' aktiv' : '');
+        b.style.background = f.v || 'linear-gradient(135deg,#c8102e 0%,#0057b8 50%,#e8e8e8 100%)';
+        b.title = t(f.n); b.setAttribute('aria-label', t(f.n));
+        b.onclick = (e) => { e.stopPropagation(); vfLackSetzen(f.v); renderGarage(); };
+        palette.appendChild(b);
+      });
+      zeile.querySelector('.gk-w').appendChild(palette);
+      if (autos[ja].v !== 'kasten') {
+        const vor = document.createElement('div');
+        vor.className = 'opt-row opt-breit vf-vorschau';
+        const img = document.createElement('img');
+        img.className = 'vf-vorschau-bild';
+        img.alt = autos[ja].name;
+        img.src = vfModellPfad(autos[ja].v) + 'vorschau_' + vfLackId(vfLack()) + '.jpg';
+        img.onerror = () => { vor.remove(); };
+        vor.appendChild(img);
+        rechts.appendChild(vor);
+      }
+      rechts.appendChild(zeile);
+    }
     // v1.3.39 (WIP): der Fussboden unter der Bahn, Dielen in echten Massen (siehe VF_BOEDEN).
     const jb = Math.max(0, VF_BOEDEN.findIndex((b) => b.id === vfBodenWahl()));
     const bodenWahl = (dd) => { vfBodenSetzen(VF_BOEDEN[(jb + dd + VF_BOEDEN.length) % VF_BOEDEN.length].id); renderGarage(); };
@@ -115821,6 +115904,43 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
+
+  // v1.5.10: Lackfarbe und Vorschaubilder des virtuellen Fahrens (WIP).
+  stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto und Farbe', async () => {
+    const f = [];
+    // Daten: acht Farben plus Original, eindeutige Kennungen, jede Farbe wird gefunden.
+    const ids = VF_LACK_FARBEN.map((x) => x.id);
+    if (new Set(ids).size !== ids.length) f.push('Kennungen nicht eindeutig');
+    if (VF_LACK_FARBEN.length !== 9 || VF_LACK_FARBEN[0].v !== '') f.push('Farbliste: ' + VF_LACK_FARBEN.length);
+    for (const x of VF_LACK_FARBEN) if (vfLackId(x.v) !== x.id) f.push('vfLackId(' + x.v + ') = ' + vfLackId(x.v));
+    if (vfLackTint('')[0] !== 1 || vfLackTint('')[1] !== 1) f.push('ohne Farbe getoent');
+    const rot = vfLackTint('#c8102e');
+    if (!(rot[0] > 0.7 && rot[1] < 0.1 && rot[2] < 0.25)) f.push('Rot ist ' + rot.map((x) => x.toFixed(2)).join(','));
+    // Speicher: nur bekannte Farben werden gelesen.
+    const merk = (() => { try { return localStorage.getItem(VF_LACK_STORE); } catch (e) { return null; } })();
+    try {
+      vfLackSetzen('#0057b8'); if (vfLack() !== '#0057b8') f.push('Blau nicht gemerkt');
+      vfLackSetzen('#123456'); if (vfLack() !== '') f.push('unbekannte Farbe wird gelesen: ' + vfLack());
+      vfLackSetzen(''); if (vfLack() !== '') f.push('Original nicht gemerkt');
+    } finally {
+      try { if (merk === null) localStorage.removeItem(VF_LACK_STORE); else localStorage.setItem(VF_LACK_STORE, merk); } catch (e) { /* privat */ }
+    }
+    // Der Shader kennt das Umfaerben (beide Varianten) - ohne den Wert fiele die Farbe stillschweigend weg.
+    const quelle = Array.from(document.scripts).map((x) => x.text).join(' ');
+    if ((quelle.match(/uniform float lack;/g) || []).length < 2) f.push('Shader ohne uniform lack in beiden Varianten');
+    // Vorschaubilder: jedes Auto in jeder Farbe.
+    const fehlt = [];
+    for (const m of Object.keys(VF_MODELL_PFADE)) {
+      for (const id of ids) {
+        try {
+          const r = await fetch(VF_MODELL_PFADE[m] + 'vorschau_' + id + '.jpg', { method: 'HEAD', cache: 'no-store' });
+          if (!r.ok) fehlt.push(m + '/' + id);
+        } catch (e) { fehlt.push(m + '/' + id); }
+      }
+    }
+    if (fehlt.length) f.push(fehlt.length + ' Vorschaubilder fehlen: ' + fehlt.slice(0, 6).join(', '));
+    return { ok: !f.length, mass: f.length ? f.join('; ') : ids.length + ' Farben, Umfaerben im Shader, ' + Object.keys(VF_MODELL_PFADE).length * ids.length + ' Vorschaubilder vorhanden' };
+  });
 
   // v1.5.3: Die Bruecke der Android-App mit einer Attrappe von Capacitor. Vorher gab es fuer diesen Weg keinen
   // Test; er ist der einzige Weg, auf dem die App ein Auto verbindet.
