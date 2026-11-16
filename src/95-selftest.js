@@ -24154,22 +24154,8 @@
   });
 
   // Review nach 1.3.131: die Drehzahl-Vibration auf R2 (DualSense) gilt nur in der virtuellen Fahrt.
-  stAdd('DualSense: R2-Vibration nur in der virtuellen Fahrt', () => {
-    if (typeof dsRechtsStufe !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein DualSense-Teil' };
-    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
-    const st = physEngine.state, merk = { rpm: st.rpmFrac, lu: st.longUse, thr: bindings.throttle, phys: physicsEnabled };
-    try {
-      bindings.throttle = { type: 'button', index: 7 };
-      physicsEnabled = true; st.rpmFrac = 0.97; st.longUse = 1;
-      const echt = dsRechtsStufe();
-      VF.aktiv = true;
-      const virtuell = dsRechtsStufe();
-      VF.aktiv = false;
-      return { ok: echt === 0 && virtuell > 0, mass: 'echt ' + echt + ', virtuell ' + virtuell };
-    } finally {
-      VF.aktiv = false; st.rpmFrac = merk.rpm; st.longUse = merk.lu; bindings.throttle = merk.thr; physicsEnabled = merk.phys;
-    }
-  });
+  // v1.5.29: der Test "R2-Vibration nur in der virtuellen Fahrt" entfaellt mit dem Drehzahl-Hinweis; die Trigger
+  // folgen jetzt LibreCorsa (Test "DualSense v1.5.29").
 
   // Review nach 1.3.131: fehlt auf Deutsch ein Tutorial-Clip, bleibt es still (Text steht da) statt der
   // Geraetestimme mit en-US; englische Clips spielen nur im englischen Modus.
@@ -26278,6 +26264,37 @@
   }
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
+
+  // v1.5.29: DualSense-Trigger wie bei LibreCorsa.
+  stAdd('DualSense v1.5.29: Bremse mit Widerstand und ABS-Vibration, Gas mit Schlupf/TC, Halten 150 ms', () => {
+    const f = [];
+    const w = dsWiderstand(1, 2, 7);
+    if (w[0] !== 0x21 || w[1] !== 0xfe || w[2] !== 0x03) f.push('Widerstand: ' + Array.from(w.slice(0, 3)).join(','));
+    // Staerke steigt ueber den Weg (Zone 1 = 2, Zone 9 = 7, als 3-Bit-Werte s-1).
+    const pack = w[3] | (w[4] << 8) | (w[5] << 16) | (w[6] << 24);
+    const z1 = (pack >>> 3) & 7, z9 = (pack >>> 27) & 7;
+    if (!(z1 === 1 && z9 === 6)) f.push('Verlauf ' + z1 + '..' + z9);
+    const e = (o) => Object.assign({ physik: true, bremse: 0, gas: 0, abs: false, absAn: true, tcAn: false, nutzV: 0, nutzH: 0, kmh: 50 }, o);
+    const fall = (o, l, r) => { const a = dsTriggerArt(e(o)); if (a.links !== l || a.rechts !== r) f.push(JSON.stringify(o) + ' -> ' + a.links + '/' + a.rechts + ' statt ' + l + '/' + r); };
+    fall({}, 'pedal', 'gas');
+    fall({ bremse: 0.9, abs: true }, 'abs', 'gas');
+    fall({ bremse: 0.6, absAn: false, nutzV: 1.2 }, 'block', 'gas');
+    fall({ bremse: 0.6, absAn: false, nutzV: 0.95 }, 'grenze', 'gas');
+    fall({ gas: 0.9, nutzH: 1.2 }, 'pedal', 'spin');
+    fall({ gas: 0.9, nutzH: 1.2, tcAn: true }, 'pedal', 'tc');
+    fall({ gas: 0.9, nutzH: 0.95 }, 'pedal', 'grenze');
+    fall({ gas: 0.2, nutzH: 1.5 }, 'pedal', 'gas');
+    if (dsTriggerArt({ physik: false }).links !== 'aus') f.push('ohne Physik nicht aus');
+    // Frequenzen der Vibrationen.
+    if (dsEffekt('abs', true)[9] !== 20 || dsEffekt('block', true)[9] !== 12 || dsEffekt('tc', false)[9] !== 18 || dsEffekt('spin', false)[9] !== 35) f.push('Frequenzen falsch');
+    // Halten: ABS flackert ein Bild weg, der Trigger bleibt 150 ms bei ABS.
+    dsHalt.links = { art: 'aus', bis: 0 };
+    if (dsHalten('links', 'abs', 1000) !== 'abs') f.push('ABS nicht sofort');
+    if (dsHalten('links', 'pedal', 1060) !== 'abs') f.push('ABS nach 60 ms schon weg');
+    if (dsHalten('links', 'pedal', 1200) !== 'pedal') f.push('nach 200 ms noch ABS');
+    dsHalt.links = { art: 'aus', bis: 0 }; dsHalt.rechts = { art: 'aus', bis: 0 };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Widerstand 0x21 mit Verlauf, acht Lagen richtig, Frequenzen 20/12/18/35, Halten 150 ms' };
+  });
 
   // v1.5.25: LibreCorsa fuer echte Autos; Gran Hybrismo und Assetto Carrera sind entfernt (ihre Tests mit ihnen).
   stAdd('Fahrgefuehl v1.5.25: LibreCorsa (Preset, Modus, Uebersteuern schaltbar), Gran/Assetto laden als LibreCorsa', () => {

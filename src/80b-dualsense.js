@@ -28,6 +28,70 @@
     return e;
   }
   function dsAus() { const e = new Uint8Array(11); e[0] = 0x05; return e; }
+  // v1.5.29: WIDERSTAND ueber den Weg (Effekt "Feedback" 0x21, dieselbe Packung wie die Vibration ohne Frequenz):
+  // ab Zone start (0..9) waechst die Staerke von s0 bis s1 (1..8). So wird ein Pedal nach unten fester.
+  function dsWiderstand(start, s0, s1) {
+    const e = new Uint8Array(11);
+    let zonen = 0, staerken = 0;
+    const a = Math.max(0, Math.min(9, start));
+    for (let i = a; i < 10; i++) {
+      const k = a === 9 ? 1 : (i - a) / (9 - a);
+      const st = Math.max(0, Math.min(7, Math.round(s0 + (s1 - s0) * k) - 1));
+      zonen |= 1 << i; staerken |= st << (3 * i);
+    }
+    e[0] = 0x21;
+    e[1] = zonen & 0xff; e[2] = (zonen >> 8) & 0xff;
+    e[3] = staerken & 0xff; e[4] = (staerken >>> 8) & 0xff; e[5] = (staerken >>> 16) & 0xff; e[6] = (staerken >>> 24) & 0xff;
+    return e;
+  }
+  // ---- TRIGGER WIE BEI LIBRECORSA (v1.5.29, WIP) -----------------------------------------------------
+  // BESTELLT: "Die Trigger-Effekte vom DualSense sollten, wenn sie gehen, immer so wie die bei LibreCorsa sein."
+  // Nach der Beschreibung dort (kein Code uebernommen): L2 ist das Bremspedal, ein Widerstand, der ueber den Weg
+  // fester wird; regelt das ABS, vibriert er (20 Hz), blockiert ein Rad (12 Hz); ohne ABS nahe der Haftgrenze ein
+  // leichtes Summen (40 Hz). R2 ist das Gas: leichter Widerstand; drehen die Hinterraeder durch, vibriert er (35 Hz),
+  // regelt die Traktionskontrolle (18 Hz); ohne TC nahe der Grenze ein schwaches Summen (40 Hz). Ein Effekt bleibt
+  // DS_HALTE_MS stehen, damit ein Signal, das nur ein Bild flackert, nicht zwischen den Arten springt.
+  // Gilt in allen Fahrgefuehlen mit Physik, echt und virtuell. RC (ohne Physik): Trigger aus.
+  const DS_HZ = { abs: 20, block: 12, tc: 18, spin: 35, grenze: 40 };
+  const DS_HALTE_MS = 150;
+  // Rein, fuer den Selbsttest: aus dem Zustand die Art je Trigger. e: { physik, bremse (0..1), gas (0..1), abs (bool),
+  // absAn (Hilfe aktiv), tcAn, nutzV, nutzH (Ausnutzung der Haftung vorn/hinten, 1 = Grenze), kmh }.
+  function dsTriggerArt(e) {
+    if (!e || !e.physik) return { links: 'aus', rechts: 'aus' };
+    let links = 'pedal', rechts = 'gas';
+    if (e.bremse > 0.05) {
+      if (e.abs) links = 'abs';
+      else if (!e.absAn && e.nutzV > 1.05 && e.kmh > 5) links = 'block';
+      else if (!e.absAn && e.nutzV > 0.9) links = 'grenze';
+    }
+    if (e.gas > 0.4) {
+      if (e.nutzH > 1.0) rechts = e.tcAn ? 'tc' : 'spin';
+      else if (!e.tcAn && e.nutzH > 0.9) rechts = 'grenze';
+    }
+    return { links, rechts };
+  }
+  function dsEffekt(art, links) {
+    switch (art) {
+      case 'pedal': return dsWiderstand(1, 2, 7);           // Bremse: wird nach unten fester
+      case 'gas': return dsWiderstand(1, 2, 3);             // Gas: leicht
+      case 'abs': return dsVibration(2, 6, DS_HZ.abs);
+      case 'block': return dsVibration(2, 7, DS_HZ.block);
+      case 'tc': return dsVibration(1, 5, DS_HZ.tc);
+      case 'spin': return dsVibration(1, 6, DS_HZ.spin);
+      case 'grenze': return dsVibration(links ? 3 : 2, 2, DS_HZ.grenze);
+      default: return dsAus();
+    }
+  }
+  const dsHalt = { links: { art: 'aus', bis: 0 }, rechts: { art: 'aus', bis: 0 } };
+  // Haelt eine Vibration DS_HALTE_MS fest: eine neue Art gilt sofort, das Zurueckfallen auf den Grundzustand erst danach.
+  function dsHalten(seite, art, jetzt) {
+    const h = dsHalt[seite];
+    const grund = art === 'pedal' || art === 'gas' || art === 'aus';
+    if (!grund) { h.art = art; h.bis = jetzt + DS_HALTE_MS; return art; }
+    if (h.bis > jetzt && h.art !== 'aus' && h.art !== 'pedal' && h.art !== 'gas') return h.art;
+    h.art = art; h.bis = 0;
+    return art;
+  }
   // Die 47 Byte, die USB und Bluetooth gemeinsam haben.
   function dsGemeinsam(links, rechts) {
     const c = new Uint8Array(47);
@@ -102,29 +166,33 @@
   function dsGasRechts() {
     return !!(typeof bindings !== 'undefined' && bindings.throttle && bindings.throttle.type === 'button' && bindings.throttle.index === 7);
   }
-  // Drehzahl-Feedback auf dem Gaspedal (dezent, v1.3.107): nahe der Drehzahlgrenze VIBRIERT der
-  // rechte Trigger (dsVibration, kein fester Widerstand), mit der Drehzahl staerker - ein leiser
-  // Hinweis zum Schalten. Nur in der virtuellen Fahrt: beim echten Fahren schaltet das Auto selbst,
-  // und ein summender Gas-Trigger stoert dort die feine Dosierung (Review nach 1.3.131).
-  function dsRechtsStufe() {
-    if (typeof vfAktiv !== 'function' || !vfAktiv()) return 0;
-    if (!dsGasRechts() || !physicsEnabled || !physEngine.state) return 0;
-    const st = physEngine.state;
-    if (Math.max(0, st.longUse || 0) <= 0.02) return 0;
-    const frac = Math.max(0, Math.min(1, st.rpmFrac || 0));
-    if (frac < 0.70) return 0;
-    return Math.min(6, 2 + Math.round((frac - 0.70) / 0.30 * 4));
+  // v1.5.29: der Drehzahl-Hinweis auf dem Gas (v1.3.107) entfaellt; LibreCorsa zeigt die Drehzahl am Leuchtbalken,
+  // nicht am Trigger, und ein summendes Gas stoerte beim echten Fahren die feine Dosierung.
+  function dsEingang() {
+    const st = physEngine && physEngine.state;
+    const an = !!($('vib-trigger') ? $('vib-trigger').checked : true);
+    if (!an || !physicsEnabled || !st) return { physik: false };
+    return {
+      physik: true,
+      bremse: dsBremseLinks() ? Math.max(0, -(st.longUse || 0)) : 0,
+      gas: dsGasRechts() ? Math.max(0, st.longUse || 0) : 0,
+      abs: !!st.absActive && !!($('vib-abs') ? $('vib-abs').checked : true),
+      absAn: true,
+      tcAn: (st.setupTc || 0) > 0,
+      nutzV: st.pacNutzV || 0, nutzH: st.pacNutzH || 0,
+      kmh: Math.abs(st.speedKmh || 0),
+    };
   }
   function dsTick() {
     if (!dsGeraet) return;
-    const absAn = !!($('vib-abs') ? $('vib-abs').checked : true);
-    const linksAn = absAn && dsBremseLinks() && physicsEnabled && !!(physEngine.state && physEngine.state.absActive);
-    const rechtsStufe = dsRechtsStufe();
-    const schluessel = (linksAn ? 'l' : '-') + (rechtsStufe || 0);
+    const jetzt = performance.now();
+    const a = dsTriggerArt(dsEingang());
+    const l = dsBremseLinks() ? dsHalten('links', a.links, jetzt) : 'aus';
+    const r = dsGasRechts() ? dsHalten('rechts', a.rechts, jetzt) : 'aus';
+    const schluessel = l + '|' + r;
     if (schluessel === dsZustand) return;
     dsZustand = schluessel;
-    dsSenden(linksAn ? dsVibration(DS_ABS.position, DS_ABS.staerke, DS_ABS.frequenz) : dsAus(),
-             rechtsStufe ? dsVibration(0, rechtsStufe, 25) : dsAus());
+    dsSenden(dsEffekt(l, true), dsEffekt(r, false));
   }
   setInterval(dsTick, 60);
   if ($('ds-verbinden')) $('ds-verbinden').addEventListener('click', dsVerbinden);
