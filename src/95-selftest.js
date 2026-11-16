@@ -26463,6 +26463,28 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  // v1.5.19: Regen im virtuellen Fahren, Raeder ohne Kartenschatten.
+  stAdd('Virtuell v1.5.19: 3D-Regen folgt dem Wetter, Raeder ohne drehenden Kartenschatten', () => {
+    const f = [];
+    if (VF_RAD_KARTENSCHATTEN !== false) f.push('Raeder werfen weiter Kartenschatten');
+    const quelle = vfModellSchatten.toString();
+    if (quelle.indexOf('vfRx(raddreh') >= 0) f.push('Schattenkarte dreht die Raeder noch');
+    if (!(VF_REGEN_N.perf > 0 && VF_REGEN_N.qual >= VF_REGEN_N.perf && VF_REGEN_N.qual <= 4000)) f.push('Tropfenzahl ' + JSON.stringify(VF_REGEN_N));
+    const merk = { front: wxFront, to: wxFrontTo, w: weather };
+    try {
+      wxFront = -1; wxFrontTo = -1;
+      if (vfRegenStaerke() !== 0) f.push('trocken, aber Regen ' + vfRegenStaerke());
+      wxFront = 0; wxFrontTo = 0;
+      if (vfRegenStaerke() !== 1) f.push('volle Front, aber Regen ' + vfRegenStaerke());
+      wxFront = -0.5;
+      if (Math.abs(vfRegenStaerke() - 0.5) > 1e-9) f.push('halbe Front, aber Regen ' + vfRegenStaerke());
+    } finally { wxFront = merk.front; wxFrontTo = merk.to; }
+    // Der Schleier und die Tropfen mischen nur die Farbe (Ziel-Alpha bleibt), sonst wuerde der Canvas durchsichtig.
+    const rq = vfRegenMalen.toString() + vfRegenSchleier.toString();
+    if (rq.indexOf('gl.blendFunc(') >= 0 || rq.indexOf('blendFuncSeparate') < 0) f.push('Regen mischt das Ziel-Alpha mit');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Regenstaerke = Wetterfront, Tropfen ' + VF_REGEN_N.perf + '/' + VF_REGEN_N.qual + ', Raeder ohne Kartenschatten' };
+  });
+
   // v1.5.16: Renneinstellungen im virtuellen Fahren.
   stAdd('Virtuell v1.5.16: Startwetter aus den Renneinstellungen, nicht Verfuegbares wird genannt, Schaden-Schalter', () => {
     const f = [];

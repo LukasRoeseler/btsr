@@ -1566,6 +1566,7 @@
   }
   // Ein Modell in die Schattenkarte zeichnen (nur die undurchsichtigen Karosserie- und Radteile). Die
   // Teillisten sind beim Bauen sortiert (M.aufbauTeile, M.radTeile), die Matrix geht ueber SP.f16.
+  const VF_RAD_KARTENSCHATTEN = false;   // v1.5.19: Raeder ohne Schatten in der Schattenkarte (siehe unten)
   function vfModellSchatten(gl, SP, M, x, y, h, fe, lenkWinkel, raddreh, radModell, fs, nick, schM) {
     const d = M.d;
     const s = VF_AUTO.L / d.laenge;
@@ -1582,6 +1583,12 @@
     gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
     for (const t of M.aufbauTeile) gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
+    // v1.5.19 GEMELDET: "entferne die komischen sich drehenden flachen/spitzen Schatten der Raeder im Quality-Modus".
+    // Die Raeder gingen DREHEND in die Schattenkarte; bei der steilen Sonne sieht die Karte die Felge fast von der
+    // Kante, und Speichen oder Ventil warfen eine flache bzw. spitze Silhouette, die mitlief. Auch ohne Drehung blieben
+    // lange spitze Streifen (gemessen im Bild). Darum werfen die Raeder GAR KEINEN Kartenschatten mehr: den Boden
+    // unter ihnen dunkelt der weiche Kontaktschatten des Autos (M.schatten), der Aufbau wirft weiter seinen Schatten.
+    if (VF_RAD_KARTENSCHATTEN) {
     const radTeile = M.radTeile;
     const halbW = d.breite / 2;
     for (let k = 0; k < 4; k++) {
@@ -1589,19 +1596,20 @@
       const r = d.reifen[ax];
       const dreh = vfRy(ax === 'vorn' ? -(lenkWinkel || 0) : 0);
       if (radTeile.length) {
-        matrix(vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), dreh, vfRx(raddreh || 0), vfS(seite * r.breite, 2 * r.radius, 2 * r.radius)));
+        matrix(vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), dreh, vfRx(0), vfS(seite * r.breite, 2 * r.radius, 2 * r.radius)));
         gl.bindBuffer(gl.ARRAY_BUFFER, M.vbo);
         gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, 0);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
         for (const t of radTeile) gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
       } else if (radModell && radModell.teile.length) {
         const xW = seite * Math.max(r.spur / 2, halbW + 0.12 - 0.5 * r.breite);
-        matrix(vfKette(lage, vfT(xW, r.radius, z), dreh, vfRx(raddreh || 0), vfS(seite * r.breite, 2 * r.radius, 2 * r.radius)));
+        matrix(vfKette(lage, vfT(xW, r.radius, z), dreh, vfRx(0), vfS(seite * r.breite, 2 * r.radius, 2 * r.radius)));
         gl.bindBuffer(gl.ARRAY_BUFFER, radModell.vbo);
         gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, 0);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, radModell.ibo);
         for (const t of radModell.teile) gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
       }
+    }
     }
     gl.disableVertexAttribArray(SP.ap);
   }
@@ -2193,6 +2201,108 @@
           !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, k.auge);
       }
     }
+    // v1.5.19: Regen zuletzt (durchsichtig, ohne Tiefe zu schreiben).
+    try { vfRegenMalen(gl, pv, k.auge, VF.dtBild || 0.016); } catch (e) { VF.regen = null; }
+  }
+  // ---- 3D-REGEN (v1.5.19, WIP) -------------------------------------------------------------------------
+  // BESTELLT: "mache 3D-Regeneffekte (aktuell ist der Regen nicht schoen)". Regen kommt aus dem Wetter des Rennens
+  // (wxRainLevel, dieselbe Front wie beim echten Fahren). Die Tropfen sind kurze Striche IM RAUM: ein Kasten um die
+  // Kamera, in dem jeder Tropfen faellt und vom Fahrtwind schraeg gezogen wird; verlaesst er den Kasten, kommt er auf
+  // der anderen Seite wieder herein (mod im Vertex-Shader). Die CPU rechnet je Bild nichts ausser drei Zahlen; die
+  // Zahl der gezeichneten Tropfen folgt der Regenstaerke (Performance 700, Quality 2000). Dazu ein grauer Schleier
+  // ueber dem Bild (Vollbild-Viereck), der mit der Staerke dichter wird.
+  const VF_REGEN_N = { perf: 700, qual: 2000 };
+  const VF_REGEN_KASTEN = [70, 34, 70];       // Streckeneinheiten (1 Einheit ~ 0,48 m eines GT3)
+  const VF_REGEN_FALL = 26;                   // Einheiten je s (~12 m/s, Regentropfen)
+  function vfRegenBauen(gl, n) {
+    const p = gl.createProgram();
+    gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
+      'attribute vec4 a; uniform mat4 m; uniform vec3 auge; uniform vec3 kasten; uniform vec3 fall; uniform vec3 strich; uniform float t;'
+      + 'varying float va;'
+      + 'void main(){ vec3 lo = auge - kasten * 0.5; vec3 q = a.xyz * kasten + fall * t;'
+      + ' q = mod(q - lo, kasten) + lo; q -= strich * a.w;'
+      + ' gl_Position = m * vec4(q, 1.0); va = 1.0 - a.w * 0.85; }'));
+    gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
+      'precision mediump float; varying float va; uniform float staerke;'
+      + 'void main(){ gl_FragColor = vec4(0.82, 0.87, 0.94, 0.62 * va * staerke); }'));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const d = new Float32Array(n * 8);
+    for (let i = 0; i < n; i++) {
+      const x = Math.random(), y = Math.random(), z = Math.random();
+      d.set([x, y, z, 0, x, y, z, 1], i * 8);
+    }
+    const b = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, d, gl.STATIC_DRAW);
+    const u = {};
+    ['m', 'auge', 'kasten', 'fall', 'strich', 't', 'staerke'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    return { p, b, n, u, a: gl.getAttribLocation(p, 'a'), m16: new Float32Array(16), t: 0 };
+  }
+  function vfRegenStaerke() {
+    try { return typeof wxRainLevel === 'function' ? Math.max(0, Math.min(1, wxRainLevel())) : 0; } catch (e) { return 0; }
+  }
+  function vfRegenMalen(gl, pv, auge, dt) {
+    const st = vfRegenStaerke();
+    if (st < 0.02) return;
+    vfRegenSchleier(gl, st);        // erst der Schleier, dann die Tropfen darueber (sonst verschwinden sie im Grau)
+    if (!VF.regen) VF.regen = vfRegenBauen(gl, VF.grafik ? VF_REGEN_N.qual : VF_REGEN_N.perf);
+    const R = VF.regen;
+    R.t = (R.t + Math.min(0.1, dt || 0.016)) % 1000;
+    // Fahrtwind: die Tropfen bewegen sich relativ zum Auto rueckwaerts; der Strich zeigt die Bewegung im Bild.
+    const kmh = Math.max(0, (physEngine && physEngine.state && physEngine.state.speedKmh) || 0);
+    const vE = kmh / 3.6 * 100 * TRACK_UNITS_PER_CM;
+    const hr = (VF.h || 0) * Math.PI / 180;
+    const vx = Math.sin(hr) * vE, vz = -Math.cos(hr) * vE;
+    const fall = [0, -VF_REGEN_FALL, 0];
+    // Strich: Weg in 0,05 s relativ zur Kamera (Fall minus eigene Bewegung), mindestens 0,8 Einheiten lang.
+    let sx = (fall[0] - vx) * 0.05, sy = fall[1] * 0.05, sz = (fall[2] - vz) * 0.05;
+    const sl = Math.hypot(sx, sy, sz) || 1, ml = Math.max(0.8, sl);
+    sx *= ml / sl; sy *= ml / sl; sz *= ml / sl;
+    gl.useProgram(R.p);
+    for (let i = 0; i < 16; i++) R.m16[i] = pv[i];
+    gl.uniformMatrix4fv(R.u.m, false, R.m16);
+    gl.uniform3f(R.u.auge, auge[0], auge[1], auge[2]);
+    gl.uniform3f(R.u.kasten, VF_REGEN_KASTEN[0], VF_REGEN_KASTEN[1], VF_REGEN_KASTEN[2]);
+    gl.uniform3f(R.u.fall, fall[0], fall[1], fall[2]);
+    gl.uniform3f(R.u.strich, sx, sy, sz);
+    gl.uniform1f(R.u.t, R.t);
+    gl.uniform1f(R.u.staerke, 0.4 + 0.6 * st);
+    gl.bindBuffer(gl.ARRAY_BUFFER, R.b);
+    gl.enableVertexAttribArray(R.a);
+    gl.vertexAttribPointer(R.a, 4, gl.FLOAT, false, 16, 0);
+    gl.enable(gl.BLEND); gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE); gl.depthMask(false);
+    gl.drawArrays(gl.LINES, 0, Math.max(2, Math.round(R.n * st) * 2));
+    gl.depthMask(true); gl.disable(gl.BLEND);
+    gl.disableVertexAttribArray(R.a);
+  }
+  // Grauer Schleier ueber dem Bild: ein Vollbild-Viereck im selben Kontext (ein DOM-Schleier ueber dem Canvas war
+  // im Bild nicht zu sehen). Gemischt wird nur die Farbe (blendFuncSeparate, Ziel-Alpha bleibt 1): mit dem
+  // einfachen blendFunc wurde der Canvas halb durchsichtig, und der helle Seitenhintergrund wusch das Bild aus. Zwei Dreiecke, eine Farbe, Deckkraft mit der Regenstaerke.
+  function vfRegenSchleier(gl, st) {
+    if (st < 0.02) return;
+    if (!VF.schleier) {
+      const p = gl.createProgram();
+      gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER, 'attribute vec2 a; varying float vy; void main(){ vy = a.y; gl_Position = vec4(a, 0.0, 1.0); }'));
+      gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER, 'precision mediump float; varying float vy; uniform float st;'
+        + 'void main(){ gl_FragColor = vec4(mix(vec3(0.16, 0.19, 0.24), vec3(0.30, 0.35, 0.42), vy * 0.5 + 0.5), 0.38 * st); }'));
+      gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+      const b = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, b);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
+      VF.schleier = { p, b, a: gl.getAttribLocation(p, 'a'), st: gl.getUniformLocation(p, 'st') };
+    }
+    const S = VF.schleier;
+    gl.useProgram(S.p);
+    gl.uniform1f(S.st, st);
+    gl.bindBuffer(gl.ARRAY_BUFFER, S.b);
+    gl.enableVertexAttribArray(S.a);
+    gl.vertexAttribPointer(S.a, 2, gl.FLOAT, false, 8, 0);
+    gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.disable(gl.BLEND); gl.enable(gl.DEPTH_TEST);
+    gl.disableVertexAttribArray(S.a);
   }
   // ---- Kamera (v1.1.11) --------------------------------------------------------------------
   // BESTELLT: "Wenn ich den rechten Stick reindruecke im virtuellen Fahren, aendere die Kamera zu
@@ -3243,7 +3353,7 @@
     }
     VF.aktiv = false;
     VF.npcs = null; VF.npcBogen = null; VF.npcRunde = 0;
-    VF.schatte = null; VF.schatteProg = null; VF.grafik = false;
+    VF.schatte = null; VF.schatteProg = null; VF.grafik = false; VF.regen = null; VF.schleier = null;
     // Was die virtuelle Fahrt am echten Fahren veraendert hat, zuruecknehmen: Schaden wie beim Start,
     // eine hier gesetzte gelbe Flagge (Knopf "Gelbe Flagge") aufheben, gehaltene Touch-Eingaben loslassen
     // (die Schicht verschwindet, ein pointerup kaeme nie mehr) und keine dreckige Luft mitnehmen.
