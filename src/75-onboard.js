@@ -7,7 +7,8 @@
   // wie eine WEBCAM - also braucht es hier nichts als getUserMedia, keine eigene Hardware-
   // Schnittstelle wie bei der Startampel.
   //
-  //   Optionen -> AddOn -> Onboard-Kamera     Einschalten, Kamera waehlen, Bild drehen
+  //   Garage -> Onboard-Kamera (v1.5)         Einschalten, Quelle (USB oder WLAN), Bild drehen
+  //   (bei gnen54 unter Optionen -> AddOn; OmegaSim hat keine AddOn-Seite)
   //   Cockpit, Schirm "Onboard"               Livebild mit Runde, Zeit, km/h
   //   Aufnahme (Knopf oder Waehltaste X)      Video MIT Anzeige (Runde, Zeit, km/h, Ampel,
   //                                           Gelbe Flagge), gespeichert als MP4/WebM
@@ -15,6 +16,13 @@
   //
   // DIE AUFNAHME LAEUFT UEBER EIN CANVAS und nicht direkt am Kamerastrom: nur so kommen
   // Rundenzeit und Ampel ins Video. Der Kamerastrom selbst wird nie veraendert.
+  //
+  // v1.5 (WIP) ZWEITE QUELLE: M5Stack Timer Camera (ESP32 mit PSRAM) oder eine andere ESP32-Kamera
+  // im WLAN, die ein MJPEG-Bild liefert (http://<adresse>/stream). Ein <img> zeigt den Strom; der
+  // Rest (Schirm, Anzeige, Aufnahme) ist derselbe. Aufnehmen geht nur, wenn die Kamera CORS erlaubt
+  // (Access-Control-Allow-Origin), sonst waere das Canvas "verschmutzt". Die Webseite ueber https darf
+  // kein http-Bild laden; in der Android-App (allowMixedContent) und ueber localhost geht es.
+  // Firmware-Hinweise: tools/onboard/README.md.
   //
   // ZUSTAND IN EINEM var, und das ist Absicht. 50-drive.js fragt beim Laden ueber
   // cockpitScreenGilt() -> onboardAktiv(), ob der Schirm blaetterbar ist - VOR dieser Datei.
@@ -24,14 +32,18 @@
   function onbZustand() {
     if (!onbZ) {
       onbZ = { stream: null, an: false, fehler: '', rec: null, wache: null,
-               zuletzt: 'idle', malTakt: 0, einst: null };
+               zuletzt: 'idle', malTakt: 0, einst: null,
+               m5: null, m5Cors: false, m5Neu: 0 };
     }
     return onbZ;
   }
 
   const ONB_STORE = 'omegasim-onboard';
   const ONB_VORGABE = { an: false, quelle: '', quelleName: '', drehen: false,
-                        beimStart: true, autoRec: false };
+                        beimStart: true, autoRec: false, art: 'usb', m5: '' };
+  // Wie lange eine Adresse fuer das erste Bild Zeit hat, und der Abstand der Neuversuche nach einem Abriss.
+  const ONB_M5_WARTE_MS = 6000;
+  const ONB_M5_NEU_MS = 4000;
   // Obergrenze einer Aufnahme: der Puffer liegt bis zum Speichern im Speicher des Tablets.
   // 15 min bei 3 Mbit/s sind rund 340 MB - mehr will man einem Tablet nicht zumuten.
   const ONB_MAX_MS = 15 * 60 * 1000;
@@ -57,9 +69,114 @@
   // Fuer 50-drive.js: den Schirm "Onboard" gibt es nur, solange ein Bild da ist.
   function onboardAktiv() {
     const z = onbZ;
-    if (!z || !z.stream) return false;
+    if (!z) return false;
+    if (z.m5) {
+      const img = $('onboard-bild');
+      return !!(img && img.naturalWidth > 0);
+    }
+    if (!z.stream) return false;
     const tr = z.stream.getVideoTracks()[0];
     return !!(tr && tr.readyState === 'live');
+  }
+
+  // ---- WLAN-Kamera (M5Stack Timer Camera, ESP32) ----
+  function onbApp() {
+    const C = window.Capacitor;
+    return !!(C && C.isNativePlatform && C.isNativePlatform());
+  }
+  // "192.168.1.50" -> http://192.168.1.50/stream; mit Pfad oder Schema bleibt es, wie es ist.
+  function onbM5Url(adr) {
+    let a = String(adr || '').trim();
+    if (!a) return '';
+    if (!/^https?:[/][/]/i.test(a)) a = 'http://' + a;
+    try {
+      const u = new URL(a);
+      if (u.pathname === '/' || u.pathname === '') u.pathname = '/stream';
+      return u.href;
+    } catch (e) { return ''; }
+  }
+  // Die Kandidaten: die Adresse selbst; ohne Port und Pfad zusaetzlich Port 81 (so streamt das
+  // Arduino-Beispiel CameraWebServer).
+  function onbM5Kandidaten(adr) {
+    const url = onbM5Url(adr);
+    if (!url) return [];
+    const liste = [url];
+    const roh = String(adr || '').trim().replace(/^https?:[/][/]/i, '');
+    if (!/[:/]/.test(roh)) {
+      try { const u = new URL(url); u.port = '81'; liste.push(u.href); } catch (e) { /* nur die eine */ }
+    }
+    return liste;
+  }
+  // https-Seite und http-Bild: der Browser laedt es nicht (gemischte Inhalte). App und localhost duerfen.
+  function onbM5Gesperrt(url) {
+    if (onbApp() || !/^http:/i.test(url)) return false;
+    return location.protocol === 'https:' && !/^(localhost|127[.]0[.]0[.]1|\[::1\])$/.test(location.hostname);
+  }
+  function onbM5Hinweis() {
+    const h = $('onboard-m5-hinweis');
+    if (!h) return;
+    const url = onbM5Url(onbEinst().m5);
+    const gesperrt = onbEinst().art === 'm5' && (url ? onbM5Gesperrt(url) : onbM5Gesperrt('http://x/'));
+    h.hidden = !gesperrt;
+    if (gesperrt) h.textContent = t('Diese Seite läuft über https und darf das http-Bild der Kamera nicht laden. In der Android-App oder über „Start OmegaSim.bat“ geht es.');
+  }
+  // Ein Versuch: das erste Bild abwarten (naturalWidth), Fehler oder Zeitablauf heisst: naechster Kandidat.
+  function onbM5Versuch(img, url, cors) {
+    return new Promise((ja) => {
+      let fertig = false;
+      const ende = (ok) => { if (fertig) return; fertig = true; clearInterval(takt); clearTimeout(uhr); img.onerror = null; ja(ok); };
+      img.onerror = () => ende(false);
+      if (cors) img.crossOrigin = 'anonymous'; else img.removeAttribute('crossorigin');
+      img.src = url;
+      const takt = setInterval(() => { if (img.naturalWidth > 0) ende(true); }, 150);
+      const uhr = setTimeout(() => ende(false), ONB_M5_WARTE_MS);
+    });
+  }
+  async function onbM5Starten() {
+    const z = onbZustand();
+    const e = onbEinst();
+    const img = $('onboard-bild');
+    const kand = onbM5Kandidaten(e.m5);
+    if (!img) return false;
+    if (!kand.length) { z.fehler = t('Erst die Adresse der Kamera eintragen.'); onbStatus(); return false; }
+    if (onbM5Gesperrt(kand[0])) {
+      z.fehler = t('Diese Seite läuft über https und darf das http-Bild der Kamera nicht laden. In der Android-App oder über „Start OmegaSim.bat“ geht es.');
+      onbStatus(); return false;
+    }
+    onbStatus(t('Suche …'));
+    const lauf = ++z.m5Neu;
+    // Zuerst mit CORS (dann geht auch die Aufnahme), danach ohne (nur Bild).
+    for (const cors of [true, false]) {
+      for (const url of kand) {
+        if (lauf !== z.m5Neu || !e.an) return false;
+        z.m5 = { url, cors };
+        if (await onbM5Versuch(img, url, cors)) {
+          z.m5Cors = cors;
+          img.hidden = false;
+          const v = $('onboard-video'); if (v) v.hidden = true;
+          img.onerror = () => {
+            if (!z.m5 || z.m5.url !== url) return;
+            log('Onboard-Kamera (WLAN) getrennt.', 'err');
+            z.fehler = t('Kamera getrennt.');
+            onbStoppen(true);
+            // Von selbst weiter versuchen, solange sie eingeschaltet ist (Akku im Auto gewechselt).
+            setTimeout(() => { if (onbEinst().an && onbEinst().art === 'm5' && !onboardAktiv()) onbStarten(); }, ONB_M5_NEU_MS);
+          };
+          log('Onboard-Kamera (WLAN) an: ' + url + (cors ? '' : ' (ohne CORS, keine Aufnahme)'), 'info');
+          onbBildDrehen();
+          onbWacheStellen();
+          if (typeof cockpitPunkteMalen === 'function') cockpitPunkteMalen();
+          onbStatus();
+          return true;
+        }
+      }
+    }
+    z.m5 = null;
+    img.removeAttribute('src');
+    z.fehler = t('Kamera nicht erreichbar: {u}').replace('{u}', kand[0]);
+    log('Onboard-Kamera (WLAN): ' + z.fehler, 'err');
+    onbStatus();
+    return false;
   }
 
   function onbStatus(text) {
@@ -68,7 +185,11 @@
     if (s) {
       let zeile;
       if (text) zeile = text;
-      else if (onboardAktiv()) {
+      else if (onboardAktiv() && z.m5) {
+        const img = $('onboard-bild');
+        zeile = t('An: {n}').replace('{n}', 'WLAN ' + z.m5.url.replace(/^https?:[/][/]/i, ''))
+          + ' · ' + img.naturalWidth + '×' + img.naturalHeight + (z.m5Cors ? '' : ' · ' + t('ohne Aufnahme (CORS)'));
+      } else if (onboardAktiv()) {
         const tr = z.stream.getVideoTracks()[0];
         const v = $('onboard-video');
         const gr = v && v.videoWidth ? ' · ' + v.videoWidth + '×' + v.videoHeight : '';
@@ -81,6 +202,11 @@
     if (b) b.textContent = onbEinst().an ? t('Ausschalten') : t('Einschalten');
     const leer = $('onboard-leer');
     if (leer) leer.hidden = onboardAktiv();
+    const art = onbEinst().art === 'm5' ? 'm5' : 'usb';
+    const zu = $('onboard-zeile-usb'), zm = $('onboard-zeile-m5');
+    if (zu) zu.hidden = art !== 'usb';
+    if (zm) zm.hidden = art !== 'm5';
+    onbM5Hinweis();
   }
 
   // Die Auswahlliste. Namen gibt der Browser erst heraus, wenn die Kamera einmal erlaubt
@@ -127,7 +253,14 @@
     if (z.stream) z.stream.getTracks().forEach((tr) => { try { tr.stop(); } catch (e) { /* weg */ } });
     z.stream = null;
     const v = $('onboard-video');
-    if (v) v.srcObject = null;
+    if (v) { v.srcObject = null; v.hidden = false; }
+    z.m5Neu++;
+    if (z.m5) {
+      z.m5 = null;
+      const img = $('onboard-bild');
+      // Erst den Fehler-Haken weg, dann die Quelle: sonst meldete das Leeren einen Abriss.
+      if (img) { img.onerror = null; img.removeAttribute('src'); img.hidden = true; }
+    }
     onbWacheStellen();
     if (typeof cockpitScreenIst === 'function' && cockpitScreenIst().id === 'onboard') cockpitScreenZu('main');
     if (typeof cockpitPunkteMalen === 'function') cockpitPunkteMalen();
@@ -137,6 +270,10 @@
   async function onbStarten() {
     const z = onbZustand();
     z.fehler = '';
+    if (onbEinst().art === 'm5') {
+      if (z.stream || z.m5) onbStoppen();
+      return onbM5Starten();
+    }
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       z.fehler = t('Dieser Browser kann keine Kamera.');
       onbStatus();
@@ -175,6 +312,7 @@
     }
     const v = $('onboard-video');
     if (v) {
+      v.hidden = false;
       v.srcObject = stream;
       v.onloadedmetadata = () => onbStatus();
       try { await v.play(); } catch (e) { /* stumm und autoplay: spielt trotzdem */ }
@@ -213,8 +351,12 @@
     }
     let gelb = false;
     try { gelb = typeof flagState !== 'undefined' && flagState !== 'green'; } catch (e) { /* noch nicht da */ }
+    const posEl = $('race-pos');
     return { runde: txt('race-lap-count') || '0', zeit: txt('race-lap-now') || '–',
+             letzte: txt('race-lap-last') || '–',
              beste: txt('race-lap-best') || '–', kmh: txt('race-speed') || '0',
+             gang: txt('race-gear-n') || 'N', tank: txt('race-fuel') || '–',
+             pos: posEl && !posEl.hidden ? posEl.textContent.trim() : '',
              gantryAn, lampen, gelb };
   }
 
@@ -223,22 +365,40 @@
     const set = (id, v) => { const el = $(id); if (el && el.textContent !== v) el.textContent = v; };
     set('onb-runde', w.runde);
     set('onb-zeit', w.zeit);
+    set('onb-letzte', w.letzte);
+    set('onb-beste', w.beste);
     set('onb-kmh', w.kmh);
+    set('onb-gang', w.gang);
+    set('onb-tank', w.tank);
+    set('onb-pos', w.pos);
+    // Die Beschriftungen in der eingestellten Sprache (die Kacheln selbst sind data-i18n-skip).
+    set('onb-l-runde', t('Runde')); set('onb-l-zeit', t('Zeit')); set('onb-l-letzte', t('Letzte'));
+    set('onb-l-beste', t('Beste')); set('onb-l-tank', t('Tank'));
     const s = $('race-onboardscreen');
     if (s) s.classList.toggle('gelb', w.gelb);
   }
 
   // Ein Bild in die Aufnahme: Kamera, darueber die Anzeige.
-  function onbCanvasMalen(rec) {
+  // Die Bildquelle (Video vom USB-Empfaenger oder das MJPEG-Bild der WLAN-Kamera) mit Groesse.
+  function onbQuelleBild() {
+    const z = onbZustand();
+    if (z.m5) {
+      const img = $('onboard-bild');
+      return img && img.naturalWidth > 0 ? { el: img, w: img.naturalWidth, h: img.naturalHeight } : null;
+    }
     const v = $('onboard-video');
+    return v && v.readyState >= 2 ? { el: v, w: v.videoWidth || 640, h: v.videoHeight || 480 } : null;
+  }
+  function onbCanvasMalen(rec) {
+    const q = onbQuelleBild();
     const c = rec.canvas, g = rec.ctx;
     const W = c.width, H = c.height;
     g.save();
     g.fillStyle = '#000';
     g.fillRect(0, 0, W, H);
-    if (v && v.readyState >= 2) {
+    if (q) {
       if (onbEinst().drehen) { g.translate(W, H); g.rotate(Math.PI); }
-      g.drawImage(v, 0, 0, W, H);
+      try { g.drawImage(q.el, 0, 0, W, H); } catch (e) { /* Bild gerade weg */ }
     }
     g.restore();
     const w = onbWerte();
@@ -248,25 +408,52 @@
       g.lineWidth = 14 * u; g.strokeStyle = '#ffd400';
       g.strokeRect(7 * u, 7 * u, W - 14 * u, H - 14 * u);
     }
-    // Leiste unten: Runde, Zeit, km/h.
-    const lh = 92 * u;
-    const verlauf = g.createLinearGradient(0, H - lh * 1.6, 0, H);
-    verlauf.addColorStop(0, 'rgba(0,0,0,0)');
-    verlauf.addColorStop(1, 'rgba(0,0,0,.78)');
-    g.fillStyle = verlauf;
-    g.fillRect(0, H - lh * 1.6, W, lh * 1.6);
-    const feld = (x, label, wert, ausr) => {
-      g.textAlign = ausr; g.textBaseline = 'alphabetic';
-      g.fillStyle = 'rgba(255,255,255,.7)';
-      g.font = '600 ' + Math.round(22 * u) + 'px system-ui, sans-serif';
-      g.fillText(label, x, H - 70 * u);
-      g.fillStyle = '#fff';
-      g.font = '800 ' + Math.round(48 * u) + 'px system-ui, sans-serif';
-      g.fillText(wert, x, H - 24 * u);
+    // v1.5: Kacheln wie beim virtuellen Fahren (60d-virtuell.js .vf-hud/.vf-acc): fast schwarz,
+    // schmale blaue Linie oben, kleine gesperrte Beschriftung, grosse Zahlen.
+    const BLAU = '#00a3e0', GRUND = 'rgba(8,10,14,.8)', DIM = '#a3acbd';
+    const kachel = (x, y, bw, bh) => {
+      g.fillStyle = GRUND; g.fillRect(x, y, bw, bh);
+      g.fillStyle = BLAU; g.fillRect(x, y, bw, 3 * u);
     };
-    feld(28 * u, t('Runde').toUpperCase(), w.runde, 'left');
-    feld(W / 2, t('Zeit').toUpperCase(), w.zeit, 'center');
-    feld(W - 28 * u, 'KM/H', w.kmh, 'right');
+    const lbl = (txt, x, y, ausr) => {
+      g.textAlign = ausr; g.textBaseline = 'middle'; g.fillStyle = DIM;
+      g.font = '600 ' + Math.round(15 * u) + 'px system-ui, sans-serif';
+      g.fillText(String(txt).toUpperCase(), x, y);
+    };
+    const wert = (txt, x, y, ausr, gr) => {
+      g.textAlign = ausr; g.textBaseline = 'middle'; g.fillStyle = '#f3f4f6';
+      g.font = '700 ' + Math.round(gr * u) + 'px system-ui, sans-serif';
+      g.fillText(String(txt), x, y);
+    };
+    // Zeiten oben links.
+    const zx = 18 * u, zy = 18 * u, zb = 300 * u;
+    const zeilen = [[t('Runde'), w.runde, 40], [t('Zeit'), w.zeit, 26], [t('Letzte'), w.letzte, 26], [t('Beste'), w.beste, 26]];
+    const zh = (w.pos ? 34 * u : 0) + 58 * u + 3 * 40 * u + 10 * u;
+    kachel(zx, zy, zb, zh);
+    let y = zy + 3 * u;
+    if (w.pos) {
+      g.fillStyle = BLAU; g.fillRect(zx, y, zb, 30 * u);
+      g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#04070c';
+      g.font = '700 ' + Math.round(16 * u) + 'px system-ui, sans-serif';
+      g.fillText(w.pos.toUpperCase(), zx + 14 * u, y + 15 * u);
+      y += 34 * u;
+    }
+    zeilen.forEach(([l, v2, gr], i) => {
+      const hz = i === 0 ? 58 * u : 40 * u;
+      lbl(l, zx + 14 * u, y + hz / 2, 'left');
+      wert(v2, zx + zb - 14 * u, y + hz / 2, 'right', gr);
+      y += hz;
+    });
+    // Tempo | Gang | Tank unten Mitte.
+    const kb = 380 * u, kh = 96 * u, kx = W / 2 - kb / 2, ky = H - kh - 18 * u;
+    kachel(kx, ky, kb, kh);
+    wert(w.kmh, kx + kb * 0.2, ky + kh * 0.45, 'center', 40);
+    lbl('km/h', kx + kb * 0.2, ky + kh * 0.8, 'center');
+    g.fillStyle = 'rgba(255,255,255,.05)'; g.fillRect(kx + kb / 2 - 38 * u, ky + 10 * u, 76 * u, kh - 20 * u);
+    g.fillStyle = BLAU; g.fillRect(kx + kb / 2 - 38 * u, ky + kh - 12 * u, 76 * u, 2 * u);
+    wert(w.gang, kx + kb / 2, ky + kh * 0.5, 'center', 64);
+    wert(w.tank, kx + kb * 0.8, ky + kh * 0.45, 'center', 30);
+    lbl(t('Tank'), kx + kb * 0.8, ky + kh * 0.8, 'center');
     // Ampel oben in der Mitte, solange sie im Cockpit steht.
     if (w.gantryAn) {
       const r = 15 * u, abst = 40 * u, x0 = W / 2 - 2 * abst;
@@ -305,9 +492,10 @@
     const z = onbZustand();
     if (z.rec || !onboardAktiv()) return false;
     const mime = onbMime();
-    const v = $('onboard-video');
-    if (mime === null || !v) { showHudToast(t('Dieser Browser kann nicht aufnehmen.')); return false; }
-    const vw = v.videoWidth || 640, vh = v.videoHeight || 480;
+    const q = onbQuelleBild();
+    if (mime === null || !q) { showHudToast(t('Dieser Browser kann nicht aufnehmen.')); return false; }
+    if (z.m5 && !z.m5Cors) { showHudToast(t('Aufnahme braucht CORS in der Kamera-Firmware (tools/onboard).')); return false; }
+    const vw = q.w || 640, vh = q.h || 480;
     const H = 720, W = Math.round((H * vw / vh) / 2) * 2;
     const canvas = document.createElement('canvas');
     canvas.width = W; canvas.height = H;
@@ -489,7 +677,7 @@
   }
   function onboardMalen() { onbHudMalen(); onbRecKnopf(); onbStatus(); }
 
-  // ---- Bedienung in Optionen -> AddOn ----
+  // ---- Bedienung in der Garage (Onboard-Kamera) ----
   if ($('onboard-an')) {
     $('onboard-an').addEventListener('click', async () => {
       const e = onbEinst();
@@ -520,12 +708,32 @@
       });
     });
   if ($('onboard-rec')) $('onboard-rec').addEventListener('click', onbAufnahmeUmschalten);
+  if ($('onboard-art')) {
+    $('onboard-art').value = onbEinst().art === 'm5' ? 'm5' : 'usb';
+    $('onboard-art').addEventListener('change', (ev) => {
+      const e = onbEinst();
+      e.art = ev.target.value === 'm5' ? 'm5' : 'usb';
+      onbSpeichern();
+      onbZustand().fehler = '';
+      if (e.an) onbStarten(); else onbStatus();
+    });
+  }
+  if ($('onboard-m5-adresse')) {
+    $('onboard-m5-adresse').value = onbEinst().m5 || '';
+    $('onboard-m5-adresse').addEventListener('change', (ev) => {
+      const e = onbEinst();
+      e.m5 = String(ev.target.value || '').trim();
+      onbSpeichern();
+      onbZustand().fehler = '';
+      if (e.an && e.art === 'm5') onbStarten(); else onbStatus();
+    });
+  }
 
   // Empfaenger wieder eingesteckt: von selbst weiter.
   if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
     navigator.mediaDevices.addEventListener('devicechange', () => {
       onbQuellenFuellen();
-      if (onbEinst().an && !onboardAktiv()) onbStarten();
+      if (onbEinst().an && onbEinst().art !== 'm5' && !onboardAktiv()) onbStarten();
     });
   }
 
@@ -533,8 +741,12 @@
   // ohne Nachfrage. Sonst wartet sie auf den Knopf (kein Kamera-Dialog beim App-Start).
   (async () => {
     onbBildDrehen();
+    onbRecKnopf();
     onbStatus();
-    if (!onbEinst().an || !navigator.mediaDevices) return;
+    if (!onbEinst().an) return;
+    // WLAN-Kamera: keine Erlaubnis noetig, gleich verbinden.
+    if (onbEinst().art === 'm5') { onbStarten(); return; }
+    if (!navigator.mediaDevices) return;
     let erlaubt = false;
     try {
       const p = await navigator.permissions.query({ name: 'camera' });

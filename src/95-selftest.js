@@ -3045,6 +3045,57 @@
   //
   // Ohne Kamera darf "Onboard" weder blaetterbar sein noch einen Punkt bekommen: ein Punkt,
   // den man nie erreicht, sieht aus wie ein kaputter Schirm. Mit Kamera umgekehrt.
+  // v1.5 (WIP): Onboard-Kamera in der Garage, zweite Quelle WLAN (M5Stack Timer Camera), Anzeige wie beim
+  // virtuellen Fahren. Ohne echte Kamera: Adressen, Garage-Zeile, Anzeige und ein Bild fuer die Aufnahme.
+  stAdd('Onboard-Kamera v1.5: Garage-Zeile, WLAN-Adresse, Anzeige im VF-Stil', () => {
+    const f = [];
+    if (typeof onbM5Url !== 'function') return { skip: true, mass: '75-onboard.js fehlt' };
+    // Adressen.
+    if (onbM5Url('192.168.1.50') !== 'http://192.168.1.50/stream') f.push('IP -> ' + onbM5Url('192.168.1.50'));
+    if (onbM5Url('http://cam.local:8080/mjpeg') !== 'http://cam.local:8080/mjpeg') f.push('volle Adresse veraendert');
+    if (onbM5Url('') !== '') f.push('leere Adresse');
+    const k = onbM5Kandidaten('192.168.1.50');
+    if (k.length !== 2 || k[1] !== 'http://192.168.1.50:81/stream') f.push('Kandidaten: ' + k.join(' '));
+    if (onbM5Kandidaten('192.168.1.50:80').length !== 1) f.push('mit Port trotzdem Port 81 versucht');
+    if (location.protocol === 'http:' && onbM5Gesperrt('http://192.168.1.50/stream')) f.push('ueber http gesperrt');
+    if (onbM5Gesperrt('https://cam/stream')) f.push('https-Bild gesperrt');
+    // Garage: rechts die Optionen, danach wieder im Halter.
+    const merk = { auf: garAufAuto, virt: garVirtuellAuf, kam: garKameraAuf };
+    try {
+      garVirtuellAuf = false; garKameraAuf = true; renderGarage();
+      const opt = $('onboard-optionen');
+      if (!opt || !opt.closest('.gar-a-rechts')) f.push('Optionen nicht rechts in der Garage');
+      const zeile = document.querySelector('#gar-list .gar-a-kamera button');
+      if (!zeile || zeile.getAttribute('aria-pressed') !== 'true') f.push('Garage-Zeile fehlt oder nicht gedrueckt');
+      if (!zeile || !zeile.querySelector('.wip-tag')) f.push('Garage-Zeile ohne WIP');
+      const sel = $('onboard-art');
+      if (!sel || [...sel.options].map((o) => o.value).join(',') !== 'usb,m5') f.push('Quelle-Wahl');
+      garKameraAuf = false; renderGarage();
+      if (!$('onboard-optionen') || $('onboard-optionen').parentElement !== $('onboard-halter')) f.push('Optionen nicht zurueck im Halter');
+      if ($('onboard-an') && !$('onboard-an').isConnected) f.push('Knopf verloren');
+    } finally {
+      garAufAuto = merk.auf; garVirtuellAuf = merk.virt; garKameraAuf = merk.kam; renderGarage();
+    }
+    // Anzeige: Kacheln wie beim virtuellen Fahren, gefuellt aus dem Cockpit.
+    const schirm = $('race-onboardscreen');
+    if (!schirm || !schirm.querySelector('.vf-hud.vf-kachel') || !schirm.querySelector('.vf-acc .vf-gang')) f.push('VF-Kacheln fehlen');
+    const merkG = $('race-gear-n') ? $('race-gear-n').textContent : null;
+    try {
+      if ($('race-gear-n')) $('race-gear-n').textContent = '3';
+      onbHudMalen();
+      if ($('onb-gang') && $('onb-gang').textContent !== '3') f.push('Gang nicht uebernommen: ' + $('onb-gang').textContent);
+      if (!$('onb-l-beste') || !$('onb-l-beste').textContent) f.push('Beschriftung leer');
+    } finally { if (merkG !== null) $('race-gear-n').textContent = merkG; }
+    // Ein Aufnahmebild ohne Quelle malt ohne Fehler (schwarz mit Anzeige).
+    try {
+      const c = document.createElement('canvas'); c.width = 1280; c.height = 720;
+      onbCanvasMalen({ canvas: c, ctx: c.getContext('2d') });
+      const px = c.getContext('2d').getImageData(640, 720 - 60, 1, 1).data;
+      if (px[0] + px[1] + px[2] === 0 && px[3] === 255) { /* Kachel ist dunkel, aber nicht reines Schwarz */ f.push('Tacho-Kachel fehlt im Video'); }
+    } catch (e) { f.push('Aufnahmebild: ' + e.message); }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'IP -> /stream (+ Port 81), Garage-Zeile mit Optionen rechts, Kacheln im VF-Stil, Aufnahmebild malt' };
+  });
+
   stAdd('Onboard-Schirm: nur mit Kamera blaetterbar, ein Punkt je Schirm', () => {
     if (!window.OMEGA_TEST || !OMEGA_TEST.onboardLage) return { skip: true, mass: 'Pruefhaken fehlt' };
     const blaetter = OMEGA_TEST.schirmListeBlaetterbar();

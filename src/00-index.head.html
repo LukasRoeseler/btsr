@@ -1908,6 +1908,34 @@
   #race-dash[data-screen="auto2"] #race-p2screen,
   #race-dash[data-screen="renneinstellungen"] #race-settingsscreen,
   #race-dash[data-screen="uebersicht"] #race-ovscreen { display: grid; }
+  /* ---- Onboard-Kamera (75-onboard.js) ----
+     Das Bild fuellt den Schirm ohne Abschneiden (contain): ein FPV-Empfaenger liefert 4:3,
+     und abgeschnittene Raender waeren genau die Kurve, die man sehen will. */
+  #race-dash[data-screen="onboard"] #race-onboardscreen { display: block; }
+  #race-onboardscreen { padding: 0; background: #000; color: #fff; }
+  #race-onboardscreen video { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; background: #000; }
+  #race-onboardscreen img { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; background: #000; }
+  #race-onboardscreen img[hidden], #race-onboardscreen video[hidden] { display: none; }
+  #race-onboardscreen.gedreht video, #race-onboardscreen.gedreht img { transform: rotate(180deg); }
+  /* v1.5: Anzeige im Stil des virtuellen Fahrens (dieselben .vf-Kacheln). */
+  .onb-vf { position: absolute; inset: 0; pointer-events: none;
+    --vf-s: clamp(10px, calc(.9vw + 1vh), 18px); --vf-bg: rgba(8,10,14,.8); --vf-linie: var(--k-blau, #00a3e0);
+    --vf-dim: var(--k-dim, #a3acbd); font-family: var(--k-font); }
+  .onb-vf .vf-hud { left: clamp(6px, 1.2vw, 14px); top: clamp(6px, 1.2vw, 14px); width: 10.5em; }
+  .onb-vf .vf-acc { bottom: clamp(6px, 1.2vw, 14px); }
+  .onb-vf .onb-kern { width: 12em; }
+  #race-onboardscreen.gelb { box-shadow: inset 0 0 0 6px #ffd400; }
+  .onb-leer { position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; text-align: center; padding: 16px; color: #a3acbd;
+    font-size: clamp(13px, 1.8vw, 18px); }
+  .onb-leer[hidden] { display: none; }
+  .onb-rec { position: absolute; right: clamp(6px, 1.2vw, 14px); bottom: clamp(6px, 1.2vw, 14px);
+    padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.35);
+    background: rgba(0,0,0,.62); color: #fff; font-weight: 700;
+    font-size: clamp(12px, 1.5vw, 16px); font-variant-numeric: tabular-nums; }
+  .onb-rec.an { background: #d81b2c; border-color: #ff6b74; }
   /* ---- DER VERGLEICHSSCHIRM ------------------------------------------------------
      ZWEI SPALTEN NEBENEINANDER, auch auf dem Telefon. Untereinander waere es kein
      Vergleich mehr, sondern zweimal dieselbe Liste - und der ganze Zweck dieses Schirms
@@ -6394,6 +6422,33 @@
         <button type="button" id="ov-nochmal" class="ov-nochmal" hidden>✕ Nochmal</button>
       </div>
 
+      <!-- ONBOARD-KAMERA (75-onboard.js): Livebild aus dem Auto, z. B. FPV-Mikrokamera mit
+           USB-Empfaenger. Darueber Runde, Zeit und km/h; der Knopf unten rechts nimmt auf. -->
+      <div class="gt3-schirm" id="race-onboardscreen">
+        <video id="onboard-video" autoplay muted playsinline></video>
+        <img id="onboard-bild" alt="" hidden>
+        <div class="onb-leer" id="onboard-leer">Keine Kamera. Garage &rarr; Onboard-Kamera.</div>
+        <!-- Zeiten oben links und Tempo/Gang/Tank unten Mitte: dieselben Kacheln wie beim virtuellen
+             Fahren (.vf-hud, .vf-acc), gelesen aus den Cockpit-Feldern (onbWerte). -->
+        <div class="onb-vf">
+          <div class="vf-hud vf-kachel" data-i18n-skip>
+            <div class="vf-modus" id="onb-pos"></div>
+            <div class="vf-z vf-z-akt"><span class="vf-lbl" id="onb-l-runde">Runde</span><b id="onb-runde">0</b></div>
+            <div class="vf-z"><span class="vf-lbl" id="onb-l-zeit">Zeit</span><span id="onb-zeit">&ndash;</span></div>
+            <div class="vf-z"><span class="vf-lbl" id="onb-l-letzte">Letzte</span><span id="onb-letzte">&ndash;</span></div>
+            <div class="vf-z"><span class="vf-lbl" id="onb-l-beste">Beste</span><span id="onb-beste">&ndash;</span></div>
+          </div>
+          <div class="vf-acc" data-i18n-skip>
+            <div class="vf-kachel vf-acc-kern onb-kern"><div class="vf-acc-werte">
+              <div class="vf-acc-wert"><b id="onb-kmh">0</b><span class="vf-lbl">km/h</span></div>
+              <b class="vf-gang" id="onb-gang">N</b>
+              <div class="vf-acc-wert"><b id="onb-tank">&ndash;</b><span class="vf-lbl" id="onb-l-tank">Tank</span></div>
+            </div></div>
+          </div>
+        </div>
+        <button type="button" class="onb-rec" id="onboard-rec" data-i18n-skip>&#9679; Aufnahme</button>
+      </div>
+
       <!-- ---- RENNEINSTELLUNGEN ALS EIGENER COCKPIT-SCHIRM --------------------------
            BESTELLT: "cockpit: weiteren screen mit Renneinstellungen einfuegen (wie pit
            screen bedienbar, optionen: renntyp, dauer/runden, start/abbrechen;
@@ -7073,6 +7128,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Onboard-Kamera (WIP): Livebild aus dem Auto als Cockpit-Schirm &#8222;Onboard&#8220;, mit Aufnahme als Video (Grundlage: gnen54s Zweig onboard, danke). Eingeschaltet wird sie in der Garage unter &#8222;Onboard-Kamera&#8220;. Quelle ist eine USB-Kamera bzw. ein FPV-Empf&#228;nger oder neu eine M5Stack Timer Camera im WLAN (MJPEG, Adresse eintragen). Die Anzeige im Bild ist im Stil des virtuellen Fahrens: Zeiten oben links, Tempo, Gang und Tank unten in der Mitte. Auf der https-Webseite l&#228;dt das WLAN-Bild nicht, in der App und &#252;ber Start OmegaSim.bat schon. Video speichern in der App braucht die neue APK.</li>
         <li>Safety Car: Ist an Start/Ziel zu wenig Platz zum Einparken (Kurve direkt vor und nach einer kurzen Startgeraden), parkt es auf dem n&#228;chsten Teil, wo der Platz reicht, bevorzugt bis drei Teile vor Start/Ziel und nie in einer Kurve; das Live-Log nennt das Teil. Ein ausdr&#252;cklich gew&#228;hltes Teil bleibt, mit Hinweis, wenn der Platz nicht reicht. Dazu: K&#228;fer-Name und Boxster-H&#246;rproben &#252;bersetzt.</li>
         <li>Neue Cockpit-Ansicht &#8222;Mokamit: Digital Dash&#8220; (WIP, Optionen &gt; Allgemein &gt; Cockpit-Ansicht): die Kachel-Tafel aus Hybrid-Dash von Mo Kamit (MIT-Lizenz) mit Status, Fahrhilfe-Chips, Akku, Position, Tank, Neben der Bahn, Tempo, Gang, Reifen, Rundenzeiten, Zustand, Gas- und Bremsbalken sowie Kn&#246;pfen f&#252;r Boxenstopp, Gelbe Flagge, Licht und Wetter. Sie liegt &#252;ber dem Haupt-Schirm des Cockpits und liest dessen Werte; die Kn&#246;pfe dr&#252;cken die normalen Kn&#246;pfe, es gelten also dieselben Regeln. Texte auf Deutsch, Englisch und Spanisch.</li>
         <li>DualSense am PC (WIP): Die adaptiven Trigger verhalten sich jetzt wie bei LibreCorsa. Der linke Trigger ist die Bremse: ein Widerstand, der nach unten fester wird; regelt das ABS, vibriert er, blockiert ein Rad, vibriert er langsamer. Der rechte ist das Gas: leichter Widerstand, drehen die Hinterr&#228;der durch oder regelt die Traktionskontrolle, vibriert er. Nahe der Haftgrenze summen beide leicht. Ein Effekt bleibt 0,15 s stehen, damit er nicht flackert. Der Drehzahl-Hinweis am Gas-Trigger entf&#228;llt.</li>
@@ -10054,6 +10110,31 @@
       <button class="goto-tab" id="gar-to-cockpit" data-tab="race"
               style="margin-bottom:10px">Zum Cockpit &rarr;</button>
       <div id="gar-list"></div>
+      <!-- v1.5 (WIP) ONBOARD-KAMERA (75-onboard.js): die Optionen. Sie stehen in der Garage rechts, wenn
+           links "Onboard-Kamera" offen ist (renderGarage haengt #onboard-optionen dort ein und vorher
+           wieder hierher zurueck). Grundlage: gnen54s Zweig "onboard" (USB-Empfaenger als Webcam);
+           neu die M5Stack Timer Camera als MJPEG-Strom im WLAN. -->
+      <div id="onboard-halter" hidden>
+        <div id="onboard-optionen">
+          <div class="opt-row"><div class="opt-label">Onboard-Kamera <span class="wip-tag">WIP</span>
+              <small>Livebild einer Kamera im Auto. Im Cockpit als eigener Schirm &bdquo;Onboard&ldquo; mit Zeiten oben links und Tempo, Gang und Tank unten in der Mitte, wie beim virtuellen Fahren. Aufnahme mit dem Knopf im Bild oder der W&auml;hltaste (X).</small>
+              <div id="onboard-status" class="muted" style="font-size:12px;margin-top:4px" data-i18n-skip>Aus.</div></div>
+            <button type="button" id="onboard-an">Einschalten</button></div>
+          <div class="opt-row"><div class="opt-label">Quelle<small>USB: ein Empf&auml;nger oder eine Kamera, die sich wie eine Webcam meldet (z.&nbsp;B. FPV-Mikrokamera mit USB-Empf&auml;nger). WLAN: M5Stack Timer Camera oder eine andere ESP32-Kamera mit MJPEG-Strom, Anleitung im Projekt unter tools/onboard.</small></div>
+            <select id="onboard-art" data-preset-skip><option value="usb">USB-Kamera</option><option value="m5">M5Stack Timer Camera (WLAN)</option></select></div>
+          <div class="opt-row" id="onboard-zeile-usb"><div class="opt-label">Kamera<small>Die Namen stehen hier, sobald die Kamera einmal erlaubt wurde.</small></div>
+            <select id="onboard-quelle" data-preset-skip><option value="">Standard</option></select></div>
+          <div class="opt-row" id="onboard-zeile-m5" hidden><div class="opt-label">Adresse der Kamera<small>Die IP-Adresse aus dem Router oder dem seriellen Monitor, z.&nbsp;B. 192.168.1.50. Ohne Pfad wird /stream angeh&auml;ngt. Die Webseite &uuml;ber https darf kein http-Bild laden: in der Android-App und &uuml;ber &bdquo;Start OmegaSim.bat&ldquo; geht es.</small>
+              <div id="onboard-m5-hinweis" class="gar-warnung" hidden data-i18n-skip></div></div>
+            <input type="text" id="onboard-m5-adresse" inputmode="url" autocomplete="off" spellcheck="false" placeholder="192.168.1.50" data-preset-skip style="max-width:14em"></div>
+          <div class="opt-row"><div class="opt-label">Bild um 180&deg; drehen<small>Wenn die Kamera kopf&uuml;ber im Auto sitzt.</small></div>
+            <label class="tgl"><input type="checkbox" id="onboard-drehen" data-preset-skip><span></span></label></div>
+          <div class="opt-row"><div class="opt-label">Beim Start Onboard-Bild zeigen<small>Mit dem Countdown schaltet das Cockpit auf den Schirm &bdquo;Onboard&ldquo;.</small></div>
+            <label class="tgl"><input type="checkbox" id="onboard-beim-start" checked data-preset-skip><span></span></label></div>
+          <div class="opt-row"><div class="opt-label">Rennen automatisch aufnehmen<small>Vom Countdown bis kurz nach dem Ziel, mit Zeiten, km/h und Ampel im Bild. Ein abgebrochener Start wird nicht gespeichert.</small></div>
+            <label class="tgl"><input type="checkbox" id="onboard-auto-rec" data-preset-skip><span></span></label></div>
+        </div>
+      </div>
       <!-- Abstimmung direkt hier waehlbar, sobald ein Auto gesteuert wird. Dieselbe
            Funktion wie in den Optionen, deshalb ziehen die Regler dort automatisch nach. -->
       <div id="gar-preset" style="display:none; margin-top:14px; padding-top:12px;

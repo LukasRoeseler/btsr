@@ -1734,6 +1734,8 @@
   // v1.1.3 BESTELLT: "Wenn ich virtuell klicke, dann sollen rechts noch Optionen kommen." true = rechts
   // stehen die Optionen der virtuellen Fahrt (60d-virtuell.js) statt eines Autos.
   let garVirtuellAuf = false;
+  // v1.5 (WIP): rechts die Optionen der Onboard-Kamera (75-onboard.js) statt eines Autos.
+  let garKameraAuf = false;
   let garFotoFuer = null;
   function garageFarbeSetzen(car, id) {
     car.colorId = id;
@@ -2119,6 +2121,8 @@
     // und danach wiederherstellen (bei kuerzerem Inhalt so weit unten wie moeglich).
     const scrollMerk = { l: garScrollStand.l, r: garScrollStand.r, vorfahren: [] };
     for (let p = list.parentElement; p; p = p.parentElement) if (p.scrollTop) scrollMerk.vorfahren.push([p, p.scrollTop]);
+    const onbOpt = $('onboard-optionen'), onbHalter = $('onboard-halter');
+    if (onbOpt && onbHalter && onbOpt.parentElement !== onbHalter) onbHalter.appendChild(onbOpt);
     list.innerHTML = '';
     list.classList.remove('gar-karten');
     list.classList.add('gar-a');
@@ -2139,7 +2143,7 @@
       // v1.1.11 BESTELLT: "Das rechte soll automatisch gewaehlt werden, wenn ich ein Auto markiert habe
       // und X druecke, wie bei der Meisterschaft." Vor dem Sprung wird das markierte Auto gewaehlt.
       row._vorSprung = () => {
-        if (garAufAuto !== car || garVirtuellAuf) { garAufAuto = car; garVirtuellAuf = false; renderGarage(); }
+        if (garAufAuto !== car || garVirtuellAuf || garKameraAuf) { garAufAuto = car; garVirtuellAuf = false; garKameraAuf = false; renderGarage(); }
       };
       const f = carColor(car);
       const foto = autoFoto(car);
@@ -2164,7 +2168,7 @@
       // Ein Tipp auf die Zeile waehlt das Auto fuer die rechte Seite.
       row.onclick = (e) => {
         if (e.target.closest('button, input, select')) return;
-        if (garAufAuto !== car || garVirtuellAuf) { garAufAuto = car; garVirtuellAuf = false; renderGarage(); }
+        if (garAufAuto !== car || garVirtuellAuf || garKameraAuf) { garAufAuto = car; garVirtuellAuf = false; garKameraAuf = false; renderGarage(); }
       };
       // v1.1.25 BESTELLT: "Zeige in der Garage links je Auto die Rolle an, aber mach, dass ich sie rechts
       // ganz oben einstelle." Links steht die Rolle nur noch als Etikett; eingestellt wird sie rechts in der
@@ -2196,13 +2200,36 @@
     virtKnopf.innerHTML = t('Virtuell fahren') + ' <span class="wip-tag">WIP</span>';
     virtKnopf.setAttribute('aria-pressed', garVirtuellAuf ? 'true' : 'false');
     if (garVirtuellAuf) virtKnopf.classList.add('primary');
-    virtKnopf.onclick = () => { garVirtuellAuf = true; renderGarage(); };
+    virtKnopf.onclick = () => { garVirtuellAuf = true; garKameraAuf = false; renderGarage(); };
     virt.appendChild(virtKnopf);
     links.appendChild(virt);
+    // v1.5 (WIP) BESTELLT: die Onboard-Kamera "in der Garage verbinden". Wie "Virtuell fahren": links
+    // die Zeile, rechts die Optionen (#onboard-optionen aus dem Halter in 00-index.head.html).
+    if ($('onboard-optionen')) {
+      const kam = document.createElement('div');
+      kam.className = 'opt-row opt-breit gar-a-aktion gar-a-kamera' + (garKameraAuf ? ' gk-auf' : '');
+      kam.dataset.xSprung = '.gar-a-rechts .opt-row';
+      kam._vorSprung = () => { if (!garKameraAuf) { garKameraAuf = true; garVirtuellAuf = false; renderGarage(); } };
+      const kamKnopf = document.createElement('button');
+      kamKnopf.type = 'button';
+      kamKnopf.innerHTML = t('Onboard-Kamera') + ' <span class="wip-tag">WIP</span>';
+      kamKnopf.setAttribute('aria-pressed', garKameraAuf ? 'true' : 'false');
+      if (garKameraAuf) kamKnopf.classList.add('primary');
+      kamKnopf.onclick = () => { garKameraAuf = true; garVirtuellAuf = false; renderGarage(); };
+      kam.appendChild(kamKnopf);
+      links.appendChild(kam);
+    }
     // Rechte Seite: das gewaehlte Auto, oder die Optionen der virtuellen Fahrt.
-    const car = garVirtuellAuf ? null : garAufAuto;
+    const car = (garVirtuellAuf || garKameraAuf) ? null : garAufAuto;
     if (garVirtuellAuf && typeof vfGarageOptionen === 'function') {
       vfGarageOptionen(rechts);
+    } else if (garKameraAuf && onbOpt) {
+      const kopf = document.createElement('h3');
+      kopf.className = 'gar-a-titel';
+      kopf.textContent = t('Onboard-Kamera');
+      rechts.appendChild(kopf);
+      rechts.appendChild(onbOpt);
+      if (typeof onboardMalen === 'function') onboardMalen();
     } else if (car) {
       const kopf = document.createElement('h3');
       kopf.className = 'gar-a-titel';
@@ -2318,13 +2345,13 @@
         const k = fr.findIndex((r) => r.id === car.role);
         const n = fr[((k < 0 ? fr.length - 1 : k) + +b.dataset.d + fr.length) % fr.length];
         garAufAuto = car;
-        garVirtuellAuf = false;
+        garVirtuellAuf = false; garKameraAuf = false;
         setCarRole(car, n.id);
       };
     });
     z.querySelector('select.gk-rolle-wahl').addEventListener('change', (e) => {
       garAufAuto = car;
-      garVirtuellAuf = false;
+      garVirtuellAuf = false; garKameraAuf = false;
       setCarRole(car, e.target.value);
     });
     return z;
