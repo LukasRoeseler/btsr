@@ -5863,7 +5863,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.77</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.79</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7144,6 +7144,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>DualSense-Trigger beim Fahren in der Android-App (WIP, neue APK). Ist der Controller per Bluetooth verbunden und steckt zus&#228;tzlich das USB-Kabel, kommen die Trigger-Effekte jetzt beim echten und beim virtuellen Fahren: Widerstand der Bremse, Vibration bei ABS und blockierendem Rad, beim Gas bei Schlupf und Traktionskontrolle. Die Verbindung kommt von selbst, sobald das Kabel steckt. H&#228;ngt der Controller nur am Kabel, bliebe er ohne Tasten; dann l&#228;sst die App die Trigger aus und sagt es. Abschaltbar unter Optionen &gt; Vibration. Au&#223;erdem sendet der Knopf &#8222;Vibration testen&#8220; wieder, vorher erreichte er keinen Controller.</li>
         <li>Streckeneditor: Unter Optionen gibt es jetzt &#8222;Boxengassen&#8220; als Anzahl statt &#8222;Boxengasse erzwingen&#8220;. Vorgabe sind so viele wie unter Meine Teile eingetragen, und die Zufallsstrecke enth&#228;lt genau so viele. Geht das mit den Teilen nicht, gibt es eine Meldung. Das Editor-Tutorial erkl&#228;rt jetzt auch Br&#252;cken und Boxengassen.</li>
         <li>Android-App (neue APK): Das Rumble des Controllers geht jetzt direkt &#252;ber Android an den Motor des Gamepads, &#252;ber Bluetooth und Kabel, auch wenn der Controller erst nach dem Start der App verbunden wird. Vorher lief es &#252;ber die Gamepad-Schnittstelle der Webansicht, die den Motor nur kannte, wenn der Controller schon beim Start da war. DualSense &#252;ber USB: Ist die Schnittstelle belegt (Controller nur am Kabel), sendet die Probe &#252;ber den Steuerkanal. Das Protokoll steht unter dem Knopf und l&#228;sst sich kopieren.</li>
         <li>Virtuell fahren: Wetter aus den Renneinstellungen vollst&#228;ndig. &#8222;Wechselhaft&#8220; wechselt jetzt auch virtuell zwischen trocken und Schauern (wie im Rennen, mit Meldung), und &#8222;Wetter &#228;ndert sich&#8220; bringt einen einmaligen Wechsel im mittleren Drittel der Fahrzeit. Beim Beenden gilt wieder das Wetter von vorher.</li>
@@ -12361,6 +12362,10 @@
           <small>Probe, ob die App die adaptiven Trigger &uuml;ber das USB-Kabel erreicht: 3 s fester Widerstand auf beiden Triggern, dann 2 s Vibration, dann aus. Danach gibt die App den Controller wieder frei. Bitte melden: Haben die Trigger reagiert, und gehen die Tasten danach noch? Das Protokoll steht im Live-Log. Braucht die neue APK.</small></div>
         <button type="button" id="ds-usb-test">Trigger testen</button>
         <span class="muted" id="ds-usb-lage" data-i18n-skip style="font-size:11px; text-align:right; max-width:34ch"></span></div>
+      <!-- v1.5 (WIP, Paket 6 Stufe 2): Trigger-Effekte beim Fahren ueber das Kabel (nur in der App sichtbar). -->
+      <div class="opt-row" id="ds-usb-dauer-zeile" hidden><div class="opt-label">Trigger beim Fahren über USB <span class="wip-tag">WIP</span>
+          <small>Die Trigger-Effekte (Widerstand, ABS, Schlupf) beim echten und virtuellen Fahren über das USB-Kabel. Android gibt die Trigger nur frei, wenn der Controller zusätzlich per Bluetooth verbunden ist: zuerst Bluetooth, dann das Kabel. Hängt er nur am Kabel, würden die Tasten ausfallen; dann bleibt es aus und die App sagt es.</small></div>
+        <label class="tgl"><input type="checkbox" id="ds-usb-an" checked data-preset-skip><span></span></label></div>
       <!-- v1.5: das Protokoll der Probe zum Kopieren (wie das Verbindungsprotokoll der Garage). -->
       <div class="opt-row opt-breit" id="ds-usb-proto-zeile" hidden>
         <textarea id="ds-usb-proto" readonly rows="6" data-i18n-skip style="width:100%; font:11px/1.3 monospace"></textarea>
@@ -17382,6 +17387,13 @@
     "Anzahl Boxengassen": "Number of pit lanes",
     "Editor-Optionen: Länge, Linkslastig, Brücken, Boxengassen, Spiegeln": "Editor options: length, left-heavy, bridges, pit lanes, mirror",
     "Streckeneditor: Unter Optionen gibt es jetzt „Boxengassen“ als Anzahl statt „Boxengasse erzwingen“. Vorgabe sind so viele wie unter Meine Teile eingetragen, und die Zufallsstrecke enthält genau so viele. Geht das mit den Teilen nicht, gibt es eine Meldung. Das Editor-Tutorial erklärt jetzt auch Brücken und Boxengassen.": "Track editor: under Options there is now “Pit lanes” as a number instead of “Force pit lane”. The default is as many as entered under My parts, and the random track contains exactly that many. If that is not possible with the pieces, a message says so. The editor tutorial now also explains bridges and pit lanes.",
+    "Trigger beim Fahren über USB": "Triggers while driving over USB",
+    "Die Trigger-Effekte (Widerstand, ABS, Schlupf) beim echten und virtuellen Fahren über das USB-Kabel. Android gibt die Trigger nur frei, wenn der Controller zusätzlich per Bluetooth verbunden ist: zuerst Bluetooth, dann das Kabel. Hängt er nur am Kabel, würden die Tasten ausfallen; dann bleibt es aus und die App sagt es.": "The trigger effects (resistance, ABS, wheelspin) in real and virtual driving over the USB cable. Android only releases the triggers if the controller is also connected over Bluetooth: Bluetooth first, then the cable. On the cable alone the buttons would stop working; then it stays off and the app says so.",
+    "Trigger über USB aktiv ({w})": "Triggers over USB active ({w})",
+    "DualSense-Trigger über USB aktiv": "DualSense triggers over USB active",
+    "Nur am Kabel fallen die Tasten weg: Controller zuerst per Bluetooth verbinden, dann das Kabel einstecken.": "On the cable alone the buttons stop working: connect the controller over Bluetooth first, then plug in the cable.",
+    "USB-Zugriff nicht erlaubt.": "USB access not allowed.",
+    "DualSense-Trigger beim Fahren in der Android-App (WIP, neue APK). Ist der Controller per Bluetooth verbunden und steckt zusätzlich das USB-Kabel, kommen die Trigger-Effekte jetzt beim echten und beim virtuellen Fahren: Widerstand der Bremse, Vibration bei ABS und blockierendem Rad, beim Gas bei Schlupf und Traktionskontrolle. Die Verbindung kommt von selbst, sobald das Kabel steckt. Hängt der Controller nur am Kabel, bliebe er ohne Tasten; dann lässt die App die Trigger aus und sagt es. Abschaltbar unter Optionen > Vibration. Außerdem sendet der Knopf „Vibration testen“ wieder, vorher erreichte er keinen Controller.": "DualSense triggers while driving in the Android app (WIP, new APK). If the controller is connected over Bluetooth and the USB cable is also plugged in, the trigger effects now come in real and virtual driving: brake resistance, vibration with ABS and a locking wheel, on the throttle with wheelspin and traction control. The connection is made automatically as soon as the cable is plugged in. If the controller is on the cable only, it would lose its buttons; then the app leaves the triggers off and says so. Can be switched off under Options > Vibration. Also, the “Test vibration” button sends again; before, it did not reach any controller.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20252,6 +20264,12 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Trigger beim Fahren über USB": "Gatillos al conducir por USB",
+    "Die Trigger-Effekte (Widerstand, ABS, Schlupf) beim echten und virtuellen Fahren über das USB-Kabel. Android gibt die Trigger nur frei, wenn der Controller zusätzlich per Bluetooth verbunden ist: zuerst Bluetooth, dann das Kabel. Hängt er nur am Kabel, würden die Tasten ausfallen; dann bleibt es aus und die App sagt es.": "Los efectos de los gatillos (resistencia, ABS, patinaje) al conducir de verdad y en virtual por el cable USB. Android solo libera los gatillos si el mando también está conectado por Bluetooth: primero Bluetooth, luego el cable. Solo con el cable dejarían de funcionar los botones; entonces se queda desactivado y la app lo avisa.",
+    "Trigger über USB aktiv ({w})": "Gatillos por USB activos ({w})",
+    "DualSense-Trigger über USB aktiv": "Gatillos DualSense por USB activos",
+    "Nur am Kabel fallen die Tasten weg: Controller zuerst per Bluetooth verbinden, dann das Kabel einstecken.": "Solo con el cable dejan de funcionar los botones: conecta primero el mando por Bluetooth y luego enchufa el cable.",
+    "USB-Zugriff nicht erlaubt.": "Acceso USB no permitido.",
     "Boxengassen": "Calles de boxes",
     "Unter Optionen stellst du ein, wie viele Brücken eine Zufallsstrecke haben soll (0 bis 4). An jeder Brücke kreuzt die Bahn sich selbst: ein Stück läuft auf Stützen über das andere. Mit einer Brücke wird es eine Acht. Geht die Zahl mit deinen Teilen nicht, sagt die App Bescheid.": "En Opciones ajustas cuántos puentes debe tener un circuito aleatorio (0 a 4). En cada puente la pista se cruza consigo misma: un tramo pasa sobre soportes por encima del otro. Con un puente sale un ocho. Si el número no es posible con tus piezas, la app te avisa.",
     "Ebenfalls unter Optionen: wie viele Boxengassen die Zufallsstrecke bekommt. Vorgabe sind so viele, wie du unter Meine Teile eingetragen hast.": "También en Opciones: cuántas calles de boxes tendrá el circuito aleatorio. Por defecto, tantas como anotaste en Mis piezas.",
@@ -28080,8 +28098,12 @@
       // AUSDRUECKLICH AN padRumble VORBEI, mit einer Art, die es nicht gibt: der Test soll
       // den WEG pruefen und nicht die Schalter. Wer den Hauptschalter aus hat, soll das als
       // Satz lesen und nicht als Schweigen.
+      // v1.5 GEMELDET: "the rumble does not do anything when I click the test rumble". ruettle() ohne Ziel hiess
+      // "undefined = keiner" (zielPads) - der Knopf hat nie etwas gesendet. null = alle Pads, in der App der
+      // Android-Vibrator (nativRuettler).
+      const nativ = typeof nativRuettler === 'function' && nativRuettler();
       const stoss = rumbleOn ? ruettle({ duration: 260, startDelay: 0,
-                                         strongMagnitude: 0.6, weakMagnitude: 0.4 }) : 0;
+                                         strongMagnitude: 0.6, weakMagnitude: 0.4 }, null) : 0;
       const teile = [];
       if (!lage.pads.length) {
         teile.push('Kein Controller gemeldet. Eine Taste dr\u00fccken \u2013 der Browser '
@@ -28095,6 +28117,7 @@
         }
       }
       if (!lage.hauptschalter) teile.push('Hauptschalter steht AUS \u2013 nichts gesendet.');
+      else if (nativ && stoss) teile.push('Stoss \u00fcber Android an den Controller gesendet.');
       else teile.push('Stoss an ' + stoss + ' von ' + lage.pads.length + ' gesendet.');
       out.textContent = teile.join(' | ');
       log('R\u00fcttelprobe: ' + teile.join(' | '), 'info');
@@ -65367,6 +65390,8 @@
     return { id: 0x31, daten: d };
   }
   async function dsSenden(links, rechts) {
+    // v1.5: in der App ueber das USB-Kabel (OmegaDsUsbPlugin), wenn die Dauerverbindung steht.
+    if (dsUsb.offen) { dsUsbSenden(dsUsbBericht(links, rechts)); return; }
     if (!dsGeraet) return;
     const b = dsBericht(links, rechts, dsBt, dsFolge);
     dsFolge = (dsFolge + 1) & 0x0f;
@@ -65422,7 +65447,7 @@
     };
   }
   function dsTick() {
-    if (!dsGeraet) return;
+    if (!dsGeraet && !dsUsb.offen) return;
     const jetzt = performance.now();
     const a = dsTriggerArt(dsEingang());
     const l = dsBremseLinks() ? dsHalten('links', a.links, jetzt) : 'aus';
@@ -65471,6 +65496,14 @@
   });
   async function dsUsbTest() {
     if (!dsUsbPlugin()) { dsUsbLage(t('Braucht die neue APK.')); return; }
+    if (dsUsb.offen) {
+      const folge = [[dsWiderstand(1, 8, 8), dsWiderstand(1, 8, 8), 3000], [dsVibration(2, 7, DS_HZ.abs), dsVibration(1, 6, DS_HZ.spin), 2000], [dsAus(), dsAus(), 0]];
+      dsUsbLage(t('Läuft …'));
+      for (const [l, r, ms] of folge) { dsUsbSenden(dsUsbBericht(l, r)); if (ms) await new Promise((ok) => setTimeout(ok, ms)); }
+      dsZustand = null;
+      dsUsbLage(t('Gesendet ({w}). Haben die Trigger reagiert?').replace('{w}', 'USB'));
+      return;
+    }
     const C = window.Capacitor;
     dsUsbLage(t('Läuft …'));
     try {
@@ -65485,6 +65518,58 @@
     }
   }
   if ($('ds-usb-zeile')) $('ds-usb-zeile').hidden = !dsUsbApp();
+  if ($('ds-usb-dauer-zeile')) $('ds-usb-dauer-zeile').hidden = !dsUsbApp();
+
+  // ---- v1.5 (WIP, Paket 6 Stufe 2): DAUERVERBINDUNG BEIM FAHREN ----------------------------------------------
+  // BESTELLT: "Trigger-Effekte richtig ins virtuelle und echte Fahren einbauen." Alle DS_USB_SUCH_MS fragt die Seite, ob
+  // ein DualSense am Kabel haengt, und oeffnet die Verbindung (einmal Erlaubnis). Danach sendet dsTick ueber dsSenden
+  // dieselben Effekte wie am PC, nur ueber das Kabel. Meldet die App "tasten" (nur Kabel, Tasten fielen weg), bleibt es
+  // aus, bis das Kabel einmal abgezogen war.
+  const DS_USB_SUCH_MS = 3000;
+  const dsUsb = { offen: false, sucht: false, gesperrt: '', meldung: '' };
+  function dsUsbAn() { return !!($('ds-usb-an') ? $('ds-usb-an').checked : true); }
+  function dsUsbSenden(bytes) {
+    try { window.Capacitor.nativePromise('OmegaDsUsb', 'senden', { bericht: dsUsbBase64(bytes) }).catch(() => {}); } catch (e) { /* weiter */ }
+  }
+  async function dsUsbSuchen() {
+    if (!dsUsbPlugin() || dsUsb.sucht) return;
+    const C = window.Capacitor;
+    dsUsb.sucht = true;
+    try {
+      const l = await C.nativePromise('OmegaDsUsb', 'lage', {});
+      if (!l || !l.gefunden) { dsUsb.gesperrt = ''; if (dsUsb.offen) { dsUsb.offen = false; dsZustand = null; } return; }
+      if (l.offen === false && dsUsb.offen) { dsUsb.offen = false; dsZustand = null; }
+      if (!dsUsbAn()) { if (dsUsb.offen) await dsUsbZu(); return; }
+      if (dsUsb.offen || dsUsb.gesperrt) return;
+      const r = await C.nativePromise('OmegaDsUsb', 'oeffnen', { aus: dsUsbBase64(dsUsbBericht(dsAus(), dsAus())) });
+      if (r && r.ok) {
+        dsUsb.offen = true; dsZustand = null;
+        dsUsb.meldung = t('Trigger über USB aktiv ({w})').replace('{w}', r.weg || '?');
+        showHudToast(t('DualSense-Trigger über USB aktiv'));
+        log('DualSense USB: Trigger aktiv. ' + ((r && r.protokoll) || ''), 'ok');
+      } else {
+        dsUsb.gesperrt = (r && r.grund) || 'fehler';
+        dsUsb.meldung = dsUsb.gesperrt === 'tasten'
+          ? t('Nur am Kabel fallen die Tasten weg: Controller zuerst per Bluetooth verbinden, dann das Kabel einstecken.')
+          : dsUsb.gesperrt === 'erlaubnis' ? t('USB-Zugriff nicht erlaubt.') : t('Fehler, siehe Live-Log.');
+        if (dsUsb.gesperrt === 'tasten') showHudToast(dsUsb.meldung);
+        log('DualSense USB: ' + dsUsb.gesperrt + '. ' + ((r && r.protokoll) || ''), 'info');
+      }
+      dsUsbLage(dsUsb.meldung);
+    } catch (e) { /* alte APK: kein oeffnen */ dsUsb.gesperrt = 'apk'; }
+    finally { dsUsb.sucht = false; }
+  }
+  async function dsUsbZu() {
+    if (!dsUsb.offen) return;
+    dsUsb.offen = false; dsZustand = null;
+    try { await window.Capacitor.nativePromise('OmegaDsUsb', 'schliessen', { aus: dsUsbBase64(dsUsbBericht(dsAus(), dsAus())) }); } catch (e) { /* weg */ }
+    dsUsbLage('');
+  }
+  if (dsUsbApp()) {
+    setInterval(dsUsbSuchen, DS_USB_SUCH_MS);
+    try { window.Capacitor.addListener('OmegaDsUsb', 'dsUsbZu', (r) => { dsUsb.offen = false; dsZustand = null; dsUsbLage(''); log('DualSense USB: zu (' + ((r && r.grund) || '') + ').', 'info'); }); } catch (e) { /* alte Capacitor-Fassung */ }
+  }
+  if ($('ds-usb-an')) $('ds-usb-an').addEventListener('change', () => { if (!dsUsbAn()) dsUsbZu(); else { dsUsb.gesperrt = ''; dsUsbSuchen(); } });
   if ($('ds-usb-test')) $('ds-usb-test').addEventListener('click', dsUsbTest);
   if ('hid' in navigator) {
     navigator.hid.addEventListener('disconnect', (e) => { if (e.device === dsGeraet) { dsGeraet = null; dsLageZeigen(); } });
@@ -118472,6 +118557,55 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
+
+  stAdd('DualSense v1.5: Trigger beim Fahren ueber USB (Dauerverbindung), Vibration-Testknopf sendet', async () => {
+    const f = [];
+    const merk = { cap: window.Capacitor, pad: window.OmegaPad, usb: Object.assign({}, dsUsb), zust: dsZustand, stand: Object.assign({}, nativRuettlerStand), an: $('ds-usb-an') && $('ds-usb-an').checked };
+    const gesendet = [];
+    let oeffnenArg = null;
+    try {
+      // Vibration-Testknopf: erreicht die Pads (hier ueber eine Attrappe des Android-Vibrators).
+      const stoesse = [];
+      window.OmegaPad = { ruettlerDa: () => 1, ruetteln: (a, b, ms) => { stoesse.push(ms); return true; }, lesen: () => '' };
+      nativRuettlerStand = { zeit: 0, n: 0 };
+      const merkRumble = rumbleOn; rumbleOn = true;
+      try { $('vib-test').click(); } finally { rumbleOn = merkRumble; }
+      if (stoesse.length !== 1) f.push('Testknopf sendet nicht (' + stoesse.length + ')');
+      // Dauerverbindung.
+      let antwortOeffnen = { ok: true, weg: 'interrupt', protokoll: '' };
+      window.Capacitor = { isNativePlatform: () => true, isPluginAvailable: (x) => x === 'OmegaDsUsb', addListener: () => {},
+        nativePromise: async (pl, m, arg) => {
+          if (m === 'lage') return { gefunden: true, offen: dsUsb.offen };
+          if (m === 'oeffnen') { oeffnenArg = arg; return antwortOeffnen; }
+          if (m === 'senden') { gesendet.push(atob(arg.bericht)); return { ok: true }; }
+          return {};
+        } };
+      if ($('ds-usb-an')) $('ds-usb-an').checked = true;
+      Object.assign(dsUsb, { offen: false, sucht: false, gesperrt: '', meldung: '' });
+      await dsUsbSuchen();
+      if (!dsUsb.offen) f.push('Dauerverbindung nicht offen');
+      if (!oeffnenArg || atob(oeffnenArg.aus).length !== 63) f.push('oeffnen ohne Aus-Bericht');
+      dsZustand = null;
+      dsSenden(dsWiderstand(1, 2, 7), dsWiderstand(1, 2, 3));
+      if (gesendet.length !== 1 || gesendet[0].length !== 63 || gesendet[0].charCodeAt(0) !== 2) f.push('senden: ' + gesendet.length);
+      // Nur am Kabel: gesperrt bis zum Abziehen.
+      Object.assign(dsUsb, { offen: false, gesperrt: '' });
+      antwortOeffnen = { ok: false, grund: 'tasten', protokoll: '' };
+      await dsUsbSuchen();
+      if (dsUsb.offen || dsUsb.gesperrt !== 'tasten') f.push('nur Kabel nicht gesperrt');
+      const vorher = gesendet.length;
+      await dsUsbSuchen();
+      if (gesendet.length !== vorher || dsUsb.offen) f.push('versucht es trotz Sperre erneut');
+    } catch (e) { f.push('Fehler: ' + e.message); }
+    finally {
+      if (merk.cap === undefined) delete window.Capacitor; else window.Capacitor = merk.cap;
+      if (merk.pad === undefined) delete window.OmegaPad; else window.OmegaPad = merk.pad;
+      Object.assign(dsUsb, merk.usb); dsZustand = merk.zust; nativRuettlerStand = merk.stand;
+      if ($('ds-usb-an')) $('ds-usb-an').checked = merk.an;
+      if ($('ds-usb-lage')) $('ds-usb-lage').textContent = '';
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Testknopf sendet, Dauerverbindung oeffnet mit Aus-Bericht, Effekte als 63-Byte-Bericht ueber USB, nur Kabel bleibt gesperrt' };
+  });
 
   stAdd('App v1.5: Rumble ueber den Android-Vibrator, wenn die APK ihn hat; USB-Probe zeigt ihr Protokoll', async () => {
     const f = [];
