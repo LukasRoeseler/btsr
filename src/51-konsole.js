@@ -837,8 +837,24 @@
     try { return currentTrackTiles.length > 1 ? trackToCode(currentTrackTiles) : ''; } catch (e) { return ''; }
   }
 
+  // v1.5: Symbole auf der Garagenkachel: zweiter Laptop verbunden (98m-zwei-laptops.js), Onboard-Kamera mit Bild
+  // (75-onboard.js). Wird auch von dort bei jeder Aenderung gerufen.
+  const K_SYMBOL_LAPTOP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>';
+  const K_SYMBOL_KAMERA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+  function konsoleFahrenGeraete() {
+    const el = $('fa-auto-geraete');
+    if (!el) return;
+    let laptop = false, kamera = false;
+    try { laptop = typeof zl !== 'undefined' && !!zl && !!zl.offen; } catch (e) { laptop = false; }
+    try { kamera = typeof onboardAktiv === 'function' && onboardAktiv(); } catch (e) { kamera = false; }
+    const html = (laptop ? '<i title="' + t('Zweiter Laptop verbunden') + '">' + K_SYMBOL_LAPTOP + '</i>' : '')
+      + (kamera ? '<i title="' + t('Onboard-Kamera verbunden') + '">' + K_SYMBOL_KAMERA + '</i>' : '');
+    if (el.innerHTML !== html) el.innerHTML = html;
+    el.hidden = !html;
+  }
   function konsoleFahrenZeichnen() {
     if (!$('fa-auto')) return;
+    konsoleFahrenGeraete();
     const autos = kAutos();
     $('fa-auto-titel').textContent = autos.length ? autos.length + ' ' + t('verbunden') : t('Autos verbinden');
     // BESTELLT v0.8.126: mehrere verbundene Autos mit Fotos gemeinsam zeigen (die Garage auf dem
@@ -1195,6 +1211,11 @@
     kn('fa-garage', () => konsoleZeige('garage'));
     kn('fa-mp', () => konsoleZeige('mp'));
     kn('fa-start', () => { konsoleLosfahren(); });
+    // v1.5: "Drive Virtually" - wie "Virtuell fahren" in der Garage, das Rennen (Renneinstellungen) beginnt sofort.
+    kn('fa-virtuell', () => {
+      if (kRennenLaeuft()) { showHudToast(t('Erst das laufende Rennen beenden')); return; }
+      if (typeof virtuellStarten === 'function') virtuellStarten();
+    });
     // v1.1.3 BESTELLT: "Tippe ich bei der Kachel STRECKE auf STRECKE oder AUF DER BAHN, soll
     // umgeschaltet werden; tippe ich auf das Bild, oeffnet sich das Menue dazu." Vorher schaltete nur
     // der Text selbst um, ein Tipp daneben in der Kopfzeile oeffnete das Menue. Jetzt oeffnet nur das

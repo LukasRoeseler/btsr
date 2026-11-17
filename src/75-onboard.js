@@ -202,6 +202,7 @@
     if (b) b.textContent = onbEinst().an ? t('Ausschalten') : t('Einschalten');
     const leer = $('onboard-leer');
     if (leer) leer.hidden = onboardAktiv();
+    if (typeof konsoleFahrenGeraete === 'function') konsoleFahrenGeraete();
     const art = onbEinst().art === 'm5' ? 'm5' : 'usb';
     const zu = $('onboard-zeile-usb'), zm = $('onboard-zeile-m5');
     if (zu) zu.hidden = art !== 'usb';

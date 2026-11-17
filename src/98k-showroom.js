@@ -205,7 +205,29 @@
   showFenster.addEventListener('click', (e) => { if (e.target === showFenster) showSchliessen(); });
 
   function showFensterOffen() { const f = document.getElementById('show-fenster'); return !!(f && !f.hidden); }
+  // v1.5 BESTELLT: "beim handy tilten einen glaenzeffekt auf die collection karten machen". Die Neigung des Telefons
+  // (deviceorientation: gamma links/rechts, beta vor/zurueck um die Haltung von etwa 45 Grad) setzt Glanz, Holo-Folie und
+  // eine leichte Drehung aller Karten wie der Zeiger am Rechner. Ein Bild je Animationsschritt. iPhone fragt beim Oeffnen.
+  let showNeigungRaf = 0, showNeigungWert = null;
+  function showNeigungAnwenden(g, b) {
+    const x = Math.max(0, Math.min(1, (g + 30) / 60)), y = Math.max(0, Math.min(1, (b - 15) / 60));
+    document.querySelectorAll('#show-fenster .show-karte').forEach((k) => {
+      k.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); k.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+      k.style.setProperty('--rx', ((0.5 - y) * 14).toFixed(2) + 'deg'); k.style.setProperty('--ry', ((x - 0.5) * 18).toFixed(2) + 'deg');
+      k.classList.add('aktiv');
+    });
+  }
+  function showNeigung(e) {
+    if (showFenster.hidden || e.gamma === null || e.gamma === undefined || e.beta === null) return;
+    showNeigungWert = [e.gamma, e.beta];
+    if (showNeigungRaf) return;
+    showNeigungRaf = requestAnimationFrame(() => { showNeigungRaf = 0; if (showNeigungWert) showNeigungAnwenden(showNeigungWert[0], showNeigungWert[1]); });
+  }
+  window.addEventListener('deviceorientation', showNeigung);
   function showOeffnen() {
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') DeviceOrientationEvent.requestPermission().catch(() => {});
+    } catch (e) { /* kein Neigungssensor */ }
     showFenster.hidden = false;
     showZeichnen();
     if (typeof menuNavEnsureContext === 'function') {
@@ -244,13 +266,14 @@
     d.querySelector('[data-act="show-zu"]').addEventListener('click', (e) => { e.stopPropagation(); showSchliessen(); });
     d.querySelectorAll('.show-karte').forEach((k) => {
       k.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'touch') return;   // auf dem Telefon fuehrt die Neigung (showNeigung)
         const r = k.getBoundingClientRect();
         const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
         k.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); k.style.setProperty('--my', (y * 100).toFixed(1) + '%');
         k.style.setProperty('--rx', ((0.5 - y) * 14).toFixed(2) + 'deg'); k.style.setProperty('--ry', ((x - 0.5) * 18).toFixed(2) + 'deg');
         k.classList.add('aktiv');
       });
-      k.addEventListener('pointerleave', () => { k.classList.remove('aktiv'); k.style.setProperty('--rx', '0deg'); k.style.setProperty('--ry', '0deg'); });
+      k.addEventListener('pointerleave', (e) => { if (e.pointerType === 'touch') return; k.classList.remove('aktiv'); k.style.setProperty('--rx', '0deg'); k.style.setProperty('--ry', '0deg'); });
       k.addEventListener('click', (e) => { e.stopPropagation(); k.classList.toggle('gedreht'); });
     });
   }

@@ -14512,13 +14512,63 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Karte, 2 Zeilen, Histogramm, Warten abgebrochen' };
   });
 
-  stAdd('Fahren: Motorsound nur noch in der Garage, Fahrgefuehl und Start fuellen die Reihe', () => {
+  // v1.5: dazu "Drive Virtually" zwischen Meisterschaft und Start (ein Drittel der alten Startbreite, Start zwei Drittel).
+  stAdd('Fahren: Motorsound nur noch in der Garage, Meisterschaft, Virtuell fahren und Start fuellen die Reihe', () => {
     const f = [];
     if (document.getElementById(['fa', 'motor'].join('-'))) f.push('Motorsound-Kachel noch da');
-    if (!$('fa-profil') || !$('fa-start')) f.push('Fahrgefuehl oder Start fehlt');
+    if (!$('fa-profil') || !$('fa-start') || !$('fa-virtuell')) f.push('Meisterschaft, Virtuell oder Start fehlt');
     const unten = document.querySelector('.k-fahren-unten');
-    if (unten && getComputedStyle(unten).gridTemplateColumns.split(' ').length !== 2) f.push('Reihe hat nicht zwei Spalten');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Fahrgefuehl 1/3, Start 2/3' };
+    const kinder = unten ? [...unten.children].map((x) => x.id) : [];
+    if (kinder.join(',') !== 'fa-profil,fa-virtuell,fa-start') f.push('Reihenfolge ' + kinder.join(','));
+    if (unten && unten.offsetWidth > 300 && getComputedStyle(unten).gridTemplateColumns.split(' ').length === 3) {
+      const v = $('fa-virtuell').offsetWidth, st = $('fa-start').offsetWidth;
+      if (Math.abs(st / v - 2) > 0.2) f.push('Start/Virtuell ' + (st / v).toFixed(2) + ' statt 2');
+    }
+    if (!$('fa-virtuell').querySelector('.wip-tag')) f.push('Virtuell ohne WIP');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Meisterschaft | Virtuell (1/3 der alten Startbreite) | Start (2/3)' };
+  });
+
+  stAdd('Fahren v1.5: Symbole fuer zweiten Laptop und Onboard-Kamera auf der Garagenkachel', () => {
+    const f = [];
+    const merkOffen = zl.offen, merkZ = onbZ;
+    try {
+      zl.offen = false; onbZ = null; konsoleFahrenGeraete();
+      if (!$('fa-auto-geraete').hidden) f.push('Symbole ohne Verbindung sichtbar');
+      zl.offen = true; konsoleFahrenGeraete();
+      if ($('fa-auto-geraete').hidden || $('fa-auto-geraete').querySelectorAll('i').length !== 1) f.push('Laptop-Symbol fehlt');
+      // Kamera mit Bild: Attrappe des WLAN-Bilds.
+      onbZ = { m5: { url: 'x' } };
+      const img = $('onboard-bild');
+      const merkW = Object.getOwnPropertyDescriptor(img, 'naturalWidth');
+      Object.defineProperty(img, 'naturalWidth', { configurable: true, get: () => 640 });
+      try { konsoleFahrenGeraete(); } finally { if (merkW) Object.defineProperty(img, 'naturalWidth', merkW); else delete img.naturalWidth; }
+      if ($('fa-auto-geraete').querySelectorAll('i').length !== 2) f.push('Kamera-Symbol fehlt');
+    } finally { zl.offen = merkOffen; onbZ = merkZ; konsoleFahrenGeraete(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'ohne Verbindung keine Symbole, Laptop und Kamera je ein Symbol' };
+  });
+
+  stAdd('Showroom v1.5: Neigen des Telefons setzt Glanz und Drehung der Karten', () => {
+    const f = [];
+    let roh = null;
+    try { roh = localStorage.getItem(SESSION_STORE); } catch (e) { roh = null; }
+    const probe = { role: 'ghost', device: { id: 'probe-neig' }, alias: 'Neig', colorId: 'rot', sim: false, testSenke: [], probe: true };
+    try {
+      garage.push(probe);
+      showOeffnen();
+      const k = $('show-dialog').querySelector('.show-karte');
+      if (!k) { f.push('keine Karte'); return { ok: false, mass: f.join(' | ') }; }
+      showNeigungAnwenden(30, 75);
+      if (!k.classList.contains('aktiv') || k.style.getPropertyValue('--mx') !== '100.0%' || k.style.getPropertyValue('--my') !== '100.0%') f.push('Neigung rechts/vorn: ' + k.style.getPropertyValue('--mx') + '/' + k.style.getPropertyValue('--my'));
+      showNeigungAnwenden(-30, 15);
+      if (k.style.getPropertyValue('--mx') !== '0.0%' || k.style.getPropertyValue('--ry') !== '-9.00deg') f.push('Neigung links: ' + k.style.getPropertyValue('--mx') + '/' + k.style.getPropertyValue('--ry'));
+    } finally {
+      showFenster.hidden = true;
+      const i = garage.indexOf(probe); if (i >= 0) garage.splice(i, 1);
+      try { if (roh === null) localStorage.removeItem(SESSION_STORE); else localStorage.setItem(SESSION_STORE, roh); } catch (e) { /* privat */ }
+      renderGarage();
+      if (typeof menuNavEnsureContext === 'function') menuNavEnsureContext();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts/vorn 100 %, links 0 % mit -9 Grad, Glanz an' };
   });
 
   stAdd('ACC-Menü: Streckenfoto ersetzt im Ausdruck-Modus die Karte im Cockpit', () => {

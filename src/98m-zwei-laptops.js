@@ -421,6 +421,7 @@
   function zlStatus(s) { zl.status = s; const el = $('zl-status'); if (el) el.textContent = s; }
   function zlEsc(x) { return String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
   function zlMalen() {
+    if (typeof konsoleFahrenGeraete === 'function') konsoleFahrenGeraete();
     const lampe = $('zl-lampe');
     if (lampe) {
       lampe.className = 'zl-lampe ' + (zl.offen ? (zl.warStill ? 'gelb' : 'gruen') : 'rot');
