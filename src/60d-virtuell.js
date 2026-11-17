@@ -1873,6 +1873,7 @@
     }
     const dt = VF.letzt ? Math.min(0.05, (now - VF.letzt) / 1000) : 0.016;
     VF.letzt = now;
+    if (VF.wxEinmalAt && rennZeitJetzt() >= VF.wxEinmalAt) vfWetterEinmal();
     const st = physEngine.state;
     VF.dtBild = dt;
     // Zeitmodi (Endurance, Qualifying): laufen gegen die Rennzeit.
@@ -2049,12 +2050,34 @@
   // v1.5.16 BESTELLT: "virtuelles Fahren: hierfuer sollen die aktuellen Renneinstellungen auch gelten". Renntyp und
   // Limit galten schon; jetzt auch das Startwetter (Regen mit nassem Griff, wie beim echten Fahren binaer), und
   // was virtuell (noch) nicht geht, sagt der Start einmal an, statt es still zu uebergehen.
+  // v1.5: der einmalige Wetterwechsel der virtuellen Fahrt (Renneinstellung "Wetter ändert sich").
+  function vfWetterEinmal() {
+    VF.wxEinmalAt = null;
+    if (typeof setWeather !== 'function') return;
+    const nass = weather !== 'rain';
+    setWeather(nass ? 'rain' : 'dry');
+    showHudToast(nass ? t('Es fängt an zu regnen') : t('Es trocknet ab'));
+  }
   function vfRennEinstellungen() {
     const fehlt = [];
     const wx = $('race-wx-start') ? $('race-wx-start').value : 'dry';
     VF.wetterVorher = typeof weather !== 'undefined' ? weather : null;
     if (wx === 'rain' && typeof setWeather === 'function') setWeather('rain');
-    else if (wx === 'wechsel') fehlt.push(t('wechselhaftes Wetter'));
+    else if (wx === 'wechsel' && typeof wxWechselPlanen === 'function') {
+      // v1.5: wechselhaft auch virtuell. Der Wetter-Takt (wxWechselTick, 70-race.js) laeuft unabhaengig vom
+      // Rennen; er braucht nur raceWxStart und den ersten Wechselzeitpunkt. Beginn trocken wie im Rennen.
+      raceWxStart = 'wechsel';
+      if (typeof setWeather === 'function') setWeather('dry');
+      wxWechselPlanen(false);
+      VF.wxWechsel = true;
+    } else if (wx === 'wechsel') fehlt.push(t('wechselhaftes Wetter'));
+    // v1.5: "Wetter ändert sich" (einmaliger Wechsel) virtuell: im mittleren Drittel der Fahrzeit (ohne Zeitlimit
+    // in den ersten 5 Minuten), geprueft in vfBild.
+    VF.wxEinmalAt = null;
+    if (wx !== 'wechsel' && typeof raceWxChange !== 'undefined' && raceWxChange) {
+      const total = (VF.limit && (VF.modus === 'endurance' || VF.modus === 'qualifying' || VF.modus === 'practice')) ? VF.limit * 60000 : 5 * 60000;
+      VF.wxEinmalAt = rennZeitJetzt() + total * (0.35 + (typeof wxZufall === 'function' ? wxZufall() : Math.random()) * 0.3);
+    }
     if ($('race-flying') && $('race-flying').checked) fehlt.push(t('fliegender Start'));
     if ($('race-pit-required') && +$('race-pit-required').value > 0) fehlt.push(t('Pflichtboxenstopps'));
     if ($('race-zev') && $('race-zev').checked) fehlt.push(t('Zufallsevents'));
@@ -2067,6 +2090,8 @@
     return fehlt;
   }
   function vfRennEinstellungenZurueck() {
+    if (VF.wxWechsel) { if (typeof wxWechselAt !== 'undefined') wxWechselAt = null; VF.wxWechsel = false; }
+    VF.wxEinmalAt = null;
     if (VF.wetterVorher && typeof setWeather === 'function' && typeof weather !== 'undefined' && weather !== VF.wetterVorher) setWeather(VF.wetterVorher);
     VF.wetterVorher = null;
   }

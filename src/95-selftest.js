@@ -26774,7 +26774,8 @@
     const el = (id) => $(id);
     const merk = { wx: el('race-wx-start') && el('race-wx-start').value, fly: el('race-flying') && el('race-flying').checked,
                    pit: el('race-pit-required') && el('race-pit-required').value, zev: el('race-zev') && el('race-zev').checked,
-                   wetter: weather, front: wxFront, frontTo: wxFrontTo, schaden: el('setting-crash-schaden') && el('setting-crash-schaden').checked };
+                   wetter: weather, front: wxFront, frontTo: wxFrontTo, schaden: el('setting-crash-schaden') && el('setting-crash-schaden').checked,
+                   wxStart: raceWxStart, wxAt: wxWechselAt };
     try {
       // Regen als Startwetter: das Wetter wird Regen, beim Beenden wieder wie vorher.
       setWeather('dry'); wxFront = -1; wxFrontTo = -1;
@@ -26792,8 +26793,22 @@
       if (el('race-flying')) el('race-flying').checked = true;
       if (el('race-pit-required')) el('race-pit-required').value = '1';
       const l2 = vfRennEinstellungen();
-      for (const w of ['wechselhaftes Wetter', 'fliegender Start', 'Pflichtboxenstopps']) if (l2.indexOf(t(w)) < 0) f.push(w + ' nicht genannt');
+      for (const w of ['fliegender Start', 'Pflichtboxenstopps']) if (l2.indexOf(t(w)) < 0) f.push(w + ' nicht genannt');
+      // v1.5: wechselhaft geht jetzt virtuell: beginnt trocken, der Wetter-Takt hat einen ersten Wechsel.
+      if (l2.indexOf(t('wechselhaftes Wetter')) >= 0) f.push('wechselhaft noch als nicht verfuegbar genannt');
+      if (weather !== 'dry' || raceWxStart !== 'wechsel' || !(wxWechselAt > rennZeitJetzt())) f.push('wechselhaft nicht geplant (' + weather + ', ' + wxWechselAt + ')');
       vfRennEinstellungenZurueck();
+      if (wxWechselAt !== null) f.push('Wechsel nach dem Beenden noch geplant');
+      // v1.5: einmaliger Wechsel ("Wetter ändert sich").
+      el('race-wx-start').value = 'dry';
+      const merkW = raceWxChange; raceWxChange = true;
+      try {
+        vfRennEinstellungen();
+        if (!(VF.wxEinmalAt > rennZeitJetzt())) f.push('einmaliger Wechsel nicht geplant');
+        VF.wxEinmalAt = rennZeitJetzt() - 1; vfWetterEinmal();
+        if (weather !== 'rain' || VF.wxEinmalAt !== null) f.push('einmaliger Wechsel schaltet nicht auf Regen');
+        vfRennEinstellungenZurueck();
+      } finally { raceWxChange = merkW; }
       // Schaden-Schalter (Optionen) gilt auch virtuell.
       if (el('setting-crash-schaden')) {
         el('setting-crash-schaden').checked = false;
@@ -26808,8 +26823,9 @@
       if (el('race-zev')) el('race-zev').checked = merk.zev;
       if (el('setting-crash-schaden')) el('setting-crash-schaden').checked = merk.schaden;
       setWeather(merk.wetter); wxFront = merk.front; wxFrontTo = merk.frontTo;
+      raceWxStart = merk.wxStart; wxWechselAt = merk.wxAt;
     }
-    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Regen als Startwetter und zurueck, wechselhaft/fliegend/Pflichtstopps genannt, Schaden-Schalter wirkt' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Regen als Startwetter und zurueck, wechselhaft geplant und beim Beenden gestoppt, einmaliger Wechsel, fliegend/Pflichtstopps genannt, Schaden-Schalter wirkt' };
   });
 
   // v1.5.11: Kollision im virtuellen Fahren mit gedrehten Kaesten und Impuls.
