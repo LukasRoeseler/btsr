@@ -1086,6 +1086,9 @@
     const z = vfTz();
     if (u.nebel) gl.uniform3f(u.nebel, z.horizont[0], z.horizont[1], z.horizont[2]);
     if (u.sonne) gl.uniform3f(u.sonne, z.sonne[0], z.sonne[1], z.sonne[2]);
+    // v1.5: Lackreflexe (Modell-Shader Quality) spiegeln denselben Himmel.
+    if (u.horizont) gl.uniform3f(u.horizont, z.horizont[0], z.horizont[1], z.horizont[2]);
+    if (u.zenit) gl.uniform3f(u.zenit, z.zenit[0], z.zenit[1], z.zenit[2]);
   }
   // v1.3.124: Grafik-Feinschliff (BESTELLT). Regler (Konsole) fuer die Bildqualitaet im Quality-Modus.
   // VF_BELICHTUNG: Gesamthelligkeit. VF_BUMP_BODEN/BAHN: Relief-Staerke (0 = aus, wenn der Boden
@@ -1505,6 +1508,7 @@
         + 'varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vv; varying HP vec3 vsp;'
         + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
         + 'uniform float klar; uniform float glas; uniform sampler2D sch; uniform float schatt; uniform HP float bias; uniform float lack; uniform vec3 sonne;'
+        + 'uniform vec3 horizont; uniform vec3 zenit;'
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
         + 'HP float schTiefe(HP vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
         + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7), lack); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
@@ -1515,6 +1519,8 @@
         + ' vec3 c = pow(tb, vec3(2.2)) * tint * ((amb * 0.55 + l) * sonne + emis);'
         + ' c += vec3(pow(rv, 24.0) * 0.60 * licht + sheen * licht);'
         + ' c += vec3(0.05, 0.06, 0.07) * klar * pow(rv, 6.0) * 1.2;'
+        + ' vec3 Rv = reflect(-V, N); vec3 env = pow(mix(horizont, zenit, clamp(Rv.y * 1.5 + 0.1, 0.0, 1.0)), vec3(2.2));'
+        + ' c += env * klar * (0.05 + 0.6 * pow(1.0 - max(dot(N, V), 0.0), 5.0)) * 0.9;'
         + ' c += vec3(pow(1.0 - max(dot(N, V), 0.0), 5.0) * glas * 0.9);'
         + ' c = pow(filmic(c * 1.05), vec3(1.0/2.2));'
         // Schattenkarte: Bias waechst mit flachem Lichteinfall (Streifen auf schraegen Blechen).
@@ -1525,7 +1531,7 @@
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'sonne', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'lack'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'sonne', 'horizont', 'zenit', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'lack'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     // Feste Zwischenspeicher fuer die Matrizen je Teil (keine Float32Array je Teil und Bild).
     return { p, u, qual: !!qual, f16: new Float32Array(16), f9: new Float32Array(9), pv: new Float32Array(16), schM: new Float32Array(16),
              ap: gl.getAttribLocation(p, 'p'), an: gl.getAttribLocation(p, 'n'), auv: gl.getAttribLocation(p, 'uv') };
