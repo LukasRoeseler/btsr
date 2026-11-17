@@ -184,10 +184,15 @@
       ton: [[46, 78, 32], [72, 106, 44], [104, 116, 58]], maser: [0, 0, 0], kontrast: 0, ringCm: 1, poren: 0, ast: 0, glanz: 0.0 },
   ];
   const VF_ATLAS_B = 2048, VF_ATLAS_H = 1024;   // Bodenatlas (8 MB, mit Mipmaps 10,7 MB)
-  const VF_BAHN_TEX = 1024, VF_BAHN_SPALTE = 256;
+  // v1.5.88 BESTELLT: "Textur der Strecke verbessern (höhere Auflösung des Belages und der Randstreifen) - sieht vor allem
+  // in Motorhaubenkamera nicht so gut aus". Doppelte Aufloesung in beiden Richtungen: Fahrbahn 20 statt 10 px je cm quer
+  // und 48 statt 24 px je cm laengs, Randstreifen 512 x 2048. Alles, was in Pixeln gemessen war (Fugen, Striche im
+  // Randstreifen, Abrieb), ist mit VF_TEX_K mitgewachsen; was in cm gezeichnet wird, bleibt gleich gross, nur schaerfer.
+  const VF_TEX_K = 2;
+  const VF_BAHN_TEX = 1024 * VF_TEX_K, VF_BAHN_SPALTE = 256 * VF_TEX_K;   // Fahrbahn: 4 Teile nebeneinander (3 gebraucht, 1 Start/Ziel)
   // v1.5.84: Ort der Ziellinie auf dem Startteil (Anteil der Laenge in Fahrtrichtung), fuer Textur und Rundenzaehlung.
-  const VF_ZIEL_ANTEIL = 0.8;  // Fahrbahn: 4 Teile nebeneinander (3 gebraucht, 1 Start/Ziel)
-  const VF_RAND_B = 256, VF_RAND_H = 1024;       // Randstreifen: blau | rot, 4 Pfeiltakte uebereinander
+  const VF_ZIEL_ANTEIL = 0.8;
+  const VF_RAND_B = 256 * VF_TEX_K, VF_RAND_H = 1024 * VF_TEX_K;   // Randstreifen: blau | rot, 4 Pfeiltakte uebereinander
   const VF_FUGE = 0.07;                          // halbe Steckfuge in Einheiten (zusammen ~1,5 mm)
   const VF_FUGE_FARBE = [0.22, 0.22, 0.23];
   // Gemerkte Pixel (einmal je Sitzung) und wie oft sie erzeugt wurden (Selbsttest).
@@ -410,10 +415,14 @@
         for (let x = 0; x < SW; x++) { const q = (x / SW - m) / b; if (q > -3 && q < 3) spur[x] += st * Math.exp(-q * q); }
       }
       for (let y = 0; y < H; y++) {
-        const fuge = y === 0 || y === H - 1, halb = y === 1 || y === H - 2, fase = y === 2 || y === H - 3;
+        // Fuge, Halbschatten und Fase je VF_TEX_K Zeilen (gleich breit in cm wie bei 1024 px).
+        const ry = Math.min(y, H - 1 - y) / VF_TEX_K | 0;
+        const fuge = ry === 0, halb = ry === 1, fase = ry === 2;
         for (let x = 0; x < SW; x++) {
           const fi = y * SW + x, sp = spur[x];
-          let v = 30 + fleck[fi] * 2.6 + (vfHash(s * SW + x, y) - 0.5) * 6 - sp * 1.6;
+          // Korn in zwei Groessen: das alte (je VF_TEX_K Pixel) und ein feines darin, das erst nah sichtbar wird.
+          let v = 30 + fleck[fi] * 2.6 + (vfHash(s * 256 + (x / VF_TEX_K | 0), y / VF_TEX_K | 0) - 0.5) * 5
+            + (vfHash(s * SW + x + 7001, y + 3001) - 0.5) * 3.5 - sp * 1.6;
           let gl = 0.36 + 0.24 * glanzF[fi] + 0.12 * (sp > 1 ? 1 : sp);
           if (fuge) { v = 12; gl = 0; } else if (halb) { v = 21; gl = 0.1; } else if (fase) { v = 40; gl = 0.2; }
           const i = (y * W + s * SW + x) * 4;
@@ -428,7 +437,7 @@
     for (let s = 0; s < 4; s++) {
       const rnd = vfZufall(5003 + s * 104729);
       g.save();
-      g.beginPath(); g.rect(s * SW, 3, SW, H - 6); g.clip();
+      g.beginPath(); g.rect(s * SW, 3 * VF_TEX_K, SW, H - 6 * VF_TEX_K); g.clip();
       g.setTransform(pxB, 0, 0, pxL, s * SW, 0);       // ab hier in cm
       if (s === 3) {
         // Start/Ziel wie auf dem Foto: zwei Reihen weisser Kaestchen, versetzt, mit einer Linie dazwischen.
@@ -495,7 +504,7 @@
     const rnd = vfZufall(7717), fleck = vfFeld(rnd, 4, 24, W, H);
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
-        const p = y * W + x, v = 236 + fleck[p] * 5 + (vfHash(x, y + 9000) - 0.5) * 6, i = p * 4;
+        const p = y * W + x, v = 236 + fleck[p] * 5 + (vfHash(x / VF_TEX_K | 0, (y / VF_TEX_K | 0) + 9000) - 0.5) * 6, i = p * 4;
         d[i] = v - 2; d[i + 1] = v - 1; d[i + 2] = v + 1; d[i + 3] = 255;
       }
     }
@@ -515,21 +524,21 @@
       g.save();
       g.beginPath(); g.rect(x0, 0, SB, H); g.clip();
       for (let k = 0; k < 9; k++) {
-        const x = x0 + Math.pow(rnd(), 2) * SB * 0.5, y = rnd() * H, lang = 20 + rnd() * 110;
+        const x = x0 + Math.pow(rnd(), 2) * SB * 0.5, y = rnd() * H, lang = (20 + rnd() * 110) * VF_TEX_K;
         g.strokeStyle = 'rgba(25,25,28,' + (0.04 + rnd() * 0.12).toFixed(3) + ')';
-        g.lineWidth = 1 + rnd() * 3;
+        g.lineWidth = (1 + rnd() * 3) * VF_TEX_K;
         g.beginPath(); g.moveTo(x, y); g.lineTo(x + (rnd() - 0.5) * 6, y + lang); g.stroke();
       }
       for (let k = 0; k < 26; k++) {
-        const x = x0 + rnd() * SB, y = rnd() * H, w = rnd() < 0.5 ? (rnd() - 0.5) * 0.8 : rnd() * Math.PI, lang = 4 + Math.pow(rnd(), 2) * 36;
+        const x = x0 + rnd() * SB, y = rnd() * H, w = rnd() < 0.5 ? (rnd() - 0.5) * 0.8 : rnd() * Math.PI, lang = (4 + Math.pow(rnd(), 2) * 36) * VF_TEX_K;
         g.strokeStyle = 'rgba(105,108,115,' + (0.05 + rnd() * 0.16).toFixed(3) + ')';
-        g.lineWidth = 0.5 + rnd() * 0.7;
+        g.lineWidth = (0.5 + rnd() * 0.7) * VF_TEX_K;
         g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.sin(w) * lang, y + Math.cos(w) * lang); g.stroke();
       }
       for (let k = 0; k < 8; k++) {
         const r = g.createRadialGradient(0, 0, 0, 0, 0, 1);
         r.addColorStop(0, 'rgba(110,105,95,0.13)'); r.addColorStop(1, 'rgba(110,105,95,0)');
-        g.save(); g.translate(x0 + rnd() * SB, rnd() * H); g.scale(10 + rnd() * 30, 20 + rnd() * 70);
+        g.save(); g.translate(x0 + rnd() * SB, rnd() * H); g.scale((10 + rnd() * 30) * VF_TEX_K, (20 + rnd() * 70) * VF_TEX_K);
         g.fillStyle = r; g.fillRect(-1, -1, 2, 2); g.restore();
       }
       g.restore();
@@ -773,7 +782,8 @@
           accS.push(accS[accS.length - 1] + Math.hypot(q[0] - p[0], q[1] - p[1]));
         }
         const Ls = accS[accS.length - 1] || 1, nP = Math.max(1, Math.round(Ls / takt)), k0 = Math.floor(rnd() * 4);
-        const u0 = (sg > 0 ? 0.5 : 128.5) / VF_RAND_B, u1 = (sg > 0 ? 127.5 : 255.5) / VF_RAND_B, uw = (sg > 0 ? 4 : 132) / VF_RAND_B;
+        const hb = VF_RAND_B / 2;
+        const u0 = (sg > 0 ? 0.5 : hb + 0.5) / VF_RAND_B, u1 = (sg > 0 ? hb - 0.5 : VF_RAND_B - 0.5) / VF_RAND_B, uw = (sg > 0 ? 4 * VF_TEX_K : hb + 4 * VF_TEX_K) / VF_RAND_B;
         // v1.3.124: AO-Streifen an den Randsteinen (ao = VF_AO_INNEN, kleiner = dunkler), nur Quality;
         // ohne ao (Performance, Selbsttest) die Farben von 1.3.92.
         ao = ao || 1;
@@ -967,7 +977,8 @@
     const bahn = vfBahnGeometrie(pts, nrm, tiles, q ? VF_AO_INNEN : 1), boden = vfBodenGeometrie(pts, TB, art);
     return {
       prog, art, qual: q, pv: new Float32Array(16), schM: new Float32Array(16),
-      txBahn: vfTexturHoch(gl, vfBahnTexturDaten(), false, q ? 4 : 1, q), txRand: vfTexturHoch(gl, vfRandTexturDaten(), true, q ? 4 : 2, true),
+      // v1.5.88: Fahrbahn und Randstein unter flachem Blick (Motorhaube) anisotrop: Quality 8-fach, Performance 2-fach.
+      txBahn: vfTexturHoch(gl, vfBahnTexturDaten(), false, q ? 8 : 2, q), txRand: vfTexturHoch(gl, vfRandTexturDaten(), true, q ? 8 : 2, true),
       txBoden: vfTexturHoch(gl, TB, false, q ? 8 : 2, q),
       strasse: vfPufferF(gl, bahn.strasse), rand: vfPufferF(gl, bahn.rand), boden: vfPufferF(gl, boden.daten),
     };
@@ -1276,11 +1287,13 @@
   function vfHandlingName(id) { const m = VF_HANDLING_MODI.find((x) => x.id === id); return m ? t(m.name) : t('GT3'); }
   function vfTempoFaktor() { return vfHandling() === 'schnell' ? 1.15 : 1.0; }
   // Grafik der virtuellen Fahrt: Performance (wie bisher, fuer schwache Handys) oder Quality (besseres
-  // Licht, Tonemapping, Schatten, Vignette). Performance ist der sichere Standard.
+  // Licht, Tonemapping, Schatten, Vignette). v1.5.90 BESTELLT: "Virtuelles Fahren Standardeinstellungen ändern: Licht
+  // aus, qualität (nicht performance)". Ohne eigene Wahl gilt Quality; die Bildraten-Wache (vfWacheMessen) schaltet auf
+  // schwachen Geraeten Effekte ab. Wer Performance gewaehlt hat, behaelt es.
   const VF_GRAFIK_STORE = 'omegasim-vf-grafik';
   const VF_GRAFIK_MODI = [{ id: 'perf', name: 'Performance' }, { id: 'qual', name: 'Quality' }];
   function vfGrafik() {
-    try { const v = localStorage.getItem(VF_GRAFIK_STORE); return v === 'qual' ? 'qual' : 'perf'; } catch (e) { return 'perf'; }
+    try { const v = localStorage.getItem(VF_GRAFIK_STORE); return v === 'perf' ? 'perf' : 'qual'; } catch (e) { return 'qual'; }
   }
   function vfGrafikQual() { return vfGrafik() === 'qual'; }
   function vfGrafikSetzen(id) {
@@ -3684,6 +3697,10 @@
     // Schaden, und virtuelle Zusammenstoesse blieben danach im Cockpit stehen).
     VF.schadenVorher = (typeof damage === 'number') ? damage : null;
     VF.flaggeVorher = (typeof flagState !== 'undefined') ? flagState : null;
+    // v1.5.90 BESTELLT: virtuell faehrt man ab Werk ohne Licht ("Licht" oben schaltet es an). Der Schalter des echten
+    // Fahrens kommt beim Beenden zurueck.
+    VF.lichtVorher = (typeof headlightsOn === 'undefined') ? null : headlightsOn;
+    if (VF.lichtVorher !== null) { headlightsOn = false; const cbL = $('dash-head-toggle'); if (cbL) cbL.checked = false; }
     if (typeof damage === 'number') damage = 0;
     vfRennEinstellungen();
     // Zustand der virtuellen Wertung (derby/knockout): Spieler und NPCs.
@@ -4001,6 +4018,10 @@
       } catch (e) { /* weiter */ }
     }
     VF.flaggeVorher = null;
+    if (VF.lichtVorher !== null && VF.lichtVorher !== undefined && typeof headlightsOn !== 'undefined') {
+      headlightsOn = VF.lichtVorher; const cbL = $('dash-head-toggle'); if (cbL) cbL.checked = headlightsOn;
+    }
+    VF.lichtVorher = null;
     try { releaseInput(SRC.TOUCH); } catch (e) { /* egal */ }
     if (physEngine && physEngine.state) physEngine.state.dirtyAir = 0;
     document.body.classList.remove('vf-an');

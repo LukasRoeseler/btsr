@@ -27208,6 +27208,49 @@
     showTab(merkTab);
     return { ok: !f.length, mass: f.length ? f.join('; ') : mass };
   });
+  // v1.5.90 BESTELLT: "Textur der Strecke verbessern (höhere Auflösung des Belages und der Randstreifen)" und
+  // "Virtuelles Fahren Standardeinstellungen ändern: Licht aus, qualität (nicht performance)".
+  stAdd('Virtuell v1.5.90: Belag und Randstreifen doppelt aufgeloest, Fugen gleich breit, Quality und Licht aus ab Werk', () => {
+    const f = [];
+    const B = vfBahnTexturDaten(), R = vfRandTexturDaten();
+    if (B.w !== 2048 || B.h !== 2048) f.push('Belag ' + B.w + 'x' + B.h);
+    if (R.w !== 512 || R.h !== 2048) f.push('Randstreifen ' + R.w + 'x' + R.h);
+    // Fuge oben: VF_TEX_K Zeilen dunkel (12), dann Halbschatten (21) - in cm so breit wie bei 1024 px.
+    const px = (x, y) => B.d[(y * B.w + x) * 4 + 1];
+    const x = 100;
+    for (let y = 0; y < VF_TEX_K; y++) if (Math.abs(px(x, y) - 12) > 1) f.push('Fuge Zeile ' + y + ' = ' + px(x, y));
+    if (Math.abs(px(x, VF_TEX_K) - 21) > 1) f.push('Halbschatten = ' + px(x, VF_TEX_K));
+    if (px(x, 3 * VF_TEX_K + 5) < 22) f.push('Belag unter der Fase zu dunkel');
+    // Ziellinie in der Startspalte (3) bei rund 80 % der Laenge: helle Kaestchen.
+    let hell = 0;
+    const y80 = Math.round(B.h * VF_ZIEL_ANTEIL);
+    for (let xx = 3 * VF_BAHN_SPALTE; xx < 4 * VF_BAHN_SPALTE; xx++) for (let yy = y80 - 30; yy < y80 + 30; yy++) if (px(xx, yy) > 150) hell++;
+    if (hell < 2000) f.push('keine Ziellinie bei 80 % (' + hell + ' helle Pixel)');
+    // Ab Werk Quality.
+    let merkG = null;
+    try { merkG = localStorage.getItem(VF_GRAFIK_STORE); localStorage.removeItem(VF_GRAFIK_STORE); } catch (e) { /* egal */ }
+    if (vfGrafik() !== 'qual') f.push('Grafik ab Werk ' + vfGrafik());
+    try { localStorage.setItem(VF_GRAFIK_STORE, 'perf'); } catch (e) { /* egal */ }
+    if (vfGrafik() !== 'perf') f.push('gewaehltes Performance gilt nicht');
+    try { if (merkG === null) localStorage.removeItem(VF_GRAFIK_STORE); else localStorage.setItem(VF_GRAFIK_STORE, merkG); } catch (e) { /* egal */ }
+    // Licht aus waehrend der Fahrt, danach wie vorher.
+    if (typeof virtuellStarten === 'function' && !VF.aktiv) {
+      const merkL = headlightsOn, merkTab = kAktiverTab();
+      try {
+        headlightsOn = true;
+        if (virtuellStarten({ tiles: codeToTrack('SG3R2G3R2').tiles, studie: true })) {
+          if (headlightsOn) f.push('Licht an beim Start');
+          virtuellBeenden();
+          if (!headlightsOn) f.push('Licht nach dem Beenden aus');
+        }
+      } finally {
+        if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+        headlightsOn = merkL; const cb = $('dash-head-toggle'); if (cb) cb.checked = headlightsOn;
+        showTab(merkTab);
+      }
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Belag 2048, Randstreifen 512x2048, Fuge ' + VF_TEX_K + ' Zeilen, Quality ab Werk, Licht aus' };
+  });
   stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto und Farbe', async () => {
     const f = [];
     // Daten: acht Farben plus Original, eindeutige Kennungen, jede Farbe wird gefunden.
