@@ -220,6 +220,17 @@
     ];
   }
   function dsUsbLage(text) { const el = $('ds-usb-lage'); if (el) el.textContent = text; }
+  // v1.5: das Protokoll steht unter dem Knopf (nicht nur im Live-Log) und laesst sich kopieren.
+  function dsUsbProtokoll(text) {
+    const z = $('ds-usb-proto-zeile'), ta = $('ds-usb-proto');
+    if (!z || !ta) return;
+    ta.value = text; z.hidden = !text;
+  }
+  if ($('ds-usb-proto-kopieren')) $('ds-usb-proto-kopieren').addEventListener('click', async () => {
+    const ta = $('ds-usb-proto');
+    try { await navigator.clipboard.writeText(ta.value); } catch (e) { ta.select(); try { document.execCommand('copy'); } catch (e2) { /* von Hand */ } }
+    showHudToast(t('Protokoll kopiert'));
+  });
   async function dsUsbTest() {
     if (!dsUsbPlugin()) { dsUsbLage(t('Braucht die neue APK.')); return; }
     const C = window.Capacitor;
@@ -227,10 +238,12 @@
     try {
       const r = await C.nativePromise('OmegaDsUsb', 'test', { folge: dsUsbFolge() });
       log('DualSense USB-Probe:\n' + ((r && r.protokoll) || ''), r && r.ok ? 'ok' : 'err');
+      dsUsbProtokoll((r && r.protokoll) || '');
       dsUsbLage(r && r.ok ? t('Gesendet ({w}). Haben die Trigger reagiert?').replace('{w}', r.weg || '?') : t('Fehler, siehe Live-Log.'));
     } catch (e) {
       log('DualSense USB-Probe: ' + ((e && e.message) || e), 'err');
       dsUsbLage((e && e.message) || String(e));
+      dsUsbProtokoll((e && e.message) || String(e));
     }
   }
   if ($('ds-usb-zeile')) $('ds-usb-zeile').hidden = !dsUsbApp();

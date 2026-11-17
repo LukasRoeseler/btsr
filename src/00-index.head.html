@@ -7144,6 +7144,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Android-App (neue APK): Das Rumble des Controllers geht jetzt direkt &#252;ber Android an den Motor des Gamepads, &#252;ber Bluetooth und Kabel, auch wenn der Controller erst nach dem Start der App verbunden wird. Vorher lief es &#252;ber die Gamepad-Schnittstelle der Webansicht, die den Motor nur kannte, wenn der Controller schon beim Start da war. DualSense &#252;ber USB: Ist die Schnittstelle belegt (Controller nur am Kabel), sendet die Probe &#252;ber den Steuerkanal. Das Protokoll steht unter dem Knopf und l&#228;sst sich kopieren.</li>
         <li>Virtuell fahren: Wetter aus den Renneinstellungen vollst&#228;ndig. &#8222;Wechselhaft&#8220; wechselt jetzt auch virtuell zwischen trocken und Schauern (wie im Rennen, mit Meldung), und &#8222;Wetter &#228;ndert sich&#8220; bringt einen einmaligen Wechsel im mittleren Drittel der Fahrzeit. Beim Beenden gilt wieder das Wetter von vorher.</li>
         <li>Akku-Aufzeichnung (WIP, Entwicklertools &gt; Entwickler): Jedes verbundene Auto schreibt alle 10 s den Akku-Rohwert und die Fahrzeit mit. Nach dem Laden beginnt die Aufzeichnung neu, die vorige bleibt erhalten. Aus einer ganz leer gefahrenen Ladung entsteht sp&#228;ter eine echte Akku-Kennlinie statt der linearen Sch&#228;tzung. Je Auto l&#228;sst sich die Aufzeichnung als CSV kopieren.</li>
         <li>Virtuell fahren, Quality: Bloom und Reifenverformung. Helles wie Scheinwerfer, R&#252;cklichter und Glanzlichter strahlt leicht &#252;ber, Himmel und Boden bleiben unver&#228;ndert. Die Reifen werden unten etwas flacher und breiter, je st&#228;rker das Auto an diesem Rad einfedert (beim Bremsen vorn, in der Kurve au&#223;en). Die Bildraten-Wache schaltet den Bloom zusammen mit den Schatten ab, wenn das Ger&#228;t nicht mitkommt.</li>
@@ -12359,6 +12360,10 @@
           <small>Probe, ob die App die adaptiven Trigger &uuml;ber das USB-Kabel erreicht: 3 s fester Widerstand auf beiden Triggern, dann 2 s Vibration, dann aus. Danach gibt die App den Controller wieder frei. Bitte melden: Haben die Trigger reagiert, und gehen die Tasten danach noch? Das Protokoll steht im Live-Log. Braucht die neue APK.</small></div>
         <button type="button" id="ds-usb-test">Trigger testen</button>
         <span class="muted" id="ds-usb-lage" data-i18n-skip style="font-size:11px; text-align:right; max-width:34ch"></span></div>
+      <!-- v1.5: das Protokoll der Probe zum Kopieren (wie das Verbindungsprotokoll der Garage). -->
+      <div class="opt-row opt-breit" id="ds-usb-proto-zeile" hidden>
+        <textarea id="ds-usb-proto" readonly rows="6" data-i18n-skip style="width:100%; font:11px/1.3 monospace"></textarea>
+        <button type="button" id="ds-usb-proto-kopieren">Protokoll kopieren</button></div>
     </div>
     <div class="card subpage" id="sub-opt-ansagen">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>

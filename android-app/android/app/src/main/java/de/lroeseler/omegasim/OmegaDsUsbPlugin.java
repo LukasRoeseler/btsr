@@ -48,6 +48,11 @@ public class OmegaDsUsbPlugin extends Plugin {
     private static final int[] PRODUKTE = { 0x0CE6, 0x0DF2 };   // DualSense, DualSense Edge
     private static final String AKTION = "de.lroeseler.omegasim.DS_USB_ERLAUBNIS";
 
+    private static int hidNummer(UsbDevice d) {
+        for (int i = 0; i < d.getInterfaceCount(); i++) if (d.getInterface(i).getInterfaceClass() == UsbConstants.USB_CLASS_HID) return d.getInterface(i).getId();
+        return 3;
+    }
+
     private UsbManager usb() { return (UsbManager) getContext().getSystemService(Context.USB_SERVICE); }
 
     private UsbDevice finden() {
@@ -88,7 +93,15 @@ public class OmegaDsUsbPlugin extends Plugin {
         }
         if (berichte.isEmpty()) { call.reject("Folge leer"); return; }
         final UsbDevice d = finden();
-        if (d == null) { call.reject("Kein DualSense am USB-Kabel gefunden"); return; }
+        if (d == null) {
+            // v1.5: statt nur eines Fehlers die Liste der USB-Geraete, damit sich sehen laesst, was Android meldet.
+            StringBuilder p = new StringBuilder("Kein DualSense am USB-Kabel gefunden.\nUSB-Geraete:");
+            UsbManager m = usb();
+            if (m == null) p.append(" (kein USB-Host)");
+            else for (UsbDevice x : m.getDeviceList().values()) p.append("\n  ").append(String.format("%04x:%04x", x.getVendorId(), x.getProductId())).append(" ").append(x.getProductName());
+            antwort(call, false, "", p.toString());
+            return;
+        }
         if (usb().hasPermission(d)) { abspielen(call, d, berichte, dauern); return; }
         // Erlaubnis erfragen: das System zeigt einen Dialog und meldet das Ergebnis per Broadcast.
         final Context ctx = getContext();
@@ -97,7 +110,7 @@ public class OmegaDsUsbPlugin extends Plugin {
             public void onReceive(Context c, Intent intent) {
                 try { ctx.unregisterReceiver(this); } catch (Exception e) { /* schon weg */ }
                 boolean ja = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false);
-                if (!ja) { call.reject("USB-Zugriff nicht erlaubt"); return; }
+                if (!ja) { antwort(call, false, "", "USB-Zugriff nicht erlaubt (Dialog abgelehnt oder geschlossen)."); return; }
                 abspielen(call, d, berichte, dauern);
             }
         };
@@ -105,6 +118,14 @@ public class OmegaDsUsbPlugin extends Plugin {
         Intent absicht = new Intent(AKTION).setPackage(ctx.getPackageName());
         int flags = Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0;
         usb().requestPermission(d, PendingIntent.getBroadcast(ctx, 0, absicht, flags));
+    }
+
+    private static void antwort(PluginCall call, boolean ok, String weg, String protokoll) {
+        JSObject r = new JSObject();
+        r.put("ok", ok);
+        r.put("weg", weg);
+        r.put("protokoll", protokoll);
+        call.resolve(r);
     }
 
     private void abspielen(final PluginCall call, final UsbDevice d, final List<byte[]> berichte, final List<Integer> dauern) {
@@ -132,16 +153,21 @@ public class OmegaDsUsbPlugin extends Plugin {
                 c = usb().openDevice(d);
                 if (c == null) throw new Exception("openDevice fehlgeschlagen");
                 boolean belegt = c.claimInterface(hid, true);
-                p.append("claimInterface: ").append(belegt).append(", OUT-Endpunkt: ").append(aus != null).append("\n");
-                if (!belegt) throw new Exception("Schnittstelle nicht belegbar");
+                p.append("Android ").append(Build.VERSION.RELEASE).append(" (API ").append(Build.VERSION.SDK_INT).append("), claimInterface: ").append(belegt)
+                 .append(", OUT-Endpunkt: ").append(aus != null).append("\n");
+                // v1.5: GEMELDET "Damit sie reagieren, musste er erst per Bluetooth und dann Kabel verbunden sein." Vermutlich
+                // haelt Android's Gamepad-Treiber die Schnittstelle, wenn der Controller nur am Kabel haengt. Dann trotzdem
+                // ueber den Steuerkanal (SET_REPORT, Endpunkt 0), der keine belegte Schnittstelle braucht.
+                if (!belegt) { hid = null; p.append("Schnittstelle nicht belegbar: Versuch ueber den Steuerkanal ohne Belegen\n"); }
+                final int hidId = hidNummer(d);
                 for (int i = 0; i < berichte.size(); i++) {
                     byte[] b = berichte.get(i);
                     int n = -1;
-                    if (aus != null) { n = c.bulkTransfer(aus, b, b.length, 200); weg = "interrupt"; }
+                    if (aus != null && belegt) { n = c.bulkTransfer(aus, b, b.length, 200); weg = "interrupt"; }
                     if (n < 0) {
                         // SET_REPORT (Ausgabe, Bericht 0x02) ueber den Steuerkanal.
-                        n = c.controlTransfer(0x21, 0x09, 0x0200 | (b[0] & 0xff), hid.getId(), b, b.length, 200);
-                        weg = "control";
+                        n = c.controlTransfer(0x21, 0x09, 0x0200 | (b[0] & 0xff), hidId, b, b.length, 200);
+                        weg = belegt ? "control" : "control ohne Belegen";
                     }
                     p.append("Schritt ").append(i + 1).append(": ").append(n).append(" Bytes (").append(weg).append(")\n");
                     if (n < 0) throw new Exception("Senden fehlgeschlagen");

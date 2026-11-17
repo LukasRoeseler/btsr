@@ -62,6 +62,8 @@
          Recht beim ersten Einschalten selbst nach (BridgeWebChromeClient). required=false:
          die App laeuft auch auf Geraeten ohne Kamera. -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- v1.5: Rumble des Gamepads ueber den Android-Vibrator des Eingabegeraets (OmegaPadNativ.ruetteln). -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
     <!-- Bluetooth: das Plugin bringt die Rechte mit. Hier nur BLUETOOTH_SCAN mit

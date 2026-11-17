@@ -2822,7 +2822,27 @@
   //
   // Also alle. Zwei Aufrufe auf dasselbe Geraet sind harmlos - der zweite ueberschreibt den
   // ersten -, ein stiller Fehlgriff ist es nicht.
+  // v1.5: in der App direkt an den Android-Vibrator der Gamepads (OmegaPadNativ.ruetteln), wenn die APK ihn kennt und
+  // ein Gamepad mit Motor da ist. Grund: die Gamepad-API der WebView kennt den Motor nur, wenn der Controller schon beim
+  // Start der App verbunden war (GEMELDET). Nur fuer "alle Pads" (ein Spieler); mit mehreren Spielern bleibt die
+  // Zuordnung je Pad bei der Gamepad-API.
+  let nativRuettlerStand = { zeit: 0, n: 0 };
+  function nativRuettler() {
+    const o = window.OmegaPad;
+    if (!o || typeof o.ruetteln !== 'function' || typeof o.ruettlerDa !== 'function') return false;
+    const jetzt = Date.now();
+    if (jetzt - nativRuettlerStand.zeit > 2000) {
+      nativRuettlerStand.zeit = jetzt;
+      try { nativRuettlerStand.n = +o.ruettlerDa() || 0; } catch (e) { nativRuettlerStand.n = 0; }
+    }
+    return nativRuettlerStand.n > 0;
+  }
   function ruettle(effekt, ziel) {
+    if (ziel === null && nativRuettler()) {
+      try {
+        if (window.OmegaPad.ruetteln(+effekt.strongMagnitude || 0, +effekt.weakMagnitude || 0, Math.round(+effekt.duration || 0))) return 1;
+      } catch (e) { /* dann die Gamepad-API */ }
+    }
     let erreicht = 0;
     try {
       for (const p of zielPads(ziel)) {

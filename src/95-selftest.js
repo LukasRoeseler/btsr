@@ -26413,6 +26413,41 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  stAdd('App v1.5: Rumble ueber den Android-Vibrator, wenn die APK ihn hat; USB-Probe zeigt ihr Protokoll', async () => {
+    const f = [];
+    const merk = { pad: window.OmegaPad, cap: window.Capacitor, stand: Object.assign({}, nativRuettlerStand) };
+    const aufrufe = [];
+    try {
+      window.OmegaPad = Object.assign({}, merk.pad || {}, { ruettlerDa: () => 1, ruetteln: (a, b, ms) => { aufrufe.push([a, b, ms]); return true; } });
+      nativRuettlerStand = { zeit: 0, n: 0 };
+      const n = ruettle({ duration: 120.4, startDelay: 0, strongMagnitude: 0.8, weakMagnitude: 0.3 }, null);
+      if (n !== 1 || aufrufe.length !== 1 || aufrufe[0].join() !== '0.8,0.3,120') f.push('nativ nicht genutzt: ' + JSON.stringify(aufrufe));
+      // Ein bestimmter Pad (mehrere Spieler): Gamepad-API, nicht nativ.
+      ruettle({ duration: 100, startDelay: 0, strongMagnitude: 1, weakMagnitude: 1 }, undefined);
+      if (aufrufe.length !== 1) f.push('nativ auch fuer einen bestimmten Pad');
+      // Ohne Motor: Gamepad-API.
+      window.OmegaPad.ruettlerDa = () => 0; nativRuettlerStand = { zeit: 0, n: 0 };
+      ruettle({ duration: 100, startDelay: 0, strongMagnitude: 1, weakMagnitude: 1 }, null);
+      if (aufrufe.length !== 1) f.push('nativ ohne Motor');
+      // Alte APK (ohne ruetteln): nichts kaputt.
+      window.OmegaPad = { lesen: () => '' }; nativRuettlerStand = { zeit: 0, n: 0 };
+      try { ruettle({ duration: 100, startDelay: 0, strongMagnitude: 1, weakMagnitude: 1 }, null); } catch (e) { f.push('alte APK: ' + e.message); }
+      // USB-Probe: das Protokoll steht unter dem Knopf.
+      window.Capacitor = { isNativePlatform: () => true, isPluginAvailable: (x) => x === 'OmegaDsUsb',
+                           nativePromise: async () => ({ ok: false, weg: '', protokoll: 'Kein DualSense am USB-Kabel gefunden.' }) };
+      await dsUsbTest();
+      if (!$('ds-usb-proto') || $('ds-usb-proto').value.indexOf('Kein DualSense') < 0 || $('ds-usb-proto-zeile').hidden) f.push('Protokoll nicht unter dem Knopf');
+    } catch (e) { f.push('Fehler: ' + e.message); }
+    finally {
+      if (merk.pad === undefined) delete window.OmegaPad; else window.OmegaPad = merk.pad;
+      if (merk.cap === undefined) delete window.Capacitor; else window.Capacitor = merk.cap;
+      nativRuettlerStand = merk.stand;
+      if ($('ds-usb-proto-zeile')) { $('ds-usb-proto-zeile').hidden = true; $('ds-usb-proto').value = ''; }
+      if ($('ds-usb-lage')) $('ds-usb-lage').textContent = '';
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'ein Spieler: Android-Vibrator (stark, schwach, ms), bestimmter Pad und ohne Motor: Gamepad-API, alte APK heil, Probe-Protokoll unter dem Knopf' };
+  });
+
   stAdd('Virtuell v1.5: Bloom laesst nur Helles leuchten (echtes WebGL), Reifen quetschen mit der Einfederung', () => {
     const f = [];
     // Reifen: Ruhe 2 %, tiefer eingefedert mehr, gedeckelt, nie negativ.
