@@ -5863,7 +5863,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.64</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.66</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7144,6 +7144,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren, Quality: Lackreflexe. Im Klarlack der Autos spiegelt sich der Himmel der eingestellten Tageszeit, an flachen Stellen st&#228;rker (Fresnel).</li>
         <li>Virtuell fahren: TV-Kamera (WIP). Sie ist eine neue Kamera in der Reihe (Kamera-Knopf oder R3). Kameras stehen alle drei Teile au&#223;en neben der Strecke, folgen dem Auto und zoomen mit dem Abstand. Geschnitten wird hart auf die n&#228;chste Kamera, sobald das Auto ihr deutlich n&#228;her ist, fr&#252;hestens nach 1,5 s.</li>
         <li>Virtuell fahren: Tageszeit (WIP). In der Garage unter Virtuell fahren gibt es die Zeile Tageszeit mit Mittag (wie bisher), Morgen und Abend. Sie f&#228;rbt Himmel, Dunst und das Licht auf Strecke und Autos, in Performance und Quality. Scheinwerfer und R&#252;cklichter bleiben hell.</li>
         <li>Virtuell fahren, Quality: Bildraten-Wache. Kommt das Ger&#228;t nicht mit (&#252;ber 4 s unter 40 Bildern pro Sekunde), schaltet Quality erst die Schatten ab, dann Aufl&#246;sung und Regentropfen auf das Ma&#223; von Performance, mit kurzer Meldung. In derselben Fahrt geht es nicht wieder hoch, damit nichts flackert.</li>
@@ -17336,6 +17337,7 @@
     "Virtuell fahren: Tageszeit (WIP). In der Garage unter Virtuell fahren gibt es die Zeile Tageszeit mit Mittag (wie bisher), Morgen und Abend. Sie färbt Himmel, Dunst und das Licht auf Strecke und Autos, in Performance und Quality. Scheinwerfer und Rücklichter bleiben hell.": "Virtual driving: time of day (WIP). In the Garage under Drive virtually there is a Time of day row with Noon (as before), Morning and Evening. It tints the sky, the haze and the light on track and cars, in Performance and Quality. Headlights and taillights stay bright.",
     "TV-Kamera": "TV camera",
     "Virtuell fahren: TV-Kamera (WIP). Sie ist eine neue Kamera in der Reihe (Kamera-Knopf oder R3). Kameras stehen alle drei Teile außen neben der Strecke, folgen dem Auto und zoomen mit dem Abstand. Geschnitten wird hart auf die nächste Kamera, sobald das Auto ihr deutlich näher ist, frühestens nach 1,5 s.": "Virtual driving: TV camera (WIP). It is a new camera in the cycle (camera button or R3). Cameras stand outside the track every three pieces, follow the car and zoom with the distance. It cuts hard to the next camera once the car is clearly closer to it, after 1.5 s at the earliest.",
+    "Virtuell fahren, Quality: Lackreflexe. Im Klarlack der Autos spiegelt sich der Himmel der eingestellten Tageszeit, an flachen Stellen stärker (Fresnel).": "Virtual driving, Quality: paint reflections. The cars' clear coat reflects the sky of the chosen time of day, more strongly at grazing angles (Fresnel).",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -43290,6 +43292,9 @@
     const z = vfTz();
     if (u.nebel) gl.uniform3f(u.nebel, z.horizont[0], z.horizont[1], z.horizont[2]);
     if (u.sonne) gl.uniform3f(u.sonne, z.sonne[0], z.sonne[1], z.sonne[2]);
+    // v1.5: Lackreflexe (Modell-Shader Quality) spiegeln denselben Himmel.
+    if (u.horizont) gl.uniform3f(u.horizont, z.horizont[0], z.horizont[1], z.horizont[2]);
+    if (u.zenit) gl.uniform3f(u.zenit, z.zenit[0], z.zenit[1], z.zenit[2]);
   }
   // v1.3.124: Grafik-Feinschliff (BESTELLT). Regler (Konsole) fuer die Bildqualitaet im Quality-Modus.
   // VF_BELICHTUNG: Gesamthelligkeit. VF_BUMP_BODEN/BAHN: Relief-Staerke (0 = aus, wenn der Boden
@@ -43709,6 +43714,7 @@
         + 'varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vv; varying HP vec3 vsp;'
         + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
         + 'uniform float klar; uniform float glas; uniform sampler2D sch; uniform float schatt; uniform HP float bias; uniform float lack; uniform vec3 sonne;'
+        + 'uniform vec3 horizont; uniform vec3 zenit;'
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
         + 'HP float schTiefe(HP vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
         + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7), lack); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
@@ -43719,6 +43725,8 @@
         + ' vec3 c = pow(tb, vec3(2.2)) * tint * ((amb * 0.55 + l) * sonne + emis);'
         + ' c += vec3(pow(rv, 24.0) * 0.60 * licht + sheen * licht);'
         + ' c += vec3(0.05, 0.06, 0.07) * klar * pow(rv, 6.0) * 1.2;'
+        + ' vec3 Rv = reflect(-V, N); vec3 env = pow(mix(horizont, zenit, clamp(Rv.y * 1.5 + 0.1, 0.0, 1.0)), vec3(2.2));'
+        + ' c += env * klar * (0.05 + 0.6 * pow(1.0 - max(dot(N, V), 0.0), 5.0)) * 0.9;'
         + ' c += vec3(pow(1.0 - max(dot(N, V), 0.0), 5.0) * glas * 0.9);'
         + ' c = pow(filmic(c * 1.05), vec3(1.0/2.2));'
         // Schattenkarte: Bias waechst mit flachem Lichteinfall (Streifen auf schraegen Blechen).
@@ -43729,7 +43737,7 @@
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'sonne', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'lack'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'sonne', 'horizont', 'zenit', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'lack'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     // Feste Zwischenspeicher fuer die Matrizen je Teil (keine Float32Array je Teil und Bild).
     return { p, u, qual: !!qual, f16: new Float32Array(16), f9: new Float32Array(9), pv: new Float32Array(16), schM: new Float32Array(16),
              ap: gl.getAttribLocation(p, 'p'), an: gl.getAttribLocation(p, 'n'), auv: gl.getAttribLocation(p, 'uv') };
