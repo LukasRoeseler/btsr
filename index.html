@@ -1938,13 +1938,50 @@
     object-fit: contain; background: #000; }
   #race-onboardscreen img[hidden], #race-onboardscreen video[hidden] { display: none; }
   #race-onboardscreen.gedreht video, #race-onboardscreen.gedreht img { transform: rotate(180deg); }
-  /* v1.5: Anzeige im Stil des virtuellen Fahrens (dieselben .vf-Kacheln). */
-  .onb-vf { position: absolute; inset: 0; pointer-events: none;
-    --vf-s: clamp(10px, calc(.9vw + 1vh), 18px); --vf-bg: rgba(8,10,14,.8); --vf-linie: var(--k-blau, #00a3e0);
-    --vf-dim: var(--k-dim, #a3acbd); font-family: var(--k-font); }
-  .onb-vf .vf-hud { left: clamp(6px, 1.2vw, 14px); top: clamp(6px, 1.2vw, 14px); width: 10.5em; }
-  .onb-vf .vf-acc { bottom: clamp(6px, 1.2vw, 14px); }
-  .onb-vf .onb-kern { width: 12em; }
+  /* v1.5.111 BESTELLT: Onboard wie Gran Turismo 7/Sport. Vollbild ueber dem Cockpit, Bild maximal gross (contain),
+     Seitenleisten auf den schwarzen Raendern (Breite --onb-rand aus onbRandSetzen, mindestens 150 px, dann
+     halbdurchsichtig ueber dem Bild), unten Mitte das GT-Band mit Tempo | Gang und Drehzahlbalken. */
+  #race-onboardscreen.onb-voll { display: block; position: fixed; inset: 0; z-index: 60; border-radius: 0; margin: 0; }
+  .onb-gt { position: absolute; inset: 0; pointer-events: none; color: #f2f4f7; font-family: var(--k-font);
+    --onb-s: clamp(11px, calc(.75vw + .9vh), 17px); font-size: var(--onb-s); }
+  .onb-seite { position: absolute; top: 0; bottom: 0; width: max(150px, var(--onb-rand, 160px)); box-sizing: border-box;
+    padding: max(10px, env(safe-area-inset-top)) 12px 12px; display: flex; flex-direction: column; gap: .55em;
+    background: linear-gradient(90deg, rgba(8,10,14,.86), rgba(8,10,14,.72)); }
+  .onb-links { left: 0; padding-left: max(12px, env(safe-area-inset-left)); }
+  .onb-rechts { right: 0; padding-right: max(12px, env(safe-area-inset-right)); background: linear-gradient(270deg, rgba(8,10,14,.86), rgba(8,10,14,.72)); }
+  .onb-gt small { display: block; font-size: .68em; letter-spacing: .14em; text-transform: uppercase; color: #a9b1bf; font-weight: 700; }
+  .onb-gt b { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .onb-posbox { display: grid; grid-template-columns: auto 1fr; align-items: end; column-gap: .35em; }
+  .onb-posbox b { background: #3a3f48; padding: .05em .4em; font-size: 2.4em; line-height: 1.05; }
+  .onb-posbox span { font-size: 1.5em; color: #e6e9ef; }
+  .onb-posbox small { grid-column: 1 / -1; margin-top: .2em; }
+  .onb-runde b { font-size: 1.8em; line-height: 1.05; }
+  .onb-zeiten { display: grid; gap: .3em; }
+  .onb-zeiten b { font-size: 1.15em; }
+  .onb-zeiten .gut { color: #3ddc84; } .onb-zeiten .schlecht { color: #ff5a4f; }
+  .onb-karte { margin-top: auto; width: 100%; max-height: 32%; }
+  .onb-karte path { fill: none; stroke: #f2f4f7; stroke-width: 2.4; stroke-linejoin: round; }
+  .onb-karte circle { fill: #e10600; }
+  .onb-feld b { font-size: 1.3em; }
+  .onb-klein { font-size: .9em; color: #e6e9ef; }
+  .onb-reifen { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; width: 3.4em; margin: .2em 0; }
+  .onb-reifen i { display: block; height: 1.25em; border-radius: 3px; background: #2a3f5c; }
+  .onb-balken { display: block; height: 5px; margin-top: .25em; background: rgba(255,255,255,.14); }
+  .onb-balken > i { display: block; height: 100%; width: 0; background: #3ddc84; }
+  .onb-unten { position: absolute; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    width: min(23em, calc(100% - 2 * max(150px, var(--onb-rand, 160px)) - 16px)); min-width: 15em; }
+  .onb-rpm { height: .42em; background: rgba(255,255,255,.18); clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); }
+  .onb-rpm > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #f2f4f7 0 70%, #ff9f1c 82%, #e10600); }
+  .onb-tacho { display: grid; grid-template-columns: auto 1fr auto 1fr auto; align-items: center; gap: .5em;
+    background: rgba(8,10,14,.78); padding: .25em .7em; clip-path: polygon(0 0, 100% 0, 96% 100%, 4% 100%); }
+  .onb-kmh, .onb-umin { display: grid; justify-items: center; line-height: 1; }
+  .onb-kmh b { font-size: 1.7em; } .onb-umin b { font-size: 1.1em; }
+  .onb-gang { font-size: 2.3em; line-height: 1; padding: 0 .35em; border-left: 2px solid #f2f4f7; border-right: 2px solid #f2f4f7; }
+  .onb-lampe { font-size: 1.1em; color: #4b5260; } .onb-lampe.an { color: #8fd3ff; } .onb-schalt.an { color: #e10600; }
+  .onb-weiter { position: absolute; top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right));
+    z-index: 2; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.55);
+    color: #fff; font-size: 18px; }
+  #race-onboardscreen .onb-rec { right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); z-index: 2; }
   #race-onboardscreen.gelb { box-shadow: inset 0 0 0 6px #ffd400; }
   .onb-leer { position: absolute; inset: 0; display: flex; align-items: center;
     justify-content: center; text-align: center; padding: 16px; color: #a3acbd;
@@ -5882,7 +5919,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.110</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.113</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6464,24 +6501,43 @@
         <video id="onboard-video" autoplay muted playsinline></video>
         <img id="onboard-bild" alt="" hidden>
         <div class="onb-leer" id="onboard-leer">Keine Kamera. Garage &rarr; Onboard-Kamera.</div>
-        <!-- Zeiten oben links und Tempo/Gang/Tank unten Mitte: dieselben Kacheln wie beim virtuellen
-             Fahren (.vf-hud, .vf-acc), gelesen aus den Cockpit-Feldern (onbWerte). -->
-        <div class="onb-vf">
-          <div class="vf-hud vf-kachel" data-i18n-skip>
-            <div class="vf-modus" id="onb-pos"></div>
-            <div class="vf-z vf-z-akt"><span class="vf-lbl" id="onb-l-runde">Runde</span><b id="onb-runde">0</b></div>
-            <div class="vf-z"><span class="vf-lbl" id="onb-l-zeit">Zeit</span><span id="onb-zeit">&ndash;</span></div>
-            <div class="vf-z"><span class="vf-lbl" id="onb-l-letzte">Letzte</span><span id="onb-letzte">&ndash;</span></div>
-            <div class="vf-z"><span class="vf-lbl" id="onb-l-beste">Beste</span><span id="onb-beste">&ndash;</span></div>
+        <!-- v1.5.111 BESTELLT: Anzeige wie Gran Turismo 7/Sport. Das Bild so gross wie moeglich (Vollbild), auf den
+             schwarzen Raendern links und rechts die Werte, unten auf dem Bild Drehzahl, Gang und Lichter. Gelesen aus den
+             Cockpit-Feldern (onbWerte). Die Seitenleisten werden so breit wie der schwarze Rand (onbRandSetzen). -->
+        <div class="onb-gt" data-i18n-skip>
+          <div class="onb-seite onb-links">
+            <div class="onb-posbox"><b id="onb-pos-n">&ndash;</b><span id="onb-pos-von"></span>
+              <small id="onb-l-pos">Position</small></div>
+            <div class="onb-feld onb-runde"><small id="onb-l-runde">Runde</small><b id="onb-runde">0</b></div>
+            <div class="onb-zeiten">
+              <div><small id="onb-l-zeit">Zeit</small><b id="onb-zeit">&ndash;</b></div>
+              <div><small id="onb-l-delta">Delta</small><b id="onb-delta">&ndash;</b></div>
+              <div><small id="onb-l-letzte">Letzte</small><b id="onb-letzte">&ndash;</b></div>
+              <div><small id="onb-l-beste">Beste</small><b id="onb-beste">&ndash;</b></div>
+            </div>
+            <svg class="onb-karte" id="onb-karte" viewBox="0 0 100 100" aria-hidden="true"></svg>
           </div>
-          <div class="vf-acc" data-i18n-skip>
-            <div class="vf-kachel vf-acc-kern onb-kern"><div class="vf-acc-werte">
-              <div class="vf-acc-wert"><b id="onb-kmh">0</b><span class="vf-lbl">km/h</span></div>
-              <b class="vf-gang" id="onb-gang">N</b>
-              <div class="vf-acc-wert"><b id="onb-tank">&ndash;</b><span class="vf-lbl" id="onb-l-tank">Tank</span></div>
-            </div></div>
+          <div class="onb-seite onb-rechts">
+            <div class="onb-feld"><small id="onb-l-reifen">Reifen</small>
+              <div class="onb-reifen"><i id="onb-r0"></i><i id="onb-r1"></i><i id="onb-r2"></i><i id="onb-r3"></i></div>
+              <span class="onb-klein" id="onb-reifen-txt">&ndash;</span></div>
+            <div class="onb-feld"><small id="onb-l-zustand">Reifenzustand</small><b id="onb-zustand">&ndash;</b></div>
+            <div class="onb-feld"><small id="onb-l-box">Boxenstopp</small><span class="onb-klein" id="onb-box">&ndash;</span></div>
+            <div class="onb-feld"><small id="onb-l-akku">Batterie</small><b id="onb-akku">&ndash;</b><i class="onb-balken"><i id="onb-akku-bar"></i></i></div>
+            <div class="onb-feld"><small id="onb-l-tank">Tank</small><b id="onb-tank">&ndash;</b></div>
+          </div>
+          <div class="onb-unten">
+            <div class="onb-rpm"><i id="onb-rpm-bar"></i></div>
+            <div class="onb-tacho">
+              <span class="onb-lampe" id="onb-licht" title="Licht">&#9673;</span>
+              <span class="onb-kmh"><b id="onb-kmh">0</b><small>km/h</small></span>
+              <b class="onb-gang" id="onb-gang">N</b>
+              <span class="onb-umin"><b id="onb-umin">0</b><small>1/min</small></span>
+              <span class="onb-lampe onb-schalt" id="onb-schalt">&#9650;</span>
+            </div>
           </div>
         </div>
+        <button type="button" class="onb-weiter" id="onboard-weiter" aria-label="Naechster Schirm" data-i18n-skip>&#8644;</button>
         <button type="button" class="onb-rec" id="onboard-rec" data-i18n-skip>&#9679; Aufnahme</button>
       </div>
 
@@ -7173,6 +7229,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Onboard-Kamera (WIP): neue Anzeige im Stil von Gran Turismo. Das Bild l&#228;uft im Vollbild und so gro&#223; wie m&#246;glich. Auf den schwarzen R&#228;ndern stehen links Position, Runde, Zeit, Delta, letzte und beste Runde und das Streckenlayout, rechts Reifen, Reifenzustand, Boxenstopp-Einstellungen, Batterie und Tank. Unten auf dem Bild Tempo, Gang, Drehzahlbalken, Licht und Schaltanzeige. Oben rechts ein Knopf zum n&#228;chsten Cockpit-Schirm.</li>
         <li>Showroom: Die R&#252;ckseiten der Karten sind jetzt auch auf Android lesbar. Dort schien die gespiegelte Vorderseite durch den Text der R&#252;ckseite.</li>
         <li>Virtuell fahren: neues Auto Spider NG1 von Gnen54 (WIP), aufgebaut auf der Karosserie MODIplay MP-1 Spider von Sturmkind (Freigabe von Sturmkind, nicht kommerziell), mit eigenen R&#228;dern je Achse und Motorklang Lister Storm. Schatten mehrteiliger Modelle (K&#228;fer, Spider) stimmen jetzt. Helle Autos werden beim Umlackieren nicht mehr ausgewaschen. Showroom: Die R&#252;ckseiten der Karten sind gut lesbar.</li>
         <li>Fahrgef&#252;hl: Im Fahrmodus LibreCorsa (echt und virtuell) gibt es eine Lenkhilfe f&#252;r Gamepad und Tastatur: Der Einschlag l&#228;uft weich an und aus, geht nie &#252;ber den Punkt des besten Grips der Vorderr&#228;der hinaus, die R&#228;der stellen sich beim Loslassen in Fahrtrichtung, und ein rutschendes Heck wird teilweise abgefangen. Kalte Bremsscheiben bremsen bis zu 10 % schw&#228;cher, bis sie warm sind (in LibreCorsa und Pacejka, Schalter wie das Bremsfading). Dreckige Luft hinter einem anderen Auto kostet jetzt auch beim virtuellen Fahren Grip an der Vorderachse.</li>
@@ -17451,6 +17508,10 @@
     "Spider NG1: Aufbau von Gnen54 (OmegaSim CAD) auf der Karosserie MODIplay MP-1 Spider von Sturmkind, 3D-Daten für HYBRID von Thomas Strobel (FREAKPALACE Customs). Freigabe von Sturmkind am 16.11.2026: Verwendung erlaubt, solange die Karosserien nicht kommerziell verkauft werden. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.": "Spider NG1: built by Gnen54 (OmegaSim CAD) on the MODIplay MP-1 Spider body by Sturmkind, 3D data for HYBRID by Thomas Strobel (FREAKPALACE Customs). Permission from Sturmkind on 16 Nov 2026: use is allowed as long as the bodies are not sold commercially. Own parts, colours and vehicle data: Gnen54, CC BY 4.0.",
     "Virtuell fahren: neues Auto Spider NG1 von Gnen54 (WIP), aufgebaut auf der Karosserie MODIplay MP-1 Spider von Sturmkind (Freigabe von Sturmkind, nicht kommerziell), mit eigenen Rädern je Achse und Motorklang Lister Storm. Schatten mehrteiliger Modelle (Käfer, Spider) stimmen jetzt. Helle Autos werden beim Umlackieren nicht mehr ausgewaschen. Showroom: Die Rückseiten der Karten sind gut lesbar.": "Virtual driving: new car Spider NG1 by Gnen54 (WIP), built on the MODIplay MP-1 Spider body by Sturmkind (permission from Sturmkind, non-commercial), with its own wheels per axle and the Lister Storm engine sound. Shadows of multi-part models (Beetle, Spider) are now correct. Bright cars no longer look washed out when repainted. Showroom: the backs of the cards are easy to read.",
     "Showroom: Die Rückseiten der Karten sind jetzt auch auf Android lesbar. Dort schien die gespiegelte Vorderseite durch den Text der Rückseite.": "Showroom: the backs of the cards are now readable on Android too. There the mirrored front showed through the text on the back.",
+    "Reifenzustand": "Tyre condition",
+    "Batterie": "Battery",
+    "Nächster Schirm": "Next screen",
+    "Onboard-Kamera (WIP): neue Anzeige im Stil von Gran Turismo. Das Bild läuft im Vollbild und so groß wie möglich. Auf den schwarzen Rändern stehen links Position, Runde, Zeit, Delta, letzte und beste Runde und das Streckenlayout, rechts Reifen, Reifenzustand, Boxenstopp-Einstellungen, Batterie und Tank. Unten auf dem Bild Tempo, Gang, Drehzahlbalken, Licht und Schaltanzeige. Oben rechts ein Knopf zum nächsten Cockpit-Schirm.": "Onboard camera (WIP): new display in the style of Gran Turismo. The picture runs full screen and as large as possible. The black borders show position, lap, time, delta, last and best lap and the track layout on the left, and tyres, tyre condition, pit stop settings, battery and fuel on the right. At the bottom of the picture: speed, gear, rev bar, lights and shift light. Top right a button for the next cockpit screen.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20321,6 +20382,9 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Reifenzustand": "Estado de neumáticos",
+    "Batterie": "Batería",
+    "Nächster Schirm": "Pantalla siguiente",
     "Spider NG1 (Gnen54, WIP)": "Spider NG1 (Gnen54, WIP)",
     "Spider NG1: Aufbau von Gnen54 (OmegaSim CAD) auf der Karosserie MODIplay MP-1 Spider von Sturmkind, 3D-Daten für HYBRID von Thomas Strobel (FREAKPALACE Customs). Freigabe von Sturmkind am 16.11.2026: Verwendung erlaubt, solange die Karosserien nicht kommerziell verkauft werden. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.": "Spider NG1: construido por Gnen54 (OmegaSim CAD) sobre la carrocería MODIplay MP-1 Spider de Sturmkind, datos 3D para HYBRID de Thomas Strobel (FREAKPALACE Customs). Permiso de Sturmkind del 16/11/2026: se permite el uso siempre que las carrocerías no se vendan comercialmente. Piezas, colores y datos propios: Gnen54, CC BY 4.0.",
     "Sichtfeld mit Tempo": "Campo de visión con la velocidad",
@@ -62019,6 +62083,7 @@
   }
 
   function onbStoppen() {
+    onbVollbild(false);
     const z = onbZustand();
     if (z.rec) onbAufnahmeStopp(false);
     if (z.stream) z.stream.getTracks().forEach((tr) => { try { tr.stop(); } catch (e) { /* weg */ } });
@@ -62123,17 +62188,79 @@
     let gelb = false;
     try { gelb = typeof flagState !== 'undefined' && flagState !== 'green'; } catch (e) { /* noch nicht da */ }
     const posEl = $('race-pos');
+    // v1.5.111: weitere Werte fuer die Seitenleisten (GT-Stil), ebenfalls aus dem Cockpit.
+    const reifen = ['fl', 'fr', 'rl', 'rr'].map((k) => { const el = $('race-tyre-' + k); return el ? (el.style.background || el.style.backgroundColor || '') : ''; });
+    const zustand = ['fl', 'fr', 'rl', 'rr'].map((k) => { const el = $('race-tyre-' + k); const b = el && el.querySelector('b'); return b ? b.textContent.trim() : ''; }).filter(Boolean);
+    const deltaEl = $('race-lap-delta');
+    const bar = $('race-batt-bar');
+    let umin = 0, uminMax = 8000;
+    try { umin = +txt('race-rpm') || 0; const b = sampleEngine.band[sampleEngine.car || $('sound-profile').value]; if (b && b.limiter > 0) uminMax = b.limiter; } catch (e) { /* ohne Ton */ }
+    let licht = false;
+    try { licht = !!headlightsOn; } catch (e) { /* noch nicht da */ }
+    const schalt = $('race-shift');
     return { runde: txt('race-lap-count') || '0', zeit: txt('race-lap-now') || '–',
              letzte: txt('race-lap-last') || '–',
              beste: txt('race-lap-best') || '–', kmh: txt('race-speed') || '0',
              gang: txt('race-gear-n') || 'N', tank: txt('race-fuel') || '–',
              pos: posEl && !posEl.hidden ? posEl.textContent.trim() : '',
+             delta: txt('race-lap-delta') || '–', deltaKlasse: deltaEl ? deltaEl.className : '',
+             reifen, reifenTxt: txt('race-tyre-temp') || '–', zustand: zustand.length ? zustand.join(' · ') : '–',
+             box: [txt('race-pit-tyre'), txt('race-pit-fuel')].filter(Boolean).join(' · ') || '–',
+             akku: txt('race-batt') || '–', akkuBreite: bar ? (bar.style.width || '') : '',
+             umin, uminMax, licht, schalt: !!(schalt && (schalt.classList.contains('on') || schalt.classList.contains('an'))),
              gantryAn, lampen, gelb };
+  }
+  // v1.5.111: Vollbild. Ein Elternelement des Cockpits verhindert position: fixed (eigener Bezugsrahmen), deshalb haengt
+  // der Schirm, solange er gezeigt wird, direkt an body und kehrt danach an seinen Platz (Platzhalter) zurueck.
+  function onbVollbild(an) {
+    const s = $('race-onboardscreen');
+    if (!s) return;
+    const z = onbZustand();
+    if (an && s.parentElement !== document.body) {
+      if (!z.platz) { z.platz = document.createComment('onboard-platz'); }
+      s.parentNode.insertBefore(z.platz, s);
+      document.body.appendChild(s);
+      s.classList.add('onb-voll');
+    } else if (!an && s.parentElement === document.body && z.platz && z.platz.parentNode) {
+      z.platz.parentNode.insertBefore(s, z.platz);
+      z.platz.remove();
+      s.classList.remove('onb-voll');
+    }
+  }
+  function onbSchirmAktiv() { return typeof cockpitScreenIst === 'function' && cockpitScreenIst().id === 'onboard' && !!document.querySelector('#tab-race.active'); }
+  // v1.5.111: Breite der schwarzen Raender neben dem Bild (contain) als CSS-Variable fuer die Seitenleisten.
+  function onbRandSetzen() {
+    const s = $('race-onboardscreen');
+    if (!s) return;
+    const W = s.clientWidth, H = s.clientHeight;
+    const q = onbQuelleBild();
+    const ar = q && q.w > 0 && q.h > 0 ? q.w / q.h : 4 / 3;
+    const rand = Math.max(0, Math.round((W - H * ar) / 2));
+    const z = onbZustand();
+    if (z.rand !== rand) { z.rand = rand; s.style.setProperty('--onb-rand', rand + 'px'); }
+  }
+  // v1.5.111: Streckenlayout als weisse Linie (wie die Karte bei GT), einmal je Strecke; ohne Autoposition (Rechenzeit).
+  function onbKarteSetzen() {
+    const svg = $('onb-karte');
+    const tiles = (typeof currentTrackTiles !== 'undefined' && currentTrackTiles) || [];
+    const z = onbZustand();
+    const schluessel = tiles.length ? tiles.map((x) => x.type).join(',') : '';
+    if (!svg || z.karte === schluessel) return;
+    z.karte = schluessel;
+    if (tiles.length < 3 || typeof trackCenterline !== 'function') { svg.innerHTML = ''; return; }
+    const pts = trackCenterline(tiles);
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    pts.forEach((p) => { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); });
+    const k = 92 / Math.max(1, x1 - x0, y1 - y0), ox = (100 - (x1 - x0) * k) / 2, oy = (100 - (y1 - y0) * k) / 2;
+    const P = (p) => ((p.x - x0) * k + ox).toFixed(1) + ' ' + ((p.y - y0) * k + oy).toFixed(1);
+    const s0 = pts.find((p) => p.tile === 0) || pts[0];
+    svg.innerHTML = '<path d="M ' + pts.map(P).join(' L ') + ' Z"/><circle cx="' + P(s0).split(' ')[0] + '" cy="' + P(s0).split(' ')[1] + '" r="3"/>';
   }
 
   function onbHudMalen() {
     const w = onbWerte();
     const set = (id, v) => { const el = $(id); if (el && el.textContent !== v) el.textContent = v; };
+    const z = onbZustand();
     set('onb-runde', w.runde);
     set('onb-zeit', w.zeit);
     set('onb-letzte', w.letzte);
@@ -62141,10 +62268,33 @@
     set('onb-kmh', w.kmh);
     set('onb-gang', w.gang);
     set('onb-tank', w.tank);
-    set('onb-pos', w.pos);
-    // Die Beschriftungen in der eingestellten Sprache (die Kacheln selbst sind data-i18n-skip).
-    set('onb-l-runde', t('Runde')); set('onb-l-zeit', t('Zeit')); set('onb-l-letzte', t('Letzte'));
-    set('onb-l-beste', t('Beste')); set('onb-l-tank', t('Tank'));
+    // Position "P2/4" oder "2/4": grosse Zahl im Kasten, "/4" daneben (wie GT).
+    const pm = /(\d+)\s*\/\s*(\d+)/.exec(w.pos || '');
+    set('onb-pos-n', pm ? pm[1] : (w.pos || '–'));
+    set('onb-pos-von', pm ? '/' + pm[2] : '');
+    set('onb-delta', w.delta);
+    const dEl = $('onb-delta');
+    if (dEl) { const gut = /gut|good|neg|schneller/.test(w.deltaKlasse) || /^-/.test(w.delta), schlecht = /^\+/.test(w.delta);
+      dEl.classList.toggle('gut', gut); dEl.classList.toggle('schlecht', !gut && schlecht); }
+    set('onb-reifen-txt', w.reifenTxt); set('onb-zustand', w.zustand); set('onb-box', w.box); set('onb-akku', w.akku);
+    w.reifen.forEach((c, i) => { const el = $('onb-r' + i); if (el && c && el.style.background !== c) el.style.background = c; });
+    const ab = $('onb-akku-bar'); if (ab && w.akkuBreite && ab.style.width !== w.akkuBreite) ab.style.width = w.akkuBreite;
+    set('onb-umin', String(Math.round(w.umin)));
+    const rb = $('onb-rpm-bar'), proz = Math.max(0, Math.min(100, Math.round(w.umin / Math.max(1, w.uminMax) * 50) * 2)) + '%';
+    if (rb && rb.style.width !== proz) rb.style.width = proz;
+    const li = $('onb-licht'); if (li && li.classList.contains('an') !== w.licht) li.classList.toggle('an', w.licht);
+    const sc = $('onb-schalt'); if (sc && sc.classList.contains('an') !== w.schalt) sc.classList.toggle('an', w.schalt);
+    // Seltener Teil (Raender, Karte, Beschriftungen): hoechstens alle 500 ms.
+    const jetzt = performance.now();
+    if (!z.selten || jetzt - z.selten > 500) {
+      z.selten = jetzt;
+      onbVollbild(onbSchirmAktiv()); onbRandSetzen(); onbKarteSetzen();
+      // Die Beschriftungen in der eingestellten Sprache (die Kacheln selbst sind data-i18n-skip).
+      set('onb-l-runde', t('Runde')); set('onb-l-zeit', t('Zeit')); set('onb-l-letzte', t('Letzte'));
+      set('onb-l-beste', t('Beste')); set('onb-l-tank', t('Tank')); set('onb-l-pos', t('Position'));
+      set('onb-l-delta', t('Delta')); set('onb-l-reifen', t('Reifen')); set('onb-l-zustand', t('Reifenzustand'));
+      set('onb-l-box', t('Boxenstopp')); set('onb-l-akku', t('Batterie'));
+    }
     const s = $('race-onboardscreen');
     if (s) s.classList.toggle('gelb', w.gelb);
   }
@@ -62405,6 +62555,7 @@
 
   // zustandTest: nur fuer den Selbsttest (OMEGA_TEST.onboardWache), sonst raceState.
   function onbWache(zustandTest) {
+    if (!zustandTest) onbVollbild(onbSchirmAktiv());
     const z = onbZustand();
     const e = onbEinst();
     if (z.rec) {
@@ -62479,6 +62630,7 @@
       });
     });
   if ($('onboard-rec')) $('onboard-rec').addEventListener('click', onbAufnahmeUmschalten);
+  { const w = $('onboard-weiter'); if (w) w.addEventListener('click', (e) => { e.stopPropagation(); const n = $('race-screen-next'); if (n) n.click(); }); }
   if ($('onboard-art')) {
     $('onboard-art').value = onbEinst().art === 'm5' ? 'm5' : 'usb';
     $('onboard-art').addEventListener('change', (ev) => {
@@ -96053,7 +96205,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     // Anzeige: Kacheln wie beim virtuellen Fahren, gefuellt aus dem Cockpit.
     const schirm = $('race-onboardscreen');
-    if (!schirm || !schirm.querySelector('.vf-hud.vf-kachel') || !schirm.querySelector('.vf-acc .vf-gang')) f.push('VF-Kacheln fehlen');
+    // v1.5.111: GT-Stil - Seitenleisten links/rechts, unten Tempo | Gang mit Drehzahlbalken.
+    if (!schirm || !schirm.querySelector('.onb-gt .onb-links .onb-posbox') || !schirm.querySelector('.onb-unten .onb-gang')
+        || !schirm.querySelector('.onb-rechts #onb-akku') || !schirm.querySelector('#onb-karte')) f.push('GT-Anzeige fehlt');
     const merkG = $('race-gear-n') ? $('race-gear-n').textContent : null;
     try {
       if ($('race-gear-n')) $('race-gear-n').textContent = '3';
