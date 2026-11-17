@@ -2184,10 +2184,15 @@
     plusKnopf.textContent = '+ ' + t('Auto verbinden');
     plusKnopf.onclick = () => { const c = $('gar-connect'); if (c) c.click(); };
     plus.appendChild(plusKnopf);
-    links.appendChild(plus);
+    // v1.5.86 BESTELLT: "Garage Buttons unten näher zusammentun, damit ich nicht so viel scrollen muss". Die Knoepfe
+    // unter "+ Auto verbinden" stehen in einem Raster mit zwei Spalten und ohne Zeilenabstand (.gar-a-knoepfe).
+    const knoepfe = document.createElement('div');
+    knoepfe.className = 'gar-a-knoepfe';
+    plus.classList.add('gar-a-voll');
+    knoepfe.appendChild(plus);
     ['gar-stop-ghosts', 'gar-go', 'gar-disconnect-all', 'gar-to-cockpit'].forEach((id) => {
       const z = garAktionsZeile(id);
-      if (z) links.appendChild(z);
+      if (z) knoepfe.appendChild(z);
     });
     // v1.1.3: virtuelle Fahrt (60d-virtuell.js) - ein Auto ohne Bluetooth auf der Editor-Strecke.
     // BESTELLT: ganz unten, unter "Zum Cockpit".
@@ -2202,7 +2207,7 @@
     if (garVirtuellAuf) virtKnopf.classList.add('primary');
     virtKnopf.onclick = () => { garVirtuellAuf = true; garKameraAuf = false; renderGarage(); };
     virt.appendChild(virtKnopf);
-    links.appendChild(virt);
+    knoepfe.appendChild(virt);
     // v1.5 (WIP) BESTELLT: die Onboard-Kamera "in der Garage verbinden". Wie "Virtuell fahren": links
     // die Zeile, rechts die Optionen (#onboard-optionen aus dem Halter in 00-index.head.html).
     if ($('onboard-optionen')) {
@@ -2217,12 +2222,13 @@
       if (garKameraAuf) kamKnopf.classList.add('primary');
       kamKnopf.onclick = () => { garKameraAuf = true; garVirtuellAuf = false; renderGarage(); };
       kam.appendChild(kamKnopf);
-      links.appendChild(kam);
+      knoepfe.appendChild(kam);
     }
     // v1.5 (WIP): Showroom (98k-showroom.js), Sammelkarten aller bekannten Autos.
-    if (typeof showGarageZeile === 'function') links.appendChild(showGarageZeile());
+    if (typeof showGarageZeile === 'function') knoepfe.appendChild(showGarageZeile());
     // v1.5 (WIP): zweiter Laptop als Bluetooth-Helfer (98m-zwei-laptops.js).
-    if (typeof zlGarageZeile === 'function') links.appendChild(zlGarageZeile());
+    if (typeof zlGarageZeile === 'function') knoepfe.appendChild(zlGarageZeile());
+    links.appendChild(knoepfe);
     // Rechte Seite: das gewaehlte Auto, oder die Optionen der virtuellen Fahrt.
     const car = (garVirtuellAuf || garKameraAuf) ? null : garAufAuto;
     if (garVirtuellAuf && typeof vfGarageOptionen === 'function') {

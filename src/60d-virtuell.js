@@ -2367,6 +2367,18 @@
     }
     return fehlt;
   }
+  // v1.5.86 BESTELLT: "Virtuelles-Fahren: Oben Knopf für Wetter einfügen". Schaltet sofort zwischen trocken und Regen
+  // (die Regenfront zieht wie gewohnt auf bzw. ab). Ein von Hand gesetztes Wetter gilt: geplante Wechsel ("Wechselhaft",
+  // "Wetter ändert sich") fallen fuer diese Fahrt weg. Beim Beenden kommt das Wetter von vorher zurueck
+  // (vfRennEinstellungenZurueck). Der Knopf ist hell, solange es regnet.
+  function vfWetterKnopf() {
+    if (typeof setWeather !== 'function' || typeof weather === 'undefined') return;
+    const neu = weather === 'rain' ? 'dry' : 'rain';
+    if (VF.wxWechsel) { if (typeof wxWechselAt !== 'undefined') wxWechselAt = null; VF.wxWechsel = false; }
+    VF.wxEinmalAt = null;
+    setWeather(neu);
+    showHudToast(t('Wetter') + ': ' + t(neu === 'rain' ? 'Regen' : 'Trocken'));
+  }
   function vfRennEinstellungenZurueck() {
     if (VF.wxWechsel) { if (typeof wxWechselAt !== 'undefined') wxWechselAt = null; VF.wxWechsel = false; }
     VF.wxEinmalAt = null;
@@ -3313,11 +3325,16 @@
     VF.ui = { runde: q('.vf-runde'), letzte: q('.vf-letzte'), beste: q('.vf-beste'), delta: q('.vf-delta'), deltaBar: q('.vf-delta-bar > i'),
               modus: q('.vf-modus'), abseits: q('.vf-abseits'), acc: q('.vf-acc'), tempo: q('.vf-acc .vf-tempo'), gang: q('.vf-gang'),
               rpm: q('.vf-rpm'), reifen: Array.from(schicht.querySelectorAll('.vf-reifen > i')), tank: q('.vf-tank'), tankBar: q('.vf-tank-bar > i'),
-              dreh: q('.vf-dreh-stab'), kamFrei: q('.vf-kamfrei'), alt: {} };
+              dreh: q('.vf-dreh-stab'), kamFrei: q('.vf-kamfrei'), wetter: q('[data-vf="wetter"]'), alt: {} };
   }
   function vfHud() {
     const u = VF.ui;
     if (!u) return;
+    // Wetter-Knopf hell, solange es regnet (auch nach einem geplanten Wechsel).
+    if (u.wetter) {
+      const nass = typeof weather !== 'undefined' && weather === 'rain';
+      if (u.alt.nass !== nass) { u.alt.nass = nass; u.wetter.classList.toggle('vf-an', nass); u.wetter.setAttribute('aria-pressed', nass ? 'true' : 'false'); }
+    }
     const A = u.alt, st = physEngine.state;
     const txt = (el, key, v) => { if (A[key] !== v) { A[key] = v; el.textContent = v; } };
     const kmh = Math.round(Math.abs(st.speedKmh || 0) * TACHO_SCALE * (VF.tempoFaktor || 1));   // wie im Cockpit (race-speed)
@@ -3511,7 +3528,7 @@
       + '<div class="vf-acc-werte"><div class="vf-acc-wert"><b class="vf-tempo"></b>' + lbl('km/h') + '</div>'
       + '<b class="vf-gang"></b><div class="vf-acc-wert"><b class="vf-rpm"></b>' + lbl('1/min') + '</div></div></div>'
       + '<div class="vf-kachel vf-acc-tank">' + lbl(t('Tank')) + '<b class="vf-tank"></b><i class="vf-tank-bar"><i></i></i></div></div>'
-      + '<div class="vf-knoepfe"><button type="button" data-vf="box">' + t('Box') + '</button><button type="button" data-vf="flag">' + t('Gelbe Flagge') + '</button><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="kam">' + t('Kamera') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button><button type="button" data-vf="touch" hidden>' + t('Steuerung') + '</button>'
+      + '<div class="vf-knoepfe"><button type="button" data-vf="box">' + t('Box') + '</button><button type="button" data-vf="flag">' + t('Gelbe Flagge') + '</button><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="wetter">' + t('Wetter') + '</button><button type="button" data-vf="kam">' + t('Kamera') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button><button type="button" data-vf="touch" hidden>' + t('Steuerung') + '</button>'
       + '<button type="button" data-vf="zu" aria-label="' + t('Beenden') + '">&#10005;</button></div>'
       + '<span class="vf-kamfrei" hidden data-i18n-skip>' + t('Kamera frei') + ' · R3 / V: ' + t('Standard') + ' <span class="wip-tag">WIP</span></span>'
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>'
@@ -3632,6 +3649,7 @@
         if (typeof flagState !== 'undefined' && flagState === 'green') { if (typeof setFlag === 'function') setFlag('yellow'); }
         else if (typeof yellowRestart === 'function') yellowRestart();
       }
+      else if (b.dataset.vf === 'wetter') vfWetterKnopf();
       else if (b.dataset.vf === 'licht') {
         // Dasselbe wie Dreieck im Cockpit: der Schalter im Armaturenbrett bleibt gleich.
         headlightsOn = !headlightsOn;

@@ -27152,6 +27152,62 @@
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : mass };
   });
+  // v1.5.86 BESTELLT: "Bild vom Auto kleiner machen", "Garage Buttons unten näher zusammentun", "Oben Knopf für Wetter".
+  stAdd('Garage v1.5.86: Knoepfe im Raster, kleines Vorschaubild, Wetter-Knopf im virtuellen Fahren', () => {
+    const f = [];
+    const merkTab = kAktiverTab();
+    const merk = { auf: garAufAuto, virt: garVirtuellAuf, kam: garKameraAuf, wetter: weather };
+    let mass = '';
+    try {
+      showTab('garage');
+      garVirtuellAuf = true; garKameraAuf = false;
+      renderGarage();
+      const R = $('gar-list').querySelector('.gar-a-knoepfe');
+      if (!R) f.push('kein Knopf-Raster');
+      else {
+        const cs = getComputedStyle(R);
+        if (cs.display !== 'grid' || cs.gridTemplateColumns.split(' ').length !== 2) f.push('Raster ' + cs.display + ' ' + cs.gridTemplateColumns);
+        ['.gar-a-virtuell', '.gar-a-voll', '[data-fuer="gar-to-cockpit"]'].forEach((sel) => { if (!R.querySelector(sel)) f.push(sel + ' fehlt im Raster'); });
+        const kn = Array.from(R.querySelectorAll('.opt-row:not(.gar-a-voll) > button')).filter((b) => b.offsetParent);
+        const hoehe = kn.length ? Math.max.apply(null, kn.map((b) => b.getBoundingClientRect().height)) : 0;
+        if (hoehe > 48) f.push('Knopf ' + Math.round(hoehe) + ' px hoch');
+        mass = kn.length + ' Knoepfe, hoechstens ' + Math.round(hoehe) + ' px';
+      }
+      const bild = $('gar-list').querySelector('.vf-vorschau-bild');
+      if (bild) { const mh = parseFloat(getComputedStyle(bild).maxHeight); if (!(mh <= 170)) f.push('Vorschaubild bis ' + mh + ' px hoch'); }
+      else f.push('kein Vorschaubild');
+    } finally {
+      garAufAuto = merk.auf; garVirtuellAuf = merk.virt; garKameraAuf = merk.kam;
+      renderGarage();
+    }
+    if (typeof virtuellStarten === 'function' && !VF.aktiv) {
+      try {
+        if (weather !== 'dry') setWeather('dry');
+        if (virtuellStarten({ tiles: codeToTrack('SG3R2G3R2').tiles, studie: true })) {
+          const b = VF.schicht.querySelector('[data-vf="wetter"]');
+          if (!b) f.push('kein Wetter-Knopf');
+          else {
+            VF.wxEinmalAt = rennZeitJetzt() + 5000;
+            b.click();
+            if (weather !== 'rain') f.push('Knopf: Wetter ' + weather);
+            if (VF.wxEinmalAt !== null) f.push('geplanter Wechsel bleibt');
+            vfHud();
+            if (!b.classList.contains('vf-an')) f.push('Knopf nicht hell bei Regen');
+            b.click(); vfHud();
+            if (weather !== 'dry' || b.classList.contains('vf-an')) f.push('zweiter Druck: ' + weather);
+            b.click();
+          }
+          virtuellBeenden();
+          if (weather !== 'dry') f.push('Wetter nach dem Beenden ' + weather);
+        }
+      } finally {
+        if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+        if (weather !== merk.wetter) setWeather(merk.wetter);
+      }
+    }
+    showTab(merkTab);
+    return { ok: !f.length, mass: f.length ? f.join('; ') : mass };
+  });
   stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto und Farbe', async () => {
     const f = [];
     // Daten: acht Farben plus Original, eindeutige Kennungen, jede Farbe wird gefunden.
