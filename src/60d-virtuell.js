@@ -1320,7 +1320,8 @@
   // z: { vy (m/s, rechts +), r (rad/s, rechts +) }, vx (m/s), ax (m/s^2 Laengsbeschleunigung, aus der
   // Laengs-G der App), antrieb (0..1 Gasanteil), lenk (-1..1), mu (Griff-Faktor).
   // P: Fahrprofil (VF_GT3 oder vfPhysikAus() eines Autos). kV/kH: Abtrieb je Achse in N je (m/s)^2.
-  function vfDynamik(z, vx, ax, antrieb, lenk, dt, mu, P) {
+  // muVorn (v1.5.101, H5): zusaetzlicher Faktor nur fuer den Griff der Vorderachse (dreckige Luft hinter einem Auto).
+  function vfDynamik(z, vx, ax, antrieb, lenk, dt, mu, P, muVorn) {
     P = P || VF_GT3;
     const g = 9.81, L = P.a + P.b;
     const delta = Math.max(-1, Math.min(1, lenk)) * P.lenkGrad * Math.PI / 180;
@@ -1336,7 +1337,7 @@
     // gutmuetig, weil die entlastete Achse relativ mehr Griff behaelt.
     const fz0V = P.m * g * P.b / L, fz0H = P.m * g * P.a / L;
     const fzV = Math.max(800, fz0V - dFz + (P.kV || 0) * va), fzH = Math.max(800, fz0H + dFz + (P.kH || 0) * va);
-    const maxV = P.muV * f * fzV * (1 - P.lastEmpf * (fzV / fz0V - 1));
+    const maxV = P.muV * f * (muVorn === undefined ? 1 : muVorn) * fzV * (1 - P.lastEmpf * (fzV / fz0V - 1));
     const maxH = P.muH * f * fzH * (1 - P.lastEmpf * (fzH / fz0H - 1));
     const brems = ax < 0 ? P.m * -ax : 0;
     // ABS und Traktionskontrolle wie im GT3: beide lassen dem Reifen einen Rest Seitenkraft.
@@ -2381,6 +2382,35 @@
     VF.teilschritte = n;
     return n;
   }
+  // ---- v1.5.101 (H1): LENKHILFE, nur im Handling LibreCorsa ----
+  // BESTELLT: "H1 (aber nur für LibreCorsa Modi)". Fuer Gamepad und Tastatur, wie in Rennspielen:
+  //  1. S-Kurve: der Einschlag folgt dem Stick ueber eine kritisch gedaempfte Feder (weich an, weich aus).
+  //  2. Scheitel: der Einschlag geht nie weiter, als die Vorderachse am Scheitel ihrer Reifenkurve braucht
+  //     (Schraeglaufwinkel aV <= Scheitelwinkel). Ueberlenken schiebt dann nicht ueber die Vorderraeder.
+  //  3. Selbstausrichten: laesst man den Stick los, stellen sich die Vorderraeder in Fahrtrichtung (Schraeglauf vorn 0).
+  //     In einem Rutsch ist das von selbst Gegenlenken.
+  //  4. Rutsch einfangen: rutscht das Heck ueber seinen Scheitel, lenkt die Hilfe anteilig gegen (VF_LH.fang).
+  const VF_LH = { omega: 26, fang: 0.5, totzone: 0.08 };
+  function vfLenkHilfe(ziel, dt, vx) {
+    const P = VF.P || VF_GT3, z = VF.dyn || { vy: 0, r: 0 }, g = P.lenkGrad * Math.PI / 180;
+    let soll = ziel;
+    if (vx > 3) {
+      const betaV = Math.atan2(z.vy + P.a * z.r, vx), betaH = Math.atan2(z.vy - P.b * z.r, vx);
+      const spV = Math.tan(Math.PI / (2 * P.C)) / P.BV, spH = Math.tan(Math.PI / (2 * P.C)) / P.BH;
+      // 3. Stick in der Mitte: Raeder in Fahrtrichtung.
+      if (Math.abs(ziel) < VF_LH.totzone) soll = betaV / g;
+      // 4. Heck ueber dem Scheitel: anteilig gegenlenken (aH > 0 heisst, das Heck schiebt nach links aussen).
+      if (Math.abs(betaH) > spH) soll += VF_LH.fang * (betaH - Math.sign(betaH) * spH) / g;
+      // 2. Nicht ueber den Scheitel vorn: delta in [betaV - spV, betaV + spV].
+      soll = Math.max((betaV - spV) / g, Math.min((betaV + spV) / g, soll));
+    }
+    soll = Math.max(-1, Math.min(1, soll));
+    // 1. S-Kurve.
+    if (VF.lhV === undefined) VF.lhV = 0;
+    const w = VF_LH.omega;
+    VF.lhV += (w * w * (soll - (VF.lenkIst || 0)) - 2 * w * VF.lhV) * dt;
+    return Math.max(-1, Math.min(1, (VF.lenkIst || 0) + VF.lhV * dt));
+  }
   function vfFahrTeilschritt(sdt, kmh, st, hand, reifenModus) {
     // v1.1.11 GEMELDET: "Virtuelles Fahren ruckelt und ist sehr traege." Bisher lenkte das Auto mit
     // physEngine.state.dampedSteering: das rechnet die Physik nur alle 45 ms (Treppenstufen in der
@@ -2389,8 +2419,13 @@
     // weniger Einschlag wie ein Spiel-Lenkfilter; den Rest erledigt das Reifenmodell.
     const vVollL = Math.abs(kmh) * REAL_SCALE / 3.6;
     const lenkZiel = Math.max(-1, Math.min(1, typeof steerX === 'number' ? steerX : 0)) / (1 + (vVollL / 55) * (vVollL / 55));
-    const schritt = sdt / 0.09;
-    VF.lenkIst = (VF.lenkIst || 0) + Math.max(-schritt, Math.min(schritt, lenkZiel - (VF.lenkIst || 0)));
+    // v1.5.101 (H1, nur LibreCorsa): Lenkhilfe fuer Gamepad und Tastatur, siehe vfLenkHilfe.
+    const hilfe = hand === 'librecorsa' && Math.abs(kmh) > 0;
+    if (hilfe) VF.lenkIst = vfLenkHilfe(lenkZiel, sdt, Math.max(0, kmh * REAL_SCALE / 3.6));
+    else {
+      const schritt = sdt / 0.09;
+      VF.lenkIst = (VF.lenkIst || 0) + Math.max(-schritt, Math.min(schritt, lenkZiel - (VF.lenkIst || 0)));
+    }
     const lenk = VF.lenkIst;
     if (kmh < 0) {
       // Rueckwaerts (Rangieren): rein kinematisch wie bisher.
@@ -2413,7 +2448,11 @@
         VF.tyreTemp = vfReifenTemp(VF.tyreTemp, vVollL, VF.ay || 0, sdt);
         mu *= vfReifenGriff(VF.tyreTemp, hand);
       }
-      vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, sdt, mu, VF.P);
+      // H5 (v1.5.101): dreckige Luft (st.dirtyAir, gesetzt in vfVerkehr) kostet Griff an der Vorderachse, wie beim
+      // echten Fahren (dirtyAirMax mal dirtyAirEffect aus den Optionen). Der Windschatten bleibt, wie er ist.
+      const luftV = 1 - (physEngine.config.dirtyAirMax || 0) * Math.max(0, Math.min(2, physEngine.config.dirtyAirEffect || 0))
+        * Math.max(0, Math.min(1, st.dirtyAir || 0));
+      vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, sdt, mu, VF.P, luftV);
       VF.ax = ax; VF.ay = vVoll * VF.dyn.r;
       // Nickbewegung: beim Bremsen senkt sich die Nase, beim Beschleunigen hebt sie sich (dezent).
       VF.pitch = Math.max(-0.03, Math.min(0.03, -(VF.ax || 0) * 0.0018));
@@ -3826,6 +3865,7 @@
     VF.sichtAn = vfSichtTempoAn();      // v1.5.94 (G7)
     VF.fovPlus = 0; VF.kerbJetzt = false; VF.umw = null; VF.umwKaputt = false;
     VF.physRest = 0;                     // v1.5.96 (V1)
+    VF.lhV = 0;                          // v1.5.101 (H1)
     VF.bloom = null; VF.bloomKaputt = false;
     // v1.3.113 Quality: echte Schattenkarte (Depth-Textur) aus Richtung der Sonne. Ohne die
     // Erweiterung bleibt der weiche Blob-Schatten (M.schatten).

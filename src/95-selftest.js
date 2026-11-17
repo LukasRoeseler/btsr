@@ -27371,6 +27371,58 @@
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : mass };
   });
+  // v1.5.101 BESTELLT: H1 (Lenkhilfe, nur LibreCorsa), H2 (Bremstemperatur: kalt schwaecher), H5 (dreckige Luft).
+  stAdd('Fahrgefuehl v1.5.101: Lenkhilfe LibreCorsa (S-Kurve, Scheitel, Ausrichten), kalte Bremse, dreckige Luft virtuell', () => {
+    const f = [];
+    // H2: kalte Scheiben bremsen schwaecher, warme nicht, Schalter aus = nichts.
+    const e = new CarreraPhysicsEngine(), st = e.state, cfg = e.config;
+    Object.assign(cfg, { gran: true, pacejka: true }, GRAN_WERTE.librecorsa);
+    st.driveMode = 'forward'; st.currentGear = 3; cfg.brakeFadeEffect = 1;
+    st.speedKmh = 100 / REAL_SCALE; e.update({ throttle: 0, brake: 0.5, steering: 0 }, 0.02);
+    if (!(st.brakeKalt > 0.08 && st.brakeKalt <= cfg.brakeColdMax + 1e-9)) f.push('kalt: ' + st.brakeKalt);
+    st.brakeTemp4 = [300, 300, 300, 300]; st.speedKmh = 100 / REAL_SCALE; e.update({ throttle: 0, brake: 0.5, steering: 0 }, 0.02);
+    if (st.brakeKalt > 1e-6) f.push('warm noch kalt: ' + st.brakeKalt);
+    cfg.brakeFadeEffect = 0; st.brakeTemp4 = [25, 25, 25, 25]; st.speedKmh = 100 / REAL_SCALE; e.update({ throttle: 0, brake: 0.5, steering: 0 }, 0.02);
+    if (st.brakeKalt !== 0) f.push('Schalter aus, trotzdem kalt: ' + st.brakeKalt);
+    const eo = new CarreraPhysicsEngine(); eo.state.driveMode = 'forward'; eo.state.currentGear = 3; eo.config.brakeFadeEffect = 1;
+    eo.state.speedKmh = 100 / REAL_SCALE; eo.update({ throttle: 0, brake: 0.5, steering: 0 }, 0.02);
+    if (eo.state.brakeKalt !== 0) f.push('kalte Bremse auch in Omega/Physik');
+    // H1 echt: S-Kurve ohne Ueberschwingen, weich an, nach 0,25 s fast am Ziel.
+    const s1 = {};
+    let v10 = 0, maxV = 0;
+    for (let i = 0; i < 50; i++) { const v = lcSKurve(s1, i ? 1 : 0, i ? 0.01 : 0.01); if (i === 1) v10 = v; maxV = Math.max(maxV, v); }
+    if (!(v10 < 0.1)) f.push('S-Kurve springt (' + v10.toFixed(2) + ' nach 10 ms)');
+    if (!(s1.lcS > 0.9 && maxV <= 1.0001)) f.push('S-Kurve Ende ' + s1.lcS.toFixed(3) + ', hoechstens ' + maxV.toFixed(3));
+    // H1 echt: am Limit haelt die Hilfe die Kraft am Scheitel (mehr als ohne Hilfe), nur in LibreCorsa.
+    const lauf = (hilfe, werte) => {
+      const en = new CarreraPhysicsEngine(); Object.assign(en.config, { gran: true, pacejka: true }, werte, { lenkHilfe: hilfe });
+      en.state.driveMode = 'forward'; en.state.currentGear = 3;
+      for (let i = 0; i < 60; i++) { en.state.speedKmh = 250 / REAL_SCALE; en.update({ throttle: 0.9, brake: 0, steering: 1 }, 0.045); }
+      return en.state;
+    };
+    const mit = lauf(true, GRAN_WERTE.librecorsa), ohne = lauf(false, GRAN_WERTE.librecorsa);
+    if (!(mit.pacNutzV > 1)) f.push('Testfall nicht am Limit (vorn ' + mit.pacNutzV.toFixed(2) + ')');
+    if (!(mit.pacUnter * mit.pacNutzV >= ohne.pacUnter * ohne.pacNutzV - 1e-6)) f.push('Hilfe kostet Kraft vorn (' + (mit.pacUnter * mit.pacNutzV).toFixed(3) + ' < ' + (ohne.pacUnter * ohne.pacNutzV).toFixed(3) + ')');
+    const andere = lauf(true, Object.assign({}, GRAN_WERTE.librecorsa, { granArt: 'gran' })), andereOhne = lauf(false, Object.assign({}, GRAN_WERTE.librecorsa, { granArt: 'gran' }));
+    if (Math.abs(andere.pacUnter - andereOhne.pacUnter) > 1e-9 || andere.lcS !== undefined) f.push('Hilfe wirkt ausserhalb von LibreCorsa');
+    // H1 virtuell: Stick in der Mitte im Rutsch = Gegenlenken; voller Stick nie ueber den Scheitel vorn.
+    const merk = { P: VF.P, dyn: VF.dyn, lenk: VF.lenkIst, lhV: VF.lhV };
+    try {
+      VF.P = vfHandlingProfil(VF_GT3); VF.lenkIst = 0; VF.lhV = 0;
+      VF.dyn = { vy: 4, r: 0 };
+      for (let i = 0; i < 200; i++) VF.lenkIst = vfLenkHilfe(0, 0.002, 40);
+      if (!(VF.lenkIst > 0.02)) f.push('kein Gegenlenken im Rutsch (' + VF.lenkIst.toFixed(3) + ')');
+      VF.dyn = { vy: 0, r: 0 }; VF.lenkIst = 0; VF.lhV = 0;
+      for (let i = 0; i < 300; i++) VF.lenkIst = vfLenkHilfe(1, 0.002, 40);
+      const g = VF.P.lenkGrad * Math.PI / 180, sp = Math.tan(Math.PI / (2 * VF.P.C)) / VF.P.BV;
+      if (!(VF.lenkIst < 1 && Math.abs(VF.lenkIst * g - sp) < sp * 0.05)) f.push('Scheitel vorn: ' + (VF.lenkIst * g).toFixed(4) + ' statt ' + sp.toFixed(4));
+    } finally { VF.P = merk.P; VF.dyn = merk.dyn; VF.lenkIst = merk.lenk; VF.lhV = merk.lhV; }
+    // H5 virtuell: weniger Griff vorn = weniger Gier im Kurvenlimit (Untersteuern).
+    const P = vfHandlingProfil(VF_GT3), za = { vy: 0, r: 0 }, zb = { vy: 0, r: 0 };
+    for (let i = 0; i < 300; i++) { vfDynamik(za, 40, 0, 0, 0.6, 0.01, 1, P, 1); vfDynamik(zb, 40, 0, 0, 0.6, 0.01, 1, P, 0.82); }
+    if (!(Math.abs(zb.r) < Math.abs(za.r) * 0.97)) f.push('dreckige Luft ohne Wirkung vorn (' + za.r.toFixed(3) + ' / ' + zb.r.toFixed(3) + ')');
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'kalt ' + (cfg.brakeColdMax * 100) + ' %, Scheitel gehalten, Gier in dreckiger Luft ' + (zb.r / za.r * 100).toFixed(0) + ' %' };
+  });
   stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto und Farbe', async () => {
     const f = [];
     // Daten: acht Farben plus Original, eindeutige Kennungen, jede Farbe wird gefunden.
