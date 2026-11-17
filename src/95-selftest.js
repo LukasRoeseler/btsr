@@ -26413,6 +26413,30 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  stAdd('Virtuell v1.5: Tageszeit Mittag wie bisher, Morgen und Abend waermer, Garage-Zeile mit WIP', () => {
+    const f = [];
+    let roh = null;
+    try { roh = localStorage.getItem(VF_TZ_STORE); } catch (e) { roh = null; }
+    const merk = { tz: VF.tz, auf: garAufAuto, virt: garVirtuellAuf, kam: garKameraAuf };
+    try {
+      localStorage.removeItem(VF_TZ_STORE);
+      const m = vfTageszeit();
+      if (m.id !== 'mittag' || m.horizont.join() !== '0.66,0.78,0.9' || m.zenit.join() !== '0.18,0.36,0.66' || m.sonne.join() !== '1,1,1') f.push('Mittag weicht vom bisherigen Bild ab');
+      const ab = VF_TAGESZEITEN.find((x) => x.id === 'abend');
+      if (!(ab.sonne[0] > ab.sonne[2] && ab.horizont[0] > ab.horizont[2])) f.push('Abend nicht warm');
+      VF.tz = null;
+      if (vfTz().id !== 'mittag') f.push('ohne Fahrt nicht Mittag');
+      garVirtuellAuf = true; garKameraAuf = false; renderGarage();
+      const z = $('gar-list').querySelector('.gar-a-rechts [data-feld="tageszeit"]');
+      if (!z || !z.querySelector('.wip-tag')) f.push('Garage-Zeile fehlt');
+      else { z.querySelector('[data-d="1"]').click(); if (vfTageszeit().id !== 'morgen') f.push('rechts -> ' + vfTageszeit().id); }
+    } finally {
+      try { if (roh === null) localStorage.removeItem(VF_TZ_STORE); else localStorage.setItem(VF_TZ_STORE, roh); } catch (e) { /* privat */ }
+      VF.tz = merk.tz; garAufAuto = merk.auf; garVirtuellAuf = merk.virt; garKameraAuf = merk.kam; renderGarage();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Mittag = bisherige Farben, Abend warm, Zeile blaettert Mittag -> Morgen' };
+  });
+
   // v1.5: Bildraten-Wache im virtuellen Fahren (Quality). Ohne echtes Zeichnen: nur die Messung.
   stAdd('Virtuell v1.5: Bildraten-Wache schaltet bei unter 40 Bildern/s Schatten, dann Aufloesung ab', () => {
     const f = [];

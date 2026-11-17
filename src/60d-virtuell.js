@@ -76,8 +76,8 @@
       'attribute vec3 p; attribute vec3 c; uniform mat4 m; uniform mat4 w; varying vec3 vc; varying float vd;'
       + 'void main(){ vec4 q = w * vec4(p, 1.0); gl_Position = m * q; vc = c; vd = gl_Position.w; }'));
     gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
-      'precision mediump float; varying vec3 vc; varying float vd; uniform vec3 nebel; uniform float alf;'
-      + 'void main(){ float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(vc, nebel, f), alf); }'));
+      'precision mediump float; varying vec3 vc; varying float vd; uniform vec3 nebel; uniform float alf; uniform vec3 sonne;'
+      + 'void main(){ float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(vc * sonne, nebel, f), alf); }'));
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     return p;
@@ -98,13 +98,14 @@
       'attribute vec3 p; uniform vec3 right; uniform vec3 up; uniform vec3 fwd; uniform vec2 halb; varying vec3 vdir;'
       + 'void main(){ gl_Position = vec4(p, 1.0); vdir = fwd + right * (p.x * halb.x) + up * (p.y * halb.y); }'));
     gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
-      'precision mediump float; varying vec3 vdir;'
+      'precision mediump float; varying vec3 vdir; uniform vec3 horizont; uniform vec3 zenit;'
       + 'void main(){ float h = clamp(vdir.y * inversesqrt(dot(vdir, vdir)) * 1.6 + 0.18, 0.0, 1.0);'
-      + ' gl_FragColor = vec4(mix(vec3(0.66, 0.78, 0.90), vec3(0.18, 0.36, 0.66), h), 1.0); }'));
+      + ' gl_FragColor = vec4(mix(horizont, zenit, h), 1.0); }'));
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     return { p, ap: gl.getAttribLocation(p, 'p'), right: gl.getUniformLocation(p, 'right'),
-             up: gl.getUniformLocation(p, 'up'), fwd: gl.getUniformLocation(p, 'fwd'), halb: gl.getUniformLocation(p, 'halb') };
+             up: gl.getUniformLocation(p, 'up'), fwd: gl.getUniformLocation(p, 'fwd'), halb: gl.getUniformLocation(p, 'halb'),
+             horizont: gl.getUniformLocation(p, 'horizont'), zenit: gl.getUniformLocation(p, 'zenit') };
   }
   function vfHimmel(gl) {
     const a = [-1, 1, 0, 1, 1, 0, 1, -1, 0, -1, 1, 0, 1, -1, 0, -1, -1, 0];
@@ -532,8 +533,8 @@
         + ' float e = 1.0 - max(normalize(auge - p).y, 0.0); vg = glanz * e * e * e; }'));
       gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
         'precision mediump float;\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nvarying highp vec2 vuv;\n#else\nvarying vec2 vuv;\n#endif\n'
-        + 'varying vec3 vc; varying float vd; varying float vg; uniform sampler2D tx; uniform vec3 nebel;'
-        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 c = t.rgb * vc + vec3(0.80, 0.86, 0.95) * (vg * t.a);'
+        + 'varying vec3 vc; varying float vd; varying float vg; uniform sampler2D tx; uniform vec3 nebel; uniform vec3 sonne;'
+        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 c = (t.rgb * vc + vec3(0.80, 0.86, 0.95) * (vg * t.a)) * sonne;'
         + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, nebel, f), 1.0); }'));
     } else {
       // Quality. Blickvektor und Schattenkoordinaten entstehen im Vertexshader (dort immer highp) und
@@ -549,7 +550,7 @@
         'precision mediump float;\n' + VF_HP
         + 'varying HP vec2 vuv; varying HP vec3 vsp; varying vec3 vc; varying float vd; varying vec3 vv;'
         + 'uniform sampler2D tx; uniform vec3 nebel; uniform sampler2D sch; uniform float schatt; uniform float glanz;'
-        + 'uniform float belichtung; uniform float bump; uniform HP float bias; uniform HP float biasPixel;'
+        + 'uniform float belichtung; uniform float bump; uniform HP float bias; uniform HP float biasPixel; uniform vec3 sonne;'
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
         + 'HP float schTiefe(HP vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
         + 'void main(){'
@@ -559,7 +560,7 @@
         + ' if (bump > 0.01) { float dU = texture2D(tx, vuv + vec2(1.0/512.0, 0.0)).r - t.r; c += vec3(dU) * bump * 0.8; }'
         // max(0): das Relief zieht an dunklen Fugen unter 0, und filmic(x < 0) kippt einzelne Kanaele
         // auf 0 oder 1 (lila Linien am Boden in 1.3.124-1.3.131).
-        + ' c = pow(filmic(max(c, vec3(0.0)) * belichtung), vec3(1.0/2.2));'
+        + ' c = pow(filmic(max(c, vec3(0.0)) * belichtung), vec3(1.0/2.2)) * sonne;'
         + ' if (schatt > 0.5 && vsp.x > 0.0 && vsp.x < 1.0 && vsp.y > 0.0 && vsp.y < 1.0 && vsp.z > 0.0 && vsp.z <= 1.0) {'
         + '   HP float b = vsp.z - bias; float s = 0.0;'
         + '   for (int ox = -1; ox <= 1; ox++) for (int oy = -1; oy <= 1; oy++)'
@@ -570,7 +571,7 @@
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'auge', 'glanz', 'tx', 'nebel', 'sch', 'schM', 'schatt', 'belichtung', 'bump', 'bias', 'biasPixel'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'auge', 'glanz', 'tx', 'nebel', 'sonne', 'sch', 'schM', 'schatt', 'belichtung', 'bump', 'bias', 'biasPixel'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     return { p, u, qual: !!qual, ap: gl.getAttribLocation(p, 'p'), auv: gl.getAttribLocation(p, 'uv'), ac: gl.getAttribLocation(p, 'c') };
   }
   // Letzter Rueckfall, wenn kein Flaechenshader kompiliert: das einfache Eckfarben-Programm (VF.prog)
@@ -757,7 +758,7 @@
     gl.useProgram(P.p);
     for (let i = 0; i < 16; i++) F.pv[i] = pv[i];
     gl.uniformMatrix4fv(u.m, false, F.pv);
-    gl.uniform3f(u.nebel, 0.66, 0.78, 0.90);
+    vfTzSetzen(gl, u);
     if (P.einfach) {
       gl.uniformMatrix4fv(u.w, false, VF_EINS);
       gl.uniform1f(u.alf, 1.0);
@@ -1062,6 +1063,29 @@
   function vfGrafikQual() { return vfGrafik() === 'qual'; }
   function vfGrafikSetzen(id) {
     try { localStorage.setItem(VF_GRAFIK_STORE, id); } catch (e) { /* egal */ }
+  }
+  // v1.5 (WIP, Plan Paket 4 "Tageszeit"): Farbstimmung der virtuellen Fahrt. Himmel (Horizont, Zenit), Nebel
+  // und die Farbe des Lichts auf allem Beleuchteten; selbstleuchtende Teile (Lichter) bleiben, wie sie sind.
+  // Die Sonnenrichtung bleibt fest (die Schattenkarte haengt an ihr). Keine Nacht: es gibt keine Lichtkegel.
+  // Mittag ist genau das bisherige Bild.
+  const VF_TZ_STORE = 'omegasim-vf-tageszeit';
+  const VF_TAGESZEITEN = [
+    { id: 'mittag', name: 'Mittag', sonne: [1, 1, 1], horizont: [0.66, 0.78, 0.90], zenit: [0.18, 0.36, 0.66] },
+    { id: 'morgen', name: 'Morgen', sonne: [1.0, 0.93, 0.86], horizont: [0.88, 0.80, 0.74], zenit: [0.34, 0.50, 0.78] },
+    { id: 'abend', name: 'Abend', sonne: [0.98, 0.72, 0.52], horizont: [0.96, 0.62, 0.42], zenit: [0.22, 0.24, 0.48] },
+  ];
+  function vfTageszeit() {
+    let v = 'mittag';
+    try { v = localStorage.getItem(VF_TZ_STORE) || 'mittag'; } catch (e) { v = 'mittag'; }
+    return VF_TAGESZEITEN.find((x) => x.id === v) || VF_TAGESZEITEN[0];
+  }
+  function vfTageszeitSetzen(id) { try { localStorage.setItem(VF_TZ_STORE, id); } catch (e) { /* egal */ } }
+  // Je Fahrt einmal gelesen (VF.tz), nicht je Bild.
+  function vfTz() { return VF.tz || VF_TAGESZEITEN[0]; }
+  function vfTzSetzen(gl, u) {
+    const z = vfTz();
+    if (u.nebel) gl.uniform3f(u.nebel, z.horizont[0], z.horizont[1], z.horizont[2]);
+    if (u.sonne) gl.uniform3f(u.sonne, z.sonne[0], z.sonne[1], z.sonne[2]);
   }
   // v1.3.124: Grafik-Feinschliff (BESTELLT). Regler (Konsole) fuer die Bildqualitaet im Quality-Modus.
   // VF_BELICHTUNG: Gesamthelligkeit. VF_BUMP_BODEN/BAHN: Relief-Staerke (0 = aus, wenn der Boden
@@ -1465,10 +1489,10 @@
         + 'void main(){ vec4 q = w * vec4(p, 1.0); gl_Position = m * q; vuv = uv; vn = nm * n; vd = gl_Position.w; }'));
       gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
         'precision mediump float; varying vec2 vuv; varying vec3 vn; varying float vd;'
-        + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel; uniform float lack;'
+        + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel; uniform float lack; uniform vec3 sonne;'
         + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7), lack); vec3 N = normalize(vn);'
         + ' float d = max(dot(N, normalize(vec3(0.35, 0.9, 0.25))), 0.0); float s = pow(max(dot(N, normalize(vec3(0.2, 0.75, -0.6))), 0.0), 24.0);'
-        + ' float l = mix(1.0, 0.42 + 0.66 * d, licht); vec3 c = tb * tint * (l + emis) + vec3(s * 0.35 * licht);'
+        + ' float l = mix(1.0, 0.42 + 0.66 * d, licht); vec3 c = tb * tint * (l * sonne + emis) + vec3(s * 0.35 * licht) * sonne;'
         + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, nebel, f), mix(alpha, alpha * t.a, am)); }'));
     } else {
       gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
@@ -1480,7 +1504,7 @@
         'precision mediump float;\n' + VF_HP
         + 'varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vv; varying HP vec3 vsp;'
         + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
-        + 'uniform float klar; uniform float glas; uniform sampler2D sch; uniform float schatt; uniform HP float bias; uniform float lack;'
+        + 'uniform float klar; uniform float glas; uniform sampler2D sch; uniform float schatt; uniform HP float bias; uniform float lack; uniform vec3 sonne;'
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
         + 'HP float schTiefe(HP vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
         + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7), lack); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
@@ -1488,7 +1512,7 @@
         + ' vec3 amb = mix(vec3(0.30, 0.27, 0.23), vec3(0.55, 0.68, 0.90), N.y * 0.5 + 0.5);'
         + ' float sheen = pow(max(dot(N, normalize(L + V)), 0.0), 64.0) * 0.45;'
         + ' float l = mix(1.0, 0.30 + 0.72 * d, licht);'
-        + ' vec3 c = pow(tb, vec3(2.2)) * tint * (amb * 0.55 + l + emis);'
+        + ' vec3 c = pow(tb, vec3(2.2)) * tint * ((amb * 0.55 + l) * sonne + emis);'
         + ' c += vec3(pow(rv, 24.0) * 0.60 * licht + sheen * licht);'
         + ' c += vec3(0.05, 0.06, 0.07) * klar * pow(rv, 6.0) * 1.2;'
         + ' c += vec3(pow(1.0 - max(dot(N, V), 0.0), 5.0) * glas * 0.9);'
@@ -1501,7 +1525,7 @@
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'lack'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'sonne', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'lack'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     // Feste Zwischenspeicher fuer die Matrizen je Teil (keine Float32Array je Teil und Bild).
     return { p, u, qual: !!qual, f16: new Float32Array(16), f9: new Float32Array(9), pv: new Float32Array(16), schM: new Float32Array(16),
              ap: gl.getAttribLocation(p, 'p'), an: gl.getAttribLocation(p, 'n'), auv: gl.getAttribLocation(p, 'uv') };
@@ -2166,7 +2190,8 @@
     const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     gl.viewport(0, 0, w, h);
-    gl.clearColor(0.66, 0.78, 0.90, 1);
+    const tzH = vfTz().horizont;
+    gl.clearColor(tzH[0], tzH[1], tzH[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     // Himmel: Vollbild-Quad, Farbverlauf im WELTRAUM (horizontfolgend beim Umsehen). Ganz hinten.
     if (!VF.himmelProg) { VF.himmelProg = vfProgrammHimmel(gl); VF.himmel = vfHimmel(gl); }
@@ -2188,6 +2213,7 @@
       const ux = ry * fz - rz * fy, uy = rz * fx - rx * fz, uz = rx * fy - ry * fx;
       const th = Math.tan((k.fov * Math.PI / 180) / 2);
       gl.uniform3f(VF.himmelProg.right, rx, ry, rz);
+      { const z = vfTz(); gl.uniform3f(VF.himmelProg.horizont, z.horizont[0], z.horizont[1], z.horizont[2]); gl.uniform3f(VF.himmelProg.zenit, z.zenit[0], z.zenit[1], z.zenit[2]); }
       gl.uniform3f(VF.himmelProg.up, ux, uy, uz);
       gl.uniform3f(VF.himmelProg.fwd, fx, fy, fz);
       gl.uniform2f(VF.himmelProg.halb, th * w / Math.max(1, h), th);
@@ -2207,12 +2233,12 @@
     // v1.3.39: Boden, Fahrbahn und Randsteine mit Texturen (vorher Eckfarben in VF.bahn).
     vfFlaechenMalen(gl, pv, k.auge);
     gl.useProgram(VF.prog);
-    if (!VF.loc) VF.loc = { m: gl.getUniformLocation(VF.prog, 'm'), w: gl.getUniformLocation(VF.prog, 'w'), nebel: gl.getUniformLocation(VF.prog, 'nebel'), alf: gl.getUniformLocation(VF.prog, 'alf'),
+    if (!VF.loc) VF.loc = { m: gl.getUniformLocation(VF.prog, 'm'), w: gl.getUniformLocation(VF.prog, 'w'), nebel: gl.getUniformLocation(VF.prog, 'nebel'), alf: gl.getUniformLocation(VF.prog, 'alf'), sonne: gl.getUniformLocation(VF.prog, 'sonne'),
                             p: gl.getAttribLocation(VF.prog, 'p'), c: gl.getAttribLocation(VF.prog, 'c'), pv: new Float32Array(16), w16: new Float32Array(16) };
     const L = VF.loc;
     for (let i = 0; i < 16; i++) L.pv[i] = pv[i];
     gl.uniformMatrix4fv(L.m, false, L.pv);
-    gl.uniform3f(L.nebel, 0.66, 0.78, 0.90);
+    vfTzSetzen(gl, L);
     gl.uniform1f(L.alf, 1.0);
     const zeichne = (pu, welt) => {
       for (let i = 0; i < 16; i++) L.w16[i] = welt[i];
@@ -2611,7 +2637,7 @@
     gl.useProgram(T.p);
     for (let i = 0; i < 16; i++) T.pv[i] = pv[i];
     gl.uniformMatrix4fv(u.m, false, T.pv);
-    gl.uniform3f(u.nebel, 0.66, 0.78, 0.90);
+    vfTzSetzen(gl, u);
     gl.uniform1i(u.tx, 0);
     // v1.3.124 (nur Quality): Blickpunkt fuer den Glanz und Selbst-Schatten aus der Schattenkarte
     // (Textur-Einheit 1) - die Autos empfangen ihre eigenen Schatten.
@@ -2997,6 +3023,7 @@
     VF.gl = gl; VF.cv = cv; VF.schicht = schicht; VF.hud = schicht.querySelector('.vf-hud');
     VF.grafik = vfGrafikQual();   // v1.3.113: einmal je Fahrt, damit kein localStorage je Bild
     VF.wache = null; VF.letztRoh = 0;   // v1.5: Bildraten-Wache je Fahrt neu
+    VF.tz = vfTageszeit();              // v1.5: Tageszeit je Fahrt einmal
     // v1.3.113 Quality: echte Schattenkarte (Depth-Textur) aus Richtung der Sonne. Ohne die
     // Erweiterung bleibt der weiche Blob-Schatten (M.schatten).
     VF.schatte = null; VF.schatteProg = null;
@@ -3255,6 +3282,13 @@
     const grafikZeile = garWertZeile(t('Grafik'), t(vfGrafik() === 'perf' ? 'Performance' : 'Quality'), gWahl, gWahl);
     grafikZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(grafikZeile);
+    // v1.5 (WIP): Tageszeit (Farbstimmung), in Performance und Quality.
+    const tzA = VF_TAGESZEITEN.indexOf(vfTageszeit());
+    const tzWahl = (d) => { vfTageszeitSetzen(VF_TAGESZEITEN[(tzA + d + VF_TAGESZEITEN.length) % VF_TAGESZEITEN.length].id); renderGarage(); };
+    const tzZeile = garWertZeile(t('Tageszeit'), t(VF_TAGESZEITEN[tzA].name), () => tzWahl(-1), () => tzWahl(1));
+    tzZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+    tzZeile.dataset.feld = 'tageszeit';
+    rechts.appendChild(tzZeile);
     // Geist: eine Kopie faehrt nach der ersten Runde die aufgezeichnete Linie ab (Standard an).
     const geistAn = vfGeistAn();
     const geistWahl = () => {
