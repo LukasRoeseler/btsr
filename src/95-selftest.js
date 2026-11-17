@@ -27337,6 +27337,40 @@
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : G.bueschel + ' Bueschel, Dunst Abend ' + dA.map((x) => x.toFixed(2)).join('/') };
   });
+  // v1.5.96 BESTELLT (V1): feste Physik-Teilschritte (500 Hz) im virtuellen Fahren, unabhaengig von der Bildrate.
+  stAdd('Virtuell v1.5.96: Fahrphysik in festen Teilschritten, gleiche Fahrt bei 30 und 120 Bildern/s', () => {
+    if (typeof virtuellStarten !== 'function' || VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft oder fehlt' };
+    const f = [];
+    const merkTab = kAktiverTab(), st = physEngine.state, merk = { v: st.speedKmh, lenk: steerX, g: st.gLong, lu: st.longUse };
+    let mass = '';
+    try {
+      if (!virtuellStarten({ tiles: codeToTrack('SG3R2G3R2').tiles, studie: true })) return { skip: true, mass: 'kein WebGL' };
+      const hand = vfHandling(), reifen = hand === 'gran' || hand === 'acc' || hand === 'librecorsa';
+      const start = { x: VF.x, y: VF.y, h: VF.h };
+      const fahre = (bilder) => {
+        Object.assign(VF, { x: start.x, y: start.y, h: start.h, dyn: { vy: 0, r: 0 }, lenkIst: 0, physRest: 0, tyreTemp: 0, feder: null, ax: 0, ay: 0 });
+        let schritte = 0;
+        for (let i = 0; i < bilder; i++) { VF.dtBild = 1 / bilder; schritte += vfFahrPhysik(1 / bilder, 140, st, hand, reifen); }
+        return { x: VF.x, y: VF.y, h: VF.h, r: VF.dyn.r, schritte };
+      };
+      st.speedKmh = 140; st.gLong = 0; st.longUse = 0; steerX = 0.6;
+      const a = fahre(30), b = fahre(120);
+      if (Math.abs(a.schritte - 500) > 1 || Math.abs(b.schritte - 500) > 1) f.push('Teilschritte ' + a.schritte + ' / ' + b.schritte + ' statt 500 je Sekunde');
+      const weg = Math.hypot(a.x - start.x, a.y - start.y), abw = Math.hypot(a.x - b.x, a.y - b.y);
+      if (!(weg > 1)) f.push('Auto faehrt nicht (' + weg.toFixed(2) + ')');
+      if (abw > weg * 0.01) f.push('Weg bei 30 und 120 Bildern/s um ' + abw.toFixed(3) + ' verschieden (Weg ' + weg.toFixed(1) + ')');
+      if (Math.abs(a.h - b.h) > 0.5) f.push('Kurs ' + a.h.toFixed(2) + ' / ' + b.h.toFixed(2));
+      // Ein langes Bild (Haenger) rechnet hoechstens VF_TEIL.max Schritte.
+      VF.physRest = 0;
+      if (vfFahrPhysik(0.5, 140, st, hand, reifen) !== VF_TEIL.max || VF.physRest !== 0) f.push('Haenger nicht begrenzt');
+      mass = 'Weg ' + weg.toFixed(1) + ', Abweichung ' + abw.toFixed(4) + ', Kurs ' + a.h.toFixed(2) + '/' + b.h.toFixed(2);
+    } finally {
+      if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+      st.speedKmh = merk.v; steerX = merk.lenk; st.gLong = merk.g; st.longUse = merk.lu;
+      showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : mass };
+  });
   stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto und Farbe', async () => {
     const f = [];
     // Daten: acht Farben plus Original, eindeutige Kennungen, jede Farbe wird gefunden.

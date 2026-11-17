@@ -2362,6 +2362,79 @@
     log('Virtuell: Bildraten-Wache Stufe ' + W.stufe + ' bei ' + fps + ' Bildern/s.', 'info');
   }
 
+  // ---- v1.5.96 (V1): FESTE PHYSIK-TEILSCHRITTE ----
+  // BESTELLT (V1): das Fahrzeug im virtuellen Fahren rechnet in festen Teilschritten von VF_TEIL.dt (500 Hz), unabhaengig
+  // von der Bildrate. Bis 1.5.95 lief Lenkung, Reifenmodell, Gier- und Querdynamik, Weg und Federung einmal je Bild mit dem
+  // Bildabstand (bis 50 ms): bei 30 Bildern/s fuhr sich das Auto anders (traeger, Federung zappelte) als bei 120. Jetzt
+  // sammelt VF.physRest die Bildzeit, und es laufen so viele Teilschritte, wie hineinpassen (hoechstens VF_TEIL.max je Bild;
+  // haengt ein Bild laenger, verfaellt der Rest wie vorher ueber 50 ms). Alles andere (Ort auf der Strecke, Randstein,
+  // NPCs, Kollision, Geist) bleibt je Bild.
+  const VF_TEIL = { dt: 1 / 500, max: 30 };
+  function vfFahrPhysik(dt, kmh, st, hand, reifenModus) {
+    VF.physRest = (VF.physRest || 0) + dt;
+    let n = 0;
+    while (VF.physRest >= VF_TEIL.dt - 1e-9 && n < VF_TEIL.max) {
+      vfFahrTeilschritt(VF_TEIL.dt, kmh, st, hand, reifenModus);
+      VF.physRest -= VF_TEIL.dt; n++;
+    }
+    if (n >= VF_TEIL.max) VF.physRest = 0;
+    VF.teilschritte = n;
+    return n;
+  }
+  function vfFahrTeilschritt(sdt, kmh, st, hand, reifenModus) {
+    // v1.1.11 GEMELDET: "Virtuelles Fahren ruckelt und ist sehr traege." Bisher lenkte das Auto mit
+    // physEngine.state.dampedSteering: das rechnet die Physik nur alle 45 ms (Treppenstufen in der
+    // Gierrate = Ruckeln), mit der Servodaempfung und der Lenkbegrenzung bei Tempo des ECHTEN Autos
+    // (= traege). Jetzt direkt der Stick (steerX), voller Einschlag in 0,12 s, bei hohem Tempo etwas
+    // weniger Einschlag wie ein Spiel-Lenkfilter; den Rest erledigt das Reifenmodell.
+    const vVollL = Math.abs(kmh) * REAL_SCALE / 3.6;
+    const lenkZiel = Math.max(-1, Math.min(1, typeof steerX === 'number' ? steerX : 0)) / (1 + (vVollL / 55) * (vVollL / 55));
+    const schritt = sdt / 0.09;
+    VF.lenkIst = (VF.lenkIst || 0) + Math.max(-schritt, Math.min(schritt, lenkZiel - (VF.lenkIst || 0)));
+    const lenk = VF.lenkIst;
+    if (kmh < 0) {
+      // Rueckwaerts (Rangieren): rein kinematisch wie bisher.
+      const neu = vfSchritt(VF, kmh, lenk, sdt, physEngine.config.gripScale);
+      VF.x = neu.x; VF.y = neu.y; VF.h = neu.h;
+      VF.dyn = { vy: 0, r: 0 };
+      VF.ax = 0; VF.ay = 0;
+    } else {
+      const vVoll = kmh * REAL_SCALE / 3.6;                                  // m/s eines GT3
+      // Laengs: die Laengs-G der App (-1 = Vollbremsung) auf GT3-Werte (1,5 g), nicht die Ableitung
+      // des Modellauto-Tempos - das beschleunigt umgerechnet weit ueber jedes echte Auto.
+      const ax = (st.gLong || 0) * 15;
+      if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
+      let mu = (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1);
+      if (reifenModus) {
+        // Reifentemperatur (v1.2.62, Korrektur v1.3.5): kalt = weniger Griff, warm = optimal,
+        // ueberhitzt = weniger. Bis 1.3.4 heizte sie mit bis zu 0,25/s und kuehlte nur mit
+        // 0,01/s - nach wenigen Sekunden stand sie dauerhaft am Anschlag (ueberhitzt).
+        if (VF.tyreTemp === undefined) VF.tyreTemp = 0;
+        VF.tyreTemp = vfReifenTemp(VF.tyreTemp, vVollL, VF.ay || 0, sdt);
+        mu *= vfReifenGriff(VF.tyreTemp, hand);
+      }
+      vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, sdt, mu, VF.P);
+      VF.ax = ax; VF.ay = vVoll * VF.dyn.r;
+      // Nickbewegung: beim Bremsen senkt sich die Nase, beim Beschleunigen hebt sie sich (dezent).
+      VF.pitch = Math.max(-0.03, Math.min(0.03, -(VF.ax || 0) * 0.0018));
+      // Weg in der Bahnwelt: Tempo des Modellautos, Richtung = Kurs + Schwimmwinkel.
+      VF.h += VF.dyn.r * sdt * 180 / Math.PI;
+      const beta = Math.atan2(VF.dyn.vy, Math.max(0.1, vVoll));
+      const vE = kmh / 3.6 * 100 * TRACK_UNITS_PER_CM;
+      const rich = VF.h * Math.PI / 180 + beta;
+      VF.x += Math.sin(rich) * vE * sdt;
+      VF.y -= Math.cos(rich) * vE * sdt;
+    }
+    // Raeder drehen mit dem Weg, Federung folgt Laengs- und Querbeschleunigung (neben der Bahn ruettelt es).
+    const wegE = kmh / 3.6 * 100 * TRACK_UNITS_PER_CM * sdt;
+    VF.raddreh = ((VF.raddreh || 0) + wegE / (VF_AUTO.L / 4.64 * 0.335)) % (Math.PI * 2);
+    if (VF.modell) {
+      if (!VF.feder) VF.feder = { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 };
+      // Zufallsstoesse neben der Bahn: je Teilschritt einer; mit sqrt(Bild/Teilschritt) so stark wie vorher einer je Bild.
+      const stoss = VF.abseits && Math.abs(kmh) > 0.05 ? (Math.random() - 0.5) * VF.modell.d.masse * 9 * Math.sqrt(Math.max(1, (VF.dtBild || sdt) / sdt)) : 0;
+      vfFederung(VF.feder, VF.ax || 0, VF.ay || 0, sdt, VF.modell.d, stoss);
+    }
+  }
   function vfBild(now) {
     if (!VF.aktiv) return;
     VF.raf = requestAnimationFrame(vfBild);
@@ -2383,49 +2456,8 @@
     const kmh = (st.speedKmh || 0) * (VF.tempoFaktor || 1);
     const hand = vfHandling();
     const reifenModus = hand === 'gran' || hand === 'acc' || hand === 'librecorsa';
-    // v1.1.11 GEMELDET: "Virtuelles Fahren ruckelt und ist sehr traege." Bisher lenkte das Auto mit
-    // physEngine.state.dampedSteering: das rechnet die Physik nur alle 45 ms (Treppenstufen in der
-    // Gierrate = Ruckeln), mit der Servodaempfung und der Lenkbegrenzung bei Tempo des ECHTEN Autos
-    // (= traege). Jetzt direkt der Stick (steerX), voller Einschlag in 0,12 s, bei hohem Tempo etwas
-    // weniger Einschlag wie ein Spiel-Lenkfilter; den Rest erledigt das Reifenmodell.
-    const vVollL = Math.abs(kmh) * REAL_SCALE / 3.6;
-    const lenkZiel = Math.max(-1, Math.min(1, typeof steerX === 'number' ? steerX : 0)) / (1 + (vVollL / 55) * (vVollL / 55));
-    const schritt = dt / 0.09;
-    VF.lenkIst = (VF.lenkIst || 0) + Math.max(-schritt, Math.min(schritt, lenkZiel - (VF.lenkIst || 0)));
+    vfFahrPhysik(dt, kmh, st, hand, reifenModus);
     const lenk = VF.lenkIst;
-    if (kmh < 0) {
-      // Rueckwaerts (Rangieren): rein kinematisch wie bisher.
-      const neu = vfSchritt(VF, kmh, lenk, dt, physEngine.config.gripScale);
-      VF.x = neu.x; VF.y = neu.y; VF.h = neu.h;
-      VF.dyn = { vy: 0, r: 0 };
-      VF.ax = 0; VF.ay = 0;
-    } else {
-      const vVoll = kmh * REAL_SCALE / 3.6;                                  // m/s eines GT3
-      // Laengs: die Laengs-G der App (-1 = Vollbremsung) auf GT3-Werte (1,5 g), nicht die Ableitung
-      // des Modellauto-Tempos - das beschleunigt umgerechnet weit ueber jedes echte Auto.
-      const ax = (st.gLong || 0) * 15;
-      if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
-      let mu = (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1);
-      if (reifenModus) {
-        // Reifentemperatur (v1.2.62, Korrektur v1.3.5): kalt = weniger Griff, warm = optimal,
-        // ueberhitzt = weniger. Bis 1.3.4 heizte sie mit bis zu 0,25/s und kuehlte nur mit
-        // 0,01/s - nach wenigen Sekunden stand sie dauerhaft am Anschlag (ueberhitzt).
-        if (VF.tyreTemp === undefined) VF.tyreTemp = 0;
-        VF.tyreTemp = vfReifenTemp(VF.tyreTemp, vVollL, VF.ay || 0, dt);
-        mu *= vfReifenGriff(VF.tyreTemp, hand);
-      }
-      vfDynamik(VF.dyn, vVoll, ax, Math.max(0, st.longUse || 0), lenk, dt, mu, VF.P);
-      VF.ax = ax; VF.ay = vVoll * VF.dyn.r;
-      // Nickbewegung: beim Bremsen senkt sich die Nase, beim Beschleunigen hebt sie sich (dezent).
-      VF.pitch = Math.max(-0.03, Math.min(0.03, -(VF.ax || 0) * 0.0018));
-      // Weg in der Bahnwelt: Tempo des Modellautos, Richtung = Kurs + Schwimmwinkel.
-      VF.h += VF.dyn.r * dt * 180 / Math.PI;
-      const beta = Math.atan2(VF.dyn.vy, Math.max(0.1, vVoll));
-      const vE = kmh / 3.6 * 100 * TRACK_UNITS_PER_CM;
-      const rich = VF.h * Math.PI / 180 + beta;
-      VF.x += Math.sin(rich) * vE * dt;
-      VF.y -= Math.cos(rich) * vE * dt;
-    }
     // Geist: jede Runde wird von Linie zu Linie aufgezeichnet; die beste faehrt als Kopie mit (vfGeistRunde).
     if (VF.geist) {
       const g = VF.geist;
@@ -2444,14 +2476,6 @@
         g.y = p0[1] + (p1[1] - p0[1]) * f;
         g.h = p0[2] + (p1[2] - p0[2]) * f;
       }
-    }
-    // Raeder drehen mit dem Weg, Federung folgt Laengs- und Querbeschleunigung (neben der Bahn ruettelt es).
-    const wegE = kmh / 3.6 * 100 * TRACK_UNITS_PER_CM * dt;
-    VF.raddreh = ((VF.raddreh || 0) + wegE / (VF_AUTO.L / 4.64 * 0.335)) % (Math.PI * 2);
-    if (VF.modell) {
-      if (!VF.feder) VF.feder = { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 };
-      const stoss = VF.abseits && Math.abs(kmh) > 0.05 ? (Math.random() - 0.5) * VF.modell.d.masse * 9 : 0;
-      vfFederung(VF.feder, VF.ax || 0, VF.ay || 0, dt, VF.modell.d, stoss);
     }
     VF.lenkWinkel = Math.max(-1, Math.min(1, lenk)) * (VF.P ? VF.P.lenkGrad : VF_GT3.lenkGrad) * Math.PI / 180;
     const o = vfOrt(VF.pts, VF.nrm, VF.x, VF.y, VF.idx);
@@ -3801,6 +3825,7 @@
     VF.dunstF = vfDunstFarbe(vfTz());   // v1.5.94 (G3)
     VF.sichtAn = vfSichtTempoAn();      // v1.5.94 (G7)
     VF.fovPlus = 0; VF.kerbJetzt = false; VF.umw = null; VF.umwKaputt = false;
+    VF.physRest = 0;                     // v1.5.96 (V1)
     VF.bloom = null; VF.bloomKaputt = false;
     // v1.3.113 Quality: echte Schattenkarte (Depth-Textur) aus Richtung der Sonne. Ohne die
     // Erweiterung bleibt der weiche Blob-Schatten (M.schatten).
