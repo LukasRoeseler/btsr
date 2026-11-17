@@ -159,6 +159,11 @@
       border-radius: 12px; overflow: hidden; border: 2px solid var(--g); backface-visibility: hidden; -webkit-backface-visibility: hidden;
       background: linear-gradient(160deg, color-mix(in srgb, var(--c) 22%, #161b26), #0b0d12 70%); }
     .show-hinten { transform: rotateY(180deg); }
+    /* v1.5.108 GEMELDET (zweimal): Rueckseite nicht lesbar. Auf Android-WebViews wirkt backface-visibility nicht, sobald
+       die Vorderseite eine Mischschicht hat (Holo: mix-blend-mode) - die gespiegelte Vorderseite lag ueber dem Text. Jetzt
+       wird die abgewandte Seite zur Haelfte der Drehung (0,25 s) unsichtbar geschaltet, unabhaengig vom Browser. */
+    .show-seite { transition: visibility 0s linear .25s; }
+    .show-karte.gedreht .show-seite:not(.show-hinten), .show-karte:not(.gedreht) .show-hinten { visibility: hidden; }
     .show-kopf { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
     .show-stufe { color: var(--g); }
     .show-live { color: #3ddc84; letter-spacing: .06em; }
