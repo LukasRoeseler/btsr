@@ -3156,6 +3156,7 @@
       car.tileCode = b[12]; car.tileCount = b[11];
       car.lastCodeAt = rennZeitJetzt();
       car.battery = akkuGlaetten(car, b[10], rennZeitJetzt());
+      if (typeof akkuMitschreiben === 'function') akkuMitschreiben(car, b[10], b[11], performance.now());
       if (car.race) zielSperreFlanke(car.race, b);
       if (car === playerCar) handleDashboardBytes(b);
       return;
@@ -3245,6 +3246,8 @@
     // v0.9.87: geglaettet (Maximum der letzten 5 s) - unter Gas sackt die Spannung ab, und
     // der Rohwert sprang dann um bis zu zehn Prozent.
     car.battery = akkuGlaetten(car, b[10], rennZeitJetzt());
+    // v1.5 (WIP): Akku-Aufzeichnung fuer die Kennlinie (98n-akku-aufzeichnung.js).
+    if (typeof akkuMitschreiben === 'function') akkuMitschreiben(car, b[10], b[11], performance.now());
   }
 
   function stopGhost(car) {
