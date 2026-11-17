@@ -2695,6 +2695,8 @@
     // Meisterschaft (73-meisterschaft.js): wertet, sobald alle im Ziel sind, und zeigt danach
     // den Zwischenstand. Das normale Ergebnis kommt trotzdem zuerst.
     if (typeof meisterRennenEnde === 'function') meisterRennenEnde(willAuslaufen);
+    // v1.5 (WIP): Karriere (98l-karriere.js), dieselbe Geduld bis alle im Ziel sind.
+    if (typeof karriereRennenEnde === 'function') karriereRennenEnde(willAuslaufen);
     // Online-Streckenzeiten (72c-strecken-online.js): nicht fuer Challenges, die haben eigene Listen.
     if (typeof skSitzungEnde === 'function' && !(typeof challengeLaeuft === 'function' && challengeLaeuft())) skSitzungEnde();
     if (typeof challengeRennenEnde === 'function' && challengeRennenEnde(willAuslaufen)) { /* erledigt */ }

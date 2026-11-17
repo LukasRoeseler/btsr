@@ -11369,6 +11369,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // v1.5 (WIP): KI-Persoenlichkeit je NPC (98j-ki-persoenlichkeit.js), ab Werk aus. Vor der
         // gelben Flagge: unter Gelb gibt kiTempo() ohnehin 1, und das Gelb-Tempo hat das letzte Wort.
         if (typeof kiTempo === 'function') target = Math.min(1, target * kiTempo(car));
+        // v1.5 (WIP): Karriere (98l-karriere.js), die Lizenz setzt das Feldtempo; ausserhalb einer Karriere-Sitzung 1.
+        if (typeof karriereKlasse === 'function') target = Math.min(1, target * karriereKlasse());
       }
       // Gelbe Flagge: alle auf denselben Wert, und zwar bevor irgendetwas anderes daran
       // dreht. Gleiches Tempo fuer alle heisst von selbst "kein Ueberholen".
