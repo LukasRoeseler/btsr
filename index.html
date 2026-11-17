@@ -5882,7 +5882,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.103</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.107</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7144,6 +7144,7 @@
       <h3 style="font-size:14px; margin:18px 0 6px 0">Woher die 3D-Modelle kommen</h3>
       <p class="muted">Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 und Boxer 96. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder sp&auml;ter. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.</p>
       <p class="muted">Der VW K&auml;fer 1303 RS ist eine eigene Konstruktion von Gnen54 (OmegaSim CAD) und steht unter Creative Commons Namensnennung 4.0 (CC BY 4.0).</p>
+      <p class="muted">Spider NG1: Aufbau von Gnen54 (OmegaSim CAD) auf der Karosserie MODIplay MP-1 Spider von Sturmkind, 3D-Daten f&uuml;r HYBRID von Thomas Strobel (FREAKPALACE Customs). Freigabe von Sturmkind am 16.11.2026: Verwendung erlaubt, solange die Karosserien nicht kommerziell verkauft werden. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.</p>
       <p class="muted">Die Cockpit-Ansicht &bdquo;Mokamit&ldquo; (Digital Dash), die KI-Pers&ouml;nlichkeit der NPCs, der Showroom, die Karriere und der Modus mit zwei Laptops stammen aus Hybrid-Dash von Mo Kamit, MIT-Lizenz.</p>
       <p class="dank-quelle" data-i18n-skip><a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html" target="_blank" rel="noopener noreferrer">gnu.org/licenses/old-licenses/gpl-2.0</a> &middot; img/autos/*/LIZENZ.txt</p>
       <!-- BESTELLT: "in den Credits das GitHub von engine sim verlinken und ggf. die wiss.
@@ -7172,6 +7173,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren: neues Auto Spider NG1 von Gnen54 (WIP), aufgebaut auf der Karosserie MODIplay MP-1 Spider von Sturmkind (Freigabe von Sturmkind, nicht kommerziell), mit eigenen R&#228;dern je Achse und Motorklang Lister Storm. Schatten mehrteiliger Modelle (K&#228;fer, Spider) stimmen jetzt. Helle Autos werden beim Umlackieren nicht mehr ausgewaschen. Showroom: Die R&#252;ckseiten der Karten sind gut lesbar.</li>
         <li>Fahrgef&#252;hl: Im Fahrmodus LibreCorsa (echt und virtuell) gibt es eine Lenkhilfe f&#252;r Gamepad und Tastatur: Der Einschlag l&#228;uft weich an und aus, geht nie &#252;ber den Punkt des besten Grips der Vorderr&#228;der hinaus, die R&#228;der stellen sich beim Loslassen in Fahrtrichtung, und ein rutschendes Heck wird teilweise abgefangen. Kalte Bremsscheiben bremsen bis zu 10 % schw&#228;cher, bis sie warm sind (in LibreCorsa und Pacejka, Schalter wie das Bremsfading). Dreckige Luft hinter einem anderen Auto kostet jetzt auch beim virtuellen Fahren Grip an der Vorderachse.</li>
         <li>Virtuell fahren: Das Fahrzeug wird jetzt in festen Schritten von 2 ms gerechnet (500 Mal pro Sekunde), unabh&#228;ngig von der Bildrate. Lenkung, Reifen, Federung und Weg verhalten sich bei 30 Bildern pro Sekunde genauso wie bei 120.</li>
         <li>Virtuell fahren, sch&#246;nere Grafik: Der Himmel mit Wolken und Sonne spiegelt sich jetzt im Lack (Quality), und der Himmel hat einen nat&#252;rlicheren Verlauf mit hellem Saum am Horizont. In der Ferne ist der Dunst Richtung Sonne heller und w&#228;rmer. Am Streckenrand stehen Grasb&#252;schel, die sich wie die Baumkronen im Wind wiegen (Quality, auf Rasen). Der Rasen hat gro&#223;fl&#228;chige Farbunterschiede, das Kachelmuster ist weg. Neu und in der Garage abschaltbar: &#8222;Sichtfeld mit Tempo&#8220;, das Sichtfeld wird mit dem Tempo weiter und auf Randsteinen wackelt das Bild leicht.</li>
@@ -17444,6 +17446,9 @@
     "Virtuell fahren, schönere Grafik: Der Himmel mit Wolken und Sonne spiegelt sich jetzt im Lack (Quality), und der Himmel hat einen natürlicheren Verlauf mit hellem Saum am Horizont. In der Ferne ist der Dunst Richtung Sonne heller und wärmer. Am Streckenrand stehen Grasbüschel, die sich wie die Baumkronen im Wind wiegen (Quality, auf Rasen). Der Rasen hat großflächige Farbunterschiede, das Kachelmuster ist weg. Neu und in der Garage abschaltbar: „Sichtfeld mit Tempo“, das Sichtfeld wird mit dem Tempo weiter und auf Randsteinen wackelt das Bild leicht.": "Virtual driving, nicer graphics: the sky with clouds and sun is now reflected in the paint (Quality), and the sky has a more natural gradient with a bright band at the horizon. In the distance the haze is brighter and warmer towards the sun. Tufts of grass line the track and sway in the wind like the tree tops (Quality, on grass). The grass has large-scale colour variation, the tile pattern is gone. New and switchable in the garage: “Field of view with speed”, the field of view widens with speed and the picture shakes slightly on kerbs.",
     "Virtuell fahren: Das Fahrzeug wird jetzt in festen Schritten von 2 ms gerechnet (500 Mal pro Sekunde), unabhängig von der Bildrate. Lenkung, Reifen, Federung und Weg verhalten sich bei 30 Bildern pro Sekunde genauso wie bei 120.": "Virtual driving: the car is now simulated in fixed 2 ms steps (500 times per second), independent of the frame rate. Steering, tyres, suspension and path behave the same at 30 frames per second as at 120.",
     "Fahrgefühl: Im Fahrmodus LibreCorsa (echt und virtuell) gibt es eine Lenkhilfe für Gamepad und Tastatur: Der Einschlag läuft weich an und aus, geht nie über den Punkt des besten Grips der Vorderräder hinaus, die Räder stellen sich beim Loslassen in Fahrtrichtung, und ein rutschendes Heck wird teilweise abgefangen. Kalte Bremsscheiben bremsen bis zu 10 % schwächer, bis sie warm sind (in LibreCorsa und Pacejka, Schalter wie das Bremsfading). Dreckige Luft hinter einem anderen Auto kostet jetzt auch beim virtuellen Fahren Grip an der Vorderachse.": "Handling: in the LibreCorsa driving mode (real and virtual) there is a steering assist for gamepad and keyboard: steering eases in and out, never goes past the point of best front grip, the wheels align with the direction of travel when you let go, and a sliding rear is partly caught. Cold brake discs brake up to 10 % weaker until they are warm (in LibreCorsa and Pacejka, same switch as brake fade). Dirty air behind another car now also costs front grip in virtual driving.",
+    "Spider NG1 (Gnen54, WIP)": "Spider NG1 (Gnen54, WIP)",
+    "Spider NG1: Aufbau von Gnen54 (OmegaSim CAD) auf der Karosserie MODIplay MP-1 Spider von Sturmkind, 3D-Daten für HYBRID von Thomas Strobel (FREAKPALACE Customs). Freigabe von Sturmkind am 16.11.2026: Verwendung erlaubt, solange die Karosserien nicht kommerziell verkauft werden. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.": "Spider NG1: built by Gnen54 (OmegaSim CAD) on the MODIplay MP-1 Spider body by Sturmkind, 3D data for HYBRID by Thomas Strobel (FREAKPALACE Customs). Permission from Sturmkind on 16 Nov 2026: use is allowed as long as the bodies are not sold commercially. Own parts, colours and vehicle data: Gnen54, CC BY 4.0.",
+    "Virtuell fahren: neues Auto Spider NG1 von Gnen54 (WIP), aufgebaut auf der Karosserie MODIplay MP-1 Spider von Sturmkind (Freigabe von Sturmkind, nicht kommerziell), mit eigenen Rädern je Achse und Motorklang Lister Storm. Schatten mehrteiliger Modelle (Käfer, Spider) stimmen jetzt. Helle Autos werden beim Umlackieren nicht mehr ausgewaschen. Showroom: Die Rückseiten der Karten sind gut lesbar.": "Virtual driving: new car Spider NG1 by Gnen54 (WIP), built on the MODIplay MP-1 Spider body by Sturmkind (permission from Sturmkind, non-commercial), with its own wheels per axle and the Lister Storm engine sound. Shadows of multi-part models (Beetle, Spider) are now correct. Bright cars no longer look washed out when repainted. Showroom: the backs of the cards are easy to read.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20314,6 +20319,8 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Spider NG1 (Gnen54, WIP)": "Spider NG1 (Gnen54, WIP)",
+    "Spider NG1: Aufbau von Gnen54 (OmegaSim CAD) auf der Karosserie MODIplay MP-1 Spider von Sturmkind, 3D-Daten für HYBRID von Thomas Strobel (FREAKPALACE Customs). Freigabe von Sturmkind am 16.11.2026: Verwendung erlaubt, solange die Karosserien nicht kommerziell verkauft werden. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.": "Spider NG1: construido por Gnen54 (OmegaSim CAD) sobre la carrocería MODIplay MP-1 Spider de Sturmkind, datos 3D para HYBRID de Thomas Strobel (FREAKPALACE Customs). Permiso de Sturmkind del 16/11/2026: se permite el uso siempre que las carrocerías no se vendan comercialmente. Piezas, colores y datos propios: Gnen54, CC BY 4.0.",
     "Sichtfeld mit Tempo": "Campo de visión con la velocidad",
     "Das Sichtfeld wird mit dem Tempo weiter, auf Randsteinen wackelt das Bild leicht (Verfolger- und Motorhaubenkamera).": "El campo de visión se amplía con la velocidad y la imagen tiembla un poco sobre los pianos (cámara de persecución y de capó).",
     "virtuell": "virtual",
@@ -43835,7 +43842,7 @@
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
-  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/' };
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/' };
   function vfModellPfad(auto) { return VF_MODELL_PFADE[auto || vfAutoWahl()] || 'img/autos/v5r/'; }
   const VF_FEDER_STORE = 'omegasim-vf-feder';
   const VF_FEDER_WERTE = [1, 2, 3, 5, 8];
@@ -43858,6 +43865,8 @@
   function vfLackId(hex) { const f = VF_LACK_FARBEN.find((x) => x.v === (hex || '')); return f ? f.id : 'auto'; }
   // Die Farbe der Karosserie: Der Shader faerbt sie um (Helligkeit des Texels mal Lackfarbe, uniform lack = 1), statt zu
   // multiplizieren - sonst wuerde Rot auf einem gelben Auto Orange. Ohne Farbe bleibt das Modell, wie es ist.
+  // v1.5.104: Beim Umfaerben ist die Helligkeit des Texels auf 0,82 begrenzt (Shader, min(...)): helle Grundlacke (gelber
+  // Kaefer und Spider) wurden sonst ausgewaschen, Rot wurde Rosa und Blau Tuerkis.
   function vfLackTint(hex) { return hex ? vfHex(hex) : VF_WEISS; }
   // Eine gespeicherte Wahl, die es nicht mehr gibt (z. B. 'porsche', 1.3.94-1.3.131, entfernt), faellt
   // still auf den Vulture V5.R zurueck - kein 404 beim Laden und kein Absturz.
@@ -44402,7 +44411,7 @@
       gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
         'precision mediump float; varying vec2 vuv; varying vec3 vn; varying float vd; varying float vsd; uniform vec3 dunst;'
         + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel; uniform float lack; uniform vec3 sonne;'
-        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7), lack); vec3 N = normalize(vn);'
+        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(min(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7, 0.82)), lack); vec3 N = normalize(vn);'
         + ' float d = max(dot(N, normalize(vec3(0.35, 0.9, 0.25))), 0.0); float s = pow(max(dot(N, normalize(vec3(0.2, 0.75, -0.6))), 0.0), 24.0);'
         + ' float l = mix(1.0, 0.42 + 0.66 * d, licht); vec3 c = tb * tint * (l * sonne + emis) + vec3(s * 0.35 * licht) * sonne;'
         + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, mix(nebel, dunst, vsd * vsd), f), mix(alpha, alpha * t.a, am)); }'));
@@ -44421,7 +44430,7 @@
         + 'uniform vec3 horizont; uniform vec3 zenit;'
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
         + 'HP float schTiefe(HP vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
-        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7), lack); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
+        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(min(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7, 0.82)), lack); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
         + ' vec3 V = normalize(vv); float d = max(dot(N, L), 0.0); vec3 R = reflect(-L, N); float rv = max(dot(R, V), 0.0);'
         + ' vec3 amb = mix(vec3(0.30, 0.27, 0.23), vec3(0.55, 0.68, 0.90), N.y * 0.5 + 0.5);'
         + ' float sheen = pow(max(dot(N, normalize(L + V)), 0.0), 64.0) * 0.45;'
@@ -44540,7 +44549,12 @@
     gl.enableVertexAttribArray(SP.ap);
     gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, 0);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
-    for (const t of M.aufbauTeile) gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
+    // v1.5.104 (aus PR 3 von gnen54): die Indizes zaehlen je Teil ab dessen erster Ecke (ecke0) - wie im Farb-Durchgang
+    // versetzen. Vorher warfen mehrteilige Modelle (Kaefer, Spider) falsche Schatten.
+    for (const t of M.aufbauTeile) {
+      gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, (t.ecke0 || 0) * 32);
+      gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
+    }
     // v1.5.19 GEMELDET: "entferne die komischen sich drehenden flachen/spitzen Schatten der Raeder im Quality-Modus".
     // Die Raeder gingen DREHEND in die Schattenkarte; bei der steilen Sonne sieht die Karte die Felge fast von der
     // Kante, und Speichen oder Ventil warfen eine flache bzw. spitze Silhouette, die mitlief. Auch ohne Drehung blieben
@@ -44558,14 +44572,21 @@
         gl.bindBuffer(gl.ARRAY_BUFFER, M.vbo);
         gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, 0);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
-        for (const t of radTeile) gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
+        for (const t of radTeile) {
+          if (t.achse && t.achse !== ax) continue;
+          gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, (t.ecke0 || 0) * 32);
+          gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
+        }
       } else if (radModell && radModell.teile.length) {
         const xW = seite * vfRadX(r, halbW);
         matrix(vfKette(lage, vfT(xW, r.radius, z), dreh, vfRx(0), vfS(seite * r.breite, 2 * r.radius, 2 * r.radius)));
         gl.bindBuffer(gl.ARRAY_BUFFER, radModell.vbo);
         gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, 0);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, radModell.ibo);
-        for (const t of radModell.teile) gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
+        for (const t of radModell.teile) {
+          gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, (t.ecke0 || 0) * 32);
+          gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
+        }
       }
     }
     }
@@ -46013,7 +46034,8 @@
       const quetsch = q ? vfS(1 + 0.6 * q, 1 - q, 1) : VF_EINS;
       const w = vfKette(lage, vfT(seite * r.spur / 2, r.radius * (1 - q), z), dreh, quetsch, vfRx(raddreh || 0),
         vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
-      radTeile.forEach((t) => { setze(w, [1, 1, 1], 0, 1, 0, 1, 0.2, 0); teil(t); });
+      // v1.5.104 (aus PR 3 von gnen54): Teile mit "achse" (vorn/hinten) nur an dieser Achse - eigene Raeder je Achse (Spider NG1).
+      radTeile.forEach((t) => { if (t.achse && t.achse !== ax) return; setze(w, [1, 1, 1], 0, 1, 0, 1, 0.2, 0); teil(t); });
       if (!radTeile.length) {
         // Fallback: die echten Rad-Teile der Vulture V5.R (mit Reifen-/Felgen-Textur).
         const radM = radModell;
@@ -46501,7 +46523,7 @@
   const VF_MOTOR_GLOBAL = '~global';
   // Standard ist der Vulture V5.R (wie das Auto); "Wie in Optionen" folgt dem globalen Ton (sentinel).
   function vfMotorGewaehlt() {
-    const def = ({ v5r: 'sd_v5r', lynx220: 'sd_lynx', fmcgt4: 'sd_fmc', boxer96: 'sd_boxer', kaefer: 'boxster986' })[vfAutoWahl()] || 'sd_v5r';
+    const def = ({ v5r: 'sd_v5r', lynx220: 'sd_lynx', fmcgt4: 'sd_fmc', boxer96: 'sd_boxer', kaefer: 'boxster986', spider: 'listerstorm' })[vfAutoWahl()] || 'sd_v5r';
     try { const v = localStorage.getItem(VF_MOTOR_STORE); return v === null ? def : v; } catch (e) { return def; }
   }
   function vfMotorZiel() { const g = vfMotorGewaehlt(); if (g && g !== VF_MOTOR_GLOBAL) return g; return $('sound-profile') ? $('sound-profile').value : ''; }
@@ -46550,6 +46572,9 @@
                    { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
                    // Eigenbau von Gnen54 (CC BY 4.0), WIP: Fahrdaten geschaetzt, siehe img/autos/kaefer/LIZENZ.txt
                    { v: 'kaefer', name: t('VW Käfer 1303 RS mit Boxster-Motor (Gnen54, WIP)') },
+                   // v1.5.104: Eigenbau von Gnen54 auf der Modiplay-MP1-Karosserie (Freigabe Sturmkind, nicht kommerziell),
+                   // PR 3 auf Luuke42/omegasim. WIP: Fahrdaten geschaetzt (Lister Storm LMP), siehe img/autos/spider/LIZENZ.txt
+                   { v: 'spider', name: t('Spider NG1 (Gnen54, WIP)') },
                    { v: 'kasten', name: t('Einfaches Modell') }];
     const ja = Math.max(0, autos.findIndex((a) => a.v === vfAutoWahl()));
     const autoWahl = (dd) => {
@@ -131181,10 +131206,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     .show-zahlen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
     .show-zahlen span { display: grid; justify-items: center; }
     .show-zahlen b { font-size: 18px; color: #f3f4f6; letter-spacing: 0; }
-    .show-tab { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; margin-top: 4px; }
-    .show-tab span { color: var(--muted); }
-    .show-tab b { text-align: right; font-variant-numeric: tabular-nums; }
-    .show-fort { display: grid; gap: 4px; margin-top: auto; font-size: 11px; color: var(--muted); }
+    /* v1.5.104 GEMELDET: Text auf den Rueckseiten nicht lesbar (erbte die dunkle Schrift des Dialogknopfs). Feste helle
+       Farben, etwas groesser, ohne Holo/Glanz darueber. */
+    .show-hinten { color: #f3f4f6; }
+    .show-tab { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; font-size: 14px; margin-top: 6px; }
+    .show-tab span { color: #c9ced8; }
+    .show-tab b { text-align: right; font-variant-numeric: tabular-nums; color: #ffffff; }
+    .show-hinten .show-stufe, .show-hinten .show-modell { color: #e4e7ee; }
+    .show-fort { display: grid; gap: 4px; margin-top: auto; font-size: 12px; color: #c9ced8; }
     .show-fort > i { display: block; height: 6px; background: rgba(255,255,255,.12); border-radius: 3px; overflow: hidden; }
     .show-fort > i > i { display: block; height: 100%; }
     .show-holo { position: absolute; inset: 0; pointer-events: none; opacity: var(--holo, 0); mix-blend-mode: color-dodge;
