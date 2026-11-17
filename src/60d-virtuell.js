@@ -3325,15 +3325,17 @@
     VF.ui = { runde: q('.vf-runde'), letzte: q('.vf-letzte'), beste: q('.vf-beste'), delta: q('.vf-delta'), deltaBar: q('.vf-delta-bar > i'),
               modus: q('.vf-modus'), abseits: q('.vf-abseits'), acc: q('.vf-acc'), tempo: q('.vf-acc .vf-tempo'), gang: q('.vf-gang'),
               rpm: q('.vf-rpm'), reifen: Array.from(schicht.querySelectorAll('.vf-reifen > i')), tank: q('.vf-tank'), tankBar: q('.vf-tank-bar > i'),
-              dreh: q('.vf-dreh-stab'), kamFrei: q('.vf-kamfrei'), wetter: q('[data-vf="wetter"]'), alt: {} };
+              dreh: q('.vf-dreh-stab'), kamFrei: q('.vf-kamfrei'), alt: {} };
+    VF.wetterKnopf = q('[data-vf="wetter"]'); VF.wetterNass = null;
   }
   function vfHud() {
     const u = VF.ui;
     if (!u) return;
     // Wetter-Knopf hell, solange es regnet (auch nach einem geplanten Wechsel).
-    if (u.wetter) {
+    const wk = VF.wetterKnopf;
+    if (wk) {
       const nass = typeof weather !== 'undefined' && weather === 'rain';
-      if (u.alt.nass !== nass) { u.alt.nass = nass; u.wetter.classList.toggle('vf-an', nass); u.wetter.setAttribute('aria-pressed', nass ? 'true' : 'false'); }
+      if (VF.wetterNass !== nass) { VF.wetterNass = nass; wk.classList.toggle('vf-an', nass); wk.setAttribute('aria-pressed', nass ? 'true' : 'false'); }
     }
     const A = u.alt, st = physEngine.state;
     const txt = (el, key, v) => { if (A[key] !== v) { A[key] = v; el.textContent = v; } };
@@ -4036,7 +4038,7 @@
     // Tempo (und der Gang) der virtuellen Fahrt, bis das echte Auto sich bewegte.
     if (typeof physEngine !== 'undefined' && physEngine && typeof physEngine.reset === 'function') physEngine.reset();
     if (VF.schicht) VF.schicht.remove();
-    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.boxStriche = null; VF.boxBucht = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.stick = null; VF.tasten = {};
+    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.boxStriche = null; VF.boxBucht = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.wetterKnopf = null; VF.stick = null; VF.tasten = {};
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
     // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).
