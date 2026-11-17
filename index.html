@@ -1443,6 +1443,17 @@
   #fa-profil.k-meister { background: linear-gradient(90deg, rgba(8,10,14,.88) 0%, rgba(8,10,14,.45) 70%),
     url(img/meisterschaft.jpg) center 40% / cover no-repeat; }
   .k-fahren-unten #fa-profil .k-kk { font-size: clamp(11px, 2vh, 15px); }
+  #fa-virtuell.k-virtuell { background: linear-gradient(90deg, rgba(8,10,14,.82) 0%, rgba(8,10,14,.35) 75%),
+    url(img/virtuell-fahren.jpg) center 55% / cover no-repeat; }
+  .k-fahren-unten #fa-virtuell .k-kt { font-size: clamp(13px, 2.4vh, 20px); }
+  .k-fahren-unten #fa-virtuell .k-kk { font-size: clamp(11px, 2vh, 15px); }
+  #fa-virtuell .k-kk .wip-tag { font-size: 9px; vertical-align: 1px; }
+  /* v1.5: kleine Symbole auf der Garagenkachel (zweiter Laptop, Onboard-Kamera). */
+  .k-geraete { position: absolute; top: 6px; right: 8px; display: flex; gap: 6px; z-index: 2; pointer-events: none; }
+  .k-geraete[hidden] { display: none; }
+  .k-geraete i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(8,10,14,.78); color: #3ddc84; box-shadow: 0 0 0 1px rgba(61,220,132,.6); }
+  .k-geraete svg { width: 16px; height: 16px; }
   /* Galerie: Auto ohne Foto als Farbflaeche mit Zeichen */
   .k-auto-zelle.k-auto-ohne-foto { position: relative; }
   .k-auto-zelle.k-auto-ohne-foto::before { content: attr(data-zeichen); position: absolute; inset: 0;
@@ -2637,7 +2648,8 @@
 
   .k-fahren { grid-template-columns: repeat(3, 1fr); grid-template-rows: minmax(300px, 52vh) minmax(120px, 25vh); }
   /* v0.9.31: Motorsound steht nur noch in der Garage; Fahrgefuehl und Start teilen sich die Reihe. */
-  .k-fahren-unten { grid-column: 1 / -1; grid-template-columns: 1fr 2fr; }
+  /* v1.5: Meisterschaft | Virtuell fahren (ein Drittel der bisherigen Startbreite) | Start (zwei Drittel). */
+  .k-fahren-unten { grid-column: 1 / -1; grid-template-columns: 3fr 2fr 4fr; }
   /* BESTELLT v0.8.126: mehrere verbundene Autos mit Fotos gemeinsam zeigen (Garage auf dem
      Fahren-Schirm). Erst ab zwei Fotos; dann ist die Abdunklung aus, sonst waere das Foto zu
      dunkel. Die Kacheln stehen in der .k-kb-Flaeche (Auto-Bild). */
@@ -5863,7 +5875,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.79</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.81</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -5900,6 +5912,8 @@
         <span class="k-kk">Autos</span>
         <span class="k-kt" id="fa-auto-titel"></span>
         <span class="k-kb" id="fa-auto-bild" style="background-image:url(img/garage.jpg)"></span>
+        <!-- v1.5 BESTELLT: "wenn laptop und kamera verbunden sind ... kleine Symbole dafuer anzeigen" (konsoleFahrenGeraete). -->
+        <span class="k-geraete" id="fa-auto-geraete" data-i18n-skip hidden></span>
         <span class="k-ki" id="fa-auto-info"></span>
         <span class="k-mp-status" id="fa-mp-status" data-i18n-skip hidden></span>
         <!-- v1.5 (WIP): Verbinden fehlgeschlagen, mit Grund. Antippen oeffnet den Dialog mit
@@ -5943,6 +5957,13 @@
       <div class="k-kachel k-klein k-meister" id="fa-profil" role="button" tabindex="0">
         <span class="k-kk">Meisterschaft</span>
         <span class="k-kopf"><span class="k-kt">Meisterschaft erstellen</span></span>
+        <span class="k-ki"></span>
+      </div>
+      <!-- v1.5 BESTELLT: "den Start Race Button auf 66% der Breite reduzieren und links daneben (33% der aktuellen
+           Groesse) Button einfuegen 'Drive Virtually' (so wie button in der garage, Rennen soll dann direkt losgehen)". -->
+      <div class="k-kachel k-klein k-virtuell" id="fa-virtuell" role="button" tabindex="0">
+        <span class="k-kk">Virtuell <span class="wip-tag">WIP</span></span>
+        <span class="k-kopf"><span class="k-kt">Virtuell fahren</span></span>
         <span class="k-ki"></span>
       </div>
         <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
@@ -7144,6 +7165,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>FAHREN: Neben &#8222;Rennen starten&#8220; (jetzt zwei Drittel so breit) steht die Kachel &#8222;Virtuell fahren&#8220; (WIP). Sie startet die virtuelle Fahrt sofort mit den Renneinstellungen. Auf der Garagenkachel zeigen kleine Symbole, wenn ein zweiter Laptop oder die Onboard-Kamera verbunden ist. Showroom: Auf dem Handy gl&#228;nzen die Sammelkarten beim Neigen des Telefons.</li>
         <li>DualSense-Trigger beim Fahren in der Android-App (WIP, neue APK). Ist der Controller per Bluetooth verbunden und steckt zus&#228;tzlich das USB-Kabel, kommen die Trigger-Effekte jetzt beim echten und beim virtuellen Fahren: Widerstand der Bremse, Vibration bei ABS und blockierendem Rad, beim Gas bei Schlupf und Traktionskontrolle. Die Verbindung kommt von selbst, sobald das Kabel steckt. H&#228;ngt der Controller nur am Kabel, bliebe er ohne Tasten; dann l&#228;sst die App die Trigger aus und sagt es. Abschaltbar unter Optionen &gt; Vibration. Au&#223;erdem sendet der Knopf &#8222;Vibration testen&#8220; wieder, vorher erreichte er keinen Controller.</li>
         <li>Streckeneditor: Unter Optionen gibt es jetzt &#8222;Boxengassen&#8220; als Anzahl statt &#8222;Boxengasse erzwingen&#8220;. Vorgabe sind so viele wie unter Meine Teile eingetragen, und die Zufallsstrecke enth&#228;lt genau so viele. Geht das mit den Teilen nicht, gibt es eine Meldung. Das Editor-Tutorial erkl&#228;rt jetzt auch Br&#252;cken und Boxengassen.</li>
         <li>Android-App (neue APK): Das Rumble des Controllers geht jetzt direkt &#252;ber Android an den Motor des Gamepads, &#252;ber Bluetooth und Kabel, auch wenn der Controller erst nach dem Start der App verbunden wird. Vorher lief es &#252;ber die Gamepad-Schnittstelle der Webansicht, die den Motor nur kannte, wenn der Controller schon beim Start da war. DualSense &#252;ber USB: Ist die Schnittstelle belegt (Controller nur am Kabel), sendet die Probe &#252;ber den Steuerkanal. Das Protokoll steht unter dem Knopf und l&#228;sst sich kopieren.</li>
@@ -17394,6 +17416,9 @@
     "Nur am Kabel fallen die Tasten weg: Controller zuerst per Bluetooth verbinden, dann das Kabel einstecken.": "On the cable alone the buttons stop working: connect the controller over Bluetooth first, then plug in the cable.",
     "USB-Zugriff nicht erlaubt.": "USB access not allowed.",
     "DualSense-Trigger beim Fahren in der Android-App (WIP, neue APK). Ist der Controller per Bluetooth verbunden und steckt zusätzlich das USB-Kabel, kommen die Trigger-Effekte jetzt beim echten und beim virtuellen Fahren: Widerstand der Bremse, Vibration bei ABS und blockierendem Rad, beim Gas bei Schlupf und Traktionskontrolle. Die Verbindung kommt von selbst, sobald das Kabel steckt. Hängt der Controller nur am Kabel, bliebe er ohne Tasten; dann lässt die App die Trigger aus und sagt es. Abschaltbar unter Optionen > Vibration. Außerdem sendet der Knopf „Vibration testen“ wieder, vorher erreichte er keinen Controller.": "DualSense triggers while driving in the Android app (WIP, new APK). If the controller is connected over Bluetooth and the USB cable is also plugged in, the trigger effects now come in real and virtual driving: brake resistance, vibration with ABS and a locking wheel, on the throttle with wheelspin and traction control. The connection is made automatically as soon as the cable is plugged in. If the controller is on the cable only, it would lose its buttons; then the app leaves the triggers off and says so. Can be switched off under Options > Vibration. Also, the “Test vibration” button sends again; before, it did not reach any controller.",
+    "Zweiter Laptop verbunden": "Second laptop connected",
+    "Onboard-Kamera verbunden": "Onboard camera connected",
+    "FAHREN: Neben „Rennen starten“ (jetzt zwei Drittel so breit) steht die Kachel „Virtuell fahren“ (WIP). Sie startet die virtuelle Fahrt sofort mit den Renneinstellungen. Auf der Garagenkachel zeigen kleine Symbole, wenn ein zweiter Laptop oder die Onboard-Kamera verbunden ist. Showroom: Auf dem Handy glänzen die Sammelkarten beim Neigen des Telefons.": "DRIVE: next to “Start race” (now two thirds as wide) there is the “Drive virtually” tile (WIP). It starts virtual driving at once with the race settings. Small icons on the garage tile show when a second laptop or the onboard camera is connected. Showroom: on the phone the collector cards shine when you tilt the phone.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20264,6 +20289,8 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Zweiter Laptop verbunden": "Segundo portátil conectado",
+    "Onboard-Kamera verbunden": "Cámara a bordo conectada",
     "Trigger beim Fahren über USB": "Gatillos al conducir por USB",
     "Die Trigger-Effekte (Widerstand, ABS, Schlupf) beim echten und virtuellen Fahren über das USB-Kabel. Android gibt die Trigger nur frei, wenn der Controller zusätzlich per Bluetooth verbunden ist: zuerst Bluetooth, dann das Kabel. Hängt er nur am Kabel, würden die Tasten ausfallen; dann bleibt es aus und die App sagt es.": "Los efectos de los gatillos (resistencia, ABS, patinaje) al conducir de verdad y en virtual por el cable USB. Android solo libera los gatillos si el mando también está conectado por Bluetooth: primero Bluetooth, luego el cable. Solo con el cable dejarían de funcionar los botones; entonces se queda desactivado y la app lo avisa.",
     "Trigger über USB aktiv ({w})": "Gatillos por USB activos ({w})",
@@ -33140,8 +33167,24 @@
     try { return currentTrackTiles.length > 1 ? trackToCode(currentTrackTiles) : ''; } catch (e) { return ''; }
   }
 
+  // v1.5: Symbole auf der Garagenkachel: zweiter Laptop verbunden (98m-zwei-laptops.js), Onboard-Kamera mit Bild
+  // (75-onboard.js). Wird auch von dort bei jeder Aenderung gerufen.
+  const K_SYMBOL_LAPTOP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>';
+  const K_SYMBOL_KAMERA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+  function konsoleFahrenGeraete() {
+    const el = $('fa-auto-geraete');
+    if (!el) return;
+    let laptop = false, kamera = false;
+    try { laptop = typeof zl !== 'undefined' && !!zl && !!zl.offen; } catch (e) { laptop = false; }
+    try { kamera = typeof onboardAktiv === 'function' && onboardAktiv(); } catch (e) { kamera = false; }
+    const html = (laptop ? '<i title="' + t('Zweiter Laptop verbunden') + '">' + K_SYMBOL_LAPTOP + '</i>' : '')
+      + (kamera ? '<i title="' + t('Onboard-Kamera verbunden') + '">' + K_SYMBOL_KAMERA + '</i>' : '');
+    if (el.innerHTML !== html) el.innerHTML = html;
+    el.hidden = !html;
+  }
   function konsoleFahrenZeichnen() {
     if (!$('fa-auto')) return;
+    konsoleFahrenGeraete();
     const autos = kAutos();
     $('fa-auto-titel').textContent = autos.length ? autos.length + ' ' + t('verbunden') : t('Autos verbinden');
     // BESTELLT v0.8.126: mehrere verbundene Autos mit Fotos gemeinsam zeigen (die Garage auf dem
@@ -33498,6 +33541,11 @@
     kn('fa-garage', () => konsoleZeige('garage'));
     kn('fa-mp', () => konsoleZeige('mp'));
     kn('fa-start', () => { konsoleLosfahren(); });
+    // v1.5: "Drive Virtually" - wie "Virtuell fahren" in der Garage, das Rennen (Renneinstellungen) beginnt sofort.
+    kn('fa-virtuell', () => {
+      if (kRennenLaeuft()) { showHudToast(t('Erst das laufende Rennen beenden')); return; }
+      if (typeof virtuellStarten === 'function') virtuellStarten();
+    });
     // v1.1.3 BESTELLT: "Tippe ich bei der Kachel STRECKE auf STRECKE oder AUF DER BAHN, soll
     // umgeschaltet werden; tippe ich auf das Bild, oeffnet sich das Menue dazu." Vorher schaltete nur
     // der Text selbst um, ein Tipp daneben in der Kopfzeile oeffnete das Menue. Jetzt oeffnet nur das
@@ -61140,6 +61188,7 @@
     if (b) b.textContent = onbEinst().an ? t('Ausschalten') : t('Einschalten');
     const leer = $('onboard-leer');
     if (leer) leer.hidden = onboardAktiv();
+    if (typeof konsoleFahrenGeraete === 'function') konsoleFahrenGeraete();
     const art = onbEinst().art === 'm5' ? 'm5' : 'usb';
     const zu = $('onboard-zeile-usb'), zm = $('onboard-zeile-m5');
     if (zu) zu.hidden = art !== 'usb';
@@ -106646,13 +106695,63 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Karte, 2 Zeilen, Histogramm, Warten abgebrochen' };
   });
 
-  stAdd('Fahren: Motorsound nur noch in der Garage, Fahrgefuehl und Start fuellen die Reihe', () => {
+  // v1.5: dazu "Drive Virtually" zwischen Meisterschaft und Start (ein Drittel der alten Startbreite, Start zwei Drittel).
+  stAdd('Fahren: Motorsound nur noch in der Garage, Meisterschaft, Virtuell fahren und Start fuellen die Reihe', () => {
     const f = [];
     if (document.getElementById(['fa', 'motor'].join('-'))) f.push('Motorsound-Kachel noch da');
-    if (!$('fa-profil') || !$('fa-start')) f.push('Fahrgefuehl oder Start fehlt');
+    if (!$('fa-profil') || !$('fa-start') || !$('fa-virtuell')) f.push('Meisterschaft, Virtuell oder Start fehlt');
     const unten = document.querySelector('.k-fahren-unten');
-    if (unten && getComputedStyle(unten).gridTemplateColumns.split(' ').length !== 2) f.push('Reihe hat nicht zwei Spalten');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Fahrgefuehl 1/3, Start 2/3' };
+    const kinder = unten ? [...unten.children].map((x) => x.id) : [];
+    if (kinder.join(',') !== 'fa-profil,fa-virtuell,fa-start') f.push('Reihenfolge ' + kinder.join(','));
+    if (unten && unten.offsetWidth > 300 && getComputedStyle(unten).gridTemplateColumns.split(' ').length === 3) {
+      const v = $('fa-virtuell').offsetWidth, st = $('fa-start').offsetWidth;
+      if (Math.abs(st / v - 2) > 0.2) f.push('Start/Virtuell ' + (st / v).toFixed(2) + ' statt 2');
+    }
+    if (!$('fa-virtuell').querySelector('.wip-tag')) f.push('Virtuell ohne WIP');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Meisterschaft | Virtuell (1/3 der alten Startbreite) | Start (2/3)' };
+  });
+
+  stAdd('Fahren v1.5: Symbole fuer zweiten Laptop und Onboard-Kamera auf der Garagenkachel', () => {
+    const f = [];
+    const merkOffen = zl.offen, merkZ = onbZ;
+    try {
+      zl.offen = false; onbZ = null; konsoleFahrenGeraete();
+      if (!$('fa-auto-geraete').hidden) f.push('Symbole ohne Verbindung sichtbar');
+      zl.offen = true; konsoleFahrenGeraete();
+      if ($('fa-auto-geraete').hidden || $('fa-auto-geraete').querySelectorAll('i').length !== 1) f.push('Laptop-Symbol fehlt');
+      // Kamera mit Bild: Attrappe des WLAN-Bilds.
+      onbZ = { m5: { url: 'x' } };
+      const img = $('onboard-bild');
+      const merkW = Object.getOwnPropertyDescriptor(img, 'naturalWidth');
+      Object.defineProperty(img, 'naturalWidth', { configurable: true, get: () => 640 });
+      try { konsoleFahrenGeraete(); } finally { if (merkW) Object.defineProperty(img, 'naturalWidth', merkW); else delete img.naturalWidth; }
+      if ($('fa-auto-geraete').querySelectorAll('i').length !== 2) f.push('Kamera-Symbol fehlt');
+    } finally { zl.offen = merkOffen; onbZ = merkZ; konsoleFahrenGeraete(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'ohne Verbindung keine Symbole, Laptop und Kamera je ein Symbol' };
+  });
+
+  stAdd('Showroom v1.5: Neigen des Telefons setzt Glanz und Drehung der Karten', () => {
+    const f = [];
+    let roh = null;
+    try { roh = localStorage.getItem(SESSION_STORE); } catch (e) { roh = null; }
+    const probe = { role: 'ghost', device: { id: 'probe-neig' }, alias: 'Neig', colorId: 'rot', sim: false, testSenke: [], probe: true };
+    try {
+      garage.push(probe);
+      showOeffnen();
+      const k = $('show-dialog').querySelector('.show-karte');
+      if (!k) { f.push('keine Karte'); return { ok: false, mass: f.join(' | ') }; }
+      showNeigungAnwenden(30, 75);
+      if (!k.classList.contains('aktiv') || k.style.getPropertyValue('--mx') !== '100.0%' || k.style.getPropertyValue('--my') !== '100.0%') f.push('Neigung rechts/vorn: ' + k.style.getPropertyValue('--mx') + '/' + k.style.getPropertyValue('--my'));
+      showNeigungAnwenden(-30, 15);
+      if (k.style.getPropertyValue('--mx') !== '0.0%' || k.style.getPropertyValue('--ry') !== '-9.00deg') f.push('Neigung links: ' + k.style.getPropertyValue('--mx') + '/' + k.style.getPropertyValue('--ry'));
+    } finally {
+      showFenster.hidden = true;
+      const i = garage.indexOf(probe); if (i >= 0) garage.splice(i, 1);
+      try { if (roh === null) localStorage.removeItem(SESSION_STORE); else localStorage.setItem(SESSION_STORE, roh); } catch (e) { /* privat */ }
+      renderGarage();
+      if (typeof menuNavEnsureContext === 'function') menuNavEnsureContext();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'rechts/vorn 100 %, links 0 % mit -9 Grad, Glanz an' };
   });
 
   stAdd('ACC-Menü: Streckenfoto ersetzt im Ausdruck-Modus die Karte im Cockpit', () => {
@@ -129962,7 +130061,29 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   showFenster.addEventListener('click', (e) => { if (e.target === showFenster) showSchliessen(); });
 
   function showFensterOffen() { const f = document.getElementById('show-fenster'); return !!(f && !f.hidden); }
+  // v1.5 BESTELLT: "beim handy tilten einen glaenzeffekt auf die collection karten machen". Die Neigung des Telefons
+  // (deviceorientation: gamma links/rechts, beta vor/zurueck um die Haltung von etwa 45 Grad) setzt Glanz, Holo-Folie und
+  // eine leichte Drehung aller Karten wie der Zeiger am Rechner. Ein Bild je Animationsschritt. iPhone fragt beim Oeffnen.
+  let showNeigungRaf = 0, showNeigungWert = null;
+  function showNeigungAnwenden(g, b) {
+    const x = Math.max(0, Math.min(1, (g + 30) / 60)), y = Math.max(0, Math.min(1, (b - 15) / 60));
+    document.querySelectorAll('#show-fenster .show-karte').forEach((k) => {
+      k.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); k.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+      k.style.setProperty('--rx', ((0.5 - y) * 14).toFixed(2) + 'deg'); k.style.setProperty('--ry', ((x - 0.5) * 18).toFixed(2) + 'deg');
+      k.classList.add('aktiv');
+    });
+  }
+  function showNeigung(e) {
+    if (showFenster.hidden || e.gamma === null || e.gamma === undefined || e.beta === null) return;
+    showNeigungWert = [e.gamma, e.beta];
+    if (showNeigungRaf) return;
+    showNeigungRaf = requestAnimationFrame(() => { showNeigungRaf = 0; if (showNeigungWert) showNeigungAnwenden(showNeigungWert[0], showNeigungWert[1]); });
+  }
+  window.addEventListener('deviceorientation', showNeigung);
   function showOeffnen() {
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') DeviceOrientationEvent.requestPermission().catch(() => {});
+    } catch (e) { /* kein Neigungssensor */ }
     showFenster.hidden = false;
     showZeichnen();
     if (typeof menuNavEnsureContext === 'function') {
@@ -130001,13 +130122,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     d.querySelector('[data-act="show-zu"]').addEventListener('click', (e) => { e.stopPropagation(); showSchliessen(); });
     d.querySelectorAll('.show-karte').forEach((k) => {
       k.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'touch') return;   // auf dem Telefon fuehrt die Neigung (showNeigung)
         const r = k.getBoundingClientRect();
         const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), y = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
         k.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); k.style.setProperty('--my', (y * 100).toFixed(1) + '%');
         k.style.setProperty('--rx', ((0.5 - y) * 14).toFixed(2) + 'deg'); k.style.setProperty('--ry', ((x - 0.5) * 18).toFixed(2) + 'deg');
         k.classList.add('aktiv');
       });
-      k.addEventListener('pointerleave', () => { k.classList.remove('aktiv'); k.style.setProperty('--rx', '0deg'); k.style.setProperty('--ry', '0deg'); });
+      k.addEventListener('pointerleave', (e) => { if (e.pointerType === 'touch') return; k.classList.remove('aktiv'); k.style.setProperty('--rx', '0deg'); k.style.setProperty('--ry', '0deg'); });
       k.addEventListener('click', (e) => { e.stopPropagation(); k.classList.toggle('gedreht'); });
     });
   }
@@ -131119,6 +131241,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function zlStatus(s) { zl.status = s; const el = $('zl-status'); if (el) el.textContent = s; }
   function zlEsc(x) { return String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
   function zlMalen() {
+    if (typeof konsoleFahrenGeraete === 'function') konsoleFahrenGeraete();
     const lampe = $('zl-lampe');
     if (lampe) {
       lampe.className = 'zl-lampe ' + (zl.offen ? (zl.warStill ? 'gelb' : 'gruen') : 'rot');
