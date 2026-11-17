@@ -995,6 +995,7 @@
     $('fa-start-titel').textContent = kRennenLaeuft() ? t('Zurück ins Rennen')
       : (training ? t('Training starten') : t('Rennen starten'));
     $('fa-start-unter').textContent = modus + ' · ' + (bahn ? t('auf der Bahn') : t('frei'));
+    if ($('fa-virtuell-unter')) $('fa-virtuell-unter').textContent = modus + ' · ' + t('virtuell');
     // Punkte rechts neben dem Wert (in derselben .k-kopf-Zeile): so viele, wie es
     // Schaltstellungen gibt, die gewaehlte gefuellt. Bei zu vielen (z. B. Motorsound mit
     // 27 Motoren) wuerden die Punkte nicht mehr passen - dort stehen Pfeile im Markup.

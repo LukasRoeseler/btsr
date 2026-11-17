@@ -1443,11 +1443,11 @@
   #fa-profil.k-meister { background: linear-gradient(90deg, rgba(8,10,14,.88) 0%, rgba(8,10,14,.45) 70%),
     url(img/meisterschaft.jpg) center 40% / cover no-repeat; }
   .k-fahren-unten #fa-profil .k-kk { font-size: clamp(11px, 2vh, 15px); }
-  #fa-virtuell.k-virtuell { background: linear-gradient(90deg, rgba(8,10,14,.82) 0%, rgba(8,10,14,.35) 75%),
-    url(img/virtuell-fahren.jpg) center 55% / cover no-repeat; }
-  .k-fahren-unten #fa-virtuell .k-kt { font-size: clamp(13px, 2.4vh, 20px); }
-  .k-fahren-unten #fa-virtuell .k-kk { font-size: clamp(11px, 2vh, 15px); }
-  #fa-virtuell .k-kk .wip-tag { font-size: 9px; vertical-align: 1px; }
+  /* v1.5: wie die Startkachel (abgedunkeltes Bild, grosser Titel), schmaler: ohne Zielflaggen, Titel kleiner. */
+  #fa-virtuell.k-virtuell { background: linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)), url(img/virtuell-fahren.jpg) center 55% / cover no-repeat; }
+  #fa-virtuell.k-virtuell::before, #fa-virtuell.k-virtuell::after { display: none; }
+  #fa-virtuell .k-start-innen b { font-size: clamp(15px, 2vw, 30px); }
+  #fa-virtuell .k-start-innen .wip-tag { margin-top: 4px; font-size: 9px; text-shadow: none; }
   /* v1.5: kleine Symbole auf der Garagenkachel (zweiter Laptop, Onboard-Kamera). */
   .k-geraete { position: absolute; top: 6px; right: 8px; display: flex; gap: 6px; z-index: 2; pointer-events: none; }
   .k-geraete[hidden] { display: none; }
@@ -5961,10 +5961,10 @@
       </div>
       <!-- v1.5 BESTELLT: "den Start Race Button auf 66% der Breite reduzieren und links daneben (33% der aktuellen
            Groesse) Button einfuegen 'Drive Virtually' (so wie button in der garage, Rennen soll dann direkt losgehen)". -->
-      <div class="k-kachel k-klein k-virtuell" id="fa-virtuell" role="button" tabindex="0">
-        <span class="k-kk">Virtuell <span class="wip-tag">WIP</span></span>
-        <span class="k-kopf"><span class="k-kt">Virtuell fahren</span></span>
-        <span class="k-ki"></span>
+      <!-- v1.5 BESTELLT: "Mach das Virtual Bild vom Design so aehnlich wie das Start Practice": Bild ueber die ganze
+           Kachel, grosser Titel in der Mitte, darunter Renntyp, ohne die weissen Kopfleisten. -->
+      <div class="k-kachel k-start k-virtuell" id="fa-virtuell" role="button" tabindex="0">
+        <span class="k-start-innen"><b>Virtuell fahren</b><small id="fa-virtuell-unter" data-i18n-skip></small><span class="wip-tag">WIP</span></span>
       </div>
         <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
           <span class="k-start-innen"><b id="fa-start-titel">Rennen starten</b><small id="fa-start-unter"></small></span>
@@ -7165,6 +7165,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren: neuer Boden &#8222;Rasen&#8220;, jetzt der Standard, mit B&#228;umen rund um die Strecke, die in der Ferne im Dunst verschwimmen. Der Himmel hat ziehende Wolken (im Regen dichter und grauer) und einen Schein um die Sonne. Alles selbst gebaut, passend zur eingestellten Tageszeit. Die Kachel &#8222;Virtuell fahren&#8220; im FAHREN-Men&#252; sieht jetzt aus wie die Startkachel.</li>
         <li>FAHREN: Neben &#8222;Rennen starten&#8220; (jetzt zwei Drittel so breit) steht die Kachel &#8222;Virtuell fahren&#8220; (WIP). Sie startet die virtuelle Fahrt sofort mit den Renneinstellungen. Auf der Garagenkachel zeigen kleine Symbole, wenn ein zweiter Laptop oder die Onboard-Kamera verbunden ist. Showroom: Auf dem Handy gl&#228;nzen die Sammelkarten beim Neigen des Telefons.</li>
         <li>DualSense-Trigger beim Fahren in der Android-App (WIP, neue APK). Ist der Controller per Bluetooth verbunden und steckt zus&#228;tzlich das USB-Kabel, kommen die Trigger-Effekte jetzt beim echten und beim virtuellen Fahren: Widerstand der Bremse, Vibration bei ABS und blockierendem Rad, beim Gas bei Schlupf und Traktionskontrolle. Die Verbindung kommt von selbst, sobald das Kabel steckt. H&#228;ngt der Controller nur am Kabel, bliebe er ohne Tasten; dann l&#228;sst die App die Trigger aus und sagt es. Abschaltbar unter Optionen &gt; Vibration. Au&#223;erdem sendet der Knopf &#8222;Vibration testen&#8220; wieder, vorher erreichte er keinen Controller.</li>
         <li>Streckeneditor: Unter Optionen gibt es jetzt &#8222;Boxengassen&#8220; als Anzahl statt &#8222;Boxengasse erzwingen&#8220;. Vorgabe sind so viele wie unter Meine Teile eingetragen, und die Zufallsstrecke enth&#228;lt genau so viele. Geht das mit den Teilen nicht, gibt es eine Meldung. Das Editor-Tutorial erkl&#228;rt jetzt auch Br&#252;cken und Boxengassen.</li>

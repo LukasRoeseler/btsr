@@ -14525,6 +14525,7 @@
       if (Math.abs(st / v - 2) > 0.2) f.push('Start/Virtuell ' + (st / v).toFixed(2) + ' statt 2');
     }
     if (!$('fa-virtuell').querySelector('.wip-tag')) f.push('Virtuell ohne WIP');
+    if (!$('fa-virtuell').classList.contains('k-start') || $('fa-virtuell').querySelector('.k-kk, .k-kopf')) f.push('Virtuell nicht im Stil der Startkachel');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Meisterschaft | Virtuell (1/3 der alten Startbreite) | Start (2/3)' };
   });
 
@@ -26473,6 +26474,41 @@
   }
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
+
+  stAdd('Virtuell v1.5: Rasen als Standardboden (nahtlos), Baeume im Band um die Strecke, Himmel mit Wolken kompiliert', () => {
+    const f = [];
+    let vorher = null;
+    try { vorher = localStorage.getItem(VF_BODEN_STORE); } catch (e) { /* privat */ }
+    try {
+      localStorage.removeItem(VF_BODEN_STORE);
+      if (vfBodenWahl() !== 'rasen') f.push('Standard ist ' + vfBodenWahl());
+    } finally {
+      try { if (vorher === null) localStorage.removeItem(VF_BODEN_STORE); else localStorage.setItem(VF_BODEN_STORE, vorher); } catch (e) { /* privat */ }
+    }
+    // Nahtlos: der Sprung ueber den Rand eines Stuecks ist nicht groesser als zwischen Nachbarspalten innen.
+    const T = vfBodenTexturDaten('rasen'), d = T.d, AW = T.w, w = AW / 2, h = T.h;
+    const px = (x, y) => { const i = (y * AW + x) * 4; return d[i] + d[i + 1] + d[i + 2]; };
+    let rand = 0, innen = 0;
+    for (let y = 0; y < h; y += 4) { rand += Math.abs(px(0, y) - px(w - 1, y)); innen += Math.abs(px(200, y) - px(201, y)); }
+    if (rand > innen * 1.6 + 1) f.push('Kante: ' + Math.round(rand) + ' gegen innen ' + Math.round(innen));
+    const gruen = T.mittel[1] > T.mittel[0] && T.mittel[1] > T.mittel[2];
+    if (!gruen) f.push('Rasen nicht gruen: ' + T.mittel.map((x) => x.toFixed(2)).join(','));
+    // Baeume: im Band ausserhalb der Strecke, genug davon.
+    const tiles = codeToTrack('SG4R4G4').tiles, pts = trackCenterline(tiles);
+    const B = vfBaeumeBauen(pts);
+    if (B.anzahl < 200 || B.daten.length % 6) f.push('Baeume ' + B.anzahl + ', Daten ' + B.daten.length);
+    let zuNah = 0;
+    for (const [x, z] of B.orte) { let m = Infinity; for (const p of pts) m = Math.min(m, Math.hypot(p.x - x, p.y - z)); if (m < TRACK_HALF_W + TRACK_KERB_W + 60) zuNah++; }
+    if (zuNah) f.push(zuNah + ' Baeume zu nah an der Bahn');
+    // Himmel-Shader kompiliert (mit WebGL).
+    const gl = document.createElement('canvas').getContext('webgl');
+    if (gl) {
+      try { const H = vfProgrammHimmel(gl); if (!H.wolken || !H.regen) f.push('Wolken-Uniforms fehlen'); }
+      catch (e) { f.push('Himmel: ' + e.message); }
+      const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext();
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Rasen Standard und nahtlos, ' + B.anzahl + ' Baeume im Band, Himmel mit Wolken' };
+  });
 
   stAdd('DualSense v1.5: Trigger beim Fahren ueber USB (Dauerverbindung), Vibration-Testknopf sendet', async () => {
     const f = [];

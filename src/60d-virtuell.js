@@ -98,14 +98,31 @@
       'attribute vec3 p; uniform vec3 right; uniform vec3 up; uniform vec3 fwd; uniform vec2 halb; varying vec3 vdir;'
       + 'void main(){ gl_Position = vec4(p, 1.0); vdir = fwd + right * (p.x * halb.x) + up * (p.y * halb.y); }'));
     gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
-      'precision mediump float; varying vec3 vdir; uniform vec3 horizont; uniform vec3 zenit;'
-      + 'void main(){ float h = clamp(vdir.y * inversesqrt(dot(vdir, vdir)) * 1.6 + 0.18, 0.0, 1.0);'
-      + ' gl_FragColor = vec4(mix(horizont, zenit, h), 1.0); }'));
+      // v1.5 BESTELLT ("skybox ... damit der Horizont nicht so kahl aussieht"): eigene Wolken aus Rauschen (4 Lagen) auf
+      // einer gedachten Wolkendecke, die langsam zieht, und ein Schein um die Sonne. highp, wo es das gibt: das Rauschen
+      // braucht die Genauigkeit (mediump liefert auf Handys Streifen).
+      '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n'
+      + 'varying vec3 vdir; uniform vec3 horizont; uniform vec3 zenit; uniform float wolken; uniform float zeit; uniform float regen;'
+      + 'float hs(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }'
+      + 'float rs(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);'
+      + ' return mix(mix(hs(i), hs(i + vec2(1.0, 0.0)), f.x), mix(hs(i + vec2(0.0, 1.0)), hs(i + vec2(1.0, 1.0)), f.x), f.y); }'
+      + 'float fbm(vec2 p){ float s = 0.0, a = 0.5; for (int i = 0; i < 4; i++) { s += a * rs(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; } return s; }'
+      + 'void main(){ vec3 d = normalize(vdir); float h = clamp(d.y * 1.6 + 0.18, 0.0, 1.0);'
+      + ' vec3 c = mix(horizont, zenit, h);'
+      + ' float s = max(dot(d, normalize(vec3(0.35, 0.9, 0.25))), 0.0); c += vec3(1.0, 0.92, 0.78) * (pow(s, 48.0) * 0.45 + pow(s, 5.0) * 0.10);'
+      + ' if (d.y > 0.015 && wolken > 0.0) {'
+      + '  vec2 uv = d.xz / d.y * 0.55 + vec2(zeit * 0.006, zeit * 0.002);'
+      + '  float n = fbm(uv * 1.6);'
+      + '  float dichte = smoothstep(0.62 - 0.22 * regen - 0.18 * wolken, 0.92, n) * smoothstep(0.015, 0.22, d.y);'
+      + '  vec3 wf = mix(mix(vec3(0.98), horizont, 0.25), vec3(0.52, 0.55, 0.60), regen) * (0.82 + 0.18 * smoothstep(0.4, 0.9, n));'
+      + '  c = mix(c, wf, clamp(dichte, 0.0, 1.0) * 0.92); }'
+      + ' gl_FragColor = vec4(c, 1.0); }'));
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     return { p, ap: gl.getAttribLocation(p, 'p'), right: gl.getUniformLocation(p, 'right'),
              up: gl.getUniformLocation(p, 'up'), fwd: gl.getUniformLocation(p, 'fwd'), halb: gl.getUniformLocation(p, 'halb'),
-             horizont: gl.getUniformLocation(p, 'horizont'), zenit: gl.getUniformLocation(p, 'zenit') };
+             horizont: gl.getUniformLocation(p, 'horizont'), zenit: gl.getUniformLocation(p, 'zenit'),
+             wolken: gl.getUniformLocation(p, 'wolken'), zeit: gl.getUniformLocation(p, 'zeit'), regen: gl.getUniformLocation(p, 'regen') };
   }
   function vfHimmel(gl) {
     const a = [-1, 1, 0, 1, 1, 0, 1, -1, 0, -1, 1, 0, 1, -1, 0, -1, -1, 0];
@@ -157,6 +174,11 @@
     { id: 'fischgraet', name: 'Fischgrät', art: 'fischgraet', breiteCm: 7, laengeCm: 35, spalten: 16, zeilen: 2,
       ton: [[190, 143, 94], [176, 128, 82], [201, 157, 106], [163, 118, 74], [184, 136, 86]], maser: [122, 82, 48],
       kontrast: 0.42, ringCm: 0.8, poren: 1.0, ast: 0.08, glanz: 0.28 },
+    // v1.5 BESTELLT: "als weitere Bodenart (Standard) den Rasen ... mit Baeumen in der Ferne, damit der Horizont nicht so
+    // kahl aussieht". Eigener Rasen (kein Code aus uno-com-escada, das ist PolyForm Noncommercial): nahtlose Fliesen aus
+    // Rauschen in drei Lagen und kurzen Halmen, im Dielenraster ohne Fugen gelegt. Baeume: vfBaeumeBauen.
+    { id: 'rasen', name: 'Rasen', art: 'rasen', breiteCm: 120, laengeCm: 120, spalten: 2, zeilen: 1,
+      ton: [[46, 78, 32], [72, 106, 44], [104, 116, 58]], maser: [0, 0, 0], kontrast: 0, ringCm: 1, poren: 0, ast: 0, glanz: 0.0 },
   ];
   const VF_ATLAS_B = 2048, VF_ATLAS_H = 1024;   // Bodenatlas (8 MB, mit Mipmaps 10,7 MB)
   const VF_BAHN_TEX = 1024, VF_BAHN_SPALTE = 256;  // Fahrbahn: 4 Teile nebeneinander (3 gebraucht, 1 Start/Ziel)
@@ -167,7 +189,8 @@
   const vfTexDaten = { bahn: null, rand: null, boden: null, bodenId: null };
   const vfTexZaehler = { bahn: 0, rand: 0, boden: 0 };
   function vfBodenWahl() {
-    try { const v = localStorage.getItem(VF_BODEN_STORE); return VF_BOEDEN.some((b) => b.id === v) ? v : 'eiche'; } catch (e) { return 'eiche'; }
+    // v1.5: Rasen ist der Standard (ohne gespeicherte Wahl).
+    try { const v = localStorage.getItem(VF_BODEN_STORE); return VF_BOEDEN.some((b) => b.id === v) ? v : 'rasen'; } catch (e) { return 'rasen'; }
   }
   function vfBodenSetzen(id) { try { localStorage.setItem(VF_BODEN_STORE, id); } catch (e) { /* privat */ } }
   function vfBodenArt(id) { return VF_BOEDEN.find((b) => b.id === id) || VF_BOEDEN[0]; }
@@ -215,6 +238,47 @@
   // Ringe fast gerade), Fasern je Spalte, Poren als kurze dunkle Striche, Flecken, selten ein Ast.
   // Ringsum eine dunkle Fuge (1-2 px) mit heller Fase daneben: im Atlas, damit sie mit den Mipmaps
   // weich wird statt in der Ferne zu flimmern. Alpha = Glanz (0 in der Fuge).
+  // v1.5: ein Rasenstueck, nahtlos in sich (Rauschen mit umlaufendem Gitter, Halme laufen ueber den Rand und kommen auf
+  // der anderen Seite wieder herein): neben sich selbst gelegt gibt es keine Kante. Ein Generator, der alle 64 Zeilen
+  // zurueckgibt, damit das Erzeugen beim Start nicht ruckelt.
+  function* vfGrasStueck(d, AW, x0, y0, w, h, P, rnd) {
+    x0 = Math.round(x0); y0 = Math.round(y0); w = Math.round(w); h = Math.round(h);
+    const lage = (n, gew) => { const g = new Float32Array(n * n); for (let i = 0; i < g.length; i++) g[i] = rnd(); return { n, gew, g }; };
+    const lagen = [lage(6, 0.45), lage(14, 0.33), lage(40, 0.22)], trocken = lage(5, 1);
+    const glatt = (t) => t * t * (3 - 2 * t);
+    const rausch = (L, u, v) => {
+      const n = L.n, x = u * n, y = v * n, xi = Math.floor(x), yi = Math.floor(y), fx = glatt(x - xi), fy = glatt(y - yi);
+      const a = L.g[(yi % n) * n + (xi % n)], b = L.g[(yi % n) * n + ((xi + 1) % n)];
+      const c = L.g[((yi + 1) % n) * n + (xi % n)], e = L.g[((yi + 1) % n) * n + ((xi + 1) % n)];
+      return a + (b - a) * fx + (c - a) * fy + (a - b - c + e) * fx * fy;
+    };
+    const [dunkel, hell, gelb] = P.ton, a = Math.round(P.glanz * 255);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const u = x / w, v = y / h;
+        let n = 0;
+        for (const L of lagen) n += rausch(L, u, v) * L.gew;
+        const t = Math.max(0, Math.min(1, (n - 0.25) * 1.9)), tr = Math.max(0, rausch(trocken, u, v) - 0.62) * 1.6;
+        const i = ((y0 + y) * AW + x0 + x) * 4;
+        for (let k = 0; k < 3; k++) d[i + k] = (dunkel[k] + (hell[k] - dunkel[k]) * t) * (1 - tr) + gelb[k] * tr;
+        d[i + 3] = a;
+      }
+      if ((y & 63) === 63) yield;
+    }
+    // Halme: kurze Striche, etwas heller oder dunkler als der Grund, ueber den Rand umlaufend.
+    const halme = Math.round(w * h / 22);
+    for (let k = 0; k < halme; k++) {
+      let x = rnd() * w, y = rnd() * h;
+      const lang = 3 + rnd() * 9, wi = rnd() * Math.PI * 2, dx = Math.cos(wi), dy = Math.sin(wi);
+      const f = rnd() < 0.55 ? 1.08 + rnd() * 0.12 : 0.78 + rnd() * 0.12;
+      for (let s = 0; s < lang; s++, x += dx, y += dy) {
+        const xi = ((Math.floor(x) % w) + w) % w, yi = ((Math.floor(y) % h) + h) % h;
+        const i = ((y0 + yi) * AW + x0 + xi) * 4;
+        d[i] = Math.min(255, d[i] * f); d[i + 1] = Math.min(255, d[i + 1] * f); d[i + 2] = Math.min(255, d[i + 2] * f);
+      }
+      if ((k & 16383) === 16383) yield;
+    }
+  }
   function vfHolzStueck(d, AW, x0, y0, w, h, P, rnd) {
     const ton = P.ton[Math.floor(rnd() * P.ton.length)], j = 1 + (rnd() - 0.5) * 0.08;
     const t0 = ton[0] * j, t1 = ton[1] * j, t2 = ton[2] * j, m0 = P.maser[0], m1 = P.maser[1], m2 = P.maser[2];
@@ -291,11 +355,12 @@
   }
   function* vfBodenBau(P) {
     const AW = VF_ATLAS_B, AH = VF_ATLAS_H, d = new Uint8ClampedArray(AW * AH * 4);
-    const rnd = vfZufall(P.id === 'eiche' ? 1911 : P.id === 'grau' ? 2701 : 3307);
+    const rnd = vfZufall(P.id === 'eiche' ? 1911 : P.id === 'grau' ? 2701 : P.id === 'rasen' ? 5150 : 3307);
     const w = AW / P.spalten, h = AH / P.zeilen, stuecke = [];
     for (let r = 0; r < P.zeilen; r++) {
       for (let s = 0; s < P.spalten; s++) {
-        vfHolzStueck(d, AW, s * w, r * h, w, h, P, rnd);
+        if (P.art === 'rasen') yield* vfGrasStueck(d, AW, s * w, r * h, w, h, P, rnd);
+        else vfHolzStueck(d, AW, s * w, r * h, w, h, P, rnd);
         stuecke.push([(s * w + 0.5) / AW, (r * h + 0.5) / AH, ((s + 1) * w - 0.5) / AW, ((r + 1) * h - 0.5) / AH]);
         yield;
       }
@@ -659,7 +724,9 @@
     let [u0, v0, u1, v1] = st;
     if (rnd() < 0.5) [u0, u1] = [u1, u0];
     if (rnd() < 0.5) [v0, v1] = [v1, v0];
-    const hl = (0.92 + rnd() * 0.13) * VF_BODEN_HELL, w = (rnd() - 0.5) * 0.05, c = [hl * (1 + w), hl, hl * (1 - w)];
+    // v1.5: Rasen draussen heller und fast ohne Farbunterschied je Stueck (sonst saehe man das Raster).
+    const rasen = T.art && T.art.art === 'rasen';
+    const hl = (0.92 + rnd() * (rasen ? 0.03 : 0.13)) * (rasen ? 1.0 : VF_BODEN_HELL), w = (rnd() - 0.5) * (rasen ? 0.01 : 0.05), c = [hl * (1 + w), hl, hl * (1 - w)];
     const P = (s, t) => [o[0] + e[0] * L * s + q[0] * B * t, y, o[1] + e[1] * L * s + q[1] * B * t];
     const p0 = P(0, 0), p1 = P(1, 0), p2 = P(1, 1), p3 = P(0, 1);
     vfViereck(a, [p0[0], y, p0[2], u0, v0], [p1[0], y, p1[2], u0, v1], [p2[0], y, p2[2], u1, v1], [p3[0], y, p3[2], u1, v0], c);
@@ -721,6 +788,77 @@
     streifen(xa - F, za - F, xb + F, za); streifen(xa - F, zb, xb + F, zb + F);
     streifen(xa - F, za, xa, zb); streifen(xb, za, xb + F, zb);
     return { daten: a, stuecke, reihen, breite: B, laenge: L };
+  }
+  // ---- BAEUME IN DER FERNE (v1.5, nur auf Rasen) -----------------------------------------------------------
+  // Ein Band um die Strecke (VF_BAUM_BAND Einheiten ab dem Streckenrand), Nadel- und Laubbaeume in Modellgroesse (1:50,
+  // 12 bis 34 Einheiten hoch), Licht fest eingerechnet (Sonne wie im Shader), Farbe je Baum leicht gestreut. Ein
+  // Zeichenaufruf mit dem einfachen Farbprogramm (VF.prog); der Nebel laesst die fernen im Horizont verschwimmen.
+  const VF_BAUM_N = 420, VF_BAUM_BAND = [140, 820];
+  function vfBaeumeBauen(pts) {
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    pts.forEach((p) => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); });
+    const R0 = TRACK_HALF_W + TRACK_KERB_W;
+    minX -= R0; maxX += R0; minY -= R0; maxY += R0;
+    const rnd = vfZufall(4242 + pts.length), a = [], orte = [];
+    const S = [0.35, 0.9, 0.25], sl = Math.hypot(S[0], S[1], S[2]);
+    const sonne = [S[0] / sl, S[1] / sl, S[2] / sl];
+    const dreieck = (p0, p1, p2, farbe, mitte) => {
+      const u = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]], v = [p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2]];
+      let n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+      const l = Math.hypot(n[0], n[1], n[2]) || 1; n = n.map((x) => x / l);
+      const c = [(p0[0] + p1[0] + p2[0]) / 3 - mitte[0], (p0[1] + p1[1] + p2[1]) / 3 - mitte[1], (p0[2] + p1[2] + p2[2]) / 3 - mitte[2]];
+      if (n[0] * c[0] + n[1] * c[1] + n[2] * c[2] < 0) n = n.map((x) => -x);
+      const licht = 0.5 + 0.55 * Math.max(0, n[0] * sonne[0] + n[1] * sonne[1] + n[2] * sonne[2]);
+      for (const q of [p0, p1, p2]) a.push(q[0], q[1], q[2], farbe[0] * licht, farbe[1] * licht, farbe[2] * licht);
+    };
+    const kegel = (x, z, y0, y1, r, seg, farbe) => {
+      for (let i = 0; i < seg; i++) {
+        const w0 = i / seg * Math.PI * 2, w1 = (i + 1) / seg * Math.PI * 2;
+        const b0 = [x + Math.cos(w0) * r, y0, z + Math.sin(w0) * r], b1 = [x + Math.cos(w1) * r, y0, z + Math.sin(w1) * r];
+        dreieck(b0, b1, [x, y1, z], farbe, [x, (y0 + y1) / 2, z]);
+      }
+    };
+    const stamm = (x, z, h, r, farbe) => {
+      for (let i = 0; i < 6; i++) {
+        const w0 = i / 6 * Math.PI * 2, w1 = (i + 1) / 6 * Math.PI * 2;
+        const p0 = [x + Math.cos(w0) * r, 0, z + Math.sin(w0) * r], p1 = [x + Math.cos(w1) * r, 0, z + Math.sin(w1) * r];
+        const p2 = [p1[0], h, p1[2]], p3 = [p0[0], h, p0[2]];
+        dreieck(p0, p1, p2, farbe, [x, h / 2, z]); dreieck(p0, p2, p3, farbe, [x, h / 2, z]);
+      }
+    };
+    const kugel = (x, yc, z, r, ry, farbe) => {
+      const ring = 7, lagen = 4;
+      const P = (j, i) => { const th = j / lagen * Math.PI, ph = i / ring * Math.PI * 2; return [x + Math.sin(th) * Math.cos(ph) * r, yc + Math.cos(th) * ry, z + Math.sin(th) * Math.sin(ph) * r]; };
+      for (let j = 0; j < lagen; j++) for (let i = 0; i < ring; i++) {
+        const p00 = P(j, i), p01 = P(j, i + 1), p10 = P(j + 1, i), p11 = P(j + 1, i + 1);
+        if (j > 0) dreieck(p00, p01, p11, farbe, [x, yc, z]);
+        if (j < lagen - 1) dreieck(p00, p11, p10, farbe, [x, yc, z]);
+      }
+    };
+    const W = maxX - minX, H = maxY - minY;
+    for (let k = 0; k < VF_BAUM_N; k++) {
+      // Ort: ein Punkt auf dem Umfang des Rechtecks um die Strecke, dann nach aussen ins Band (nah seltener).
+      const t = rnd() * 2 * (W + H), ab = VF_BAUM_BAND[0] + Math.pow(rnd(), 0.75) * (VF_BAUM_BAND[1] - VF_BAUM_BAND[0]);
+      let x, z;
+      if (t < W) { x = minX + t; z = minY - ab; }
+      else if (t < W + H) { x = maxX + ab; z = minY + (t - W); }
+      else if (t < 2 * W + H) { x = maxX - (t - W - H); z = maxY + ab; }
+      else { x = minX - ab; z = maxY - (t - 2 * W - H); }
+      x += (rnd() - 0.5) * 60; z += (rnd() - 0.5) * 60;
+      const hoch = 12 + rnd() * 22, j = 0.85 + rnd() * 0.3;
+      orte.push([x, z, hoch]);
+      stamm(x, z, hoch * 0.32, hoch * 0.045, [0.32 * j, 0.22 * j, 0.13 * j]);
+      if (rnd() < 0.45) {
+        const g = [0.10 * j, 0.30 * j, 0.15 * j];
+        kegel(x, z, hoch * 0.22, hoch * 0.78, hoch * 0.27, 8, g);
+        kegel(x, z, hoch * 0.50, hoch, hoch * 0.19, 8, g);
+      } else {
+        const g = [0.22 * j, 0.42 * j, 0.15 * j];
+        kugel(x, hoch * 0.62, z, hoch * 0.32, hoch * 0.30, g);
+        if (rnd() < 0.5) kugel(x + hoch * 0.15, hoch * 0.52, z - hoch * 0.1, hoch * 0.22, hoch * 0.2, [g[0] * 0.92, g[1] * 0.95, g[2] * 0.9]);
+      }
+    }
+    return { daten: a, anzahl: VF_BAUM_N, orte };
   }
   function vfPufferF(gl, a) {
     const b = gl.createBuffer();
@@ -801,7 +939,7 @@
     gl.depthMask(false);
     gl.enable(gl.POLYGON_OFFSET_FILL);
     gl.polygonOffset(2, 16);
-    zeichne(F.boden, F.txBoden, F.art.glanz, VF_BUMP_BODEN);
+    zeichne(F.boden, F.txBoden, F.art.glanz, F.art.art === 'rasen' ? 0 : VF_BUMP_BODEN);   // v1.5: Rasen ohne Relief (Halme waeren helle Striche)
     gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.depthMask(true);
     gl.disableVertexAttribArray(P.ap); gl.disableVertexAttribArray(P.ac);
@@ -2248,6 +2386,10 @@
       gl.uniform3f(VF.himmelProg.up, ux, uy, uz);
       gl.uniform3f(VF.himmelProg.fwd, fx, fy, fz);
       gl.uniform2f(VF.himmelProg.halb, th * w / Math.max(1, h), th);
+      // v1.5: Wolken (Bewoelkung mittel, im Regen dichter und grauer), Zeit fuer das Ziehen.
+      gl.uniform1f(VF.himmelProg.wolken, 0.5);
+      gl.uniform1f(VF.himmelProg.zeit, (performance.now() / 1000) % 10000);
+      gl.uniform1f(VF.himmelProg.regen, vfRegenStaerke());
     }
     gl.drawArrays(gl.TRIANGLES, 0, VF.himmel.n);
     gl.disableVertexAttribArray(VF.himmelProg.ap);
@@ -2280,6 +2422,11 @@
       gl.vertexAttribPointer(L.c, 3, gl.FLOAT, false, 24, 12);
       gl.drawArrays(gl.TRIANGLES, 0, pu.n);
     };
+    // v1.5: Baeume (nur auf Rasen), vor den Autos.
+    if (VF.baeume) {
+      zeichne(VF.baeume, VF_EINS);
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
     if (VF.geist && VF.geist.aktiv) {
       if (!VF.geistAuto) VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
       gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -3241,6 +3388,11 @@
     // v1.3.39: Flaechen mit Texturen (die Pixel entstehen nur beim ersten Mal) und der feste Platz der
     // Kamera "Fahrer am Rand".
     try { VF.flaeche = vfFlaechenBauen(gl, VF.pts, VF.nrm, tiles, VF.grafik); } catch (e) { schicht.remove(); document.body.classList.remove('vf-an'); showHudToast('WebGL: ' + e.message); return false; }
+    // v1.5: Baeume in der Ferne, nur auf Rasen (ein Puffer, 6 Zahlen je Ecke wie die Farbmodelle).
+    VF.baeume = null;
+    if (VF.flaeche && VF.flaeche.art && VF.flaeche.art.art === 'rasen') {
+      try { const B = vfBaeumeBauen(VF.pts); const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(B.daten), gl.STATIC_DRAW); VF.baeume = { b, n: B.daten.length / 6 }; } catch (e) { VF.baeume = null; }
+    }
     VF.fahrer = { ort: vfFahrerOrt(VF.pts, VF.nrm, tiles), z: {}, k: null };
     try { VF.tv = { posten: vfTvPosten(VF.pts, VF.nrm, tiles), aktiv: -1, seit: 0, uhr: 0 }; } catch (e) { VF.tv = null; }
     // Das Auto: ein Garagenauto ohne Funk. Ein gesteuertes Auto gibt seine Rolle so lange ab.
@@ -3689,7 +3841,7 @@
     // Tempo (und der Gang) der virtuellen Fahrt, bis das echte Auto sich bewegte.
     if (typeof physEngine !== 'undefined' && physEngine && typeof physEngine.reset === 'function') physEngine.reset();
     if (VF.schicht) VF.schicht.remove();
-    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.stick = null; VF.tasten = {};
+    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.stick = null; VF.tasten = {};
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
     // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).
