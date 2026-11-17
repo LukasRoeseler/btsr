@@ -26413,6 +26413,38 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  stAdd('Virtuell v1.5: Bloom laesst nur Helles leuchten (echtes WebGL), Reifen quetschen mit der Einfederung', () => {
+    const f = [];
+    // Reifen: Ruhe 2 %, tiefer eingefedert mehr, gedeckelt, nie negativ.
+    const ruhe = vfReifenQuetsch({ z: 0, th: 0, ph: 0 }, 1, 1, 0, 1, 0);
+    if (Math.abs(ruhe - VF_REIFEN_Q.ruhe) > 1e-9) f.push('Ruhe ' + ruhe);
+    if (!(vfReifenQuetsch({ z: 0.05, th: 0, ph: 0 }, 1, 1, 0, 1, 0) > ruhe)) f.push('Einfedern quetscht nicht mehr');
+    if (vfReifenQuetsch({ z: 5, th: 0, ph: 0 }, 1, 1, 0, 1, 0) !== VF_REIFEN_Q.max) f.push('nicht gedeckelt');
+    if (vfReifenQuetsch({ z: -5, th: 0, ph: 0 }, 1, 1, 0, 1, 0) !== 0) f.push('negativ');
+    // Wanken: ph > 0 hebt +x, also quetscht -x mehr.
+    if (!(vfReifenQuetsch({ z: 0, th: 0, ph: 0.05 }, 1, -1, 0, 1, 0) > vfReifenQuetsch({ z: 0, th: 0, ph: 0.05 }, 1, 1, 0, 1, 0))) f.push('Wanken falsch herum');
+    // Bloom auf einem eigenen kleinen Bild: ein weisser Fleck auf grauem Grund leuchtet ueber, das Grau nicht.
+    const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
+    const gl = cv.getContext('webgl', { antialias: false, preserveDrawingBuffer: true });
+    if (!gl) return f.length ? { ok: false, mass: f.join(' | ') } : { skip: true, mass: 'Reifen ok, kein WebGL fuer den Bloom' };
+    const merk = { bloom: VF.bloom };
+    try {
+      VF.bloom = null;
+      const pix = (x, y) => { const b = new Uint8Array(4); gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, b); return b; };
+      gl.viewport(0, 0, 64, 64);
+      gl.clearColor(0.5, 0.5, 0.5, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.enable(gl.SCISSOR_TEST); gl.scissor(28, 28, 8, 8); gl.clearColor(1, 1, 1, 1); gl.clear(gl.COLOR_BUFFER_BIT); gl.disable(gl.SCISSOR_TEST);
+      const vorNah = pix(40, 32)[0], vorFern = pix(4, 4)[0];
+      vfBloomMalen(gl, 64, 64);
+      const nachNah = pix(40, 32)[0], nachFern = pix(4, 4)[0];
+      if (!(nachNah > vorNah + 3)) f.push('kein Leuchten neben dem Weissen (' + vorNah + ' -> ' + nachNah + ')');
+      if (Math.abs(nachFern - vorFern) > 2) f.push('Grau veraendert (' + vorFern + ' -> ' + nachFern + ')');
+      if (gl.getError() !== gl.NO_ERROR) f.push('WebGL-Fehler');
+    } catch (e) { f.push('Fehler: ' + e.message); }
+    finally { VF.bloom = merk.bloom; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reifen 2 bis 7 % nach Einfederung und Wanken, Bloom leuchtet am Weissen, Grau bleibt' };
+  });
+
   stAdd('Virtuell v1.5: TV-Kamera, Posten aussen neben der Bahn, naechster Posten mit Mindestdauer und Abstandsschwelle', () => {
     const f = [];
     const tiles = codeToTrack('SG4R4G4SLLSRR').tiles;

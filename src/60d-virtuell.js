@@ -1839,7 +1839,7 @@
   // ---- v1.5 (Plan Paket 4, Quality): BILDRATEN-WACHE ----
   // "Quality bekommt eine Bildraten-Wache, die Effekte abschaltet, wenn das Geraet nicht mitkommt." Gemessen
   // wird der echte Bildabstand (gleitendes Mittel). Liegt er nach dem Anlauf VF_WACHE.ms lang unter
-  // VF_WACHE.fps, schaltet die Wache eine Stufe herunter: 1 = keine Schattenkarte, 2 = Aufloesung wie
+  // VF_WACHE.fps, schaltet die Wache eine Stufe herunter: 1 = keine Schattenkarte und kein Bloom, 2 = Aufloesung wie
   // Performance und Regentropfen wie Performance. Nie zurueck in derselben Fahrt (kein Flackern).
   // Luecken ueber 250 ms (Pause, verborgener Tab) zaehlen nicht.
   const VF_WACHE = { fps: 40, ms: 4000, anlauf: 3000 };
@@ -1858,7 +1858,7 @@
   function vfWacheRunter(W, now) {
     W.stufe++; W.langsamSeit = 0; W.start = now;
     const fps = Math.round(1000 / W.mittel);
-    if (W.stufe === 1) { VF.schM = null; showHudToast(t('Quality: Schatten aus, damit es flüssig bleibt ({f} Bilder/s)').replace('{f}', fps)); }
+    if (W.stufe === 1) { VF.schM = null; showHudToast(t('Quality: Schatten und Leuchten aus, damit es flüssig bleibt ({f} Bilder/s)').replace('{f}', fps)); }
     else { VF.regen = null; showHudToast(t('Quality: weniger Auflösung und Regentropfen ({f} Bilder/s)').replace('{f}', fps)); }
     log('Virtuell: Bildraten-Wache Stufe ' + W.stufe + ' bei ' + fps + ' Bildern/s.', 'info');
   }
@@ -2279,9 +2279,112 @@
           !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, k.auge);
       }
     }
+    // v1.5 (Quality): Bloom auf das fertige Bild, vor dem Regen. Scheitert er einmal, bleibt er fuer die Fahrt aus.
+    if (vfBloomAn()) { try { vfBloomMalen(gl, w, h); } catch (e) { VF.bloomKaputt = true; VF.bloom = null; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h); log('Virtuell: Bloom aus (' + e.message + ').', 'info'); } }
     // v1.5.19: Regen zuletzt (durchsichtig, ohne Tiefe zu schreiben).
     try { vfRegenMalen(gl, pv, k.auge, VF.dtBild || 0.016); } catch (e) { VF.regen = null; }
   }
+  // ---- BLOOM (v1.5, Quality, Plan Paket 4) -------------------------------------------------------------------
+  // Helles (Scheinwerfer, Glanzlichter, Ruecklichter) strahlt leicht ueber. Die Szene bleibt im Bildschirm-Puffer
+  // (mit Kantenglaettung, die ein eigener Framebuffer in WebGL1 nicht haette); kopiert wird das fertige Bild
+  // (copyTexSubImage2D), daraus mit viertel Aufloesung nur das fast Weisse (Luminanz ueber VF_BLOOM.schwelle, so
+  // bleiben Himmel und heller Boden aussen vor), zweimal weichgezeichnet und additiv daraufgelegt. Vor dem Regen.
+  // Die Bildraten-Wache nimmt ihn ab Stufe 1 weg (zusammen mit den Schatten).
+  const VF_BLOOM = { schwelle: 0.86, staerke: 0.65, teiler: 4 };
+  function vfBloomProgramm(gl, frag) {
+    const p = gl.createProgram();
+    gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER, 'attribute vec2 a; varying vec2 vuv; void main(){ vuv = a * 0.5 + 0.5; gl_Position = vec4(a, 0.0, 1.0); }'));
+    gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER, 'precision mediump float; varying vec2 vuv; uniform sampler2D tx;' + frag));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const u = {};
+    ['tx', 'px', 'schwelle', 'dir', 'staerke'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    return { p, u, a: gl.getAttribLocation(p, 'a') };
+  }
+  function vfBloomTextur(gl, w, h) {
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    return tex;
+  }
+  function vfBloomZiel(gl, w, h) {
+    const tex = vfBloomTextur(gl, w, h);
+    const fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    if (!ok) throw new Error('Bloom-Framebuffer unvollstaendig');
+    return { tex, fbo };
+  }
+  function vfBloomBauen(gl) {
+    const B = {
+      hell: vfBloomProgramm(gl, 'uniform vec2 px; uniform float schwelle;'
+        + 'void main(){ vec3 c = (texture2D(tx, vuv - px).rgb + texture2D(tx, vuv + px).rgb + texture2D(tx, vuv + vec2(px.x, -px.y)).rgb + texture2D(tx, vuv + vec2(-px.x, px.y)).rgb) * 0.25;'
+        + ' float l = dot(c, vec3(0.2126, 0.7152, 0.0722)); gl_FragColor = vec4(c * max(l - schwelle, 0.0) / max(l, 0.001) / (1.0 - schwelle), 1.0); }'),
+      weich: vfBloomProgramm(gl, 'uniform vec2 dir;'
+        + 'void main(){ vec3 c = texture2D(tx, vuv).rgb * 0.2270;'
+        + ' c += (texture2D(tx, vuv + dir).rgb + texture2D(tx, vuv - dir).rgb) * 0.1946;'
+        + ' c += (texture2D(tx, vuv + dir * 2.0).rgb + texture2D(tx, vuv - dir * 2.0).rgb) * 0.1216;'
+        + ' c += (texture2D(tx, vuv + dir * 3.0).rgb + texture2D(tx, vuv - dir * 3.0).rgb) * 0.0541;'
+        + ' c += (texture2D(tx, vuv + dir * 4.0).rgb + texture2D(tx, vuv - dir * 4.0).rgb) * 0.0162;'
+        + ' gl_FragColor = vec4(c, 1.0); }'),
+      misch: vfBloomProgramm(gl, 'uniform float staerke; void main(){ gl_FragColor = vec4(texture2D(tx, vuv).rgb * staerke, 1.0); }'),
+      quad: gl.createBuffer(), w: 0, h: 0,
+    };
+    gl.bindBuffer(gl.ARRAY_BUFFER, B.quad);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
+    return B;
+  }
+  function vfBloomGroesse(gl, B, w, h) {
+    if (B.w === w && B.h === h) return;
+    [B.szene, B.a && B.a.tex, B.b && B.b.tex].forEach((x) => { if (x) gl.deleteTexture(x); });
+    [B.a && B.a.fbo, B.b && B.b.fbo].forEach((x) => { if (x) gl.deleteFramebuffer(x); });
+    B.w = w; B.h = h;
+    B.sw = Math.max(1, Math.round(w / VF_BLOOM.teiler)); B.sh = Math.max(1, Math.round(h / VF_BLOOM.teiler));
+    B.szene = vfBloomTextur(gl, w, h);
+    B.a = vfBloomZiel(gl, B.sw, B.sh);
+    B.b = vfBloomZiel(gl, B.sw, B.sh);
+  }
+  function vfBloomZug(gl, B, P, quelle, ziel, w, h, setze) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, ziel ? ziel.fbo : null);
+    gl.viewport(0, 0, w, h);
+    gl.useProgram(P.p);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, quelle);
+    gl.uniform1i(P.u.tx, 0);
+    setze(P.u);
+    gl.bindBuffer(gl.ARRAY_BUFFER, B.quad);
+    gl.enableVertexAttribArray(P.a);
+    gl.vertexAttribPointer(P.a, 2, gl.FLOAT, false, 8, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.disableVertexAttribArray(P.a);
+  }
+  // Auf den Bildschirm-Puffer (w x h, bereits fertig gezeichnet).
+  function vfBloomMalen(gl, w, h) {
+    if (!VF.bloom) VF.bloom = vfBloomBauen(gl);
+    const B = VF.bloom;
+    vfBloomGroesse(gl, B, w, h);
+    gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, B.szene);
+    gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, w, h);
+    vfBloomZug(gl, B, B.hell, B.szene, B.a, B.sw, B.sh, (u) => { gl.uniform2f(u.px, 1 / w, 1 / h); gl.uniform1f(u.schwelle, VF_BLOOM.schwelle); });
+    for (const breit of [1, 2]) {
+      vfBloomZug(gl, B, B.weich, B.a.tex, B.b, B.sw, B.sh, (u) => gl.uniform2f(u.dir, breit / B.sw, 0));
+      vfBloomZug(gl, B, B.weich, B.b.tex, B.a, B.sw, B.sh, (u) => gl.uniform2f(u.dir, 0, breit / B.sh));
+    }
+    gl.enable(gl.BLEND); gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ZERO, gl.ONE);
+    vfBloomZug(gl, B, B.misch, B.a.tex, null, w, h, (u) => gl.uniform1f(u.staerke, VF_BLOOM.staerke));
+    gl.disable(gl.BLEND); gl.enable(gl.DEPTH_TEST);
+    gl.viewport(0, 0, w, h);
+  }
+  function vfBloomAn() { return !!(VF.grafik && vfWacheStufe() < 1 && !VF.bloomKaputt); }
+
   // ---- 3D-REGEN (v1.5.19, WIP) -------------------------------------------------------------------------
   // BESTELLT: "mache 3D-Regeneffekte (aktuell ist der Regen nicht schoen)". Regen kommt aus dem Wetter des Rennens
   // (wxRainLevel, dieselbe Front wie beim echten Fahren). Die Tropfen sind kurze Striche IM RAUM: ein Kasten um die
@@ -2680,6 +2783,15 @@
       (typeof headlightsOn === 'undefined' ? true : !!headlightsOn),
       !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake), vfFederSicht(), VF.pitch || 0, auge, vfLack());
   }
+  // v1.5: wie weit der Reifen an einem Rad gequetscht ist (0 bis VF_REIFEN_Q.max), rein fuer den Selbsttest.
+  // Absenkung des Aufbaus am Rad (x = Spurhaelfte mit Seite, zRel = Abstand zum Schwerpunkt laengs), aus Hub fez.z,
+  // Wanken fez.ph (vfRz: +x hebt sich bei ph > 0) und Nicken fez.th (vfRx: +z senkt sich bei th > 0), wie der Aufbau.
+  const VF_REIFEN_Q = { ruhe: 0.02, max: 0.07, k: 0.5 };
+  function vfReifenQuetsch(fez, g, x, zRel, radius, nick) {
+    const f = fez || { z: 0, th: 0, ph: 0 }, gg = g || 1;
+    const senk = f.z * gg - x * Math.sin(f.ph * gg) + zRel * Math.sin((f.th + (nick || 0)) * gg * 0.55);
+    return Math.max(0, Math.min(VF_REIFEN_Q.max, VF_REIFEN_Q.ruhe + VF_REIFEN_Q.k * senk / Math.max(1e-6, radius)));
+  }
   // Ein Modell an einer Stelle zeichnen. Wird fuer das Spielerauto und fuer jeden NPC benutzt:
   // M ist das gebaute Modell (vfModellBauen), T das Texturprogramm, fe der Federungszustand.
   function vfModellZeichnen(gl, pv, blick, M, T, x, y, h, fe, lenkWinkel, raddreh, radModell, licht, bremst, fs, nick, auge, lackHex) {
@@ -2770,7 +2882,12 @@
     [[1, 'vorn', d.vorderachse], [-1, 'vorn', d.vorderachse], [1, 'hinten', d.hinterachse], [-1, 'hinten', d.hinterachse]].forEach(([seite, ax, z]) => {
       const r = d.reifen[ax];
       const dreh = vfRy(ax === 'vorn' ? -(lenkWinkel || 0) : 0);
-      const w = vfKette(lage, vfT(seite * r.spur / 2, r.radius, z), dreh, vfRx(raddreh || 0),
+      // v1.5 (Quality): Reifenverformung. Der Reifen wird unten flacher und breiter, je tiefer der Aufbau an
+      // diesem Rad einfedert (Hub, Wanken, Nicken aus fez wie beim Aufbau oben); die Mitte sinkt mit, damit
+      // er auf dem Boden bleibt. Nicht drehend (vor vfRx), Performance unveraendert.
+      const q = T.qual ? vfReifenQuetsch(fez, g, seite * r.spur / 2, z - zSp, r.radius, nick) : 0;
+      const quetsch = q ? vfS(1 + 0.6 * q, 1 - q, 1) : VF_EINS;
+      const w = vfKette(lage, vfT(seite * r.spur / 2, r.radius * (1 - q), z), dreh, quetsch, vfRx(raddreh || 0),
         vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
       radTeile.forEach((t) => { setze(w, [1, 1, 1], 0, 1, 0, 1, 0.2, 0); teil(t); });
       if (!radTeile.length) {
@@ -2780,7 +2897,7 @@
           // Das Rad so weit nach aussen, dass es neben der Karosserie sichtbar bleibt (manche Modelle
           // haben eine schmalere Spur und wuerden das Rad sonst verstecken).
           const xW = seite * Math.max(r.spur / 2, halbW + 0.12 - 0.5 * r.breite);
-          const wF = vfKette(lage, vfT(xW, r.radius, z), dreh, vfRx(raddreh || 0),
+          const wF = vfKette(lage, vfT(xW, r.radius * (1 - q), z), dreh, quetsch, vfRx(raddreh || 0),
             vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
           setze(wF, [1, 1, 1], 0, 1, 0, 1, 0.2, 0);
           radM.teile.forEach((t) => {
@@ -3081,6 +3198,7 @@
     VF.grafik = vfGrafikQual();   // v1.3.113: einmal je Fahrt, damit kein localStorage je Bild
     VF.wache = null; VF.letztRoh = 0;   // v1.5: Bildraten-Wache je Fahrt neu
     VF.tz = vfTageszeit();              // v1.5: Tageszeit je Fahrt einmal
+    VF.bloom = null; VF.bloomKaputt = false;
     // v1.3.113 Quality: echte Schattenkarte (Depth-Textur) aus Richtung der Sonne. Ohne die
     // Erweiterung bleibt der weiche Blob-Schatten (M.schatten).
     VF.schatte = null; VF.schatteProg = null;
