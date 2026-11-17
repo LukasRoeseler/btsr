@@ -169,10 +169,14 @@
     .show-zahlen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
     .show-zahlen span { display: grid; justify-items: center; }
     .show-zahlen b { font-size: 18px; color: #f3f4f6; letter-spacing: 0; }
-    .show-tab { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; margin-top: 4px; }
-    .show-tab span { color: var(--muted); }
-    .show-tab b { text-align: right; font-variant-numeric: tabular-nums; }
-    .show-fort { display: grid; gap: 4px; margin-top: auto; font-size: 11px; color: var(--muted); }
+    /* v1.5.104 GEMELDET: Text auf den Rueckseiten nicht lesbar (erbte die dunkle Schrift des Dialogknopfs). Feste helle
+       Farben, etwas groesser, ohne Holo/Glanz darueber. */
+    .show-hinten { color: #f3f4f6; }
+    .show-tab { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; font-size: 14px; margin-top: 6px; }
+    .show-tab span { color: #c9ced8; }
+    .show-tab b { text-align: right; font-variant-numeric: tabular-nums; color: #ffffff; }
+    .show-hinten .show-stufe, .show-hinten .show-modell { color: #e4e7ee; }
+    .show-fort { display: grid; gap: 4px; margin-top: auto; font-size: 12px; color: #c9ced8; }
     .show-fort > i { display: block; height: 6px; background: rgba(255,255,255,.12); border-radius: 3px; overflow: hidden; }
     .show-fort > i > i { display: block; height: 100%; }
     .show-holo { position: absolute; inset: 0; pointer-events: none; opacity: var(--holo, 0); mix-blend-mode: color-dodge;
