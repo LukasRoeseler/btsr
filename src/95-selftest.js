@@ -24352,7 +24352,7 @@
       if (throttleClaim[SRC.TOUCH]) f.push('Touch-Gas haengt nach dem Beenden');
       if (physEngine.state.dirtyAir) f.push('dreckige Luft bleibt ' + physEngine.state.dirtyAir);
       // Time Attack: die Runde wertet nur 70-race.js (die virtuelle Fahrt ruft bestzeitRunde nicht selbst).
-      if (/bestzeitRunde\(/.test(String(vfPaket))) f.push('vfPaket wertet Time Attack selbst');
+      if (/bestzeitRunde\(/.test(String(vfPaket) + String(vfRundeAnLinie))) f.push('vfPaket wertet Time Attack selbst');
     } finally {
       if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
       damage = merk.damage;
@@ -27068,6 +27068,90 @@
   });
 
   // v1.5.10: Lackfarbe und Vorschaubilder des virtuellen Fahrens (WIP).
+  // v1.5.84 GEMELDET: "Startgerade hat die Ziellinie an der falschen Stelle", "Rundenzeitenmessung und Ansage ist verbuggt
+  // und startet dann mittendrin", "Räder ... entweder keine, oder die stehen zu weit nach außen ab", "Ghostcar sollte wie
+  // das ausgewählte Auto aussehen", "Fallback-Strecke soll eine Boxengasse haben".
+  stAdd('Virtuell v1.5.84: Ziellinie bei 80 %, Puls nur an der Linie, Geist faehrt die beste Runde, Raeder, Boxengasse', () => {
+    if (typeof virtuellStarten !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    const f = [];
+    // Linie: vorwaerts, nicht erreicht, rueckwaerts, ueber das Schleifenende.
+    if (vfZielUeberquert(10, 12, 11, 100) !== 1) f.push('vorwaerts ueber die Linie nicht erkannt');
+    if (vfZielUeberquert(10, 12, 13, 100) !== 0) f.push('Linie vor dem Auto gezaehlt');
+    if (vfZielUeberquert(11, 13, 11, 100) !== 0) f.push('Linie doppelt (Start auf der Linie)');
+    if (vfZielUeberquert(12, 10, 11, 100) !== -1) f.push('rueckwaerts nicht erkannt');
+    if (vfZielUeberquert(98, 2, 0, 100) !== 1) f.push('ueber das Schleifenende nicht erkannt');
+    // Raeder: die geliehenen enden innerhalb der Karosserie, nie weiter innen als die halbe Spur.
+    for (const r of [{ spur: 1.6, breite: 0.235 }, { spur: 1.71, breite: 0.255 }, { spur: 1.58, breite: 0.255 }]) {
+      const x = vfRadX(r, 0.975);
+      if (x < r.spur / 2 - 1e-9) f.push('Rad innerhalb der Spur ' + x);
+      if (x + r.breite / 2 > Math.max(0.975 - 0.03, r.spur / 2 + r.breite / 2) + 1e-9) f.push('Rad ragt raus: ' + (x + r.breite / 2).toFixed(3));
+    }
+    // Radmodell je Grafikkontext (jede Fahrt hat einen neuen).
+    const c1 = document.createElement('canvas'), c2 = document.createElement('canvas');
+    const g1 = c1.getContext('webgl'), g2 = c2.getContext('webgl');
+    const merkRad = vfRadModell;
+    if (g1 && g2) {
+      const p1 = vfRadModellBauen(g1), p1b = vfRadModellBauen(g1), p2 = vfRadModellBauen(g2);
+      if (p1 !== p1b) f.push('Radmodell im selben Kontext doppelt gebaut');
+      if (p1 === p2) f.push('Radmodell des alten Kontexts in neuem Kontext benutzt');
+      [p1, p2].forEach((pp) => pp.catch(() => {}));
+    }
+    vfRadModell = merkRad;
+    // Boxengasse: Ersatzstrecke hat ein Boxenteil direkt nach Start/Ziel, Bucht auf der Boxenseite, Striche da.
+    const ers = codeToTrack(VF_ERSATZ_CODE);
+    if (!ers || ers.tiles[1].type !== TILE_TYPE.PIT) f.push('Ersatzstrecke ohne Boxenteil nach Start/Ziel');
+    const bal = codeToTrack(CH_DAUER.find((x) => x.id === 'dauer-balkonia').code);
+    if (ers && bal && trackLaengeM(ers.tiles).toFixed(3) !== trackLaengeM(bal.tiles).toFixed(3)) f.push('Ersatzstrecke anders lang als Balkonia');
+    if (ers) {
+      const pts = trackCenterline(ers.tiles), nrm = trackNormals(pts), B = vfBoxBucht(pts, ers.tiles);
+      let maxB = 0, inPit = 0, ausser = 0;
+      pts.forEach((q, i) => { maxB = Math.max(maxB, B.b[i]); if (B.u[i] >= 0) inPit++; else if (B.b[i] > 0) ausser++; });
+      if (Math.abs(maxB - VF_BOX_TIEFE * TRACK_HALF_W) > 1e-3) f.push('Bucht ' + maxB.toFixed(2) + ' breit');
+      if (!inPit || ausser) f.push('Bucht ausserhalb des Boxenteils (' + ausser + ')');
+      const S = vfBoxStriche(pts, nrm, ers.tiles, B);
+      if (S.length !== 16 * 2 * 6 * 6) f.push('Striche: ' + S.length / 36 + ' Vierecke statt 32');
+      const geo = vfBahnGeometrie(pts, nrm, ers.tiles), geoB = vfBahnGeometrie(pts, nrm, bal.tiles);
+      if (!(geo.strasse.length > geoB.strasse.length)) f.push('keine Fahrbahn in der Bucht');
+    }
+    // Fahrt: Linie bei 80 % des Startteils, Puls nur dort, HUD-Runde an der Linie.
+    const merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : null;
+    let mass = '';
+    try {
+      if (!virtuellStarten({ tiles: codeToTrack('SG3R2G3R2').tiles, studie: true })) return { skip: true, mass: 'virtuelle Fahrt startet hier nicht (kein WebGL?)' };
+      VF.modus = 'practice'; VF.limit = 0;
+      const n = VF.pts.length, k0 = VF.pts.findIndex((q) => q.tile === 0);
+      const imStart = VF.pts.filter((q) => q.tile === 0).length;
+      const anteil = (VF.zielIdx - k0) / imStart;
+      if (!(anteil > 0.74 && anteil < 0.86)) f.push('Linie bei ' + Math.round(anteil * 100) + ' % des Startteils');
+      const geh = (bis) => { let sicher = 0; while (VF.idx !== bis && sicher++ < n + 2) { VF.idx = (VF.idx + 1) % n; const q = VF.pts[VF.idx]; VF.x = q.x; VF.y = q.y; VF.h = q.heading; vfPaket(); } };
+      VF.zielVor = null; vfPaket();
+      if (dashOnMarker) f.push('Puls schon beim Start (mitten in der Runde)');
+      geh((VF.zielIdx - 1 + n) % n);
+      if (dashOnMarker || VF.zielAt) f.push('Puls vor der Linie');
+      geh(VF.zielIdx);
+      if (!dashOnMarker || !VF.zielAt) f.push('kein Puls an der Linie');
+      if (!VF.rundeAb || VF.runden !== 0) f.push('Runde 1 beginnt nicht an der Linie (runden ' + VF.runden + ')');
+      VF.zielAt -= 2 * VF_ZIEL_PULS_MS; vfPaket();
+      if (dashOnMarker) f.push('Puls endet nicht');
+      VF.geist.aufzeichnung = [[0, 0, 0, 0], [1, 0, 0, 0.5], [2, 0, 0, 1]];
+      VF.rundeAb -= 30000;
+      geh((VF.zielIdx + n - 1) % n); geh(VF.zielIdx);
+      if (VF.runden !== 1) f.push('nach einer Runde ' + VF.runden + ' Runden');
+      if (!VF.geist.aktiv || !VF.geist.beste || VF.geist.beste.length !== 3) f.push('Geist faehrt nicht die beste Runde');
+      if (VF.geist.aufzeichnung.length) f.push('Aufzeichnung nicht neu begonnen');
+      // Langsamere Runde: der Geist bleibt bei der besten.
+      VF.geist.aufzeichnung = [[0, 0, 0, 0], [1, 0, 0, 2]];
+      VF.rundeAb -= 60000;
+      geh((VF.zielIdx + n - 1) % n); geh(VF.zielIdx);
+      if (VF.geist.beste.length !== 3) f.push('langsamere Runde ersetzt den Geist');
+      mass = 'Linie ' + Math.round(anteil * 100) + ' %, ' + VF.runden + ' Runden';
+    } finally {
+      if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+      if (merkTab && typeof showTab === 'function') showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : mass };
+  });
   stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto und Farbe', async () => {
     const f = [];
     // Daten: acht Farben plus Original, eindeutige Kennungen, jede Farbe wird gefunden.

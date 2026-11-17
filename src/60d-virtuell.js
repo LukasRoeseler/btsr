@@ -43,10 +43,13 @@
   // menuNavActive() und konsoleMenue() fragen das hier ab. Als Funktionsdeklaration und mit try, weil
   // sie schon gerufen werden kann, bevor VF angelegt ist.
   function vfAktiv() { try { return !!VF.aktiv; } catch (e) { return false; } }
+  // v1.5.84 BESTELLT: "Fallback-Strecke soll eine Boxengasse haben (ersten beiden Geraden nach Start/Ziel kannst du durch
+  // Boxengasse ersetzen)". Balkonia wie in der Challenge (SG2RLGR3...), nur G2 -> B: das Boxenteil ist so lang wie zwei
+  // Geraden, die Form der Strecke bleibt. Die Challenge selbst bleibt unveraendert.
+  const VF_ERSATZ_CODE = 'SBRLGR3LGHLGLJR4G3R2@270';
   function vfTilesWaehlen() {
     if (currentTrackTiles && currentTrackTiles.length >= 3) return currentTrackTiles;
-    const b = (typeof CH_DAUER !== 'undefined') ? CH_DAUER.find((d) => d.id === 'dauer-balkonia') : null;
-    const p = b ? codeToTrack(b.code) : null;
+    const p = codeToTrack(VF_ERSATZ_CODE);
     if (p && p.tiles && p.tiles.length >= 3) {
       currentTrackTiles = p.tiles;
       if (typeof refreshTrackPreview === 'function') refreshTrackPreview();
@@ -181,7 +184,9 @@
       ton: [[46, 78, 32], [72, 106, 44], [104, 116, 58]], maser: [0, 0, 0], kontrast: 0, ringCm: 1, poren: 0, ast: 0, glanz: 0.0 },
   ];
   const VF_ATLAS_B = 2048, VF_ATLAS_H = 1024;   // Bodenatlas (8 MB, mit Mipmaps 10,7 MB)
-  const VF_BAHN_TEX = 1024, VF_BAHN_SPALTE = 256;  // Fahrbahn: 4 Teile nebeneinander (3 gebraucht, 1 Start/Ziel)
+  const VF_BAHN_TEX = 1024, VF_BAHN_SPALTE = 256;
+  // v1.5.84: Ort der Ziellinie auf dem Startteil (Anteil der Laenge in Fahrtrichtung), fuer Textur und Rundenzaehlung.
+  const VF_ZIEL_ANTEIL = 0.8;  // Fahrbahn: 4 Teile nebeneinander (3 gebraucht, 1 Start/Ziel)
   const VF_RAND_B = 256, VF_RAND_H = 1024;       // Randstreifen: blau | rot, 4 Pfeiltakte uebereinander
   const VF_FUGE = 0.07;                          // halbe Steckfuge in Einheiten (zusammen ~1,5 mm)
   const VF_FUGE_FARBE = [0.22, 0.22, 0.23];
@@ -427,8 +432,11 @@
       g.setTransform(pxB, 0, 0, pxL, s * SW, 0);       // ab hier in cm
       if (s === 3) {
         // Start/Ziel wie auf dem Foto: zwei Reihen weisser Kaestchen, versetzt, mit einer Linie dazwischen.
+        // v1.5.84 GEMELDET: "Startgerade hat die Ziellinie an der falschen Stelle (müsste später kommen)". Auf dem
+        // echten Teil liegt sie bei 78-84 % (Mitschnitte, siehe handleDashboardBytes); die Mitte steht jetzt bei
+        // VF_ZIEL_ANTEIL der Laenge, dort zaehlt auch die Runde (vfZielIdx).
         g.fillStyle = 'rgb(226,227,229)';
-        const y0 = 5.2, kb = 0.95, kl = 0.85;
+        const kb = 0.95, kl = 0.85, y0 = 43 * VF_ZIEL_ANTEIL - kl - 0.175;
         for (let x = 0.3; x < 25; x += kb * 2) { g.fillRect(x, y0, kb, kl); g.fillRect(x + kb, y0 + kl + 0.35, kb, kl); }
         g.fillRect(0.3, y0 + kl + 0.08, 24.4, 0.2);
       }
@@ -650,6 +658,72 @@
   function vfViereck(a, e0, e1, e2, e3, c) {
     for (const e of [e0, e1, e2, e0, e2, e3]) a.push(e[0], e[1], e[2], e[3], e[4], c[0], c[1], c[2]);
   }
+  // ---- v1.5.84: BOXENGASSE ----
+  // Das echte Boxenteil (photos/boxengasse.png): doppelte Gerade, rechts (rote Randsteine) eine Bucht, die in den ersten
+  // 20 % weich aufgeht, dann gut eine Fahrbahnhaelfte (VF_BOX_TIEFE x halbe Breite) breit bleibt und in den letzten 20 %
+  // zurueckgeht. In der Bucht weisse Parkstriche, an der Fahrbahnkante eine Punktreihe. Seite wie im Editor (-1 = rechts,
+  // siehe 60-track.js "Pit bulge").
+  const VF_BOX_SEITE = -1, VF_BOX_TIEFE = 1.1, VF_BOX_RAMPE = 0.2;
+  function vfBoxForm(u) {
+    const sm = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+    return u < VF_BOX_RAMPE ? sm(u / VF_BOX_RAMPE) : u > 1 - VF_BOX_RAMPE ? sm((1 - u) / VF_BOX_RAMPE) : 1;
+  }
+  // Je Punkt der Mittellinie: wie weit die Fahrbahn auf der Boxenseite ueber die halbe Breite hinausgeht (Einheiten),
+  // und der Anteil u im Boxenteil (-1 ausserhalb). Abschnitt i gehoert zum Teil pts[i+1].tile (wie vfBahnGeometrie).
+  function vfBoxBucht(pts, tiles) {
+    const n = pts.length, b = new Float32Array(n), u = new Float32Array(n).fill(-1);
+    let i = 0;
+    while (i < n - 1) {
+      const T = pts[i + 1].tile;
+      let j = i;
+      while (j + 1 < n - 1 && pts[j + 2].tile === T) j++;
+      if (tiles[T] && tiles[T].type === TILE_TYPE.PIT) {
+        const acc = [0];
+        for (let k = i; k <= j; k++) acc.push(acc[acc.length - 1] + Math.hypot(pts[k + 1].x - pts[k].x, pts[k + 1].y - pts[k].y));
+        const L = acc[acc.length - 1] || 1;
+        for (let k = i; k <= j + 1; k++) { const uu = acc[k - i] / L; u[k] = uu; b[k] = Math.max(b[k], VF_BOX_TIEFE * TRACK_HALF_W * vfBoxForm(uu)); }
+      }
+      i = j + 1;
+    }
+    return { b, u };
+  }
+  // Parkstriche und Punktreihe als Farb-Dreiecke (6 Zahlen je Ecke, wie die Baeume), knapp ueber der Fahrbahn.
+  // Je Haelfte 8 Striche quer: in der ersten Haelfte von u 0,26 bis 0,47 kuerzer werdend, in der zweiten gespiegelt.
+  function vfBoxStriche(pts, nrm, tiles, bucht) {
+    const a = [], y = 0.02, half = TRACK_HALF_W, w = [0.93, 0.93, 0.93];
+    const B = bucht || vfBoxBucht(pts, tiles), n = pts.length;
+    const quad = (p0, p1, p2, p3) => { for (const e of [p0, p1, p2, p0, p2, p3]) a.push(e[0], y, e[1], w[0], w[1], w[2]); };
+    // Punkt bei Anteil uu in einem Boxenteil (Index-Bereich i0..i1): Ort und Laengsrichtung.
+    const ort = (i0, i1, uu) => {
+      let k = i0;
+      while (k < i1 && B.u[k + 1] < uu) k++;
+      const f = Math.max(0, Math.min(1, (uu - B.u[k]) / ((B.u[k + 1] - B.u[k]) || 1)));
+      const P = pts[k], Q = pts[Math.min(n - 1, k + 1)];
+      const x = P.x + (Q.x - P.x) * f, z = P.y + (Q.y - P.y) * f;
+      const lx = Q.x - P.x, lz = Q.y - P.y, ll = Math.hypot(lx, lz) || 1;
+      return { x, z, lx: lx / ll, lz: lz / ll, nx: nrm[k].x, nz: nrm[k].y };
+    };
+    let i = 0;
+    while (i < n) {
+      if (B.u[i] < 0) { i++; continue; }
+      let j = i;
+      while (j + 1 < n && B.u[j + 1] >= 0 && B.u[j + 1] > B.u[j]) j++;
+      const strich = (uu, laenge) => {
+        const o = ort(i, j, uu), sd = VF_BOX_SEITE, dicke = half * 0.035, mitte = half + half * 0.6 * VF_BOX_TIEFE;
+        const P = (q, l) => [o.x + o.nx * sd * q + o.lx * l, o.z + o.nz * sd * q + o.lz * l];
+        quad(P(mitte - laenge / 2, -dicke), P(mitte + laenge / 2, -dicke), P(mitte + laenge / 2, dicke), P(mitte - laenge / 2, dicke));
+        const pk = half * 0.05, pq = half + half * 0.07;
+        quad(P(pq - pk, -pk), P(pq + pk, -pk), P(pq + pk, pk), P(pq - pk, pk));
+      };
+      for (let k = 0; k < 8; k++) {
+        const t = k / 7, l = half * (0.8 - 0.42 * t);
+        strich(0.26 + 0.21 * t, l);           // erste Haelfte: zur Mitte hin kuerzer
+        strich(0.74 - 0.21 * t, l);           // zweite Haelfte gespiegelt
+      }
+      i = j + 1;
+    }
+    return a;
+  }
   // Fahrbahn und Randsteine aus der Mittellinie. Abschnitt i (Punkt i -> i+1) gehoert zum Teil
   // pts[i+1].tile; Punkt i ist dann die Teilegrenze (trackCenterline legt den letzten Punkt eines Teils
   // auf sein Ende). Fahrbahn: v = 0..1 ueber das Teil, eine zufaellige Spalte (Gebrauchsgrad), zufaellig
@@ -661,6 +735,9 @@
     const rnd = vfZufall(4242 + tiles.length * 31 + Math.round(Math.abs(pts[n - 1].x) * 7));
     const off = (i, d) => [pts[i].x + nrm[i].x * d, pts[i].y + nrm[i].y * d];
     const lerp = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+    // v1.5.84: halbe Breite je Punkt und Seite (Boxenbucht auf VF_BOX_SEITE).
+    const bucht = vfBoxBucht(pts, tiles).b;
+    const hw = (i, sg) => half + (sg === VF_BOX_SEITE ? bucht[i] : 0);
     const teile = [];
     for (let i = 0; i < n - 1; i++) {
       const T = pts[i + 1].tile, l = teile[teile.length - 1];
@@ -681,11 +758,18 @@
         if (fv) { v0 = 1 - v0; v1 = 1 - v1; }
         const a = off(i, half), b = off(i + 1, half), c = off(i + 1, -half), d = off(i, -half);
         vfViereck(strasse, [a[0], 0, a[1], ua, v0], [b[0], 0, b[1], ua, v1], [c[0], 0, c[1], ub, v1], [d[0], 0, d[1], ub, v0], ct);
+        // Boxenbucht: ein Streifen neben der Fahrbahn, die Textur an der Kante gespiegelt (keine Naht).
+        if (bucht[i] > 0 || bucht[i + 1] > 0) {
+          const sd = VF_BOX_SEITE, kante = sd > 0 ? ua : ub, innen = sd > 0 ? ub : ua;
+          const uq = (bb) => kante + (innen - kante) * Math.min(1, bb / (2 * half));
+          const e0 = off(i, sd * half), e1 = off(i + 1, sd * half), f1 = off(i + 1, sd * hw(i + 1, sd)), f0 = off(i, sd * hw(i, sd));
+          vfViereck(strasse, [e0[0], 0, e0[1], kante, v0], [e1[0], 0, e1[1], kante, v1], [f1[0], 0, f1[1], uq(bucht[i + 1]), v1], [f0[0], 0, f0[1], uq(bucht[i]), v0], ct);
+        }
       }
       for (const sg of [1, -1]) {
-        const mitte = (half + kw / 2) * sg, accS = [0];
+        const accS = [0];
         for (let i = tl.i0; i <= tl.i1; i++) {
-          const p = off(i, mitte), q = off(i + 1, mitte);
+          const p = off(i, (hw(i, sg) + kw / 2) * sg), q = off(i + 1, (hw(i + 1, sg) + kw / 2) * sg);
           accS.push(accS[accS.length - 1] + Math.hypot(q[0] - p[0], q[1] - p[1]));
         }
         const Ls = accS[accS.length - 1] || 1, nP = Math.max(1, Math.round(Ls / takt)), k0 = Math.floor(rnd() * 4);
@@ -703,7 +787,7 @@
           if (i === tl.i1) t1 = 1 - f;
           stuecke.push([t0, t1, false]);
           if (i === tl.i1) stuecke.push([t1, 1, true]);
-          const iA = off(i, half * sg), iB = off(i + 1, half * sg), oA = off(i, (half + kw) * sg), oB = off(i + 1, (half + kw) * sg);
+          const iA = off(i, hw(i, sg) * sg), iB = off(i + 1, hw(i + 1, sg) * sg), oA = off(i, (hw(i, sg) + kw) * sg), oB = off(i + 1, (hw(i + 1, sg) + kw) * sg);
           for (const [s0, s1, fuge] of stuecke) {
             if (s1 <= s0) continue;
             const i0 = lerp(iA, iB, s0), i1 = lerp(iA, iB, s1), o0 = lerp(oA, oB, s0), o1 = lerp(oA, oB, s1);
@@ -1786,7 +1870,7 @@
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
         for (const t of radTeile) gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
       } else if (radModell && radModell.teile.length) {
-        const xW = seite * Math.max(r.spur / 2, halbW + 0.12 - 0.5 * r.breite);
+        const xW = seite * vfRadX(r, halbW);
         matrix(vfKette(lage, vfT(xW, r.radius, z), dreh, vfRx(0), vfS(seite * r.breite, 2 * r.radius, 2 * r.radius)));
         gl.bindBuffer(gl.ARRAY_BUFFER, radModell.vbo);
         gl.vertexAttribPointer(SP.ap, 3, gl.FLOAT, false, 32, 0);
@@ -1847,9 +1931,14 @@
   // Gemeinsamer Rad-Modell-Fallback: die echten Rad-Teile der Vulture V5.R (mit Texturen),
   // damit auch Modelle ohne eigene Rad-Geometrie die gleichen Raeder zeigen.
   let vfRadModell = null;
+  // v1.5.84 GEMELDET: "Räder der virtuellen Autos fixen: sie haben entweder keine, oder die stehen zu weit nach außen
+  // ab". Jede Fahrt hat einen NEUEN Grafikkontext (eigene Leinwand); die Puffer des Radmodells gehoeren aber dem
+  // Kontext, in dem sie gebaut wurden. Bis 1.5.83 galt das Radmodell der ersten Fahrt fuer immer: ab der zweiten Fahrt
+  // hatten FMC GT4, Boxer 96 und Lynx 220 (ohne eigene Raeder) keine. Jetzt je Kontext.
   function vfRadModellBauen(gl) {
-    if (vfRadModell) return vfRadModell;
-    vfRadModell = vfModellDaten('img/autos/v5r/').then((daten) => {
+    if (vfRadModell && vfRadModell.gl === gl) return vfRadModell.p;
+    vfRadModell = { gl, p: null };
+    vfRadModell.p = vfModellDaten('img/autos/v5r/').then((daten) => {
       const teile = daten.meta.teile.filter((t) => t.gruppe === 'rad');
       const vbo = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
@@ -1861,8 +1950,11 @@
       teile.forEach((t) => { if (!tex[t.tex]) tex[t.tex] = vfTextur(gl, 'img/autos/v5r/' + t.tex); });
       return { vbo, ibo, teile, tex };
     });
-    return vfRadModell;
+    return vfRadModell.p;
   }
+  // Abstand der Radmitte zur Mitte des Autos (m, Modellmass) fuer die geliehenen Raeder: halbe Spur, aber der Reifen
+  // bleibt mit seiner Aussenkante hoechstens 3 cm innerhalb der Karosserie-Flanke sichtbar.
+  function vfRadX(r, halbW) { return Math.max(r.spur / 2, Math.min(halbW - 0.03 - 0.5 * r.breite, r.spur / 2 + 0.06)); }
   function vfTextur(gl, url, rgba) {
     const tx = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tx);
@@ -1944,34 +2036,82 @@
     const tile = roh >= 0 ? roh : (VF.kachel >= 0 ? VF.kachel : 0);
     if (tile !== VF.kachel) {
       if (VF.kachel !== -2) VF.zaehler = (VF.zaehler + 1) & 0xff;
-      const vorher = VF.kachel;
       VF.kachel = tile;
-      // Eigene Rundenanzeige fuer die Kopfzeile (die Zeitnahme selbst laeuft in der App).
-      if (vorher !== -2 && VF.tiles[tile] && VF.tiles[tile].type === TILE_TYPE.START && !VF.abseits) {
-        const jetzt = rennZeitJetzt();
-        if (VF.rundeAb) {
-          VF.letzte = jetzt - VF.rundeAb;
-          // Delta (HUD): die Zwischenzeiten der besten Runde je Punkt der Mittellinie.
-          if (VF.beste === null || VF.letzte < VF.beste) { VF.beste = VF.letzte; VF.besteSplits = VF.splits; }
-          // Nach der ersten Runde beginnt der Geist, die aufgezeichnete Linie abzufahren.
-          if (VF.geist && !VF.geist.aktiv) { VF.geist.aktiv = true; VF.geist.zeit = 0; VF.geist.i = 0; }
-          // Rundenrennen: nach der Ziel-Lap ist Schluss.
-          VF.runden = (VF.runden || 0) + 1;
-          if (VF.modus === 'laps' && VF.runden >= VF.limit) vfRennenEnde();
-          // Time Attack wertet hier NICHT: die Runde laeuft ueber onCarNotify in die Zeitnahme der App,
-          // und 70-race.js ruft dort bestzeitRunde/bestzeitMeldung (bis 1.3.131 doppelt, mit der
-          // Rundenzahl als Spielernummer "P3: ...").
-        }
-        VF.rundeAb = jetzt;
-        VF.splits = [];
-      }
+    }
+    // v1.5.84 GEMELDET: "Rundenzeitenmessung und Ansage ist verbuggt und startet dann mittendrin". Bis 1.5.83 stand
+    // Byte 15 Bit 3 (Ziellinie) in JEDEM Paket. Die App wertet nur die steigende Flanke (handleDashboardBytes): sie sah
+    // die "Linie" also im ersten Paket, wo immer das Auto stand, und danach nur nach jedem Abflug, mitten in der Runde.
+    // Seit sie die Linie einmal gesehen hatte, zaehlte der Barcode des Startteils nicht mehr. Jetzt meldet das Auto die
+    // Linie wie das echte: ein Puls von VF_ZIEL_PULS_MS ab dem Ueberqueren der gezeichneten Linie (VF.zielIdx).
+    const jetzt = rennZeitJetzt();
+    if (VF.zielVor === undefined || VF.zielVor === null) VF.zielVor = VF.idx;
+    const ueber = vfZielUeberquert(VF.zielVor, VF.idx, VF.zielIdx, VF.pts.length);
+    VF.zielVor = VF.idx;
+    if (ueber < 0) VF.zielRueck = (VF.zielRueck || 0) + 1;          // rueckwaerts ueber die Linie: die naechste zaehlt nicht
+    else if (ueber > 0 && VF.zielRueck) VF.zielRueck--;
+    else if (ueber > 0 && !VF.abseits) {
+      VF.zielAt = jetzt;
+      vfRundeAnLinie(jetzt);
     }
     const b = new Uint8Array(19);
     b[0] = 0xaf; b[2] = 0x9c; b[10] = 100;
     b[11] = VF.zaehler;
     b[12] = VF.abseits ? TILE_OFFTRACK : vfCode(VF.tiles[tile] ? VF.tiles[tile].type : TILE_TYPE.STRAIGHT);
-    b[15] = VF.abseits ? 0 : 0x08;
+    b[15] = (!VF.abseits && VF.zielAt && jetzt - VF.zielAt < VF_ZIEL_PULS_MS) ? 0x08 : 0;
     try { onCarNotify(VF.car, { target: { value: new DataView(b.buffer) } }); } catch (e) { /* weiter */ }
+  }
+
+  // ---- v1.5.84: ZIELLINIE ----
+  // Wie lange das Auto die Linie meldet (das echte haelt das Bit rund 1 s, Mitschnitte 13.-21.08.).
+  const VF_ZIEL_PULS_MS = 1000;
+  // Der Punkt der Mittellinie, an dem die Ziellinie liegt: VF_ZIEL_ANTEIL der Punkte des Startteils (Punkte liegen
+  // auf einer Geraden gleichmaessig). Ohne Startteil der erste Punkt.
+  function vfZielIdx(pts, tiles) {
+    const k = tiles.findIndex((tl) => tl && tl.type === TILE_TYPE.START);
+    if (k < 0) return 0;
+    const ix = [];
+    pts.forEach((p, i) => { if (p.tile === k) ix.push(i); });
+    if (!ix.length) return 0;
+    return ix[Math.min(ix.length - 1, Math.round(VF_ZIEL_ANTEIL * ix.length))];
+  }
+  // Von Punkt vor nach Punkt nach: 1 = vorwaerts ueber die Linie, -1 = rueckwaerts, 0 = nicht. Die Linie gilt als
+  // ueberquert, wenn nach den Linienpunkt erreicht oder passiert (vor liegt davor). Mehr als eine halbe Runde Sprung
+  // gilt als rueckwaerts.
+  function vfZielUeberquert(vor, nach, ziel, n) {
+    if (!(n > 0) || vor === nach) return 0;
+    const weg = ((nach - vor) % n + n) % n;
+    if (weg <= n / 2) { const bis = ((ziel - vor) % n + n) % n; return (bis > 0 && bis <= weg) ? 1 : 0; }
+    const zur = n - weg, bisZ = ((vor - ziel) % n + n) % n;   // rueckwaerts: von vor zurueck bis ziel
+    return bisZ < zur ? -1 : 0;
+  }
+  // Was an der Linie fuer die Kopfzeile passiert (die Zeitnahme selbst laeuft in der App, ueber den Puls).
+  function vfRundeAnLinie(jetzt) {
+    if (VF.rundeAb) {
+      VF.letzte = jetzt - VF.rundeAb;
+      // Delta (HUD): die Zwischenzeiten der besten Runde je Punkt der Mittellinie.
+      const best = VF.beste === null || VF.letzte < VF.beste;
+      if (best) { VF.beste = VF.letzte; VF.besteSplits = VF.splits; }
+      vfGeistRunde(best);
+      // Rundenrennen: nach der Ziel-Lap ist Schluss.
+      VF.runden = (VF.runden || 0) + 1;
+      if (VF.modus === 'laps' && VF.runden >= VF.limit) vfRennenEnde();
+      // Time Attack wertet hier NICHT: die Runde laeuft ueber onCarNotify in die Zeitnahme der App,
+      // und 70-race.js ruft dort bestzeitRunde/bestzeitMeldung (bis 1.3.131 doppelt, mit der
+      // Rundenzahl als Spielernummer "P3: ...").
+    } else vfGeistRunde(false);
+    VF.rundeAb = jetzt;
+    VF.splits = [];
+  }
+  // v1.5.84: Der Geist faehrt die BESTE Runde, von Linie zu Linie, und startet an jeder Linie neu mit dem Auto.
+  // Bis 1.5.83 nahm er die Fahrt vom Start bis zum Ende der ersten vollen Runde (mit Anlauf) und lief dann in
+  // Schleife, also bald neben der Runde des Fahrers her.
+  function vfGeistRunde(best) {
+    const g = VF.geist;
+    if (!g) return;
+    if (best && g.aufzeichnung.length > 1) g.beste = g.aufzeichnung;
+    g.aufzeichnung = []; g.t = 0;
+    g.zeit = 0; g.i = 0;
+    g.aktiv = !!(g.beste && g.beste.length > 1);
   }
 
   // ---- v1.5 (Plan Paket 4, Quality): BILDRATEN-WACHE ----
@@ -2065,17 +2205,15 @@
       VF.x += Math.sin(rich) * vE * dt;
       VF.y -= Math.cos(rich) * vE * dt;
     }
-    // Geist: die erste Runde wird aufgezeichnet, danach faehrt eine Kopie diese Linie ab.
+    // Geist: jede Runde wird von Linie zu Linie aufgezeichnet; die beste faehrt als Kopie mit (vfGeistRunde).
     if (VF.geist) {
       const g = VF.geist;
-      if (!g.aktiv) {
-        g.aufzeichnung.push([VF.x, VF.y, VF.h, g.t]);
-        g.t += dt;
-      } else if (g.an && g.aufzeichnung.length > 1) {
+      if (VF.rundeAb && g.aufzeichnung.length < 20000) { g.aufzeichnung.push([VF.x, VF.y, VF.h, g.t]); g.t += dt; }
+      if (g.aktiv && g.an && g.beste && g.beste.length > 1) {
         g.zeit += dt;
-        const a = g.aufzeichnung;
+        const a = g.beste;
         const total = a[a.length - 1][3];
-        const t = total > 0 ? (g.zeit % total) : 0;
+        const t = Math.min(g.zeit, total);
         while (g.i < a.length - 2 && a[g.i + 1][3] <= t) g.i++;
         while (g.i > 0 && a[g.i][3] > t) g.i--;
         const p0 = a[g.i], p1 = a[g.i + 1];
@@ -2098,14 +2236,16 @@
     const o = vfOrt(VF.pts, VF.nrm, VF.x, VF.y, VF.idx);
     VF.idx = o.idx;
     if (VF.splits && VF.splits[VF.idx] === undefined) VF.splits[VF.idx] = rennZeitJetzt() - VF.rundeAb;
-    const ab = Math.abs(o.quer) > TRACK_HALF_W * 1.19 + VF_AUTO.B * 0.3;
+    // v1.5.84: in der Boxenbucht ist die Fahrbahn auf der Boxenseite breiter.
+    const bucht = (VF.boxBucht && o.quer * VF_BOX_SEITE > 0) ? VF.boxBucht.b[o.idx] : 0;
+    const ab = Math.abs(o.quer) > TRACK_HALF_W * 1.19 + bucht + VF_AUTO.B * 0.3;
     if (ab && !VF.abseits) VF.abseitsSeit = rennZeitJetzt();
     VF.abseits = ab;
     // Randstein (v1.2.62): der erhabene Stein links/rechts der Fahrbahn. Faehrt das Auto mit dem
     // Rand ueber ihn, rattert es und der Controller brummt.
     const q = Math.abs(o.quer);
     const kerbRand = TRACK_HALF_W * 2 * 0.095;
-    const kerb = !ab && q > TRACK_HALF_W - VF_AUTO.B * 0.5 && q < TRACK_HALF_W + kerbRand;
+    const kerb = !ab && q > TRACK_HALF_W + bucht - VF_AUTO.B * 0.5 && q < TRACK_HALF_W + bucht + kerbRand;
     if (kerb && Math.abs(kmh) > 0.05) {
       if (VF.kerbSeit === undefined || rennZeitJetzt() - VF.kerbSeit > 70) {
         VF.kerbSeit = rennZeitJetzt();
@@ -2422,12 +2562,18 @@
       gl.vertexAttribPointer(L.c, 3, gl.FLOAT, false, 24, 12);
       gl.drawArrays(gl.TRIANGLES, 0, pu.n);
     };
+    if (VF.boxStriche) {
+      zeichne(VF.boxStriche, VF_EINS);
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
     // v1.5: Baeume (nur auf Rasen), vor den Autos.
     if (VF.baeume) {
       zeichne(VF.baeume, VF_EINS);
       gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
     }
-    if (VF.geist && VF.geist.aktiv) {
+    const geistDa = !!(VF.geist && VF.geist.aktiv && VF.geist.an);
+    // Ohne Modell (Kasten gewaehlt oder Modell noch nicht geladen) bleibt der blaue Kasten als Geist.
+    if (geistDa && !(VF.modell && VF.tprog)) {
       if (!VF.geistAuto) VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
       gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.uniform1f(L.alf, 0.45);
@@ -2451,6 +2597,8 @@
           !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, k.auge);
       }
     }
+    // v1.5.84: der Geist als durchscheinende Kopie des gewaehlten Autos, nach allen undurchsichtigen Autos.
+    if (geistDa && VF.modell && VF.tprog) vfGeistMalen(gl, pv, blick, k.auge);
     // v1.5 (Quality): Bloom auf das fertige Bild, vor dem Regen. Scheitert er einmal, bleibt er fuer die Fahrt aus.
     if (vfBloomAn()) { try { vfBloomMalen(gl, w, h); } catch (e) { VF.bloomKaputt = true; VF.bloom = null; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h); log('Virtuell: Bloom aus (' + e.message + ').', 'info'); } }
     // v1.5.19: Regen zuletzt (durchsichtig, ohne Tiefe zu schreiben).
@@ -2950,6 +3098,28 @@
     VF.kam = VF.kam ? VF.kam.map((q, i) => q + (soll[i] - q) * a) : soll;
     return { auge: VF.kam, ziel: k.ziel, fov: nah ? 58 : 54, nah: 0.5 };
   }
+  // v1.5.84 BESTELLT: "Ghostcar sollte wie das ausgewählte Auto aussehen". Dasselbe Modell mit derselben Lackfarbe,
+  // durchscheinend (VF_GEIST_ALPHA), ohne Licht, Bodenschatten und Federung. Zwei Durchgaenge: erst nur die Tiefe, dann
+  // die Farbe mit Tiefe <= gleich, so sieht man nur die vorderste Flaeche des Geists und nicht sein Inneres.
+  const VF_GEIST_ALPHA = 0.42;
+  let vfGeistA = 0;
+  function vfGeistMalen(gl, pv, blick, auge) {
+    const g = VF.geist;
+    const malen = () => vfModellZeichnen(gl, pv, blick, VF.modell, VF.tprog, g.x, g.y, g.h, null, 0, VF.raddreh, VF.radModell,
+      false, false, 1, 0, auge, vfLack());
+    vfGeistA = VF_GEIST_ALPHA;
+    try {
+      gl.colorMask(false, false, false, false);
+      malen();
+      gl.colorMask(true, true, true, true);
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.depthMask(false); gl.depthFunc(gl.LEQUAL);
+      malen();
+    } finally {
+      vfGeistA = 0;
+      gl.colorMask(true, true, true, true); gl.depthFunc(gl.LESS); gl.depthMask(true); gl.disable(gl.BLEND);
+    }
+  }
   function vfModellMalen(gl, pv, blick, auge) {
     vfModellZeichnen(gl, pv, blick, VF.modell, VF.tprog, VF.x, VF.y, VF.h, VF.feder, VF.lenkWinkel, VF.raddreh, VF.radModell,
       (typeof headlightsOn === 'undefined' ? true : !!headlightsOn),
@@ -3002,7 +3172,7 @@
       for (let i = 0; i < 9; i++) T.f9[i] = nm[i];
       gl.uniformMatrix3fv(u.nm, false, T.f9);
       gl.uniform3f(u.tint, tint[0], tint[1], tint[2]); gl.uniform1f(u.emis, emis);
-      gl.uniform1f(u.alpha, alpha); gl.uniform1f(u.am, am); gl.uniform1f(u.licht, hell); gl.uniform1f(u.lack, lackF || 0);
+      gl.uniform1f(u.alpha, vfGeistA ? alpha * vfGeistA : alpha); gl.uniform1f(u.am, am); gl.uniform1f(u.licht, hell); gl.uniform1f(u.lack, lackF || 0);
       if (T.qual) { gl.uniform1f(u.klar, klar || 0); gl.uniform1f(u.glas, glas || 0); }
     };
     const teil = (t) => {
@@ -3026,8 +3196,8 @@
       gl.drawArrays(gl.TRIANGLES, 0, ecken.length);
     };
     const ort = (w, p) => [w[0] * p[0] + w[4] * p[1] + w[8] * p[2] + w[12], w[1] * p[0] + w[5] * p[1] + w[9] * p[2] + w[13], w[2] * p[0] + w[6] * p[1] + w[10] * p[2] + w[14]];
-    // 1. Schatten unter dem Auto (Boden, nicht mitgeneigt)
-    if (M.schatten) {
+    // 1. Schatten unter dem Auto (Boden, nicht mitgeneigt); der Geist wirft keinen.
+    if (M.schatten && !vfGeistA) {
       gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
       // v1.3.124: mit echter Schattenkarte wird der Blob ein kleiner Kontaktschatten direkt am Auto.
       const kd = hatSch ? 0.5 : 1;
@@ -3066,9 +3236,9 @@
         // Fallback: die echten Rad-Teile der Vulture V5.R (mit Reifen-/Felgen-Textur).
         const radM = radModell;
         if (radM && radM.teile.length) {
-          // Das Rad so weit nach aussen, dass es neben der Karosserie sichtbar bleibt (manche Modelle
-          // haben eine schmalere Spur und wuerden das Rad sonst verstecken).
-          const xW = seite * Math.max(r.spur / 2, halbW + 0.12 - 0.5 * r.breite);
+          // Mitte des Rads auf der halben Spur; bis 1.5.83 so weit nach aussen, dass es 12 cm UEBER die Karosserie
+          // ragte (GEMELDET "stehen zu weit nach außen ab"). Jetzt endet der Reifen hoechstens 3 cm innerhalb der Flanke.
+          const xW = seite * vfRadX(r, halbW);
           const wF = vfKette(lage, vfT(xW, r.radius * (1 - q), z), dreh, quetsch, vfRx(raddreh || 0),
             vfS(seite * r.breite, 2 * r.radius, 2 * r.radius));
           setze(wF, [1, 1, 1], 0, 1, 0, 1, 0.2, 0);
@@ -3389,6 +3559,12 @@
     // Kamera "Fahrer am Rand".
     try { VF.flaeche = vfFlaechenBauen(gl, VF.pts, VF.nrm, tiles, VF.grafik); } catch (e) { schicht.remove(); document.body.classList.remove('vf-an'); showHudToast('WebGL: ' + e.message); return false; }
     // v1.5: Baeume in der Ferne, nur auf Rasen (ein Puffer, 6 Zahlen je Ecke wie die Farbmodelle).
+    // v1.5.84: Boxenbucht je Punkt (Abseits, Randstein) und die Parkstriche.
+    VF.boxBucht = vfBoxBucht(VF.pts, tiles); VF.boxStriche = null;
+    try {
+      const S = vfBoxStriche(VF.pts, VF.nrm, tiles, VF.boxBucht);
+      if (S.length) { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(S), gl.STATIC_DRAW); VF.boxStriche = { b, n: S.length / 6 }; }
+    } catch (e) { VF.boxStriche = null; }
     VF.baeume = null;
     if (VF.flaeche && VF.flaeche.art && VF.flaeche.art.art === 'rasen') {
       try { const B = vfBaeumeBauen(VF.pts); const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(B.daten), gl.STATIC_DRAW); VF.baeume = { b, n: B.daten.length / 6 }; } catch (e) { VF.baeume = null; }
@@ -3414,7 +3590,7 @@
     VF.car = car;
     VF.auto = vfAutoBauen(gl, vfHex(carColor(car).hex));
     VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
-    VF.geist = { an: vfGeistAn(), aufzeichnung: [], aktiv: false, zeit: 0, t: 0, i: 0, x: 0, y: 0, h: 0 };
+    VF.geist = { an: vfGeistAn(), aufzeichnung: [], beste: null, aktiv: false, zeit: 0, t: 0, i: 0, x: 0, y: 0, h: 0 };
     VF.modell = null; VF.P = vfHandlingProfil(VF_GT3); VF.feder = null; VF.raddreh = 0;
     VF.tyreTemp = 0;   // v1.3.5: jede Fahrt beginnt mit kalten Reifen (vorher blieb die alte Temperatur stehen)
     VF.tempoFaktor = vfTempoFaktor();
@@ -3435,6 +3611,7 @@
     // Start eine halbe Kachel vor Start/Ziel, in Fahrtrichtung.
     const s = Math.max(0, VF.pts.findIndex((p) => p.tile >= 0 && tiles[p.tile] && tiles[p.tile].type === TILE_TYPE.START));
     const start = ((s - Math.round(TRACK_SAMPLES_PER_TILE / 2)) % VF.pts.length + VF.pts.length) % VF.pts.length;
+    VF.zielIdx = vfZielIdx(VF.pts, tiles); VF.zielVor = null; VF.zielRueck = 0; VF.zielAt = 0;
     Object.assign(VF, { x: VF.pts[start].x, y: VF.pts[start].y, h: VF.pts[start].heading, idx: start, zaehler: 0, kachel: -2,
                         abseits: false, letzt: 0, kam: null, rundeAb: 0, letzte: null, beste: null, aktiv: true,
                         startX: VF.pts[start].x, startY: VF.pts[start].y, startH: VF.pts[start].heading });
@@ -3841,7 +4018,7 @@
     // Tempo (und der Gang) der virtuellen Fahrt, bis das echte Auto sich bewegte.
     if (typeof physEngine !== 'undefined' && physEngine && typeof physEngine.reset === 'function') physEngine.reset();
     if (VF.schicht) VF.schicht.remove();
-    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.stick = null; VF.tasten = {};
+    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.boxStriche = null; VF.boxBucht = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.stick = null; VF.tasten = {};
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
     // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).
