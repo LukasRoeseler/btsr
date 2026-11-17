@@ -3419,6 +3419,12 @@
   .gar-a-rolle.is-safety .gk-rolle { background: #f5c400; color: #1a1500; }
   .gar-a-rolle.is-ghost .gk-rolle button, .gar-a-rolle.is-player .gk-rolle button { color: inherit; }
   .gar-a-aktion > button { width: 100%; text-align: left; }
+  /* v1.5.86: die Knoepfe unter den Autos eng im Raster (zwei Spalten), nicht je eine Zeile mit Abstand. */
+  .gar-a-knoepfe { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; flex-shrink: 0; }
+  .gar-a-knoepfe > .opt-row { padding: 0; margin: 0; border: 0; min-height: 0; background: none; }
+  .gar-a-knoepfe > .opt-row[hidden] { display: none; }
+  .gar-a-knoepfe > .gar-a-voll { grid-column: 1 / -1; margin-bottom: 2px; }
+  .gar-a-knoepfe > .opt-row > button { min-height: 36px; padding: 6px 10px; font-size: 14px; line-height: 1.15; height: 100%; }
   /* v0.9.24: die Knoepfe ganz unten groesser (Motorsound steht jetzt nur noch hier). */
   .gar-a-rechts .gar-a-aktion > button { min-height: 50px; font-size: clamp(14px, 1.8vw, 17px);
     padding: 12px 16px; letter-spacing: .04em; }
@@ -5688,7 +5694,8 @@
   body[data-cockpit="acc"] #race-dash #race-ovscreen > .ov-nochmal[hidden] { display: none; }
   /* v1.5.10: Vorschau und Lackfarbe im Virtuell-Fenster der Garage (WIP) */
   .vf-vorschau { justify-content: center; padding: 6px 0; }
-  .vf-vorschau-bild { width: 100%; max-width: 420px; height: auto; border-radius: 6px; display: block; background: #3a3f46; }
+  /* v1.5.86 BESTELLT: "Bild vom Auto kleiner machen". Hoehe nach dem Fenster begrenzt, Seitenverhaeltnis bleibt. */
+  .vf-vorschau-bild { width: auto; max-width: min(100%, 300px); max-height: clamp(100px, 22vh, 170px); height: auto; border-radius: 6px; display: block; background: #3a3f46; }
   .vf-lack-palette { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
   .vf-lack { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); cursor: pointer; }
   .vf-lack.aktiv { border-color: #fff; box-shadow: 0 0 0 2px rgba(0,160,230,.9); }
@@ -5875,7 +5882,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.85</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.89</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7165,6 +7172,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Garage aufger&#228;umt: Die Kn&#246;pfe unter den Autos (Alle trennen, Zum Cockpit, Virtuell fahren, Onboard-Kamera, Showroom, Zweiter Laptop) stehen jetzt eng in zwei Spalten, man muss kaum noch scrollen. Das Vorschaubild des virtuellen Autos ist kleiner. Beim virtuellen Fahren gibt es oben einen Knopf &#8222;Wetter&#8220;: er schaltet sofort zwischen trocken und Regen um und leuchtet, solange es regnet.</li>
         <li>Virtuell fahren, Fehler behoben: Die Ziellinie sitzt jetzt wie auf dem echten Teil hinten auf der Startgeraden, und genau dort wird die Runde gemessen und angesagt (bisher startete die Zeitnahme irgendwo mitten in der Runde und dann erst wieder nach einem Abflug). Die R&#228;der von FMC GT4, Boxer 96 und Lynx 220 fehlen ab der zweiten Fahrt nicht mehr und stehen nicht mehr &#252;ber die Karosserie hinaus. Der Geist ist jetzt das gew&#228;hlte Auto in seiner Lackfarbe (durchscheinend) und f&#228;hrt deine beste Runde, von Linie zu Linie. Die Ersatzstrecke Balkonia hat nach Start/Ziel eine Boxengasse mit Bucht und Parkstrichen wie das echte Teil.</li>
         <li>Virtuell fahren: neuer Boden &#8222;Rasen&#8220;, jetzt der Standard, mit B&#228;umen rund um die Strecke, die in der Ferne im Dunst verschwimmen. Der Himmel hat ziehende Wolken (im Regen dichter und grauer) und einen Schein um die Sonne. Alles selbst gebaut, passend zur eingestellten Tageszeit. Die Kachel &#8222;Virtuell fahren&#8220; im FAHREN-Men&#252; sieht jetzt aus wie die Startkachel.</li>
         <li>FAHREN: Neben &#8222;Rennen starten&#8220; (jetzt zwei Drittel so breit) steht die Kachel &#8222;Virtuell fahren&#8220; (WIP). Sie startet die virtuelle Fahrt sofort mit den Renneinstellungen. Auf der Garagenkachel zeigen kleine Symbole, wenn ein zweiter Laptop oder die Onboard-Kamera verbunden ist. Showroom: Auf dem Handy gl&#228;nzen die Sammelkarten beim Neigen des Telefons.</li>
@@ -17425,6 +17433,7 @@
     "virtuell": "virtual",
     "Virtuell fahren: neuer Boden „Rasen“, jetzt der Standard, mit Bäumen rund um die Strecke, die in der Ferne im Dunst verschwimmen. Der Himmel hat ziehende Wolken (im Regen dichter und grauer) und einen Schein um die Sonne. Alles selbst gebaut, passend zur eingestellten Tageszeit. Die Kachel „Virtuell fahren“ im FAHREN-Menü sieht jetzt aus wie die Startkachel.": "Virtual driving: new ground “Grass”, now the default, with trees around the track that fade into the haze in the distance. The sky has drifting clouds (denser and greyer in rain) and a glow around the sun. All built in-house, matching the chosen time of day. The “Drive virtually” tile in the DRIVE menu now looks like the start tile.",
     "Virtuell fahren, Fehler behoben: Die Ziellinie sitzt jetzt wie auf dem echten Teil hinten auf der Startgeraden, und genau dort wird die Runde gemessen und angesagt (bisher startete die Zeitnahme irgendwo mitten in der Runde und dann erst wieder nach einem Abflug). Die Räder von FMC GT4, Boxer 96 und Lynx 220 fehlen ab der zweiten Fahrt nicht mehr und stehen nicht mehr über die Karosserie hinaus. Der Geist ist jetzt das gewählte Auto in seiner Lackfarbe (durchscheinend) und fährt deine beste Runde, von Linie zu Linie. Die Ersatzstrecke Balkonia hat nach Start/Ziel eine Boxengasse mit Bucht und Parkstrichen wie das echte Teil.": "Virtual driving, fixes: the finish line now sits near the end of the start straight like on the real piece, and that is exactly where the lap is timed and announced (until now timing started somewhere mid-lap and then only after going off track). The wheels of the FMC GT4, Boxer 96 and Lynx 220 no longer disappear from the second drive on and no longer stick out past the body. The ghost is now the chosen car in its paint colour (see-through) and drives your best lap, line to line. The fallback track Balkonia has a pit lane after start/finish with a bay and parking stripes like the real piece.",
+    "Garage aufgeräumt: Die Knöpfe unter den Autos (Alle trennen, Zum Cockpit, Virtuell fahren, Onboard-Kamera, Showroom, Zweiter Laptop) stehen jetzt eng in zwei Spalten, man muss kaum noch scrollen. Das Vorschaubild des virtuellen Autos ist kleiner. Beim virtuellen Fahren gibt es oben einen Knopf „Wetter“: er schaltet sofort zwischen trocken und Regen um und leuchtet, solange es regnet.": "Garage tidied up: the buttons below the cars (Disconnect all, To the cockpit, Drive virtually, Onboard camera, Showroom, Second laptop) now sit close together in two columns, so there is hardly any scrolling. The preview image of the virtual car is smaller. In virtual driving there is a “Weather” button at the top: it switches between dry and rain at once and lights up while it rains.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -44767,6 +44776,18 @@
     }
     return fehlt;
   }
+  // v1.5.86 BESTELLT: "Virtuelles-Fahren: Oben Knopf für Wetter einfügen". Schaltet sofort zwischen trocken und Regen
+  // (die Regenfront zieht wie gewohnt auf bzw. ab). Ein von Hand gesetztes Wetter gilt: geplante Wechsel ("Wechselhaft",
+  // "Wetter ändert sich") fallen fuer diese Fahrt weg. Beim Beenden kommt das Wetter von vorher zurueck
+  // (vfRennEinstellungenZurueck). Der Knopf ist hell, solange es regnet.
+  function vfWetterKnopf() {
+    if (typeof setWeather !== 'function' || typeof weather === 'undefined') return;
+    const neu = weather === 'rain' ? 'dry' : 'rain';
+    if (VF.wxWechsel) { if (typeof wxWechselAt !== 'undefined') wxWechselAt = null; VF.wxWechsel = false; }
+    VF.wxEinmalAt = null;
+    setWeather(neu);
+    showHudToast(t('Wetter') + ': ' + t(neu === 'rain' ? 'Regen' : 'Trocken'));
+  }
   function vfRennEinstellungenZurueck() {
     if (VF.wxWechsel) { if (typeof wxWechselAt !== 'undefined') wxWechselAt = null; VF.wxWechsel = false; }
     VF.wxEinmalAt = null;
@@ -45714,10 +45735,17 @@
               modus: q('.vf-modus'), abseits: q('.vf-abseits'), acc: q('.vf-acc'), tempo: q('.vf-acc .vf-tempo'), gang: q('.vf-gang'),
               rpm: q('.vf-rpm'), reifen: Array.from(schicht.querySelectorAll('.vf-reifen > i')), tank: q('.vf-tank'), tankBar: q('.vf-tank-bar > i'),
               dreh: q('.vf-dreh-stab'), kamFrei: q('.vf-kamfrei'), alt: {} };
+    VF.wetterKnopf = q('[data-vf="wetter"]'); VF.wetterNass = null;
   }
   function vfHud() {
     const u = VF.ui;
     if (!u) return;
+    // Wetter-Knopf hell, solange es regnet (auch nach einem geplanten Wechsel).
+    const wk = VF.wetterKnopf;
+    if (wk) {
+      const nass = typeof weather !== 'undefined' && weather === 'rain';
+      if (VF.wetterNass !== nass) { VF.wetterNass = nass; wk.classList.toggle('vf-an', nass); wk.setAttribute('aria-pressed', nass ? 'true' : 'false'); }
+    }
     const A = u.alt, st = physEngine.state;
     const txt = (el, key, v) => { if (A[key] !== v) { A[key] = v; el.textContent = v; } };
     const kmh = Math.round(Math.abs(st.speedKmh || 0) * TACHO_SCALE * (VF.tempoFaktor || 1));   // wie im Cockpit (race-speed)
@@ -45911,7 +45939,7 @@
       + '<div class="vf-acc-werte"><div class="vf-acc-wert"><b class="vf-tempo"></b>' + lbl('km/h') + '</div>'
       + '<b class="vf-gang"></b><div class="vf-acc-wert"><b class="vf-rpm"></b>' + lbl('1/min') + '</div></div></div>'
       + '<div class="vf-kachel vf-acc-tank">' + lbl(t('Tank')) + '<b class="vf-tank"></b><i class="vf-tank-bar"><i></i></i></div></div>'
-      + '<div class="vf-knoepfe"><button type="button" data-vf="box">' + t('Box') + '</button><button type="button" data-vf="flag">' + t('Gelbe Flagge') + '</button><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="kam">' + t('Kamera') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button><button type="button" data-vf="touch" hidden>' + t('Steuerung') + '</button>'
+      + '<div class="vf-knoepfe"><button type="button" data-vf="box">' + t('Box') + '</button><button type="button" data-vf="flag">' + t('Gelbe Flagge') + '</button><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="wetter">' + t('Wetter') + '</button><button type="button" data-vf="kam">' + t('Kamera') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button><button type="button" data-vf="touch" hidden>' + t('Steuerung') + '</button>'
       + '<button type="button" data-vf="zu" aria-label="' + t('Beenden') + '">&#10005;</button></div>'
       + '<span class="vf-kamfrei" hidden data-i18n-skip>' + t('Kamera frei') + ' · R3 / V: ' + t('Standard') + ' <span class="wip-tag">WIP</span></span>'
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>'
@@ -46032,6 +46060,7 @@
         if (typeof flagState !== 'undefined' && flagState === 'green') { if (typeof setFlag === 'function') setFlag('yellow'); }
         else if (typeof yellowRestart === 'function') yellowRestart();
       }
+      else if (b.dataset.vf === 'wetter') vfWetterKnopf();
       else if (b.dataset.vf === 'licht') {
         // Dasselbe wie Dreieck im Cockpit: der Schalter im Armaturenbrett bleibt gleich.
         headlightsOn = !headlightsOn;
@@ -46418,7 +46447,7 @@
     // Tempo (und der Gang) der virtuellen Fahrt, bis das echte Auto sich bewegte.
     if (typeof physEngine !== 'undefined' && physEngine && typeof physEngine.reset === 'function') physEngine.reset();
     if (VF.schicht) VF.schicht.remove();
-    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.boxStriche = null; VF.boxBucht = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.stick = null; VF.tasten = {};
+    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.boxStriche = null; VF.boxBucht = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.wetterKnopf = null; VF.stick = null; VF.tasten = {};
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
     // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).
@@ -69668,10 +69697,15 @@
     plusKnopf.textContent = '+ ' + t('Auto verbinden');
     plusKnopf.onclick = () => { const c = $('gar-connect'); if (c) c.click(); };
     plus.appendChild(plusKnopf);
-    links.appendChild(plus);
+    // v1.5.86 BESTELLT: "Garage Buttons unten näher zusammentun, damit ich nicht so viel scrollen muss". Die Knoepfe
+    // unter "+ Auto verbinden" stehen in einem Raster mit zwei Spalten und ohne Zeilenabstand (.gar-a-knoepfe).
+    const knoepfe = document.createElement('div');
+    knoepfe.className = 'gar-a-knoepfe';
+    plus.classList.add('gar-a-voll');
+    knoepfe.appendChild(plus);
     ['gar-stop-ghosts', 'gar-go', 'gar-disconnect-all', 'gar-to-cockpit'].forEach((id) => {
       const z = garAktionsZeile(id);
-      if (z) links.appendChild(z);
+      if (z) knoepfe.appendChild(z);
     });
     // v1.1.3: virtuelle Fahrt (60d-virtuell.js) - ein Auto ohne Bluetooth auf der Editor-Strecke.
     // BESTELLT: ganz unten, unter "Zum Cockpit".
@@ -69686,7 +69720,7 @@
     if (garVirtuellAuf) virtKnopf.classList.add('primary');
     virtKnopf.onclick = () => { garVirtuellAuf = true; garKameraAuf = false; renderGarage(); };
     virt.appendChild(virtKnopf);
-    links.appendChild(virt);
+    knoepfe.appendChild(virt);
     // v1.5 (WIP) BESTELLT: die Onboard-Kamera "in der Garage verbinden". Wie "Virtuell fahren": links
     // die Zeile, rechts die Optionen (#onboard-optionen aus dem Halter in 00-index.head.html).
     if ($('onboard-optionen')) {
@@ -69701,12 +69735,13 @@
       if (garKameraAuf) kamKnopf.classList.add('primary');
       kamKnopf.onclick = () => { garKameraAuf = true; garVirtuellAuf = false; renderGarage(); };
       kam.appendChild(kamKnopf);
-      links.appendChild(kam);
+      knoepfe.appendChild(kam);
     }
     // v1.5 (WIP): Showroom (98k-showroom.js), Sammelkarten aller bekannten Autos.
-    if (typeof showGarageZeile === 'function') links.appendChild(showGarageZeile());
+    if (typeof showGarageZeile === 'function') knoepfe.appendChild(showGarageZeile());
     // v1.5 (WIP): zweiter Laptop als Bluetooth-Helfer (98m-zwei-laptops.js).
-    if (typeof zlGarageZeile === 'function') links.appendChild(zlGarageZeile());
+    if (typeof zlGarageZeile === 'function') knoepfe.appendChild(zlGarageZeile());
+    links.appendChild(knoepfe);
     // Rechte Seite: das gewaehlte Auto, oder die Optionen der virtuellen Fahrt.
     const car = (garVirtuellAuf || garKameraAuf) ? null : garAufAuto;
     if (garVirtuellAuf && typeof vfGarageOptionen === 'function') {
@@ -119671,6 +119706,62 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
       if (merkTab && typeof showTab === 'function') showTab(merkTab);
     }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : mass };
+  });
+  // v1.5.86 BESTELLT: "Bild vom Auto kleiner machen", "Garage Buttons unten näher zusammentun", "Oben Knopf für Wetter".
+  stAdd('Garage v1.5.86: Knoepfe im Raster, kleines Vorschaubild, Wetter-Knopf im virtuellen Fahren', () => {
+    const f = [];
+    const merkTab = kAktiverTab();
+    const merk = { auf: garAufAuto, virt: garVirtuellAuf, kam: garKameraAuf, wetter: weather };
+    let mass = '';
+    try {
+      showTab('garage');
+      garVirtuellAuf = true; garKameraAuf = false;
+      renderGarage();
+      const R = $('gar-list').querySelector('.gar-a-knoepfe');
+      if (!R) f.push('kein Knopf-Raster');
+      else {
+        const cs = getComputedStyle(R);
+        if (cs.display !== 'grid' || cs.gridTemplateColumns.split(' ').length !== 2) f.push('Raster ' + cs.display + ' ' + cs.gridTemplateColumns);
+        ['.gar-a-virtuell', '.gar-a-voll', '[data-fuer="gar-to-cockpit"]'].forEach((sel) => { if (!R.querySelector(sel)) f.push(sel + ' fehlt im Raster'); });
+        const kn = Array.from(R.querySelectorAll('.opt-row:not(.gar-a-voll) > button')).filter((b) => b.offsetParent);
+        const hoehe = kn.length ? Math.max.apply(null, kn.map((b) => b.getBoundingClientRect().height)) : 0;
+        if (hoehe > 48) f.push('Knopf ' + Math.round(hoehe) + ' px hoch');
+        mass = kn.length + ' Knoepfe, hoechstens ' + Math.round(hoehe) + ' px';
+      }
+      const bild = $('gar-list').querySelector('.vf-vorschau-bild');
+      if (bild) { const mh = parseFloat(getComputedStyle(bild).maxHeight); if (!(mh <= 170)) f.push('Vorschaubild bis ' + mh + ' px hoch'); }
+      else f.push('kein Vorschaubild');
+    } finally {
+      garAufAuto = merk.auf; garVirtuellAuf = merk.virt; garKameraAuf = merk.kam;
+      renderGarage();
+    }
+    if (typeof virtuellStarten === 'function' && !VF.aktiv) {
+      try {
+        if (weather !== 'dry') setWeather('dry');
+        if (virtuellStarten({ tiles: codeToTrack('SG3R2G3R2').tiles, studie: true })) {
+          const b = VF.schicht.querySelector('[data-vf="wetter"]');
+          if (!b) f.push('kein Wetter-Knopf');
+          else {
+            VF.wxEinmalAt = rennZeitJetzt() + 5000;
+            b.click();
+            if (weather !== 'rain') f.push('Knopf: Wetter ' + weather);
+            if (VF.wxEinmalAt !== null) f.push('geplanter Wechsel bleibt');
+            vfHud();
+            if (!b.classList.contains('vf-an')) f.push('Knopf nicht hell bei Regen');
+            b.click(); vfHud();
+            if (weather !== 'dry' || b.classList.contains('vf-an')) f.push('zweiter Druck: ' + weather);
+            b.click();
+          }
+          virtuellBeenden();
+          if (weather !== 'dry') f.push('Wetter nach dem Beenden ' + weather);
+        }
+      } finally {
+        if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+        if (weather !== merk.wetter) setWeather(merk.wetter);
+      }
+    }
+    showTab(merkTab);
     return { ok: !f.length, mass: f.length ? f.join('; ') : mass };
   });
   stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto und Farbe', async () => {
