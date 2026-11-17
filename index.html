@@ -5863,7 +5863,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.75</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.77</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7144,6 +7144,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Streckeneditor: Unter Optionen gibt es jetzt &#8222;Boxengassen&#8220; als Anzahl statt &#8222;Boxengasse erzwingen&#8220;. Vorgabe sind so viele wie unter Meine Teile eingetragen, und die Zufallsstrecke enth&#228;lt genau so viele. Geht das mit den Teilen nicht, gibt es eine Meldung. Das Editor-Tutorial erkl&#228;rt jetzt auch Br&#252;cken und Boxengassen.</li>
         <li>Android-App (neue APK): Das Rumble des Controllers geht jetzt direkt &#252;ber Android an den Motor des Gamepads, &#252;ber Bluetooth und Kabel, auch wenn der Controller erst nach dem Start der App verbunden wird. Vorher lief es &#252;ber die Gamepad-Schnittstelle der Webansicht, die den Motor nur kannte, wenn der Controller schon beim Start da war. DualSense &#252;ber USB: Ist die Schnittstelle belegt (Controller nur am Kabel), sendet die Probe &#252;ber den Steuerkanal. Das Protokoll steht unter dem Knopf und l&#228;sst sich kopieren.</li>
         <li>Virtuell fahren: Wetter aus den Renneinstellungen vollst&#228;ndig. &#8222;Wechselhaft&#8220; wechselt jetzt auch virtuell zwischen trocken und Schauern (wie im Rennen, mit Meldung), und &#8222;Wetter &#228;ndert sich&#8220; bringt einen einmaligen Wechsel im mittleren Drittel der Fahrzeit. Beim Beenden gilt wieder das Wetter von vorher.</li>
         <li>Akku-Aufzeichnung (WIP, Entwicklertools &gt; Entwickler): Jedes verbundene Auto schreibt alle 10 s den Akku-Rohwert und die Fahrzeit mit. Nach dem Laden beginnt die Aufzeichnung neu, die vorige bleibt erhalten. Aus einer ganz leer gefahrenen Ladung entsteht sp&#228;ter eine echte Akku-Kennlinie statt der linearen Sch&#228;tzung. Je Auto l&#228;sst sich die Aufzeichnung als CSV kopieren.</li>
@@ -13885,7 +13886,7 @@
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M4 6h3l7 12h3M4 18h3l7-12h3"/><path d="M17 4l3 2-3 2M17 16l3 2-3 2"/></svg>
             <span class="tp-cap">Zufall</span></button>
-          <button class="tp-btn tp-schalter" id="track-opt-toggle" title="Editor-Optionen: L&auml;nge, Linkslastig, Br&uuml;cken, Spiegeln" aria-label="Editor-Optionen" aria-pressed="false">
+          <button class="tp-btn tp-schalter" id="track-opt-toggle" title="Editor-Optionen: L&auml;nge, Linkslastig, Br&uuml;cken, Boxengassen, Spiegeln" aria-label="Editor-Optionen" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/>
               <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
@@ -13930,10 +13931,16 @@
                 <button type="button" class="num-plus" aria-label="Mehr Br&uuml;cken">+</button>
               </span>
             </span>
-            <label>Boxengasse erzwingen
-              <input type="checkbox" id="track-opt-box">
+            <!-- v1.5 BESTELLT: "Pitstop anzahl als option im editor hinzufuegen (standard: so viele wie in meine teile
+                 angegeben)". Statt "Boxengasse erzwingen" eine Anzahl wie bei den Bruecken. -->
+            <span class="tp-opt-gruppe" id="track-opt-boxen-gruppe">Boxengassen
+              <span class="num-steuer">
+                <button type="button" class="num-minus" aria-label="Weniger Boxengassen">&#8722;</button>
+                <input type="number" id="track-opt-boxen" min="0" max="0" step="1" value="0" inputmode="numeric" aria-label="Anzahl Boxengassen">
+                <button type="button" class="num-plus" aria-label="Mehr Boxengassen">+</button>
+              </span>
               <small class="tp-opt-hinweis" id="track-opt-box-hinweis" hidden>Erst unter Meine Teile eine Boxengasse eintragen</small>
-            </label>
+            </span>
             <button class="tp-opt-knopf" id="track-spiegel" title="Strecke spiegeln: Kurven links/rechts tauschen und die Schleife r&uuml;ckw&auml;rts fahren">Strecke spiegeln</button>
           </div>
         </div>
@@ -17366,6 +17373,15 @@
     "Protokoll kopieren": "Copy log",
     "Protokoll kopiert": "Log copied",
     "Android-App (neue APK): Das Rumble des Controllers geht jetzt direkt über Android an den Motor des Gamepads, über Bluetooth und Kabel, auch wenn der Controller erst nach dem Start der App verbunden wird. Vorher lief es über die Gamepad-Schnittstelle der Webansicht, die den Motor nur kannte, wenn der Controller schon beim Start da war. DualSense über USB: Ist die Schnittstelle belegt (Controller nur am Kabel), sendet die Probe über den Steuerkanal. Das Protokoll steht unter dem Knopf und lässt sich kopieren.": "Android app (new APK): controller rumble now goes directly through Android to the gamepad's motor, over Bluetooth and cable, even if the controller is connected only after the app has started. Before, it went through the web view's gamepad interface, which only knew the motor if the controller was already there at start. DualSense over USB: if the interface is taken (controller on the cable only), the test sends over the control channel. The log is shown under the button and can be copied.",
+    "Boxengassen": "Pit lanes",
+    "Unter Optionen stellst du ein, wie viele Brücken eine Zufallsstrecke haben soll (0 bis 4). An jeder Brücke kreuzt die Bahn sich selbst: ein Stück läuft auf Stützen über das andere. Mit einer Brücke wird es eine Acht. Geht die Zahl mit deinen Teilen nicht, sagt die App Bescheid.": "Under Options you set how many bridges a random track should have (0 to 4). At every bridge the track crosses itself: one section runs on supports over the other. With one bridge it becomes a figure of eight. If the number is not possible with your pieces, the app tells you.",
+    "Ebenfalls unter Optionen: wie viele Boxengassen die Zufallsstrecke bekommt. Vorgabe sind so viele, wie du unter Meine Teile eingetragen hast.": "Also under Options: how many pit lanes the random track gets. The default is as many as you entered under My parts.",
+    "Zufall: {n} Boxengassen mit diesen Teilen nicht möglich": "Random: {n} pit lanes not possible with these pieces",
+    "Weniger Boxengassen": "Fewer pit lanes",
+    "Mehr Boxengassen": "More pit lanes",
+    "Anzahl Boxengassen": "Number of pit lanes",
+    "Editor-Optionen: Länge, Linkslastig, Brücken, Boxengassen, Spiegeln": "Editor options: length, left-heavy, bridges, pit lanes, mirror",
+    "Streckeneditor: Unter Optionen gibt es jetzt „Boxengassen“ als Anzahl statt „Boxengasse erzwingen“. Vorgabe sind so viele wie unter Meine Teile eingetragen, und die Zufallsstrecke enthält genau so viele. Geht das mit den Teilen nicht, gibt es eine Meldung. Das Editor-Tutorial erklärt jetzt auch Brücken und Boxengassen.": "Track editor: under Options there is now “Pit lanes” as a number instead of “Force pit lane”. The default is as many as entered under My parts, and the random track contains exactly that many. If that is not possible with the pieces, a message says so. The editor tutorial now also explains bridges and pit lanes.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20236,6 +20252,14 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Boxengassen": "Calles de boxes",
+    "Unter Optionen stellst du ein, wie viele Brücken eine Zufallsstrecke haben soll (0 bis 4). An jeder Brücke kreuzt die Bahn sich selbst: ein Stück läuft auf Stützen über das andere. Mit einer Brücke wird es eine Acht. Geht die Zahl mit deinen Teilen nicht, sagt die App Bescheid.": "En Opciones ajustas cuántos puentes debe tener un circuito aleatorio (0 a 4). En cada puente la pista se cruza consigo misma: un tramo pasa sobre soportes por encima del otro. Con un puente sale un ocho. Si el número no es posible con tus piezas, la app te avisa.",
+    "Ebenfalls unter Optionen: wie viele Boxengassen die Zufallsstrecke bekommt. Vorgabe sind so viele, wie du unter Meine Teile eingetragen hast.": "También en Opciones: cuántas calles de boxes tendrá el circuito aleatorio. Por defecto, tantas como anotaste en Mis piezas.",
+    "Zufall: {n} Boxengassen mit diesen Teilen nicht möglich": "Aleatorio: {n} calles de boxes no son posibles con estas piezas",
+    "Weniger Boxengassen": "Menos calles de boxes",
+    "Mehr Boxengassen": "Más calles de boxes",
+    "Anzahl Boxengassen": "Número de calles de boxes",
+    "Editor-Optionen: Länge, Linkslastig, Brücken, Boxengassen, Spiegeln": "Opciones del editor: longitud, más a la izquierda, puentes, calles de boxes, reflejar",
     "Protokoll kopieren": "Copiar protocolo",
     "Protokoll kopiert": "Protocolo copiado",
     "Akku-Aufzeichnung": "Registro de batería",
@@ -33636,6 +33660,11 @@
       text: 'Kreis (Z) nimmt die letzte Änderung zurück, auch mehrmals.' },
     { tab: 'track', sub: 'edit', ziel: ['#track-fs-info'], bild: 'strecke-frei', titel: 'Länge und Teile',
       text: 'Oben steht die Länge in Metern und im Maßstab 1:50. Hast du unter Meine Teile deinen Karton eingetragen, siehst du hier, was fehlt.' },
+    // v1.5 BESTELLT: "Brücken im Editor-Tutorial ergänzen". Bruecken gibt es als Option der Zufallsstrecke.
+    { tab: 'track', sub: 'edit', ziel: ['#track-opt-toggle'], bild: 'strecke-bahn', titel: 'Brücken',
+      text: 'Unter Optionen stellst du ein, wie viele Brücken eine Zufallsstrecke haben soll (0 bis 4). An jeder Brücke kreuzt die Bahn sich selbst: ein Stück läuft auf Stützen über das andere. Mit einer Brücke wird es eine Acht. Geht die Zahl mit deinen Teilen nicht, sagt die App Bescheid.' },
+    { tab: 'track', sub: 'edit', ziel: ['#track-opt-toggle'], bild: 'strecke-frei', titel: 'Boxengassen',
+      text: 'Ebenfalls unter Optionen: wie viele Boxengassen die Zufallsstrecke bekommt. Vorgabe sind so viele, wie du unter Meine Teile eingetragen hast.' },
     { tab: 'track', sub: 'edit', ziel: ['#track-fs-toggle'], taste: 'L3', titel: 'Schließen',
       text: 'L3 oder Esc schließt den Editor. Die Strecke bleibt, speichern kannst du sie unter Strecke laden.' },
   ];
@@ -40141,6 +40170,8 @@
              // braucht volle Schleifen, und davon schliessen weniger.
              bruecken: Math.max(0, Math.floor(+trackEditorOpt.bruecken || 0)),
              box: !!trackEditorOpt.box && hat(TILE_TYPE.PIT) > 0, ohneBox: false,
+             // v1.5: genau so viele Boxengassen (Vorgabe: der ganze Bestand).
+             boxen: editorBoxenSoll(),
              maxVersuche: trackEditorOpt.bruecken > 0 ? 1500 : 400 };
   }
   // Ein einzelner Versuch der Suche (v0.9.42 aus der Schleife geloest, damit die Suche in
@@ -40196,8 +40227,11 @@
     }
     const gaps = trackZufallSolveGaps(runs, 3, TRACK_SCHLUSS_STRENG_CM);
     if (!gaps) return;
-    const tiles = trackZufallBaueTiles(runs, gaps, b);
+    // v1.5: nur so viele Boxengassen wie gewuenscht in den Topf, die uebrigen zaehlen nicht als Rest.
+    const bZ = z.boxen !== undefined ? Object.assign({}, b, { [TILE_TYPE.PIT]: z.boxen }) : b;
+    const tiles = trackZufallBaueTiles(runs, gaps, bZ);
     if (!tiles) return;
+    if (z.boxen !== undefined && tiles.filter((x) => x.type === TILE_TYPE.PIT).length !== z.boxen) { z.ohneBox = true; return; }
     // Boxengasse erzwingen (v1.3.5): die Luecken fuellt trackZufallFuellGap() ohnehin zuerst mit
     // der Box, wenn eine da ist - fehlt sie trotzdem, ist es der naechste Versuch.
     if (z.box && !tiles.some((x) => x.type === TILE_TYPE.PIT)) { z.ohneBox = true; return; }
@@ -40263,8 +40297,8 @@
       showHudToast(t('Zufall: {n} Brücken mit diesen Teilen nicht möglich').replace('{n}', z.bruecken));
       return false;
     }
-    if (z.box && z.ohneBox) {
-      showHudToast(t('Zufall: Boxengasse mit diesen Teilen nicht möglich'));
+    if (z.ohneBox && z.boxen > 0) {
+      showHudToast(t('Zufall: {n} Boxengassen mit diesen Teilen nicht möglich').replace('{n}', z.boxen));
       return false;
     }
     showHudToast(t('Zufall: Nicht genug Kurventeile für einen Rundkurs'));
@@ -40448,7 +40482,15 @@
   // Der "Optionen"-Knopf in der Aktionsleiste klappt ein Feld auf: Laenge/Teile-Slider,
   // Linkslastig, Bruecken und "Strecke spiegeln". Die ersten drei wirken auf den Zufallsknopf.
   // v1.3.5: bruecken ist eine ANZAHL (vorher ein Schalter), box erzwingt ein Boxenteil.
-  const trackEditorOpt = { ziel: Infinity, linkslastig: false, bruecken: 0, box: false };
+  // v1.5: boxen = Anzahl Boxengassen der Zufallsstrecke; null = so viele wie unter "Meine Teile" (Vorgabe).
+  // box bleibt als Kurzform fuer "mindestens eine" (Selbsttests, aeltere Aufrufer).
+  const trackEditorOpt = { ziel: Infinity, linkslastig: false, bruecken: 0, box: false, boxen: null };
+  function editorBoxenBestand() { return Math.max(0, Math.floor(+((teileBestand() || {})[TILE_TYPE.PIT]) || 0)); }
+  function editorBoxenSoll() {
+    const n = editorBoxenBestand();
+    if (trackEditorOpt.boxen === null || trackEditorOpt.boxen === undefined) return n;
+    return Math.max(0, Math.min(n, Math.floor(+trackEditorOpt.boxen) || 0));
+  }
   const BRUECKEN_MAX = 4;
   function editorOptGesamtTeile() {
     const b = teileBestand() || {};
@@ -40467,16 +40509,20 @@
     ziel.value = String(Math.max(4, akt));
     const wert = $('track-opt-ziel-wert');
     if (wert) wert.textContent = trackEditorOpt.ziel === Infinity ? 'max' : String(Math.max(4, akt));
-    // Boxengasse erzwingen: nur waehlbar, wenn in "Meine Teile" eine Boxengasse steht.
-    const box = $('track-opt-box');
-    if (box) {
-      const hatBox = ((teileBestand() || {})[TILE_TYPE.PIT] || 0) > 0;
-      box.disabled = !hatBox;
-      box.checked = hatBox && trackEditorOpt.box;
-      const zeile = box.closest('label');
-      if (zeile) zeile.classList.toggle('tp-opt-aus', !hatBox);
+    // v1.5: Boxengassen als Anzahl (0 bis Bestand), Vorgabe = Bestand. Ohne Boxengasse im Bestand ausgegraut.
+    const bx = $('track-opt-boxen');
+    if (bx) {
+      const n = editorBoxenBestand();
+      bx.max = String(n);
+      bx.value = String(editorBoxenSoll());
+      bx.disabled = n === 0;
+      const gruppe = $('track-opt-boxen-gruppe');
+      if (gruppe) {
+        gruppe.classList.toggle('tp-opt-aus', n === 0);
+        gruppe.querySelectorAll('button').forEach((b) => { b.disabled = n === 0; });
+      }
       const hinweis = $('track-opt-box-hinweis');
-      if (hinweis) hinweis.hidden = hatBox;
+      if (hinweis) hinweis.hidden = n > 0;
     }
     const br = $('track-opt-bruecken');
     if (br) br.value = String(trackEditorOpt.bruecken);
@@ -40513,8 +40559,18 @@
     if (mi) mi.onclick = () => brueckenSetzen(trackEditorOpt.bruecken - 1);
     if (pl) pl.onclick = () => brueckenSetzen(trackEditorOpt.bruecken + 1);
   }
-  if ($('track-opt-box')) {
-    $('track-opt-box').onchange = () => { trackEditorOpt.box = $('track-opt-box').checked; };
+  function boxenSetzen(v) {
+    const n = Math.floor(+v);
+    trackEditorOpt.boxen = isFinite(n) ? Math.max(0, Math.min(editorBoxenBestand(), n)) : null;
+    trackEditorOpt.box = false;
+    editorOptZeigen();
+  }
+  if ($('track-opt-boxen')) {
+    $('track-opt-boxen').onchange = () => boxenSetzen($('track-opt-boxen').value);
+    const steuer = $('track-opt-boxen').closest('.num-steuer');
+    const mi = steuer && steuer.querySelector('.num-minus'), pl = steuer && steuer.querySelector('.num-plus');
+    if (mi) mi.onclick = () => boxenSetzen(editorBoxenSoll() - 1);
+    if (pl) pl.onclick = () => boxenSetzen(editorBoxenSoll() + 1);
   }
   // "Strecke spiegeln": links/rechts tauschen und die Schleife rueckwaerts fahren (chSpiegelTiles).
   if ($('track-spiegel')) {
@@ -107038,27 +107094,38 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
 
   // BESTELLT: Editor-Option "Boxengasse erzwingen" - nur waehlbar mit Box in "Meine Teile".
-  stAdd('Editor v1.3.5: Boxengasse erzwingen baut ein Boxenteil ein, ohne Box gesperrt', () => {
+  // v1.5 BESTELLT: als Anzahl, Vorgabe = so viele wie unter "Meine Teile".
+  stAdd('Editor v1.5: Boxengassen als Anzahl (Vorgabe Bestand), genau so viele eingebaut, ohne Box gesperrt', () => {
     const f = [];
-    const mitBox = stBestand(['grund'], { [TILE_TYPE.PIT]: 1 });
-    stZufallMit(mitBox, { box: true, bruecken: 0 }, (ok, tiles) => {
-      if (!ok) f.push('mit Box keine Strecke');
-      else if (!tiles.some((x) => x.type === TILE_TYPE.PIT)) f.push('Strecke ohne Boxenteil');
-      if ($('track-opt-box').disabled) f.push('mit Box im Bestand gesperrt');
-    });
-    stZufallMit(stBestand(['grund']), { box: true, bruecken: 0 }, (ok, tiles) => {
-      const kb = $('track-opt-box');
-      if (!kb.disabled) f.push('ohne Box waehlbar');
-      if (kb.checked) f.push('ohne Box angehakt');
-      if ($('track-opt-box-hinweis').hidden) f.push('kein Hinweis ohne Box');
-      if (!kb.closest('label').classList.contains('tp-opt-aus')) f.push('nicht ausgegraut');
-      if (!ok) f.push('ohne Box baut der Zufall gar nicht mehr');
-    });
+    const merkBoxen = trackEditorOpt.boxen;
+    try {
+      trackEditorOpt.boxen = null;
+      const mitBox = stBestand(['grund'], { [TILE_TYPE.PIT]: 1 });
+      stZufallMit(mitBox, { box: false, bruecken: 0, boxen: null }, (ok, tiles) => {
+        if (!ok) f.push('mit Box keine Strecke');
+        else if (tiles.filter((x) => x.type === TILE_TYPE.PIT).length !== 1) f.push('Vorgabe: nicht genau die eine Box aus dem Bestand');
+        const bx = $('track-opt-boxen');
+        if (!bx || bx.disabled || bx.value !== '1' || bx.max !== '1') f.push('Feld: ' + (bx && [bx.disabled, bx.value, bx.max].join('/')));
+      });
+      stZufallMit(mitBox, { box: false, bruecken: 0, boxen: 0 }, (ok, tiles) => {
+        if (!ok) f.push('mit 0 Boxengassen keine Strecke');
+        else if (tiles.some((x) => x.type === TILE_TYPE.PIT)) f.push('0 gewaehlt, trotzdem Box');
+      });
+      stZufallMit(stBestand(['grund']), { box: false, bruecken: 0, boxen: null }, (ok) => {
+        const bx = $('track-opt-boxen');
+        if (!bx.disabled) f.push('ohne Box waehlbar');
+        if ($('track-opt-box-hinweis').hidden) f.push('kein Hinweis ohne Box');
+        if (!$('track-opt-boxen-gruppe').classList.contains('tp-opt-aus')) f.push('nicht ausgegraut');
+        if (!ok) f.push('ohne Box baut der Zufall gar nicht mehr');
+      });
+    } finally { trackEditorOpt.boxen = merkBoxen; }
     if (!document.querySelector('#track-opt-panel .wip-tag')) f.push('WIP fehlt');
-    for (const k of ['Boxengasse erzwingen', 'Erst unter Meine Teile eine Boxengasse eintragen', 'Zufall: Boxengasse mit diesen Teilen nicht möglich']) {
+    for (const k of ['Boxengassen', 'Erst unter Meine Teile eine Boxengasse eintragen', 'Zufall: {n} Boxengassen mit diesen Teilen nicht möglich']) {
       if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'mit Box: Boxenteil drin; ohne Box: gesperrt, ausgegraut, Hinweis' };
+    // Tutorial: Schritte zu Bruecken und Boxengassen.
+    if (!K_EDITOR.some((x) => x.titel === 'Brücken') || !K_EDITOR.some((x) => x.titel === 'Boxengassen')) f.push('Editor-Tutorial ohne Bruecken/Boxengassen');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vorgabe 1 = Bestand, 0 ohne Box, ohne Bestand gesperrt mit Hinweis, Tutorial mit Bruecken und Boxengassen' };
   });
 
   // BESTELLT: Editor-Option "Bruecken" als Anzahl (Standard 0) mit Pruefung, ob es geht.
