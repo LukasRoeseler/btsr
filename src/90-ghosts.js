@@ -2314,6 +2314,8 @@
     }
     list.appendChild(links);
     list.appendChild(rechts);
+    // v1.5.94: Erklaerungen (<small> in .opt-label) der Garagenzeilen hinter das (i), erst wenn sie im Dokument stehen.
+    if (rechts.querySelector('.opt-label small:not(.opt-info-versteckt)') && typeof optInfoEinrichten === 'function') optInfoEinrichten();
     refreshGarageGo();
     garAktionenAbgleichen();
     const setzen = () => {

@@ -76,11 +76,11 @@
   function vfProgramm(gl) {
     const p = gl.createProgram();
     gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
-      'attribute vec3 p; attribute vec3 c; uniform mat4 m; uniform mat4 w; varying vec3 vc; varying float vd;'
-      + 'void main(){ vec4 q = w * vec4(p, 1.0); gl_Position = m * q; vc = c; vd = gl_Position.w; }'));
+      'attribute vec3 p; attribute vec3 c; uniform mat4 m; uniform mat4 w; uniform vec3 aug; varying vec3 vc; varying float vd; varying float vsd;'
+      + 'void main(){ vec4 q = w * vec4(p, 1.0); gl_Position = m * q; vc = c; vd = gl_Position.w;' + ' vec2 dd_ = q.xz - aug.xz; vsd = max(dot(dd_, vec2(0.8137, 0.5812)), 0.0) * inversesqrt(dot(dd_, dd_) + 0.0001);' + '}'));
     gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
-      'precision mediump float; varying vec3 vc; varying float vd; uniform vec3 nebel; uniform float alf; uniform vec3 sonne;'
-      + 'void main(){ float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(vc * sonne, nebel, f), alf); }'));
+      'precision mediump float; varying vec3 vc; varying float vd; varying float vsd; uniform vec3 nebel; uniform vec3 dunst; uniform float alf; uniform vec3 sonne;'
+      + 'void main(){ float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(vc * sonne, mix(nebel, dunst, vsd * vsd), f), alf); }'));
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     return p;
@@ -106,12 +106,17 @@
       // braucht die Genauigkeit (mediump liefert auf Handys Streifen).
       '#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n'
       + 'varying vec3 vdir; uniform vec3 horizont; uniform vec3 zenit; uniform float wolken; uniform float zeit; uniform float regen;'
+      + 'uniform vec3 dunst; uniform float umwelt; uniform vec3 unten;'
       + 'float hs(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }'
       + 'float rs(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);'
       + ' return mix(mix(hs(i), hs(i + vec2(1.0, 0.0)), f.x), mix(hs(i + vec2(0.0, 1.0)), hs(i + vec2(1.0, 1.0)), f.x), f.y); }'
       + 'float fbm(vec2 p){ float s = 0.0, a = 0.5; for (int i = 0; i < 4; i++) { s += a * rs(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; } return s; }'
-      + 'void main(){ vec3 d = normalize(vdir); float h = clamp(d.y * 1.6 + 0.18, 0.0, 1.0);'
-      + ' vec3 c = mix(horizont, zenit, h);'
+      // v1.5.94 (G2): natuerlicherer Verlauf - am Horizont schnell, nach oben langsam tiefer, ein heller Saum am Horizont.
+      + 'void main(){ vec3 d = normalize(vdir); float h = pow(clamp(d.y + 0.03, 0.0, 1.0), 0.55);'
+      + ' vec3 c = mix(horizont, zenit, h) + vec3(0.07, 0.065, 0.05) * exp(-abs(d.y) * 16.0);'
+      // v1.5.94 (G3): zur Sonne hin heller und waermer in Horizontnaehe (dieselbe Farbe wie der Dunst in der Ferne).
+      + ' vec2 hz = d.xz * inversesqrt(dot(d.xz, d.xz) + 0.0001); float sd = max(dot(hz, vec2(0.8137, 0.5812)), 0.0);'
+      + ' c = mix(c, dunst, sd * sd * pow(1.0 - h, 3.0));'
       + ' float s = max(dot(d, normalize(vec3(0.35, 0.9, 0.25))), 0.0); c += vec3(1.0, 0.92, 0.78) * (pow(s, 48.0) * 0.45 + pow(s, 5.0) * 0.10);'
       + ' if (d.y > 0.015 && wolken > 0.0) {'
       + '  vec2 uv = d.xz / d.y * 0.55 + vec2(zeit * 0.006, zeit * 0.002);'
@@ -119,13 +124,16 @@
       + '  float dichte = smoothstep(0.62 - 0.22 * regen - 0.18 * wolken, 0.92, n) * smoothstep(0.015, 0.22, d.y);'
       + '  vec3 wf = mix(mix(vec3(0.98), horizont, 0.25), vec3(0.52, 0.55, 0.60), regen) * (0.82 + 0.18 * smoothstep(0.4, 0.9, n));'
       + '  c = mix(c, wf, clamp(dichte, 0.0, 1.0) * 0.92); }'
+      // Nur fuer die Umgebungskarte (G2): unter dem Horizont der Boden.
+      + ' if (umwelt > 0.5 && d.y < 0.0) c = mix(c, unten, smoothstep(0.0, 0.1, -d.y));'
       + ' gl_FragColor = vec4(c, 1.0); }'));
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     return { p, ap: gl.getAttribLocation(p, 'p'), right: gl.getUniformLocation(p, 'right'),
              up: gl.getUniformLocation(p, 'up'), fwd: gl.getUniformLocation(p, 'fwd'), halb: gl.getUniformLocation(p, 'halb'),
              horizont: gl.getUniformLocation(p, 'horizont'), zenit: gl.getUniformLocation(p, 'zenit'),
-             wolken: gl.getUniformLocation(p, 'wolken'), zeit: gl.getUniformLocation(p, 'zeit'), regen: gl.getUniformLocation(p, 'regen') };
+             wolken: gl.getUniformLocation(p, 'wolken'), zeit: gl.getUniformLocation(p, 'zeit'), regen: gl.getUniformLocation(p, 'regen'),
+             dunst: gl.getUniformLocation(p, 'dunst'), umwelt: gl.getUniformLocation(p, 'umwelt'), unten: gl.getUniformLocation(p, 'unten') };
   }
   function vfHimmel(gl) {
     const a = [-1, 1, 0, 1, 1, 0, 1, -1, 0, -1, 1, 0, 1, -1, 0, -1, -1, 0];
@@ -610,14 +618,14 @@
     if (!qual) {
       gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
         'attribute vec3 p; attribute vec2 uv; attribute vec3 c; uniform mat4 m; uniform vec3 auge; uniform float glanz;'
-        + 'varying vec2 vuv; varying vec3 vc; varying float vd; varying float vg;'
+        + 'varying vec2 vuv; varying vec3 vc; varying float vd; varying float vg; varying float vsd;'
         + 'void main(){ gl_Position = m * vec4(p, 1.0); vuv = uv; vc = c; vd = gl_Position.w;'
-        + ' float e = 1.0 - max(normalize(auge - p).y, 0.0); vg = glanz * e * e * e; }'));
+        + ' float e = 1.0 - max(normalize(auge - p).y, 0.0); vg = glanz * e * e * e;' + ' vec2 dd_ = p.xz - auge.xz; vsd = max(dot(dd_, vec2(0.8137, 0.5812)), 0.0) * inversesqrt(dot(dd_, dd_) + 0.0001);' + '}'));
       gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
         'precision mediump float;\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nvarying highp vec2 vuv;\n#else\nvarying vec2 vuv;\n#endif\n'
-        + 'varying vec3 vc; varying float vd; varying float vg; uniform sampler2D tx; uniform vec3 nebel; uniform vec3 sonne;'
+        + 'varying vec3 vc; varying float vd; varying float vg; varying float vsd; uniform sampler2D tx; uniform vec3 nebel; uniform vec3 dunst; uniform vec3 sonne;'
         + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 c = (t.rgb * vc + vec3(0.80, 0.86, 0.95) * (vg * t.a)) * sonne;'
-        + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, nebel, f), 1.0); }'));
+        + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, mix(nebel, dunst, vsd * vsd), f), 1.0); }'));
     } else {
       // Quality. Blickvektor und Schattenkoordinaten entstehen im Vertexshader (dort immer highp) und
       // kommen relativ bzw. in [0,1] an: Weltkoordinaten bis ~3000 waren im Pixel (mediump, 10 Bit
@@ -625,12 +633,12 @@
       // Licht: Boden waagerecht, Sonne (0.35, 0.9, 0.25) normiert -> N.L = 0.9022 (fest, eingesetzt).
       gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
         'attribute vec3 p; attribute vec2 uv; attribute vec3 c; uniform mat4 m; uniform mat4 schM; uniform vec3 auge;'
-        + 'varying vec2 vuv; varying vec3 vc; varying float vd; varying vec3 vv; varying vec3 vsp;'
+        + 'varying vec2 vuv; varying vec3 vc; varying float vd; varying vec3 vv; varying vec3 vsp; varying float vsd;'
         + 'void main(){ gl_Position = m * vec4(p, 1.0); vuv = uv; vc = c; vd = gl_Position.w; vv = auge - p;'
-        + ' vsp = (schM * vec4(p, 1.0)).xyz * 0.5 + 0.5; }'));
+        + ' vsp = (schM * vec4(p, 1.0)).xyz * 0.5 + 0.5;' + ' vec2 dd_ = p.xz - auge.xz; vsd = max(dot(dd_, vec2(0.8137, 0.5812)), 0.0) * inversesqrt(dot(dd_, dd_) + 0.0001);' + '}'));
       gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
         'precision mediump float;\n' + VF_HP
-        + 'varying HP vec2 vuv; varying HP vec3 vsp; varying vec3 vc; varying float vd; varying vec3 vv;'
+        + 'varying HP vec2 vuv; varying HP vec3 vsp; varying vec3 vc; varying float vd; varying vec3 vv; varying float vsd; uniform vec3 dunst;'
         + 'uniform sampler2D tx; uniform vec3 nebel; uniform sampler2D sch; uniform float schatt; uniform float glanz;'
         + 'uniform float belichtung; uniform float bump; uniform HP float bias; uniform HP float biasPixel; uniform vec3 sonne;'
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
@@ -648,19 +656,20 @@
         + '   for (int ox = -1; ox <= 1; ox++) for (int oy = -1; oy <= 1; oy++)'
         + '     s += step(schTiefe(texture2D(sch, vsp.xy + vec2(float(ox), float(oy)) * biasPixel)), b);'
         + '   c *= mix(1.0, 0.42, s / 9.0); }'
-        + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, nebel, f), 1.0); }'));
+        + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, mix(nebel, dunst, vsd * vsd), f), 1.0); }'));
     }
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'auge', 'glanz', 'tx', 'nebel', 'sonne', 'sch', 'schM', 'schatt', 'belichtung', 'bump', 'bias', 'biasPixel'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'auge', 'glanz', 'tx', 'nebel', 'dunst', 'sonne', 'sch', 'schM', 'schatt', 'belichtung', 'bump', 'bias', 'biasPixel'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     return { p, u, qual: !!qual, ap: gl.getAttribLocation(p, 'p'), auv: gl.getAttribLocation(p, 'uv'), ac: gl.getAttribLocation(p, 'c') };
   }
   // Letzter Rueckfall, wenn kein Flaechenshader kompiliert: das einfache Eckfarben-Programm (VF.prog)
   // auf denselben Puffern - ohne Texturen, aber die Fahrt laeuft weiter statt abzubrechen.
   function vfProgrammFlaecheEinfach(gl, prog) {
     return { p: prog, einfach: true, qual: false, u: { m: gl.getUniformLocation(prog, 'm'), w: gl.getUniformLocation(prog, 'w'),
-             nebel: gl.getUniformLocation(prog, 'nebel'), alf: gl.getUniformLocation(prog, 'alf') },
+             nebel: gl.getUniformLocation(prog, 'nebel'), alf: gl.getUniformLocation(prog, 'alf'),
+             dunst: gl.getUniformLocation(prog, 'dunst'), aug: gl.getUniformLocation(prog, 'aug') },
              ap: gl.getAttribLocation(prog, 'p'), auv: -1, ac: gl.getAttribLocation(prog, 'c') };
   }
   // Ecke: x y z u v r g b (8 Zahlen); Viereck aus vier Ecken [x, y, z, u, v] mit einer Farbe.
@@ -813,6 +822,17 @@
   }
   // Ein Holzstueck als Viereck: Ursprung o, Laengsrichtung e (Laenge L), Querrichtung q (Breite B).
   // Atlas-Stueck, Spiegelung und Farbton zufaellig: kein Muster wiederholt sich sichtbar.
+  // v1.5.94 (G5): grossflaechige Farbunterschiede im Rasen (Wertrauschen in zwei Groessen, 380 und 110 Einheiten), je
+  // Ecke eines Rasenstuecks, damit das Raster der Kacheln verschwindet. Liefert [hell, gelb] in etwa -1..1.
+  function vfRasenFleck(x, z) {
+    const lage = (S, o) => {
+      const gx = x / S + o, gz = z / S - o, ix = Math.floor(gx), iz = Math.floor(gz), fx = gx - ix, fz = gz - iz;
+      const sx = fx * fx * (3 - 2 * fx), sz = fz * fz * (3 - 2 * fz), hsh = (a, b) => vfHash(a + 5000, b + 7000) * 2 - 1;
+      const a0 = hsh(ix, iz) + (hsh(ix + 1, iz) - hsh(ix, iz)) * sx, a1 = hsh(ix, iz + 1) + (hsh(ix + 1, iz + 1) - hsh(ix, iz + 1)) * sx;
+      return a0 + (a1 - a0) * sz;
+    };
+    return [lage(380, 0.37) * 0.7 + lage(110, 3.1) * 0.3, lage(520, 7.7)];
+  }
   function vfBodenStueck(a, T, rnd, o, e, L, q, B, y) {
     const st = T.stuecke[Math.floor(rnd() * T.stuecke.length)];
     let [u0, v0, u1, v1] = st;
@@ -823,6 +843,15 @@
     const hl = (0.92 + rnd() * (rasen ? 0.03 : 0.13)) * (rasen ? 1.0 : VF_BODEN_HELL), w = (rnd() - 0.5) * (rasen ? 0.01 : 0.05), c = [hl * (1 + w), hl, hl * (1 - w)];
     const P = (s, t) => [o[0] + e[0] * L * s + q[0] * B * t, y, o[1] + e[1] * L * s + q[1] * B * t];
     const p0 = P(0, 0), p1 = P(1, 0), p2 = P(1, 1), p3 = P(0, 1);
+    if (rasen) {
+      // G5: Farbe je Ecke aus dem Fleckenrauschen (heller/dunkler, gelblicher/blaeulicher).
+      const ecken = [[p0, u0, v0], [p1, u0, v1], [p2, u1, v1], [p3, u1, v0]].map(([pp, uu, vv]) => {
+        const [hh, gg] = vfRasenFleck(pp[0], pp[2]), m = 1 + 0.13 * hh;
+        return [pp[0], y, pp[2], uu, vv, c[0] * m * (1 + 0.07 * gg), c[1] * m, c[2] * m * (1 - 0.10 * gg)];
+      });
+      for (const k of [0, 1, 2, 0, 2, 3]) a.push(...ecken[k]);
+      return;
+    }
     vfViereck(a, [p0[0], y, p0[2], u0, v0], [p1[0], y, p1[2], u0, v1], [p2[0], y, p2[2], u1, v1], [p3[0], y, p3[2], u1, v0], c);
   }
   // Der Boden: Dielen (Reihen laengs x, Stossfugen je Reihe versetzt, mindestens ein Viertel der
@@ -893,7 +922,8 @@
     pts.forEach((p) => { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); });
     const R0 = TRACK_HALF_W + TRACK_KERB_W;
     minX -= R0; maxX += R0; minY -= R0; maxY += R0;
-    const rnd = vfZufall(4242 + pts.length), a = [], orte = [];
+    const rnd = vfZufall(4242 + pts.length), a = [], orte = [], gewicht = [];
+    let hochAkt = 1;   // v1.5.94 (G4): Hoehe des gerade gebauten Baums, fuer das Gewicht je Ecke
     const S = [0.35, 0.9, 0.25], sl = Math.hypot(S[0], S[1], S[2]);
     const sonne = [S[0] / sl, S[1] / sl, S[2] / sl];
     const dreieck = (p0, p1, p2, farbe, mitte) => {
@@ -903,7 +933,12 @@
       const c = [(p0[0] + p1[0] + p2[0]) / 3 - mitte[0], (p0[1] + p1[1] + p2[1]) / 3 - mitte[1], (p0[2] + p1[2] + p2[2]) / 3 - mitte[2]];
       if (n[0] * c[0] + n[1] * c[1] + n[2] * c[2] < 0) n = n.map((x) => -x);
       const licht = 0.5 + 0.55 * Math.max(0, n[0] * sonne[0] + n[1] * sonne[1] + n[2] * sonne[2]);
-      for (const q of [p0, p1, p2]) a.push(q[0], q[1], q[2], farbe[0] * licht, farbe[1] * licht, farbe[2] * licht);
+      for (const q of [p0, p1, p2]) {
+        a.push(q[0], q[1], q[2], farbe[0] * licht, farbe[1] * licht, farbe[2] * licht);
+        // Wehen: der Stamm unten steht, die Krone oben schwingt (quadratisch, Ausschlag mit der Hoehe des Baums).
+        const r = Math.max(0, q[1]) / hochAkt;
+        gewicht.push(r * r * hochAkt * 0.035);
+      }
     };
     const kegel = (x, z, y0, y1, r, seg, farbe) => {
       for (let i = 0; i < seg; i++) {
@@ -940,6 +975,7 @@
       else { x = minX - ab; z = maxY - (t - 2 * W - H); }
       x += (rnd() - 0.5) * 60; z += (rnd() - 0.5) * 60;
       const hoch = 12 + rnd() * 22, j = 0.85 + rnd() * 0.3;
+      hochAkt = hoch;
       orte.push([x, z, hoch]);
       stamm(x, z, hoch * 0.32, hoch * 0.045, [0.32 * j, 0.22 * j, 0.13 * j]);
       if (rnd() < 0.45) {
@@ -952,7 +988,168 @@
         if (rnd() < 0.5) kugel(x + hoch * 0.15, hoch * 0.52, z - hoch * 0.1, hoch * 0.22, hoch * 0.2, [g[0] * 0.92, g[1] * 0.95, g[2] * 0.9]);
       }
     }
-    return { daten: a, anzahl: VF_BAUM_N, orte };
+    return { daten: a, anzahl: VF_BAUM_N, orte, gewicht };
+  }
+  // ---- v1.5.94 (G4): WEHENDES GRAS UND BAEUME ----
+  // Grasbueschel am Streckenrand (hinter den Randsteinen, nur auf Rasen) und die Baumkronen wiegen sich im Wind. Ein eigenes
+  // Farbprogramm mit einem Gewicht je Ecke (0 = steht fest, mehr = schwingt weiter); nur Quality.
+  // Je Mittellinienpunkt und Seite VF_GRAS.je Bueschel mit je 4 Halmen, Abstand zum Rand 0,4 bis 7 Einheiten, nie naeher
+  // als der Rand an irgendeinem Teil der Strecke (Haarnadeln, enge Kurven).
+  const VF_GRAS = { je: 3, halme: 4, hoch: [0.5, 1.15], ab: [0.4, 7] };
+  function vfGrasBueschel(pts, nrm, bucht) {
+    const a = [], n = pts.length, rnd = vfZufall(5557 + n);
+    const rand = TRACK_HALF_W + TRACK_KERB_W, frei = rand + 0.25, frei2 = frei * frei;
+    const S = [0.35, 0.9, 0.25], sl = Math.hypot(S[0], S[1], S[2]);
+    const zuNah = (x, z) => {
+      for (let i = 0; i < n; i += 2) { const dx = pts[i].x - x, dz = pts[i].y - z; if (dx * dx + dz * dz < frei2) return true; }
+      return false;
+    };
+    let bueschel = 0;
+    for (let i = 0; i < n; i++) for (const sg of [1, -1]) for (let k = 0; k < VF_GRAS.je; k++) {
+      const extra = (bucht && sg === VF_BOX_SEITE) ? bucht[i] : 0;
+      const d = (rand + extra + VF_GRAS.ab[0] + Math.pow(rnd(), 1.6) * (VF_GRAS.ab[1] - VF_GRAS.ab[0])) * sg;
+      const j = (rnd() - 0.5) * 2;   // laengs verstreut zwischen den Punkten
+      const ni = Math.min(n - 1, i + 1), lx = pts[ni].x - pts[i].x, lz = pts[ni].y - pts[i].y;
+      const x = pts[i].x + nrm[i].x * d + lx * j * 0.5, z = pts[i].y + nrm[i].y * d + lz * j * 0.5;
+      if (zuNah(x, z)) continue;
+      bueschel++;
+      const g = 0.85 + rnd() * 0.3;
+      for (let b = 0; b < VF_GRAS.halme; b++) {
+        const w = rnd() * Math.PI, h = VF_GRAS.hoch[0] + rnd() * (VF_GRAS.hoch[1] - VF_GRAS.hoch[0]), br = 0.07 + rnd() * 0.05;
+        const cx = Math.cos(w) * br, cz = Math.sin(w) * br, ox = (rnd() - 0.5) * 0.35, oz = (rnd() - 0.5) * 0.35;
+        const neig = [(rnd() - 0.5) * 0.5 * h, (rnd() - 0.5) * 0.5 * h];
+        const licht = 0.75 + 0.3 * Math.abs(Math.sin(w) * S[0] / sl - Math.cos(w) * S[2] / sl);
+        const fu = [0.09 * g * licht, 0.20 * g * licht, 0.05 * g * licht], fo = [0.30 * g * licht, 0.50 * g * licht, 0.15 * g * licht];
+        a.push(x + ox - cx, -0.04, z + oz - cz, fu[0], fu[1], fu[2], 0);
+        a.push(x + ox + cx, -0.04, z + oz + cz, fu[0], fu[1], fu[2], 0);
+        a.push(x + ox + neig[0], h, z + oz + neig[1], fo[0], fo[1], fo[2], 0.22 + rnd() * 0.12);
+      }
+    }
+    return { daten: a, bueschel };
+  }
+  function vfProgrammWehen(gl) {
+    const p = gl.createProgram();
+    gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
+      'attribute vec3 p; attribute vec3 c; attribute float k; uniform mat4 m; uniform float zeit; uniform float wind; uniform vec3 aug;'
+      + 'varying vec3 vc; varying float vd; varying float vsd;'
+      + 'void main(){ float ph = zeit * 1.6 + p.x * 0.045 + p.z * 0.06; float sw = sin(ph) + 0.35 * sin(ph * 2.3 + 1.3);'
+      + ' vec3 q = p + vec3(sw, 0.0, cos(ph * 0.8) * 0.5) * (k * wind);'
+      + ' gl_Position = m * vec4(q, 1.0); vc = c; vd = gl_Position.w;' + ' vec2 dd_ = q.xz - aug.xz; vsd = max(dot(dd_, vec2(0.8137, 0.5812)), 0.0) * inversesqrt(dot(dd_, dd_) + 0.0001);' + '}'));
+    gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
+      'precision mediump float; varying vec3 vc; varying float vd; varying float vsd; uniform vec3 nebel; uniform vec3 dunst; uniform vec3 sonne;'
+      + 'void main(){ float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(vc * sonne, mix(nebel, dunst, vsd * vsd), f), 1.0); }'));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    const u = {};
+    ['m', 'zeit', 'wind', 'aug', 'nebel', 'dunst', 'sonne'].forEach((x) => { u[x] = gl.getUniformLocation(p, x); });
+    return { p, u, ap: gl.getAttribLocation(p, 'p'), ac: gl.getAttribLocation(p, 'c'), ak: gl.getAttribLocation(p, 'k'), pv: new Float32Array(16) };
+  }
+  // 6 Zahlen je Ecke (Baeume) plus Gewicht -> 7 Zahlen je Ecke, ein Puffer.
+  function vfWehPuffer(gl, daten6, gewicht) {
+    const n = daten6.length / 6, a = new Float32Array(n * 7);
+    for (let i = 0; i < n; i++) { for (let j = 0; j < 6; j++) a[i * 7 + j] = daten6[i * 6 + j]; a[i * 7 + 6] = gewicht[i] || 0; }
+    const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, a, gl.STATIC_DRAW);
+    return { b, n };
+  }
+  function vfWehenMalen(gl, pv) {
+    const W = VF.weh, P = W.prog, u = P.u;
+    gl.useProgram(P.p);
+    for (let i = 0; i < 16; i++) P.pv[i] = pv[i];
+    gl.uniformMatrix4fv(u.m, false, P.pv);
+    vfTzSetzen(gl, u);
+    gl.uniform1f(u.zeit, (performance.now() / 1000) % 1000);
+    // Im Regen weht es staerker.
+    gl.uniform1f(u.wind, 1 + 0.8 * vfRegenStaerke());
+    gl.enableVertexAttribArray(P.ap); gl.enableVertexAttribArray(P.ac); gl.enableVertexAttribArray(P.ak);
+    for (const pu of [W.baeume, W.gras]) {
+      if (!pu || !pu.n) continue;
+      gl.bindBuffer(gl.ARRAY_BUFFER, pu.b);
+      gl.vertexAttribPointer(P.ap, 3, gl.FLOAT, false, 28, 0);
+      gl.vertexAttribPointer(P.ac, 3, gl.FLOAT, false, 28, 12);
+      gl.vertexAttribPointer(P.ak, 1, gl.FLOAT, false, 28, 24);
+      gl.drawArrays(gl.TRIANGLES, 0, pu.n);
+    }
+    gl.disableVertexAttribArray(P.ap); gl.disableVertexAttribArray(P.ac); gl.disableVertexAttribArray(P.ak);
+    gl.useProgram(VF.prog);
+  }
+  // ---- v1.5.94 (G2): UMGEBUNGSKARTE ----
+  // Der Himmel (Verlauf, Wolken, Sonne) wird in eine kleine Wuerfelkarte gemalt, unten der Boden; der Lack spiegelt sie.
+  // Alle VF_UMW.alle s neu, damit ziehende Wolken und Regen mitkommen. Kosten: 6 x 64 x 64 Pixel Himmelsshader.
+  const VF_UMW = { groesse: 64, alle: 2 };
+  // Seiten der Wuerfelkarte: Blickrichtung, rechts, oben (WebGL-Konvention der Wuerfelkarten).
+  const VF_UMW_SEITEN = [
+    [[1, 0, 0], [0, 0, -1], [0, -1, 0]], [[-1, 0, 0], [0, 0, 1], [0, -1, 0]],
+    [[0, 1, 0], [1, 0, 0], [0, 0, 1]], [[0, -1, 0], [1, 0, 0], [0, 0, -1]],
+    [[0, 0, 1], [1, 0, 0], [0, -1, 0]], [[0, 0, -1], [-1, 0, 0], [0, -1, 0]]];
+  function vfUmweltUnten() {
+    const s = vfTz().sonne, rasen = VF.flaeche && VF.flaeche.art && VF.flaeche.art.art === 'rasen';
+    const b = rasen ? [0.16, 0.27, 0.10] : [0.42, 0.31, 0.21];
+    return [b[0] * s[0], b[1] * s[1], b[2] * s[2]];
+  }
+  function vfUmweltMalen(gl, dt) {
+    if (VF.umwKaputt) return;
+    if (!VF.umw) {
+      const N = VF_UMW.groesse, tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_CUBE_MAP, tex);
+      for (let i = 0; i < 6; i++) gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, gl.RGBA, N, N, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      const fb = gl.createFramebuffer();
+      VF.umw = { tex, fb, N, uhr: 1e9, fertig: false };
+    }
+    const U = VF.umw;
+    U.uhr += dt;
+    if (U.uhr < VF_UMW.alle) return;
+    U.uhr = 0;
+    if (!VF.himmelProg) { VF.himmelProg = vfProgrammHimmel(gl); VF.himmel = vfHimmel(gl); }
+    const H = VF.himmelProg, z = vfTz(), d = VF.dunstF || z.horizont, un = vfUmweltUnten();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, U.fb);
+    gl.viewport(0, 0, U.N, U.N);
+    gl.disable(gl.DEPTH_TEST);
+    gl.useProgram(H.p);
+    gl.bindBuffer(gl.ARRAY_BUFFER, VF.himmel.b);
+    gl.enableVertexAttribArray(H.ap);
+    gl.vertexAttribPointer(H.ap, 3, gl.FLOAT, false, 12, 0);
+    gl.uniform3f(H.horizont, z.horizont[0], z.horizont[1], z.horizont[2]); gl.uniform3f(H.zenit, z.zenit[0], z.zenit[1], z.zenit[2]);
+    gl.uniform3f(H.dunst, d[0], d[1], d[2]); gl.uniform3f(H.unten, un[0], un[1], un[2]); gl.uniform1f(H.umwelt, 1);
+    gl.uniform1f(H.wolken, 0.5); gl.uniform1f(H.zeit, (performance.now() / 1000) % 10000); gl.uniform1f(H.regen, vfRegenStaerke());
+    gl.uniform2f(H.halb, 1, 1);
+    for (let i = 0; i < 6; i++) {
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, U.tex, 0);
+      if (i === 0 && gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) { VF.umwKaputt = true; break; }
+      const [f, r, o] = VF_UMW_SEITEN[i];
+      gl.uniform3f(H.fwd, f[0], f[1], f[2]); gl.uniform3f(H.right, r[0], r[1], r[2]); gl.uniform3f(H.up, o[0], o[1], o[2]);
+      gl.drawArrays(gl.TRIANGLES, 0, VF.himmel.n);
+    }
+    gl.disableVertexAttribArray(H.ap);
+    gl.enable(gl.DEPTH_TEST);
+    if (VF.umwKaputt) { VF.umw = null; return; }
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, U.tex);
+    gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    U.fertig = true;
+  }
+  // ---- v1.5.94 (G7): SICHTFELD MIT TEMPO, WACKELN AUF RANDSTEINEN (abschaltbar) ----
+  // In den Kameras hinter und auf dem Auto wird das Sichtfeld mit dem Tempo weiter (bis VF_SICHT.plus Grad bei
+  // VF_SICHT.kmh angezeigten km/h, gedaempft), und auf dem Randstein ruckelt das Bild leicht senkrecht. Die Kamera selbst
+  // bleibt unberuehrt: geaendert wird eine Kopie (feste Arrays, keine Allokation je Bild).
+  const VF_SICHT_STORE = 'omegasim-vf-sicht-tempo';
+  const VF_SICHT = { plus: 9, kmh: 260, wackeln: 0.06 };
+  function vfSichtTempoAn() { try { return localStorage.getItem(VF_SICHT_STORE) !== 'aus'; } catch (e) { return true; } }
+  function vfKameraEffekt(k, dt) {
+    const id = vfKameraId();
+    if (!VF.sichtAn || !(id === 'verfolger' || id === 'nah' || id === 'haube')) { VF.fovPlus = 0; return k; }
+    const kmh = Math.abs(physEngine.state.speedKmh || 0) * TACHO_SCALE * (VF.tempoFaktor || 1);
+    const ziel = VF_SICHT.plus * Math.pow(Math.min(1, kmh / VF_SICHT.kmh), 1.3);
+    VF.fovPlus = (VF.fovPlus || 0) + (ziel - (VF.fovPlus || 0)) * Math.min(1, dt * 3);
+    const E = VF.kEff || (VF.kEff = { auge: [0, 0, 0], ziel: [0, 0, 0] });
+    let ruck = 0;
+    if (VF.kerbJetzt && kmh > 5) ruck = (Math.random() - 0.5) * VF_SICHT.wackeln * Math.min(1, kmh / 150) * (id === 'haube' ? 0.6 : 1);
+    for (let i = 0; i < 3; i++) { E.auge[i] = k.auge[i]; E.ziel[i] = k.ziel[i]; }
+    E.auge[1] += ruck; E.ziel[1] += ruck * 0.5;
+    E.fov = k.fov + VF.fovPlus; E.nah = k.nah; E.fern = k.fern; E.oben = k.oben;
+    return E;
   }
   function vfPufferF(gl, a) {
     const b = gl.createBuffer();
@@ -1317,9 +1514,17 @@
   function vfTageszeitSetzen(id) { try { localStorage.setItem(VF_TZ_STORE, id); } catch (e) { /* egal */ } }
   // Je Fahrt einmal gelesen (VF.tz), nicht je Bild.
   function vfTz() { return VF.tz || VF_TAGESZEITEN[0]; }
+  // v1.5.94 (G3) BESTELLT ("Dunst zur Sonne"): in der Ferne Richtung Sonne heller und waermer. Die Dunstfarbe mischt den
+  // Horizont mit warmem Sonnenlicht; die Shader nehmen sie je nach Blickrichtung zur Sonne (vsd) statt des Nebels.
+  function vfDunstFarbe(z) {
+    const h = z.horizont, s = z.sonne, w = [1.0, 0.90, 0.74];
+    return [0, 1, 2].map((i) => Math.min(1, h[i] * 0.55 + w[i] * s[i] * 0.5));
+  }
   function vfTzSetzen(gl, u) {
     const z = vfTz();
     if (u.nebel) gl.uniform3f(u.nebel, z.horizont[0], z.horizont[1], z.horizont[2]);
+    if (u.dunst) { const d = VF.dunstF || z.horizont; gl.uniform3f(u.dunst, d[0], d[1], d[2]); }
+    if (u.aug && VF.augeJetzt) gl.uniform3f(u.aug, VF.augeJetzt[0], VF.augeJetzt[1], VF.augeJetzt[2]);
     if (u.sonne) gl.uniform3f(u.sonne, z.sonne[0], z.sonne[1], z.sonne[2]);
     // v1.5: Lackreflexe (Modell-Shader Quality) spiegeln denselben Himmel.
     if (u.horizont) gl.uniform3f(u.horizont, z.horizont[0], z.horizont[1], z.horizont[2]);
@@ -1723,24 +1928,25 @@
     if (!qual) {
       gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
         'attribute vec3 p; attribute vec3 n; attribute vec2 uv; uniform mat4 m; uniform mat4 w; uniform mat3 nm;'
-        + 'varying vec2 vuv; varying vec3 vn; varying float vd;'
-        + 'void main(){ vec4 q = w * vec4(p, 1.0); gl_Position = m * q; vuv = uv; vn = nm * n; vd = gl_Position.w; }'));
+        + 'uniform vec3 aug; varying vec2 vuv; varying vec3 vn; varying float vd; varying float vsd;'
+        + 'void main(){ vec4 q = w * vec4(p, 1.0); gl_Position = m * q; vuv = uv; vn = nm * n; vd = gl_Position.w;' + ' vec2 dd_ = q.xz - aug.xz; vsd = max(dot(dd_, vec2(0.8137, 0.5812)), 0.0) * inversesqrt(dot(dd_, dd_) + 0.0001);' + '}'));
       gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
-        'precision mediump float; varying vec2 vuv; varying vec3 vn; varying float vd;'
+        'precision mediump float; varying vec2 vuv; varying vec3 vn; varying float vd; varying float vsd; uniform vec3 dunst;'
         + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel; uniform float lack; uniform vec3 sonne;'
         + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7), lack); vec3 N = normalize(vn);'
         + ' float d = max(dot(N, normalize(vec3(0.35, 0.9, 0.25))), 0.0); float s = pow(max(dot(N, normalize(vec3(0.2, 0.75, -0.6))), 0.0), 24.0);'
         + ' float l = mix(1.0, 0.42 + 0.66 * d, licht); vec3 c = tb * tint * (l * sonne + emis) + vec3(s * 0.35 * licht) * sonne;'
-        + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, nebel, f), mix(alpha, alpha * t.a, am)); }'));
+        + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, mix(nebel, dunst, vsd * vsd), f), mix(alpha, alpha * t.a, am)); }'));
     } else {
       gl.attachShader(p, vfShader(gl, gl.VERTEX_SHADER,
         'attribute vec3 p; attribute vec3 n; attribute vec2 uv; uniform mat4 m; uniform mat4 w; uniform mat3 nm; uniform mat4 schM; uniform vec3 auge;'
-        + 'varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vv; varying vec3 vsp;'
+        + 'varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vv; varying vec3 vsp; varying float vsd;'
         + 'void main(){ vec4 q = w * vec4(p, 1.0); gl_Position = m * q; vuv = uv; vn = nm * n; vd = gl_Position.w;'
-        + ' vv = auge - q.xyz; vsp = (schM * q).xyz * 0.5 + 0.5; }'));
+        + ' vv = auge - q.xyz; vsp = (schM * q).xyz * 0.5 + 0.5;' + ' vec2 dd_ = q.xz - auge.xz; vsd = max(dot(dd_, vec2(0.8137, 0.5812)), 0.0) * inversesqrt(dot(dd_, dd_) + 0.0001);' + '}'));
       gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
         'precision mediump float;\n' + VF_HP
-        + 'varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vv; varying HP vec3 vsp;'
+        + 'varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vv; varying HP vec3 vsp; varying float vsd; uniform vec3 dunst;'
+        + 'uniform samplerCube umw; uniform float umwAn;'
         + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
         + 'uniform float klar; uniform float glas; uniform sampler2D sch; uniform float schatt; uniform HP float bias; uniform float lack; uniform vec3 sonne;'
         + 'uniform vec3 horizont; uniform vec3 zenit;'
@@ -1755,18 +1961,20 @@
         + ' c += vec3(pow(rv, 24.0) * 0.60 * licht + sheen * licht);'
         + ' c += vec3(0.05, 0.06, 0.07) * klar * pow(rv, 6.0) * 1.2;'
         + ' vec3 Rv = reflect(-V, N); vec3 env = pow(mix(horizont, zenit, clamp(Rv.y * 1.5 + 0.1, 0.0, 1.0)), vec3(2.2));'
+        // v1.5.94 (G2): der echte Himmel (Wolken, Sonne, Boden) aus der Umgebungskarte, leicht unscharf.
+        + ' if (umwAn > 0.5) env = pow(textureCube(umw, Rv, 1.5).rgb, vec3(2.2)) * 1.15;'
         + ' c += env * klar * (0.05 + 0.6 * pow(1.0 - max(dot(N, V), 0.0), 5.0)) * 0.9;'
         + ' c += vec3(pow(1.0 - max(dot(N, V), 0.0), 5.0) * glas * 0.9);'
         + ' c = pow(filmic(c * 1.05), vec3(1.0/2.2));'
         // Schattenkarte: Bias waechst mit flachem Lichteinfall (Streifen auf schraegen Blechen).
         + ' if (schatt > 0.5 && vsp.x > 0.0 && vsp.x < 1.0 && vsp.y > 0.0 && vsp.y < 1.0 && vsp.z > 0.0 && vsp.z <= 1.0) {'
         + '   if (schTiefe(texture2D(sch, vsp.xy)) < vsp.z - bias * (1.0 + 3.0 * (1.0 - d))) c *= 0.55; }'
-        + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, nebel, f), mix(alpha, alpha * t.a, am)); }'));
+        + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, mix(nebel, dunst, vsd * vsd), f), mix(alpha, alpha * t.a, am)); }'));
     }
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'sonne', 'horizont', 'zenit', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'lack'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'sonne', 'horizont', 'zenit', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'lack', 'dunst', 'aug', 'umw', 'umwAn'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     // Feste Zwischenspeicher fuer die Matrizen je Teil (keine Float32Array je Teil und Bild).
     return { p, u, qual: !!qual, f16: new Float32Array(16), f9: new Float32Array(9), pv: new Float32Array(16), schM: new Float32Array(16),
              ap: gl.getAttribLocation(p, 'p'), an: gl.getAttribLocation(p, 'n'), auv: gl.getAttribLocation(p, 'uv') };
@@ -2259,6 +2467,7 @@
     const q = Math.abs(o.quer);
     const kerbRand = TRACK_HALF_W * 2 * 0.095;
     const kerb = !ab && q > TRACK_HALF_W + bucht - VF_AUTO.B * 0.5 && q < TRACK_HALF_W + bucht + kerbRand;
+    VF.kerbJetzt = kerb;
     if (kerb && Math.abs(kmh) > 0.05) {
       if (VF.kerbSeit === undefined || rennZeitJetzt() - VF.kerbSeit > 70) {
         VF.kerbSeit = rennZeitJetzt();
@@ -2529,9 +2738,17 @@
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     // Himmel: Vollbild-Quad, Farbverlauf im WELTRAUM (horizontfolgend beim Umsehen). Ganz hinten.
     if (!VF.himmelProg) { VF.himmelProg = vfProgrammHimmel(gl); VF.himmel = vfHimmel(gl); }
-    const k = vfKamera(VF.dtBild || 0.016);
+    let k = vfKamera(VF.dtBild || 0.016);
     // v1.3.124 Studienmodus: festes Sichtfeld aus Bildschirmgroesse und Sitzabstand.
     if (VF_STUDIE) { const sf = vfStudieFov(); if (sf) k.fov = sf; }
+    else k = vfKameraEffekt(k, VF.dtBild || 0.016);
+    VF.augeJetzt = k.auge;
+    // v1.5.94 (G2): Umgebungskarte fuer den Lack (nur Quality-Autoshader), alle 2 s neu (Wolken, Regen).
+    if (VF.tprog && VF.tprog.qual && vfWacheStufe() < 1) {
+      try { vfUmweltMalen(gl, VF.dtBild || 0.016); } catch (e) { VF.umw = null; VF.umwKaputt = true; }
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, w, h);
+    }
     gl.disable(gl.DEPTH_TEST);
     gl.useProgram(VF.himmelProg.p);
     gl.bindBuffer(gl.ARRAY_BUFFER, VF.himmel.b);
@@ -2555,6 +2772,8 @@
       gl.uniform1f(VF.himmelProg.wolken, 0.5);
       gl.uniform1f(VF.himmelProg.zeit, (performance.now() / 1000) % 10000);
       gl.uniform1f(VF.himmelProg.regen, vfRegenStaerke());
+      { const d = VF.dunstF || vfTz().horizont; gl.uniform3f(VF.himmelProg.dunst, d[0], d[1], d[2]); }
+      gl.uniform1f(VF.himmelProg.umwelt, 0);
     }
     gl.drawArrays(gl.TRIANGLES, 0, VF.himmel.n);
     gl.disableVertexAttribArray(VF.himmelProg.ap);
@@ -2572,6 +2791,7 @@
     vfFlaechenMalen(gl, pv, k.auge);
     gl.useProgram(VF.prog);
     if (!VF.loc) VF.loc = { m: gl.getUniformLocation(VF.prog, 'm'), w: gl.getUniformLocation(VF.prog, 'w'), nebel: gl.getUniformLocation(VF.prog, 'nebel'), alf: gl.getUniformLocation(VF.prog, 'alf'), sonne: gl.getUniformLocation(VF.prog, 'sonne'),
+                            dunst: gl.getUniformLocation(VF.prog, 'dunst'), aug: gl.getUniformLocation(VF.prog, 'aug'),
                             p: gl.getAttribLocation(VF.prog, 'p'), c: gl.getAttribLocation(VF.prog, 'c'), pv: new Float32Array(16), w16: new Float32Array(16) };
     const L = VF.loc;
     for (let i = 0; i < 16; i++) L.pv[i] = pv[i];
@@ -2592,7 +2812,8 @@
       gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
     }
     // v1.5: Baeume (nur auf Rasen), vor den Autos.
-    if (VF.baeume) {
+    if (VF.weh && VF.weh.prog) vfWehenMalen(gl, pv);
+    else if (VF.baeume) {
       zeichne(VF.baeume, VF_EINS);
       gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
     }
@@ -3187,6 +3408,11 @@
       gl.uniform1i(u.sch, 1);
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, VF.schatte ? VF.schatte.tex : null);
+      // v1.5.94 (G2): Umgebungskarte auf Einheit 2.
+      const umw = VF.umw && VF.umw.fertig ? VF.umw.tex : null;
+      gl.uniform1i(u.umw, 2); gl.uniform1f(u.umwAn, umw ? 1 : 0);
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_CUBE_MAP, umw);
       gl.activeTexture(gl.TEXTURE0);
     }
     gl.enableVertexAttribArray(T.ap); gl.enableVertexAttribArray(T.an); gl.enableVertexAttribArray(T.auv);
@@ -3572,6 +3798,9 @@
     VF.grafik = vfGrafikQual();   // v1.3.113: einmal je Fahrt, damit kein localStorage je Bild
     VF.wache = null; VF.letztRoh = 0;   // v1.5: Bildraten-Wache je Fahrt neu
     VF.tz = vfTageszeit();              // v1.5: Tageszeit je Fahrt einmal
+    VF.dunstF = vfDunstFarbe(vfTz());   // v1.5.94 (G3)
+    VF.sichtAn = vfSichtTempoAn();      // v1.5.94 (G7)
+    VF.fovPlus = 0; VF.kerbJetzt = false; VF.umw = null; VF.umwKaputt = false;
     VF.bloom = null; VF.bloomKaputt = false;
     // v1.3.113 Quality: echte Schattenkarte (Depth-Textur) aus Richtung der Sonne. Ohne die
     // Erweiterung bleibt der weiche Blob-Schatten (M.schatten).
@@ -3597,9 +3826,16 @@
       const S = vfBoxStriche(VF.pts, VF.nrm, tiles, VF.boxBucht);
       if (S.length) { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(S), gl.STATIC_DRAW); VF.boxStriche = { b, n: S.length / 6 }; }
     } catch (e) { VF.boxStriche = null; }
-    VF.baeume = null;
+    VF.baeume = null; VF.weh = null;
     if (VF.flaeche && VF.flaeche.art && VF.flaeche.art.art === 'rasen') {
-      try { const B = vfBaeumeBauen(VF.pts); const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(B.daten), gl.STATIC_DRAW); VF.baeume = { b, n: B.daten.length / 6 }; } catch (e) { VF.baeume = null; }
+      try { const B = vfBaeumeBauen(VF.pts); const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(B.daten), gl.STATIC_DRAW); VF.baeume = { b, n: B.daten.length / 6 };
+        // v1.5.94 (G4, nur Quality): Baeume und Grasbueschel wehen im Wind.
+        if (VF.grafik) {
+          const G = vfGrasBueschel(VF.pts, VF.nrm, VF.boxBucht ? VF.boxBucht.b : null);
+          const bg = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, bg); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(G.daten), gl.STATIC_DRAW);
+          VF.weh = { prog: vfProgrammWehen(gl), baeume: vfWehPuffer(gl, B.daten, B.gewicht), gras: { b: bg, n: G.daten.length / 7 } };
+        }
+      } catch (e) { VF.baeume = VF.baeume || null; VF.weh = null; }
     }
     VF.fahrer = { ort: vfFahrerOrt(VF.pts, VF.nrm, tiles), z: {}, k: null };
     try { VF.tv = { posten: vfTvPosten(VF.pts, VF.nrm, tiles), aktiv: -1, seit: 0, uhr: 0 }; } catch (e) { VF.tv = null; }
@@ -3856,6 +4092,15 @@
     tzZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     tzZeile.dataset.feld = 'tageszeit';
     rechts.appendChild(tzZeile);
+    // v1.5.94 (G7) BESTELLT: abschaltbar. Erklaerung im (i).
+    const sichtAn = vfSichtTempoAn();
+    const sichtWahl = () => { try { localStorage.setItem(VF_SICHT_STORE, sichtAn ? 'aus' : 'an'); } catch (e) { /* egal */ } renderGarage(); };
+    const sichtZeile = garWertZeile(t('Sichtfeld mit Tempo'), sichtAn ? t('An') : t('Aus'), sichtWahl, sichtWahl);
+    const sichtL = sichtZeile.querySelector('.gk-l');
+    sichtL.classList.add('opt-label');
+    sichtL.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Das Sichtfeld wird mit dem Tempo weiter, auf Randsteinen wackelt das Bild leicht (Verfolger- und Motorhaubenkamera).') + '</small>');
+    sichtZeile.dataset.feld = 'sicht-tempo';
+    rechts.appendChild(sichtZeile);   // das (i) richtet renderGarage ein, sobald die Zeile im Dokument steht
     // Geist: eine Kopie faehrt nach der ersten Runde die aufgezeichnete Linie ab (Standard an).
     const geistAn = vfGeistAn();
     const geistWahl = () => {
@@ -4059,7 +4304,7 @@
     // Tempo (und der Gang) der virtuellen Fahrt, bis das echte Auto sich bewegte.
     if (typeof physEngine !== 'undefined' && physEngine && typeof physEngine.reset === 'function') physEngine.reset();
     if (VF.schicht) VF.schicht.remove();
-    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.boxStriche = null; VF.boxBucht = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.wetterKnopf = null; VF.stick = null; VF.tasten = {};
+    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.weh = null; VF.umw = null; VF.boxStriche = null; VF.boxBucht = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.wetterKnopf = null; VF.stick = null; VF.tasten = {};
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
     // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).

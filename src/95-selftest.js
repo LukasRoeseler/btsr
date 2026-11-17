@@ -27251,6 +27251,92 @@
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'Belag 2048, Randstreifen 512x2048, Fuge ' + VF_TEX_K + ' Zeilen, Quality ab Werk, Licht aus' };
   });
+  // v1.5.94 BESTELLT: G2 (Himmel im Lack, natuerlicher Verlauf), G3 (Dunst zur Sonne), G4 (wehendes Gras und Baeume),
+  // G5 (Rasenflecken), G7 (Sichtfeld mit Tempo, Wackeln auf Randsteinen; "nur g7 muss abschaltbar sein").
+  stAdd('Virtuell v1.5.94: Umgebungskarte, Dunst zur Sonne, wehendes Gras, Rasenflecken, Sichtfeld mit Tempo (abschaltbar)', () => {
+    const f = [];
+    // G3: Abend waermer als Mittag, beide heller/waermer als der Horizont.
+    const zM = VF_TAGESZEITEN.find((z) => z.id === 'mittag'), zA = VF_TAGESZEITEN.find((z) => z.id === 'abend');
+    const dM = vfDunstFarbe(zM), dA = vfDunstFarbe(zA);
+    if (!(dA[0] - dA[2] > dM[0] - dM[2])) f.push('Dunst am Abend nicht waermer');
+    if (!(dM[0] > zM.horizont[0])) f.push('Dunst nicht heller als der Horizont');
+    // G5: Flecken aendern sich ueber die Flaeche, Ecken eines Rasenstuecks unterschiedlich.
+    const w = [vfRasenFleck(0, 0), vfRasenFleck(400, 0), vfRasenFleck(0, 400), vfRasenFleck(800, 800)].map((x) => x[0]);
+    if (Math.max(...w) - Math.min(...w) < 0.1) f.push('Rasenflecken ohne Unterschied ' + w.map((x) => x.toFixed(2)).join(','));
+    const tiles = codeToTrack('SG3R2G3R2').tiles, pts = trackCenterline(tiles), nrm = trackNormals(pts);
+    const T = vfBodenTexturDaten('rasen'), geo = vfBodenGeometrie(pts, T, vfBodenArt('rasen'));
+    let verschieden = 0;
+    for (let q = 0; q + 48 <= Math.min(geo.daten.length, 48 * 200); q += 48) if (Math.abs(geo.daten[q + 6] - geo.daten[q + 8 + 6]) > 1e-4) verschieden++;
+    if (verschieden < 50) f.push('Rasenecken gleichfarbig (' + verschieden + ')');
+    // G4: Buschel nur neben der Bahn, Fuss steht fest, Spitze weht; Baeume mit Gewicht je Ecke.
+    const G = vfGrasBueschel(pts, nrm, null), rand = TRACK_HALF_W + TRACK_KERB_W;
+    if (!(G.bueschel > 50)) f.push(G.bueschel + ' Bueschel');
+    let naeh = Infinity, fussW = 0, spitzeW = 0;
+    for (let q = 0; q < G.daten.length; q += 7) {
+      const x = G.daten[q], z = G.daten[q + 2];
+      for (let i = 0; i < pts.length; i += 3) naeh = Math.min(naeh, Math.hypot(pts[i].x - x, pts[i].y - z));
+      if (G.daten[q + 1] < 0) fussW = Math.max(fussW, G.daten[q + 6]); else spitzeW = Math.max(spitzeW, G.daten[q + 6]);
+      if (q > 7 * 600) break;
+    }
+    if (naeh < rand) f.push('Grasbueschel auf der Bahn (' + naeh.toFixed(2) + ' < ' + rand.toFixed(2) + ')');
+    if (fussW !== 0 || !(spitzeW > 0.1)) f.push('Gewichte Fuss ' + fussW + ', Spitze ' + spitzeW);
+    const B = vfBaeumeBauen(pts);
+    if (B.gewicht.length !== B.daten.length / 6) f.push('Baumgewichte ' + B.gewicht.length + ' fuer ' + B.daten.length / 6 + ' Ecken');
+    // G7: Sichtfeld waechst mit dem Tempo, aus = unveraendert, Kamera-Zustand bleibt unberuehrt.
+    const merk = { an: VF.sichtAn, plus: VF.fovPlus, kam: VF.kamera, v: physEngine.state.speedKmh, kerb: VF.kerbJetzt };
+    try {
+      VF.kamera = 'verfolger'; VF.sichtAn = true; VF.fovPlus = 0; VF.kerbJetzt = false;
+      physEngine.state.speedKmh = 250 / TACHO_SCALE;
+      const k = { auge: [1, 2, 3], ziel: [4, 5, 6], fov: 54, nah: 0.5 };
+      let e = k;
+      for (let i = 0; i < 200; i++) e = vfKameraEffekt(k, 0.05);
+      if (!(e.fov > 60 && e.fov <= 54 + VF_SICHT.plus + 1e-6)) f.push('Sichtfeld bei Tempo ' + e.fov.toFixed(1));
+      if (k.fov !== 54 || k.auge[1] !== 2) f.push('Kamera selbst veraendert');
+      VF.kerbJetzt = true;
+      let wack = 0;
+      for (let i = 0; i < 20; i++) wack = Math.max(wack, Math.abs(vfKameraEffekt(k, 0.016).auge[1] - 2));
+      if (!(wack > 0.001 && wack <= VF_SICHT.wackeln)) f.push('Wackeln ' + wack);
+      VF.sichtAn = false;
+      if (vfKameraEffekt(k, 0.016) !== k) f.push('abgeschaltet trotzdem veraendert');
+    } finally {
+      VF.sichtAn = merk.an; VF.fovPlus = merk.plus; VF.kamera = merk.kam; physEngine.state.speedKmh = merk.v; VF.kerbJetzt = merk.kerb;
+    }
+    // Garage: nur G7 als Schalter, mit WIP und (i).
+    const merkTab = kAktiverTab(), merkG = { auf: garAufAuto, virt: garVirtuellAuf, kam: garKameraAuf };
+    try {
+      showTab('garage'); garVirtuellAuf = true; garKameraAuf = false; renderGarage();
+      const z = $('gar-list').querySelector('[data-feld="sicht-tempo"]');
+      if (!z) f.push('Garage ohne Zeile Sichtfeld mit Tempo');
+      else {
+        if (!z.querySelector('.wip-tag')) f.push('Sichtfeld ohne WIP');
+        if (!z.querySelector('.opt-info-btn')) f.push('Sichtfeld ohne (i)');
+        const sm = z.querySelector('small');
+        if (sm && sm.offsetParent) f.push('Erklaerung sichtbar unter der Zeile');
+      }
+    } finally {
+      garAufAuto = merkG.auf; garVirtuellAuf = merkG.virt; garKameraAuf = merkG.kam; renderGarage(); showTab(merkTab);
+    }
+    // Mit WebGL in Quality: Umgebungskarte entsteht, Wehen-Programm kompiliert.
+    if (typeof virtuellStarten === 'function' && !VF.aktiv) {
+      let merkGr = null;
+      try { merkGr = localStorage.getItem(VF_GRAFIK_STORE); localStorage.setItem(VF_GRAFIK_STORE, 'qual'); } catch (e) { /* egal */ }
+      try {
+        if (virtuellStarten({ tiles: codeToTrack('SBRLGR3LGHLGLJR4G3R2@270').tiles, studie: true })) {
+          if (VF.tprog && VF.tprog.qual) {
+            vfUmweltMalen(VF.gl, 10);
+            if (!(VF.umw && VF.umw.fertig) && !VF.umwKaputt) f.push('Umgebungskarte nicht fertig');
+          }
+          if (VF.flaeche && VF.flaeche.art && VF.flaeche.art.art === 'rasen' && !(VF.weh && VF.weh.prog && VF.weh.gras.n > 0)) f.push('Wehen fehlt in Quality auf Rasen');
+        }
+      } catch (e) { f.push('Start: ' + e.message); }
+      finally {
+        if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+        try { if (merkGr === null) localStorage.removeItem(VF_GRAFIK_STORE); else localStorage.setItem(VF_GRAFIK_STORE, merkGr); } catch (e) { /* egal */ }
+        showTab(merkTab);
+      }
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : G.bueschel + ' Bueschel, Dunst Abend ' + dA.map((x) => x.toFixed(2)).join('/') };
+  });
   stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto und Farbe', async () => {
     const f = [];
     // Daten: acht Farben plus Original, eindeutige Kennungen, jede Farbe wird gefunden.
