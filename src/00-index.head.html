@@ -1938,13 +1938,50 @@
     object-fit: contain; background: #000; }
   #race-onboardscreen img[hidden], #race-onboardscreen video[hidden] { display: none; }
   #race-onboardscreen.gedreht video, #race-onboardscreen.gedreht img { transform: rotate(180deg); }
-  /* v1.5: Anzeige im Stil des virtuellen Fahrens (dieselben .vf-Kacheln). */
-  .onb-vf { position: absolute; inset: 0; pointer-events: none;
-    --vf-s: clamp(10px, calc(.9vw + 1vh), 18px); --vf-bg: rgba(8,10,14,.8); --vf-linie: var(--k-blau, #00a3e0);
-    --vf-dim: var(--k-dim, #a3acbd); font-family: var(--k-font); }
-  .onb-vf .vf-hud { left: clamp(6px, 1.2vw, 14px); top: clamp(6px, 1.2vw, 14px); width: 10.5em; }
-  .onb-vf .vf-acc { bottom: clamp(6px, 1.2vw, 14px); }
-  .onb-vf .onb-kern { width: 12em; }
+  /* v1.5.111 BESTELLT: Onboard wie Gran Turismo 7/Sport. Vollbild ueber dem Cockpit, Bild maximal gross (contain),
+     Seitenleisten auf den schwarzen Raendern (Breite --onb-rand aus onbRandSetzen, mindestens 150 px, dann
+     halbdurchsichtig ueber dem Bild), unten Mitte das GT-Band mit Tempo | Gang und Drehzahlbalken. */
+  #race-onboardscreen.onb-voll { display: block; position: fixed; inset: 0; z-index: 60; border-radius: 0; margin: 0; }
+  .onb-gt { position: absolute; inset: 0; pointer-events: none; color: #f2f4f7; font-family: var(--k-font);
+    --onb-s: clamp(11px, calc(.75vw + .9vh), 17px); font-size: var(--onb-s); }
+  .onb-seite { position: absolute; top: 0; bottom: 0; width: max(150px, var(--onb-rand, 160px)); box-sizing: border-box;
+    padding: max(10px, env(safe-area-inset-top)) 12px 12px; display: flex; flex-direction: column; gap: .55em;
+    background: linear-gradient(90deg, rgba(8,10,14,.86), rgba(8,10,14,.72)); }
+  .onb-links { left: 0; padding-left: max(12px, env(safe-area-inset-left)); }
+  .onb-rechts { right: 0; padding-right: max(12px, env(safe-area-inset-right)); background: linear-gradient(270deg, rgba(8,10,14,.86), rgba(8,10,14,.72)); }
+  .onb-gt small { display: block; font-size: .68em; letter-spacing: .14em; text-transform: uppercase; color: #a9b1bf; font-weight: 700; }
+  .onb-gt b { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .onb-posbox { display: grid; grid-template-columns: auto 1fr; align-items: end; column-gap: .35em; }
+  .onb-posbox b { background: #3a3f48; padding: .05em .4em; font-size: 2.4em; line-height: 1.05; }
+  .onb-posbox span { font-size: 1.5em; color: #e6e9ef; }
+  .onb-posbox small { grid-column: 1 / -1; margin-top: .2em; }
+  .onb-runde b { font-size: 1.8em; line-height: 1.05; }
+  .onb-zeiten { display: grid; gap: .3em; }
+  .onb-zeiten b { font-size: 1.15em; }
+  .onb-zeiten .gut { color: #3ddc84; } .onb-zeiten .schlecht { color: #ff5a4f; }
+  .onb-karte { margin-top: auto; width: 100%; max-height: 32%; }
+  .onb-karte path { fill: none; stroke: #f2f4f7; stroke-width: 2.4; stroke-linejoin: round; }
+  .onb-karte circle { fill: #e10600; }
+  .onb-feld b { font-size: 1.3em; }
+  .onb-klein { font-size: .9em; color: #e6e9ef; }
+  .onb-reifen { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; width: 3.4em; margin: .2em 0; }
+  .onb-reifen i { display: block; height: 1.25em; border-radius: 3px; background: #2a3f5c; }
+  .onb-balken { display: block; height: 5px; margin-top: .25em; background: rgba(255,255,255,.14); }
+  .onb-balken > i { display: block; height: 100%; width: 0; background: #3ddc84; }
+  .onb-unten { position: absolute; left: 50%; bottom: max(10px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    width: min(23em, calc(100% - 2 * max(150px, var(--onb-rand, 160px)) - 16px)); min-width: 15em; }
+  .onb-rpm { height: .42em; background: rgba(255,255,255,.18); clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); }
+  .onb-rpm > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #f2f4f7 0 70%, #ff9f1c 82%, #e10600); }
+  .onb-tacho { display: grid; grid-template-columns: auto 1fr auto 1fr auto; align-items: center; gap: .5em;
+    background: rgba(8,10,14,.78); padding: .25em .7em; clip-path: polygon(0 0, 100% 0, 96% 100%, 4% 100%); }
+  .onb-kmh, .onb-umin { display: grid; justify-items: center; line-height: 1; }
+  .onb-kmh b { font-size: 1.7em; } .onb-umin b { font-size: 1.1em; }
+  .onb-gang { font-size: 2.3em; line-height: 1; padding: 0 .35em; border-left: 2px solid #f2f4f7; border-right: 2px solid #f2f4f7; }
+  .onb-lampe { font-size: 1.1em; color: #4b5260; } .onb-lampe.an { color: #8fd3ff; } .onb-schalt.an { color: #e10600; }
+  .onb-weiter { position: absolute; top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right));
+    z-index: 2; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.55);
+    color: #fff; font-size: 18px; }
+  #race-onboardscreen .onb-rec { right: max(8px, env(safe-area-inset-right)); bottom: max(8px, env(safe-area-inset-bottom)); z-index: 2; }
   #race-onboardscreen.gelb { box-shadow: inset 0 0 0 6px #ffd400; }
   .onb-leer { position: absolute; inset: 0; display: flex; align-items: center;
     justify-content: center; text-align: center; padding: 16px; color: #a3acbd;
@@ -6464,24 +6501,43 @@
         <video id="onboard-video" autoplay muted playsinline></video>
         <img id="onboard-bild" alt="" hidden>
         <div class="onb-leer" id="onboard-leer">Keine Kamera. Garage &rarr; Onboard-Kamera.</div>
-        <!-- Zeiten oben links und Tempo/Gang/Tank unten Mitte: dieselben Kacheln wie beim virtuellen
-             Fahren (.vf-hud, .vf-acc), gelesen aus den Cockpit-Feldern (onbWerte). -->
-        <div class="onb-vf">
-          <div class="vf-hud vf-kachel" data-i18n-skip>
-            <div class="vf-modus" id="onb-pos"></div>
-            <div class="vf-z vf-z-akt"><span class="vf-lbl" id="onb-l-runde">Runde</span><b id="onb-runde">0</b></div>
-            <div class="vf-z"><span class="vf-lbl" id="onb-l-zeit">Zeit</span><span id="onb-zeit">&ndash;</span></div>
-            <div class="vf-z"><span class="vf-lbl" id="onb-l-letzte">Letzte</span><span id="onb-letzte">&ndash;</span></div>
-            <div class="vf-z"><span class="vf-lbl" id="onb-l-beste">Beste</span><span id="onb-beste">&ndash;</span></div>
+        <!-- v1.5.111 BESTELLT: Anzeige wie Gran Turismo 7/Sport. Das Bild so gross wie moeglich (Vollbild), auf den
+             schwarzen Raendern links und rechts die Werte, unten auf dem Bild Drehzahl, Gang und Lichter. Gelesen aus den
+             Cockpit-Feldern (onbWerte). Die Seitenleisten werden so breit wie der schwarze Rand (onbRandSetzen). -->
+        <div class="onb-gt" data-i18n-skip>
+          <div class="onb-seite onb-links">
+            <div class="onb-posbox"><b id="onb-pos-n">&ndash;</b><span id="onb-pos-von"></span>
+              <small id="onb-l-pos">Position</small></div>
+            <div class="onb-feld onb-runde"><small id="onb-l-runde">Runde</small><b id="onb-runde">0</b></div>
+            <div class="onb-zeiten">
+              <div><small id="onb-l-zeit">Zeit</small><b id="onb-zeit">&ndash;</b></div>
+              <div><small id="onb-l-delta">Delta</small><b id="onb-delta">&ndash;</b></div>
+              <div><small id="onb-l-letzte">Letzte</small><b id="onb-letzte">&ndash;</b></div>
+              <div><small id="onb-l-beste">Beste</small><b id="onb-beste">&ndash;</b></div>
+            </div>
+            <svg class="onb-karte" id="onb-karte" viewBox="0 0 100 100" aria-hidden="true"></svg>
           </div>
-          <div class="vf-acc" data-i18n-skip>
-            <div class="vf-kachel vf-acc-kern onb-kern"><div class="vf-acc-werte">
-              <div class="vf-acc-wert"><b id="onb-kmh">0</b><span class="vf-lbl">km/h</span></div>
-              <b class="vf-gang" id="onb-gang">N</b>
-              <div class="vf-acc-wert"><b id="onb-tank">&ndash;</b><span class="vf-lbl" id="onb-l-tank">Tank</span></div>
-            </div></div>
+          <div class="onb-seite onb-rechts">
+            <div class="onb-feld"><small id="onb-l-reifen">Reifen</small>
+              <div class="onb-reifen"><i id="onb-r0"></i><i id="onb-r1"></i><i id="onb-r2"></i><i id="onb-r3"></i></div>
+              <span class="onb-klein" id="onb-reifen-txt">&ndash;</span></div>
+            <div class="onb-feld"><small id="onb-l-zustand">Reifenzustand</small><b id="onb-zustand">&ndash;</b></div>
+            <div class="onb-feld"><small id="onb-l-box">Boxenstopp</small><span class="onb-klein" id="onb-box">&ndash;</span></div>
+            <div class="onb-feld"><small id="onb-l-akku">Batterie</small><b id="onb-akku">&ndash;</b><i class="onb-balken"><i id="onb-akku-bar"></i></i></div>
+            <div class="onb-feld"><small id="onb-l-tank">Tank</small><b id="onb-tank">&ndash;</b></div>
+          </div>
+          <div class="onb-unten">
+            <div class="onb-rpm"><i id="onb-rpm-bar"></i></div>
+            <div class="onb-tacho">
+              <span class="onb-lampe" id="onb-licht" title="Licht">&#9673;</span>
+              <span class="onb-kmh"><b id="onb-kmh">0</b><small>km/h</small></span>
+              <b class="onb-gang" id="onb-gang">N</b>
+              <span class="onb-umin"><b id="onb-umin">0</b><small>1/min</small></span>
+              <span class="onb-lampe onb-schalt" id="onb-schalt">&#9650;</span>
+            </div>
           </div>
         </div>
+        <button type="button" class="onb-weiter" id="onboard-weiter" aria-label="Naechster Schirm" data-i18n-skip>&#8644;</button>
         <button type="button" class="onb-rec" id="onboard-rec" data-i18n-skip>&#9679; Aufnahme</button>
       </div>
 

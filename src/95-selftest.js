@@ -3078,7 +3078,9 @@
     }
     // Anzeige: Kacheln wie beim virtuellen Fahren, gefuellt aus dem Cockpit.
     const schirm = $('race-onboardscreen');
-    if (!schirm || !schirm.querySelector('.vf-hud.vf-kachel') || !schirm.querySelector('.vf-acc .vf-gang')) f.push('VF-Kacheln fehlen');
+    // v1.5.111: GT-Stil - Seitenleisten links/rechts, unten Tempo | Gang mit Drehzahlbalken.
+    if (!schirm || !schirm.querySelector('.onb-gt .onb-links .onb-posbox') || !schirm.querySelector('.onb-unten .onb-gang')
+        || !schirm.querySelector('.onb-rechts #onb-akku') || !schirm.querySelector('#onb-karte')) f.push('GT-Anzeige fehlt');
     const merkG = $('race-gear-n') ? $('race-gear-n').textContent : null;
     try {
       if ($('race-gear-n')) $('race-gear-n').textContent = '3';

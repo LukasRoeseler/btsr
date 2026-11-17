@@ -249,6 +249,7 @@
   }
 
   function onbStoppen() {
+    onbVollbild(false);
     const z = onbZustand();
     if (z.rec) onbAufnahmeStopp(false);
     if (z.stream) z.stream.getTracks().forEach((tr) => { try { tr.stop(); } catch (e) { /* weg */ } });
@@ -353,17 +354,79 @@
     let gelb = false;
     try { gelb = typeof flagState !== 'undefined' && flagState !== 'green'; } catch (e) { /* noch nicht da */ }
     const posEl = $('race-pos');
+    // v1.5.111: weitere Werte fuer die Seitenleisten (GT-Stil), ebenfalls aus dem Cockpit.
+    const reifen = ['fl', 'fr', 'rl', 'rr'].map((k) => { const el = $('race-tyre-' + k); return el ? (el.style.background || el.style.backgroundColor || '') : ''; });
+    const zustand = ['fl', 'fr', 'rl', 'rr'].map((k) => { const el = $('race-tyre-' + k); const b = el && el.querySelector('b'); return b ? b.textContent.trim() : ''; }).filter(Boolean);
+    const deltaEl = $('race-lap-delta');
+    const bar = $('race-batt-bar');
+    let umin = 0, uminMax = 8000;
+    try { umin = +txt('race-rpm') || 0; const b = sampleEngine.band[sampleEngine.car || $('sound-profile').value]; if (b && b.limiter > 0) uminMax = b.limiter; } catch (e) { /* ohne Ton */ }
+    let licht = false;
+    try { licht = !!headlightsOn; } catch (e) { /* noch nicht da */ }
+    const schalt = $('race-shift');
     return { runde: txt('race-lap-count') || '0', zeit: txt('race-lap-now') || '–',
              letzte: txt('race-lap-last') || '–',
              beste: txt('race-lap-best') || '–', kmh: txt('race-speed') || '0',
              gang: txt('race-gear-n') || 'N', tank: txt('race-fuel') || '–',
              pos: posEl && !posEl.hidden ? posEl.textContent.trim() : '',
+             delta: txt('race-lap-delta') || '–', deltaKlasse: deltaEl ? deltaEl.className : '',
+             reifen, reifenTxt: txt('race-tyre-temp') || '–', zustand: zustand.length ? zustand.join(' · ') : '–',
+             box: [txt('race-pit-tyre'), txt('race-pit-fuel')].filter(Boolean).join(' · ') || '–',
+             akku: txt('race-batt') || '–', akkuBreite: bar ? (bar.style.width || '') : '',
+             umin, uminMax, licht, schalt: !!(schalt && (schalt.classList.contains('on') || schalt.classList.contains('an'))),
              gantryAn, lampen, gelb };
+  }
+  // v1.5.111: Vollbild. Ein Elternelement des Cockpits verhindert position: fixed (eigener Bezugsrahmen), deshalb haengt
+  // der Schirm, solange er gezeigt wird, direkt an body und kehrt danach an seinen Platz (Platzhalter) zurueck.
+  function onbVollbild(an) {
+    const s = $('race-onboardscreen');
+    if (!s) return;
+    const z = onbZustand();
+    if (an && s.parentElement !== document.body) {
+      if (!z.platz) { z.platz = document.createComment('onboard-platz'); }
+      s.parentNode.insertBefore(z.platz, s);
+      document.body.appendChild(s);
+      s.classList.add('onb-voll');
+    } else if (!an && s.parentElement === document.body && z.platz && z.platz.parentNode) {
+      z.platz.parentNode.insertBefore(s, z.platz);
+      z.platz.remove();
+      s.classList.remove('onb-voll');
+    }
+  }
+  function onbSchirmAktiv() { return typeof cockpitScreenIst === 'function' && cockpitScreenIst().id === 'onboard' && !!document.querySelector('#tab-race.active'); }
+  // v1.5.111: Breite der schwarzen Raender neben dem Bild (contain) als CSS-Variable fuer die Seitenleisten.
+  function onbRandSetzen() {
+    const s = $('race-onboardscreen');
+    if (!s) return;
+    const W = s.clientWidth, H = s.clientHeight;
+    const q = onbQuelleBild();
+    const ar = q && q.w > 0 && q.h > 0 ? q.w / q.h : 4 / 3;
+    const rand = Math.max(0, Math.round((W - H * ar) / 2));
+    const z = onbZustand();
+    if (z.rand !== rand) { z.rand = rand; s.style.setProperty('--onb-rand', rand + 'px'); }
+  }
+  // v1.5.111: Streckenlayout als weisse Linie (wie die Karte bei GT), einmal je Strecke; ohne Autoposition (Rechenzeit).
+  function onbKarteSetzen() {
+    const svg = $('onb-karte');
+    const tiles = (typeof currentTrackTiles !== 'undefined' && currentTrackTiles) || [];
+    const z = onbZustand();
+    const schluessel = tiles.length ? tiles.map((x) => x.type).join(',') : '';
+    if (!svg || z.karte === schluessel) return;
+    z.karte = schluessel;
+    if (tiles.length < 3 || typeof trackCenterline !== 'function') { svg.innerHTML = ''; return; }
+    const pts = trackCenterline(tiles);
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    pts.forEach((p) => { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); });
+    const k = 92 / Math.max(1, x1 - x0, y1 - y0), ox = (100 - (x1 - x0) * k) / 2, oy = (100 - (y1 - y0) * k) / 2;
+    const P = (p) => ((p.x - x0) * k + ox).toFixed(1) + ' ' + ((p.y - y0) * k + oy).toFixed(1);
+    const s0 = pts.find((p) => p.tile === 0) || pts[0];
+    svg.innerHTML = '<path d="M ' + pts.map(P).join(' L ') + ' Z"/><circle cx="' + P(s0).split(' ')[0] + '" cy="' + P(s0).split(' ')[1] + '" r="3"/>';
   }
 
   function onbHudMalen() {
     const w = onbWerte();
     const set = (id, v) => { const el = $(id); if (el && el.textContent !== v) el.textContent = v; };
+    const z = onbZustand();
     set('onb-runde', w.runde);
     set('onb-zeit', w.zeit);
     set('onb-letzte', w.letzte);
@@ -371,10 +434,33 @@
     set('onb-kmh', w.kmh);
     set('onb-gang', w.gang);
     set('onb-tank', w.tank);
-    set('onb-pos', w.pos);
-    // Die Beschriftungen in der eingestellten Sprache (die Kacheln selbst sind data-i18n-skip).
-    set('onb-l-runde', t('Runde')); set('onb-l-zeit', t('Zeit')); set('onb-l-letzte', t('Letzte'));
-    set('onb-l-beste', t('Beste')); set('onb-l-tank', t('Tank'));
+    // Position "P2/4" oder "2/4": grosse Zahl im Kasten, "/4" daneben (wie GT).
+    const pm = /(\d+)\s*\/\s*(\d+)/.exec(w.pos || '');
+    set('onb-pos-n', pm ? pm[1] : (w.pos || '–'));
+    set('onb-pos-von', pm ? '/' + pm[2] : '');
+    set('onb-delta', w.delta);
+    const dEl = $('onb-delta');
+    if (dEl) { const gut = /gut|good|neg|schneller/.test(w.deltaKlasse) || /^-/.test(w.delta), schlecht = /^\+/.test(w.delta);
+      dEl.classList.toggle('gut', gut); dEl.classList.toggle('schlecht', !gut && schlecht); }
+    set('onb-reifen-txt', w.reifenTxt); set('onb-zustand', w.zustand); set('onb-box', w.box); set('onb-akku', w.akku);
+    w.reifen.forEach((c, i) => { const el = $('onb-r' + i); if (el && c && el.style.background !== c) el.style.background = c; });
+    const ab = $('onb-akku-bar'); if (ab && w.akkuBreite && ab.style.width !== w.akkuBreite) ab.style.width = w.akkuBreite;
+    set('onb-umin', String(Math.round(w.umin)));
+    const rb = $('onb-rpm-bar'), proz = Math.max(0, Math.min(100, Math.round(w.umin / Math.max(1, w.uminMax) * 50) * 2)) + '%';
+    if (rb && rb.style.width !== proz) rb.style.width = proz;
+    const li = $('onb-licht'); if (li && li.classList.contains('an') !== w.licht) li.classList.toggle('an', w.licht);
+    const sc = $('onb-schalt'); if (sc && sc.classList.contains('an') !== w.schalt) sc.classList.toggle('an', w.schalt);
+    // Seltener Teil (Raender, Karte, Beschriftungen): hoechstens alle 500 ms.
+    const jetzt = performance.now();
+    if (!z.selten || jetzt - z.selten > 500) {
+      z.selten = jetzt;
+      onbVollbild(onbSchirmAktiv()); onbRandSetzen(); onbKarteSetzen();
+      // Die Beschriftungen in der eingestellten Sprache (die Kacheln selbst sind data-i18n-skip).
+      set('onb-l-runde', t('Runde')); set('onb-l-zeit', t('Zeit')); set('onb-l-letzte', t('Letzte'));
+      set('onb-l-beste', t('Beste')); set('onb-l-tank', t('Tank')); set('onb-l-pos', t('Position'));
+      set('onb-l-delta', t('Delta')); set('onb-l-reifen', t('Reifen')); set('onb-l-zustand', t('Reifenzustand'));
+      set('onb-l-box', t('Boxenstopp')); set('onb-l-akku', t('Batterie'));
+    }
     const s = $('race-onboardscreen');
     if (s) s.classList.toggle('gelb', w.gelb);
   }
@@ -635,6 +721,7 @@
 
   // zustandTest: nur fuer den Selbsttest (OMEGA_TEST.onboardWache), sonst raceState.
   function onbWache(zustandTest) {
+    if (!zustandTest) onbVollbild(onbSchirmAktiv());
     const z = onbZustand();
     const e = onbEinst();
     if (z.rec) {
@@ -709,6 +796,7 @@
       });
     });
   if ($('onboard-rec')) $('onboard-rec').addEventListener('click', onbAufnahmeUmschalten);
+  { const w = $('onboard-weiter'); if (w) w.addEventListener('click', (e) => { e.stopPropagation(); const n = $('race-screen-next'); if (n) n.click(); }); }
   if ($('onboard-art')) {
     $('onboard-art').value = onbEinst().art === 'm5' ? 'm5' : 'usb';
     $('onboard-art').addEventListener('change', (ev) => {
