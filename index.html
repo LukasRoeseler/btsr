@@ -5863,7 +5863,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.58</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.60</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7144,6 +7144,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren, Quality: Bildraten-Wache. Kommt das Ger&#228;t nicht mit (&#252;ber 4 s unter 40 Bildern pro Sekunde), schaltet Quality erst die Schatten ab, dann Aufl&#246;sung und Regentropfen auf das Ma&#223; von Performance, mit kurzer Meldung. In derselben Fahrt geht es nicht wieder hoch, damit nichts flackert.</li>
         <li>Zweiter Laptop (WIP, nach Hybrid-Dash von Mo Kamit, MIT-Lizenz): In der Garage verbindet &#8222;Zweiter Laptop&#8220; einen zweiten Rechner im selben WLAN als Bluetooth-Helfer. Der Helfer verbindet weitere Autos und reicht ihre Pakete &#252;ber einen direkten WebRTC-Kanal weiter, ohne Server. Auf dem Host erscheinen sie in der Garage wie jedes andere Auto. Gekoppelt wird einmal mit zwei Codes. Bricht die Verbindung ab, h&#228;lt der Helfer seine Autos sofort an. Jedes Helfer-Auto hat etwas mehr Verz&#246;gerung, am besten als NPC. Mit ?helfer in der Adresse &#246;ffnet sich eine eigene Helfer-Seite.</li>
         <li>Karriere: Team-Upgrades (WIP). Mit dem Preisgeld lassen sich drei Upgrades in je drei Stufen kaufen. Boxencrew senkt die Standzeit um 6 % je Stufe, Spritverbrauch den Verbrauch um 4 %, Reifenprogramm den Reifenverschlei&#223; um 5 %. Sie wirken nur auf dein Auto und nur in Karriere-Sitzungen.</li>
         <li>Karriere (WIP, nach Hybrid-Dash von Mo Kamit, MIT-Lizenz): Unter Challenges gibt es den Abschnitt &#8222;Karriere&#8220;. Gefahren wird eine Saison im Format der GT World Challenge auf deinen eigenen Strecken, kurz mit 4 oder voll mit 10 Runden. Eine Sprint-Runde hat Qualifying 1, Rennen 1, Qualifying 2 und Rennen 2, mit Pflichtstopp im Boxenfenster (sonst +30 s). Eine Endurance-Runde hat Qualifying und ein Rennen &#252;ber 3, 6 oder 24 Stunden, gestaucht auf echte Minuten. Dazu kommen fliegender Start, Punkte wie in der Serie, ein Punkt f&#252;r die Pole und drei Wertungen. Die Lizenzen Bronze bis Pro setzen das Tempo der NPCs (eng begrenzt). Es gibt au&#223;erdem XP, Fahrerstufe, Preisgeld, Sponsorziele, Troph&#228;en und den Kalender mit Strecke je Runde. Team-Upgrades folgen.</li>
@@ -17323,6 +17324,9 @@
     "Kopiert": "Copied",
     "Erzeuge …": "Creating …",
     "Zweiter Laptop (WIP, nach Hybrid-Dash von Mo Kamit, MIT-Lizenz): In der Garage verbindet „Zweiter Laptop“ einen zweiten Rechner im selben WLAN als Bluetooth-Helfer. Der Helfer verbindet weitere Autos und reicht ihre Pakete über einen direkten WebRTC-Kanal weiter, ohne Server. Auf dem Host erscheinen sie in der Garage wie jedes andere Auto. Gekoppelt wird einmal mit zwei Codes. Bricht die Verbindung ab, hält der Helfer seine Autos sofort an. Jedes Helfer-Auto hat etwas mehr Verzögerung, am besten als NPC. Mit ?helfer in der Adresse öffnet sich eine eigene Helfer-Seite.": "Second laptop (WIP, after Hybrid-Dash by Mo Kamit, MIT licence): in the Garage, “Second laptop” links a second computer on the same Wi-Fi as a Bluetooth helper. The helper connects more cars and passes their packets on over a direct WebRTC channel, with no server. On the host they appear in the Garage like any other car. Pairing is done once with two codes. If the link breaks, the helper stops its cars at once. Every helper car has a little more delay, best used as an NPC. Adding ?helfer to the address opens a dedicated helper page.",
+    "Quality: Schatten aus, damit es flüssig bleibt ({f} Bilder/s)": "Quality: shadows off to keep it smooth ({f} frames/s)",
+    "Quality: weniger Auflösung und Regentropfen ({f} Bilder/s)": "Quality: lower resolution and fewer raindrops ({f} frames/s)",
+    "Virtuell fahren, Quality: Bildraten-Wache. Kommt das Gerät nicht mit (über 4 s unter 40 Bildern pro Sekunde), schaltet Quality erst die Schatten ab, dann Auflösung und Regentropfen auf das Maß von Performance, mit kurzer Meldung. In derselben Fahrt geht es nicht wieder hoch, damit nichts flackert.": "Virtual driving, Quality: frame-rate guard. If the device cannot keep up (below 40 frames per second for over 4 s), Quality first turns off the shadows, then lowers resolution and raindrops to the Performance level, with a short message. It does not step back up during the same drive, so nothing flickers.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20193,6 +20197,8 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Quality: Schatten aus, damit es flüssig bleibt ({f} Bilder/s)": "Calidad: sombras desactivadas para mantener la fluidez ({f} imágenes/s)",
+    "Quality: weniger Auflösung und Regentropfen ({f} Bilder/s)": "Calidad: menos resolución y gotas de lluvia ({f} imágenes/s)",
     "Zweiter Laptop": "Segundo portátil",
     "Ein Laptop schafft nur so viele Bluetooth-Verbindungen. Ein zweiter Laptop im selben WLAN verbindet weitere Autos und reicht ihre Pakete weiter; gefahren und gewertet wird auf diesem Laptop (Host). Jedes Helfer-Auto hat etwas mehr Verzögerung, am besten als NPC.": "Un portátil solo admite cierto número de conexiones Bluetooth. Un segundo portátil en la misma Wi-Fi conecta más coches y reenvía sus paquetes; la conducción y los tiempos se llevan en este portátil (anfitrión). Cada coche del ayudante tiene algo más de retraso, mejor como NPC.",
     "Dieser Laptop ist der Host": "Este portátil es el anfitrión",
@@ -43990,9 +43996,38 @@
     try { onCarNotify(VF.car, { target: { value: new DataView(b.buffer) } }); } catch (e) { /* weiter */ }
   }
 
+  // ---- v1.5 (Plan Paket 4, Quality): BILDRATEN-WACHE ----
+  // "Quality bekommt eine Bildraten-Wache, die Effekte abschaltet, wenn das Geraet nicht mitkommt." Gemessen
+  // wird der echte Bildabstand (gleitendes Mittel). Liegt er nach dem Anlauf VF_WACHE.ms lang unter
+  // VF_WACHE.fps, schaltet die Wache eine Stufe herunter: 1 = keine Schattenkarte, 2 = Aufloesung wie
+  // Performance und Regentropfen wie Performance. Nie zurueck in derselben Fahrt (kein Flackern).
+  // Luecken ueber 250 ms (Pause, verborgener Tab) zaehlen nicht.
+  const VF_WACHE = { fps: 40, ms: 4000, anlauf: 3000 };
+  function vfWacheStufe() { return VF.wache ? VF.wache.stufe : 0; }
+  function vfWacheMessen(roh, now) {
+    if (!VF.grafik) return;
+    const W = VF.wache || (VF.wache = { stufe: 0, mittel: 1000 / 60, langsamSeit: 0, start: now });
+    if (!(roh > 0) || roh > 250) { W.langsamSeit = 0; return; }
+    W.mittel += (roh - W.mittel) * 0.05;
+    if (now - W.start < VF_WACHE.anlauf || W.stufe >= 2) return;
+    if (W.mittel > 1000 / VF_WACHE.fps) {
+      if (!W.langsamSeit) W.langsamSeit = now;
+      else if (now - W.langsamSeit > VF_WACHE.ms) vfWacheRunter(W, now);
+    } else W.langsamSeit = 0;
+  }
+  function vfWacheRunter(W, now) {
+    W.stufe++; W.langsamSeit = 0; W.start = now;
+    const fps = Math.round(1000 / W.mittel);
+    if (W.stufe === 1) { VF.schM = null; showHudToast(t('Quality: Schatten aus, damit es flüssig bleibt ({f} Bilder/s)').replace('{f}', fps)); }
+    else { VF.regen = null; showHudToast(t('Quality: weniger Auflösung und Regentropfen ({f} Bilder/s)').replace('{f}', fps)); }
+    log('Virtuell: Bildraten-Wache Stufe ' + W.stufe + ' bei ' + fps + ' Bildern/s.', 'info');
+  }
+
   function vfBild(now) {
     if (!VF.aktiv) return;
     VF.raf = requestAnimationFrame(vfBild);
+    vfWacheMessen(VF.letztRoh ? now - VF.letztRoh : 0, now);
+    VF.letztRoh = now;
     if (rennPauseAktiv()) {
       VF.letzt = now; VF.dtBild = 0; vfMalen(); vfHud(); return;
     }
@@ -44316,7 +44351,8 @@
     if (gl.isContextLost()) return;   // webglcontextlost beendet die Fahrt (virtuellStarten)
     // Handy (Touch): hoechstens 1,25-fache Aufloesung - die Pixelzahl ist auf dem Handy der teuerste Teil.
     // Quality (v1.3.113) darf mehr Pixel: bis 1,5 auf Touch, bis 2 auf Desktop.
-    const dpr = Math.min(navigator.maxTouchPoints > 0 ? (VF.grafik ? 1.5 : 1.25) : (VF.grafik ? 2 : 1.5), window.devicePixelRatio || 1);
+    const qPix = VF.grafik && vfWacheStufe() < 2;   // v1.5: die Bildraten-Wache nimmt ab Stufe 2 die Quality-Aufloesung
+    const dpr = Math.min(navigator.maxTouchPoints > 0 ? (qPix ? 1.5 : 1.25) : (qPix ? 2 : 1.5), window.devicePixelRatio || 1);
     const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     gl.viewport(0, 0, w, h);
@@ -44352,7 +44388,7 @@
     const blick = vfBlick(k.auge, k.ziel, k.oben || VF_OBEN);
     const pv = vfMal(vfPerspektive(k.fov * Math.PI / 180, w / Math.max(1, h), k.nah, k.fern || 1300), blick);
     // v1.3.113 Quality: echte Schatten aus der Schattenkarte (Spielerauto + NPCs), vor dem Boden.
-    if (VF.grafik && VF.schatte && VF.schatteProg) {
+    if (VF.grafik && VF.schatte && VF.schatteProg && vfWacheStufe() < 1) {
       VF.schM = vfSchattenMatrix([VF.x, 0, VF.y]);
       vfSchattenPass(gl);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -44446,7 +44482,7 @@
     const st = vfRegenStaerke();
     if (st < 0.02) return;
     vfRegenSchleier(gl, st);        // erst der Schleier, dann die Tropfen darueber (sonst verschwinden sie im Grau)
-    if (!VF.regen) VF.regen = vfRegenBauen(gl, VF.grafik ? VF_REGEN_N.qual : VF_REGEN_N.perf);
+    if (!VF.regen) VF.regen = vfRegenBauen(gl, VF.grafik && vfWacheStufe() < 2 ? VF_REGEN_N.qual : VF_REGEN_N.perf);
     const R = VF.regen;
     R.t = (R.t + Math.min(0.1, dt || 0.016)) % 1000;
     // Fahrtwind: die Tropfen bewegen sich relativ zum Auto rueckwaerts; der Strich zeigt die Bewegung im Bild.
@@ -45150,6 +45186,7 @@
     gl.enable(gl.DEPTH_TEST);
     VF.gl = gl; VF.cv = cv; VF.schicht = schicht; VF.hud = schicht.querySelector('.vf-hud');
     VF.grafik = vfGrafikQual();   // v1.3.113: einmal je Fahrt, damit kein localStorage je Bild
+    VF.wache = null; VF.letztRoh = 0;   // v1.5: Bildraten-Wache je Fahrt neu
     // v1.3.113 Quality: echte Schattenkarte (Depth-Textur) aus Richtung der Sonne. Ohne die
     // Erweiterung bleibt der weiche Blob-Schatten (M.schatten).
     VF.schatte = null; VF.schatteProg = null;
@@ -118043,6 +118080,37 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
+
+  // v1.5: Bildraten-Wache im virtuellen Fahren (Quality). Ohne echtes Zeichnen: nur die Messung.
+  stAdd('Virtuell v1.5: Bildraten-Wache schaltet bei unter 40 Bildern/s Schatten, dann Aufloesung ab', () => {
+    const f = [];
+    const merk = { grafik: VF.grafik, wache: VF.wache, schM: VF.schM, regen: VF.regen };
+    try {
+      VF.grafik = true; VF.wache = null;
+      let now = 1000;
+      const lauf = (ms, sek) => { for (let i = 0; i < sek * 1000 / ms; i++) { now += ms; vfWacheMessen(ms, now); } };
+      lauf(1000 / 60, 10);
+      if (vfWacheStufe() !== 0) f.push('bei 60 Bildern/s Stufe ' + vfWacheStufe());
+      lauf(40, 3);
+      if (vfWacheStufe() !== 0) f.push('schon nach 3 s bei 25 Bildern/s Stufe ' + vfWacheStufe());
+      lauf(40, 2);
+      if (vfWacheStufe() !== 1) f.push('nach 5 s bei 25 Bildern/s Stufe ' + vfWacheStufe() + ' statt 1');
+      lauf(40, 8);
+      if (vfWacheStufe() !== 2) f.push('Stufe 2 fehlt: ' + vfWacheStufe());
+      lauf(1000 / 60, 10);
+      if (vfWacheStufe() !== 2) f.push('geht wieder hoch');
+      // Pausen zaehlen nicht.
+      VF.wache = null; now = 1000;
+      lauf(1000 / 60, 4);
+      for (let i = 0; i < 40; i++) { now += 500; vfWacheMessen(500, now); }
+      if (vfWacheStufe() !== 0) f.push('Pausen zaehlen als langsam');
+      // Performance: keine Wache.
+      VF.grafik = false; VF.wache = null; now = 1000;
+      lauf(50, 10);
+      if (VF.wache) f.push('Wache in Performance');
+    } finally { VF.grafik = merk.grafik; VF.wache = merk.wache; VF.schM = merk.schM; VF.regen = merk.regen; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '60 fps bleibt, 25 fps: nach gut 4 s Stufe 1, dann Stufe 2, nie zurueck, Pausen und Performance ohne Wirkung' };
+  });
 
   // v1.5 (WIP, Paket 6): der USB-Bericht fuer die Android-App ist der WebHID-Bericht mit Kennung davor, 63 Bytes.
   stAdd('DualSense v1.5: USB-Bericht fuer die App (0x02, 63 Bytes), Probe aus drei Schritten, Zeile nur in der App', () => {
