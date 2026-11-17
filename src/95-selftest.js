@@ -15045,27 +15045,38 @@
   }
 
   // BESTELLT: Editor-Option "Boxengasse erzwingen" - nur waehlbar mit Box in "Meine Teile".
-  stAdd('Editor v1.3.5: Boxengasse erzwingen baut ein Boxenteil ein, ohne Box gesperrt', () => {
+  // v1.5 BESTELLT: als Anzahl, Vorgabe = so viele wie unter "Meine Teile".
+  stAdd('Editor v1.5: Boxengassen als Anzahl (Vorgabe Bestand), genau so viele eingebaut, ohne Box gesperrt', () => {
     const f = [];
-    const mitBox = stBestand(['grund'], { [TILE_TYPE.PIT]: 1 });
-    stZufallMit(mitBox, { box: true, bruecken: 0 }, (ok, tiles) => {
-      if (!ok) f.push('mit Box keine Strecke');
-      else if (!tiles.some((x) => x.type === TILE_TYPE.PIT)) f.push('Strecke ohne Boxenteil');
-      if ($('track-opt-box').disabled) f.push('mit Box im Bestand gesperrt');
-    });
-    stZufallMit(stBestand(['grund']), { box: true, bruecken: 0 }, (ok, tiles) => {
-      const kb = $('track-opt-box');
-      if (!kb.disabled) f.push('ohne Box waehlbar');
-      if (kb.checked) f.push('ohne Box angehakt');
-      if ($('track-opt-box-hinweis').hidden) f.push('kein Hinweis ohne Box');
-      if (!kb.closest('label').classList.contains('tp-opt-aus')) f.push('nicht ausgegraut');
-      if (!ok) f.push('ohne Box baut der Zufall gar nicht mehr');
-    });
+    const merkBoxen = trackEditorOpt.boxen;
+    try {
+      trackEditorOpt.boxen = null;
+      const mitBox = stBestand(['grund'], { [TILE_TYPE.PIT]: 1 });
+      stZufallMit(mitBox, { box: false, bruecken: 0, boxen: null }, (ok, tiles) => {
+        if (!ok) f.push('mit Box keine Strecke');
+        else if (tiles.filter((x) => x.type === TILE_TYPE.PIT).length !== 1) f.push('Vorgabe: nicht genau die eine Box aus dem Bestand');
+        const bx = $('track-opt-boxen');
+        if (!bx || bx.disabled || bx.value !== '1' || bx.max !== '1') f.push('Feld: ' + (bx && [bx.disabled, bx.value, bx.max].join('/')));
+      });
+      stZufallMit(mitBox, { box: false, bruecken: 0, boxen: 0 }, (ok, tiles) => {
+        if (!ok) f.push('mit 0 Boxengassen keine Strecke');
+        else if (tiles.some((x) => x.type === TILE_TYPE.PIT)) f.push('0 gewaehlt, trotzdem Box');
+      });
+      stZufallMit(stBestand(['grund']), { box: false, bruecken: 0, boxen: null }, (ok) => {
+        const bx = $('track-opt-boxen');
+        if (!bx.disabled) f.push('ohne Box waehlbar');
+        if ($('track-opt-box-hinweis').hidden) f.push('kein Hinweis ohne Box');
+        if (!$('track-opt-boxen-gruppe').classList.contains('tp-opt-aus')) f.push('nicht ausgegraut');
+        if (!ok) f.push('ohne Box baut der Zufall gar nicht mehr');
+      });
+    } finally { trackEditorOpt.boxen = merkBoxen; }
     if (!document.querySelector('#track-opt-panel .wip-tag')) f.push('WIP fehlt');
-    for (const k of ['Boxengasse erzwingen', 'Erst unter Meine Teile eine Boxengasse eintragen', 'Zufall: Boxengasse mit diesen Teilen nicht möglich']) {
+    for (const k of ['Boxengassen', 'Erst unter Meine Teile eine Boxengasse eintragen', 'Zufall: {n} Boxengassen mit diesen Teilen nicht möglich']) {
       if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'mit Box: Boxenteil drin; ohne Box: gesperrt, ausgegraut, Hinweis' };
+    // Tutorial: Schritte zu Bruecken und Boxengassen.
+    if (!K_EDITOR.some((x) => x.titel === 'Brücken') || !K_EDITOR.some((x) => x.titel === 'Boxengassen')) f.push('Editor-Tutorial ohne Bruecken/Boxengassen');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vorgabe 1 = Bestand, 0 ohne Box, ohne Bestand gesperrt mit Hinweis, Tutorial mit Bruecken und Boxengassen' };
   });
 
   // BESTELLT: Editor-Option "Bruecken" als Anzahl (Standard 0) mit Pruefung, ob es geht.

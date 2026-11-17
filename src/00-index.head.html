@@ -7144,6 +7144,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Streckeneditor: Unter Optionen gibt es jetzt &#8222;Boxengassen&#8220; als Anzahl statt &#8222;Boxengasse erzwingen&#8220;. Vorgabe sind so viele wie unter Meine Teile eingetragen, und die Zufallsstrecke enth&#228;lt genau so viele. Geht das mit den Teilen nicht, gibt es eine Meldung. Das Editor-Tutorial erkl&#228;rt jetzt auch Br&#252;cken und Boxengassen.</li>
         <li>Android-App (neue APK): Das Rumble des Controllers geht jetzt direkt &#252;ber Android an den Motor des Gamepads, &#252;ber Bluetooth und Kabel, auch wenn der Controller erst nach dem Start der App verbunden wird. Vorher lief es &#252;ber die Gamepad-Schnittstelle der Webansicht, die den Motor nur kannte, wenn der Controller schon beim Start da war. DualSense &#252;ber USB: Ist die Schnittstelle belegt (Controller nur am Kabel), sendet die Probe &#252;ber den Steuerkanal. Das Protokoll steht unter dem Knopf und l&#228;sst sich kopieren.</li>
         <li>Virtuell fahren: Wetter aus den Renneinstellungen vollst&#228;ndig. &#8222;Wechselhaft&#8220; wechselt jetzt auch virtuell zwischen trocken und Schauern (wie im Rennen, mit Meldung), und &#8222;Wetter &#228;ndert sich&#8220; bringt einen einmaligen Wechsel im mittleren Drittel der Fahrzeit. Beim Beenden gilt wieder das Wetter von vorher.</li>
         <li>Akku-Aufzeichnung (WIP, Entwicklertools &gt; Entwickler): Jedes verbundene Auto schreibt alle 10 s den Akku-Rohwert und die Fahrzeit mit. Nach dem Laden beginnt die Aufzeichnung neu, die vorige bleibt erhalten. Aus einer ganz leer gefahrenen Ladung entsteht sp&#228;ter eine echte Akku-Kennlinie statt der linearen Sch&#228;tzung. Je Auto l&#228;sst sich die Aufzeichnung als CSV kopieren.</li>
@@ -13885,7 +13886,7 @@
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M4 6h3l7 12h3M4 18h3l7-12h3"/><path d="M17 4l3 2-3 2M17 16l3 2-3 2"/></svg>
             <span class="tp-cap">Zufall</span></button>
-          <button class="tp-btn tp-schalter" id="track-opt-toggle" title="Editor-Optionen: L&auml;nge, Linkslastig, Br&uuml;cken, Spiegeln" aria-label="Editor-Optionen" aria-pressed="false">
+          <button class="tp-btn tp-schalter" id="track-opt-toggle" title="Editor-Optionen: L&auml;nge, Linkslastig, Br&uuml;cken, Boxengassen, Spiegeln" aria-label="Editor-Optionen" aria-pressed="false">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/>
               <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
@@ -13930,10 +13931,16 @@
                 <button type="button" class="num-plus" aria-label="Mehr Br&uuml;cken">+</button>
               </span>
             </span>
-            <label>Boxengasse erzwingen
-              <input type="checkbox" id="track-opt-box">
+            <!-- v1.5 BESTELLT: "Pitstop anzahl als option im editor hinzufuegen (standard: so viele wie in meine teile
+                 angegeben)". Statt "Boxengasse erzwingen" eine Anzahl wie bei den Bruecken. -->
+            <span class="tp-opt-gruppe" id="track-opt-boxen-gruppe">Boxengassen
+              <span class="num-steuer">
+                <button type="button" class="num-minus" aria-label="Weniger Boxengassen">&#8722;</button>
+                <input type="number" id="track-opt-boxen" min="0" max="0" step="1" value="0" inputmode="numeric" aria-label="Anzahl Boxengassen">
+                <button type="button" class="num-plus" aria-label="Mehr Boxengassen">+</button>
+              </span>
               <small class="tp-opt-hinweis" id="track-opt-box-hinweis" hidden>Erst unter Meine Teile eine Boxengasse eintragen</small>
-            </label>
+            </span>
             <button class="tp-opt-knopf" id="track-spiegel" title="Strecke spiegeln: Kurven links/rechts tauschen und die Schleife r&uuml;ckw&auml;rts fahren">Strecke spiegeln</button>
           </div>
         </div>
