@@ -1806,9 +1806,38 @@
     try { onCarNotify(VF.car, { target: { value: new DataView(b.buffer) } }); } catch (e) { /* weiter */ }
   }
 
+  // ---- v1.5 (Plan Paket 4, Quality): BILDRATEN-WACHE ----
+  // "Quality bekommt eine Bildraten-Wache, die Effekte abschaltet, wenn das Geraet nicht mitkommt." Gemessen
+  // wird der echte Bildabstand (gleitendes Mittel). Liegt er nach dem Anlauf VF_WACHE.ms lang unter
+  // VF_WACHE.fps, schaltet die Wache eine Stufe herunter: 1 = keine Schattenkarte, 2 = Aufloesung wie
+  // Performance und Regentropfen wie Performance. Nie zurueck in derselben Fahrt (kein Flackern).
+  // Luecken ueber 250 ms (Pause, verborgener Tab) zaehlen nicht.
+  const VF_WACHE = { fps: 40, ms: 4000, anlauf: 3000 };
+  function vfWacheStufe() { return VF.wache ? VF.wache.stufe : 0; }
+  function vfWacheMessen(roh, now) {
+    if (!VF.grafik) return;
+    const W = VF.wache || (VF.wache = { stufe: 0, mittel: 1000 / 60, langsamSeit: 0, start: now });
+    if (!(roh > 0) || roh > 250) { W.langsamSeit = 0; return; }
+    W.mittel += (roh - W.mittel) * 0.05;
+    if (now - W.start < VF_WACHE.anlauf || W.stufe >= 2) return;
+    if (W.mittel > 1000 / VF_WACHE.fps) {
+      if (!W.langsamSeit) W.langsamSeit = now;
+      else if (now - W.langsamSeit > VF_WACHE.ms) vfWacheRunter(W, now);
+    } else W.langsamSeit = 0;
+  }
+  function vfWacheRunter(W, now) {
+    W.stufe++; W.langsamSeit = 0; W.start = now;
+    const fps = Math.round(1000 / W.mittel);
+    if (W.stufe === 1) { VF.schM = null; showHudToast(t('Quality: Schatten aus, damit es flüssig bleibt ({f} Bilder/s)').replace('{f}', fps)); }
+    else { VF.regen = null; showHudToast(t('Quality: weniger Auflösung und Regentropfen ({f} Bilder/s)').replace('{f}', fps)); }
+    log('Virtuell: Bildraten-Wache Stufe ' + W.stufe + ' bei ' + fps + ' Bildern/s.', 'info');
+  }
+
   function vfBild(now) {
     if (!VF.aktiv) return;
     VF.raf = requestAnimationFrame(vfBild);
+    vfWacheMessen(VF.letztRoh ? now - VF.letztRoh : 0, now);
+    VF.letztRoh = now;
     if (rennPauseAktiv()) {
       VF.letzt = now; VF.dtBild = 0; vfMalen(); vfHud(); return;
     }
@@ -2132,7 +2161,8 @@
     if (gl.isContextLost()) return;   // webglcontextlost beendet die Fahrt (virtuellStarten)
     // Handy (Touch): hoechstens 1,25-fache Aufloesung - die Pixelzahl ist auf dem Handy der teuerste Teil.
     // Quality (v1.3.113) darf mehr Pixel: bis 1,5 auf Touch, bis 2 auf Desktop.
-    const dpr = Math.min(navigator.maxTouchPoints > 0 ? (VF.grafik ? 1.5 : 1.25) : (VF.grafik ? 2 : 1.5), window.devicePixelRatio || 1);
+    const qPix = VF.grafik && vfWacheStufe() < 2;   // v1.5: die Bildraten-Wache nimmt ab Stufe 2 die Quality-Aufloesung
+    const dpr = Math.min(navigator.maxTouchPoints > 0 ? (qPix ? 1.5 : 1.25) : (qPix ? 2 : 1.5), window.devicePixelRatio || 1);
     const w = Math.round(cv.clientWidth * dpr), h = Math.round(cv.clientHeight * dpr);
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     gl.viewport(0, 0, w, h);
@@ -2168,7 +2198,7 @@
     const blick = vfBlick(k.auge, k.ziel, k.oben || VF_OBEN);
     const pv = vfMal(vfPerspektive(k.fov * Math.PI / 180, w / Math.max(1, h), k.nah, k.fern || 1300), blick);
     // v1.3.113 Quality: echte Schatten aus der Schattenkarte (Spielerauto + NPCs), vor dem Boden.
-    if (VF.grafik && VF.schatte && VF.schatteProg) {
+    if (VF.grafik && VF.schatte && VF.schatteProg && vfWacheStufe() < 1) {
       VF.schM = vfSchattenMatrix([VF.x, 0, VF.y]);
       vfSchattenPass(gl);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -2262,7 +2292,7 @@
     const st = vfRegenStaerke();
     if (st < 0.02) return;
     vfRegenSchleier(gl, st);        // erst der Schleier, dann die Tropfen darueber (sonst verschwinden sie im Grau)
-    if (!VF.regen) VF.regen = vfRegenBauen(gl, VF.grafik ? VF_REGEN_N.qual : VF_REGEN_N.perf);
+    if (!VF.regen) VF.regen = vfRegenBauen(gl, VF.grafik && vfWacheStufe() < 2 ? VF_REGEN_N.qual : VF_REGEN_N.perf);
     const R = VF.regen;
     R.t = (R.t + Math.min(0.1, dt || 0.016)) % 1000;
     // Fahrtwind: die Tropfen bewegen sich relativ zum Auto rueckwaerts; der Strich zeigt die Bewegung im Bild.
@@ -2966,6 +2996,7 @@
     gl.enable(gl.DEPTH_TEST);
     VF.gl = gl; VF.cv = cv; VF.schicht = schicht; VF.hud = schicht.querySelector('.vf-hud');
     VF.grafik = vfGrafikQual();   // v1.3.113: einmal je Fahrt, damit kein localStorage je Bild
+    VF.wache = null; VF.letztRoh = 0;   // v1.5: Bildraten-Wache je Fahrt neu
     // v1.3.113 Quality: echte Schattenkarte (Depth-Textur) aus Richtung der Sonne. Ohne die
     // Erweiterung bleibt der weiche Blob-Schatten (M.schatten).
     VF.schatte = null; VF.schatteProg = null;

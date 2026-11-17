@@ -26413,6 +26413,37 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  // v1.5: Bildraten-Wache im virtuellen Fahren (Quality). Ohne echtes Zeichnen: nur die Messung.
+  stAdd('Virtuell v1.5: Bildraten-Wache schaltet bei unter 40 Bildern/s Schatten, dann Aufloesung ab', () => {
+    const f = [];
+    const merk = { grafik: VF.grafik, wache: VF.wache, schM: VF.schM, regen: VF.regen };
+    try {
+      VF.grafik = true; VF.wache = null;
+      let now = 1000;
+      const lauf = (ms, sek) => { for (let i = 0; i < sek * 1000 / ms; i++) { now += ms; vfWacheMessen(ms, now); } };
+      lauf(1000 / 60, 10);
+      if (vfWacheStufe() !== 0) f.push('bei 60 Bildern/s Stufe ' + vfWacheStufe());
+      lauf(40, 3);
+      if (vfWacheStufe() !== 0) f.push('schon nach 3 s bei 25 Bildern/s Stufe ' + vfWacheStufe());
+      lauf(40, 2);
+      if (vfWacheStufe() !== 1) f.push('nach 5 s bei 25 Bildern/s Stufe ' + vfWacheStufe() + ' statt 1');
+      lauf(40, 8);
+      if (vfWacheStufe() !== 2) f.push('Stufe 2 fehlt: ' + vfWacheStufe());
+      lauf(1000 / 60, 10);
+      if (vfWacheStufe() !== 2) f.push('geht wieder hoch');
+      // Pausen zaehlen nicht.
+      VF.wache = null; now = 1000;
+      lauf(1000 / 60, 4);
+      for (let i = 0; i < 40; i++) { now += 500; vfWacheMessen(500, now); }
+      if (vfWacheStufe() !== 0) f.push('Pausen zaehlen als langsam');
+      // Performance: keine Wache.
+      VF.grafik = false; VF.wache = null; now = 1000;
+      lauf(50, 10);
+      if (VF.wache) f.push('Wache in Performance');
+    } finally { VF.grafik = merk.grafik; VF.wache = merk.wache; VF.schM = merk.schM; VF.regen = merk.regen; }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '60 fps bleibt, 25 fps: nach gut 4 s Stufe 1, dann Stufe 2, nie zurueck, Pausen und Performance ohne Wirkung' };
+  });
+
   // v1.5 (WIP, Paket 6): der USB-Bericht fuer die Android-App ist der WebHID-Bericht mit Kennung davor, 63 Bytes.
   stAdd('DualSense v1.5: USB-Bericht fuer die App (0x02, 63 Bytes), Probe aus drei Schritten, Zeile nur in der App', () => {
     const f = [];
