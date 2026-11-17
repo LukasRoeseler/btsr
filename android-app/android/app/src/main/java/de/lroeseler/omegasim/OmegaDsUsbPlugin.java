@@ -13,7 +13,9 @@ import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.os.Build;
+import android.os.SystemClock;
 import android.util.Base64;
+import android.view.InputDevice;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -23,6 +25,7 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -73,6 +76,7 @@ public class OmegaDsUsbPlugin extends Plugin {
         r.put("gefunden", d != null);
         r.put("erlaubt", d != null && usb().hasPermission(d));
         r.put("name", d != null ? (d.getProductName() != null ? d.getProductName() : "DualSense") : "");
+        r.put("offen", dauer != null);
         call.resolve(r);
     }
 
@@ -118,6 +122,154 @@ public class OmegaDsUsbPlugin extends Plugin {
         Intent absicht = new Intent(AKTION).setPackage(ctx.getPackageName());
         int flags = Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0;
         usb().requestPermission(d, PendingIntent.getBroadcast(ctx, 0, absicht, flags));
+    }
+
+    // ---- STUFE 2 (v1.5): DAUERBETRIEB BEIM FAHREN ----------------------------------------------------------
+    // BESTELLT: "Bitte also nun Trigger-Effekte richtig ins virtuelle und echte Fahren einbauen." Eine Verbindung bleibt
+    // offen; die Seite schickt bei jeder Aenderung des Effekts einen Bericht (senden), ein eigener Schreib-Thread sendet
+    // immer nur den NEUESTEN (kein Rueckstau, keine zusaetzliche Latenz). Android gibt einer App die HID-Schnittstelle nur
+    // mit claimInterface(force): haengt der Controller NUR am Kabel, verschwindet er dabei als Gamepad (keine Tasten mehr).
+    // Darum prueft oeffnen() nach dem Belegen, ob noch ein Sony-Gamepad da ist (z. B. ueber Bluetooth); wenn nicht, gibt
+    // es die Schnittstelle sofort zurueck und meldet grund "tasten". Abziehen des Kabels schliesst von selbst.
+    private static final class Dauer {
+        UsbDevice d; UsbDeviceConnection c; UsbInterface hid; UsbEndpoint aus; boolean belegt; int hidId;
+        final AtomicReference<byte[]> neu = new AtomicReference<>();
+        volatile boolean laeuft = true; Thread faden; int fehler = 0; long gesendet = 0;
+    }
+    private volatile Dauer dauer = null;
+    private BroadcastReceiver abzieher = null;
+
+    private static boolean sonyGamepadDa() {
+        for (int id : InputDevice.getDeviceIds()) {
+            InputDevice x = InputDevice.getDevice(id);
+            if (x == null || x.isVirtual() || x.getVendorId() != SONY) continue;
+            if ((x.getSources() & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD) return true;
+        }
+        return false;
+    }
+    private static int schreiben(Dauer z, byte[] b) {
+        int n = -1;
+        if (z.belegt && z.aus != null) n = z.c.bulkTransfer(z.aus, b, b.length, 100);
+        if (n < 0) n = z.c.controlTransfer(0x21, 0x09, 0x0200 | (b[0] & 0xff), z.hidId, b, b.length, 100);
+        return n;
+    }
+    private void mitErlaubnis(final UsbDevice d, final Runnable ja, final Runnable nein) {
+        if (usb().hasPermission(d)) { ja.run(); return; }
+        final Context ctx = getContext();
+        BroadcastReceiver empfaenger = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context c, Intent intent) {
+                try { ctx.unregisterReceiver(this); } catch (Exception e) { /* schon weg */ }
+                if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) ja.run(); else nein.run();
+            }
+        };
+        ContextCompat.registerReceiver(ctx, empfaenger, new IntentFilter(AKTION), ContextCompat.RECEIVER_NOT_EXPORTED);
+        Intent absicht = new Intent(AKTION).setPackage(ctx.getPackageName());
+        int flags = Build.VERSION.SDK_INT >= 31 ? PendingIntent.FLAG_MUTABLE : 0;
+        usb().requestPermission(d, PendingIntent.getBroadcast(ctx, 0, absicht, flags));
+    }
+
+    @PluginMethod
+    public void oeffnen(final PluginCall call) {
+        if (dauer != null) { JSObject r = new JSObject(); r.put("ok", true); r.put("weg", dauer.belegt ? "interrupt" : "control"); r.put("protokoll", "schon offen"); call.resolve(r); return; }
+        final UsbDevice d = finden();
+        if (d == null) { JSObject r = new JSObject(); r.put("ok", false); r.put("grund", "fehlt"); r.put("protokoll", "Kein DualSense am USB-Kabel."); call.resolve(r); return; }
+        final byte[] aus = Base64.decode(call.getString("aus", ""), Base64.DEFAULT);
+        mitErlaubnis(d, () -> new Thread(() -> oeffnenJetzt(call, d, aus), "omega-ds-usb-auf").start(), () -> {
+            JSObject r = new JSObject(); r.put("ok", false); r.put("grund", "erlaubnis"); r.put("protokoll", "USB-Zugriff nicht erlaubt."); call.resolve(r);
+        });
+    }
+    private void oeffnenJetzt(PluginCall call, UsbDevice d, byte[] aus) {
+        StringBuilder p = new StringBuilder();
+        Dauer z = new Dauer();
+        z.d = d;
+        String grund = "";
+        try {
+            for (int i = 0; i < d.getInterfaceCount(); i++) if (d.getInterface(i).getInterfaceClass() == UsbConstants.USB_CLASS_HID) { z.hid = d.getInterface(i); break; }
+            if (z.hid == null) throw new Exception("keine HID-Schnittstelle");
+            z.hidId = z.hid.getId();
+            for (int i = 0; i < z.hid.getEndpointCount(); i++) {
+                UsbEndpoint e = z.hid.getEndpoint(i);
+                if (e.getDirection() == UsbConstants.USB_DIR_OUT && e.getType() == UsbConstants.USB_ENDPOINT_XFER_INT) z.aus = e;
+            }
+            z.c = usb().openDevice(d);
+            if (z.c == null) throw new Exception("openDevice fehlgeschlagen");
+            boolean vorher = sonyGamepadDa();
+            z.belegt = z.c.claimInterface(z.hid, true);
+            p.append("Gamepad vorher: ").append(vorher).append(", claimInterface: ").append(z.belegt).append("\n");
+            if (z.belegt) {
+                SystemClock.sleep(700);
+                if (!sonyGamepadDa()) {
+                    grund = "tasten";
+                    throw new Exception("Nach dem Belegen ist kein Gamepad mehr da (Controller haengt nur am Kabel)");
+                }
+            }
+            int n = aus.length > 0 ? schreiben(z, aus) : 0;
+            p.append("erster Bericht: ").append(n).append(" Bytes\n");
+            if (n < 0) throw new Exception("Senden fehlgeschlagen");
+        } catch (Exception e) {
+            p.append("Fehler: ").append(e.getMessage()).append("\n");
+            if (z.c != null) {
+                if (z.belegt) { try { z.c.releaseInterface(z.hid); } catch (Exception e2) { /* weg */ } }
+                try { z.c.close(); } catch (Exception e2) { /* weg */ }
+            }
+            JSObject r = new JSObject(); r.put("ok", false); r.put("grund", grund.isEmpty() ? "fehler" : grund); r.put("protokoll", p.toString()); call.resolve(r);
+            return;
+        }
+        z.faden = new Thread(() -> {
+            while (z.laeuft) {
+                byte[] b = z.neu.getAndSet(null);
+                if (b == null) { synchronized (z) { try { z.wait(200); } catch (InterruptedException e) { return; } } continue; }
+                int n = -1;
+                try { n = schreiben(z, b); } catch (Exception e) { n = -1; }
+                if (n < 0) { if (++z.fehler > 20) { schliessenIntern("Senden scheitert"); return; } } else { z.fehler = 0; z.gesendet++; }
+            }
+        }, "omega-ds-usb-schreiber");
+        z.faden.start();
+        dauer = z;
+        abzieherAn();
+        JSObject r = new JSObject(); r.put("ok", true); r.put("weg", z.belegt ? "interrupt" : "control"); r.put("protokoll", p.toString()); call.resolve(r);
+    }
+    private void abzieherAn() {
+        if (abzieher != null) return;
+        abzieher = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context c, Intent intent) {
+                UsbDevice x = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                Dauer z = dauer;
+                if (z != null && x != null && x.getDeviceName().equals(z.d.getDeviceName())) schliessenIntern("Kabel abgezogen");
+            }
+        };
+        ContextCompat.registerReceiver(getContext(), abzieher, new IntentFilter(UsbManager.ACTION_USB_DEVICE_DETACHED), ContextCompat.RECEIVER_EXPORTED);
+    }
+    private synchronized void schliessenIntern(String grund) {
+        Dauer z = dauer;
+        if (z == null) return;
+        dauer = null;
+        z.laeuft = false;
+        synchronized (z) { z.notifyAll(); }
+        try { if (z.belegt) z.c.releaseInterface(z.hid); } catch (Exception e) { /* weg */ }
+        try { z.c.close(); } catch (Exception e) { /* weg */ }
+        JSObject r = new JSObject(); r.put("grund", grund);
+        notifyListeners("dsUsbZu", r);
+    }
+
+    @PluginMethod
+    public void senden(PluginCall call) {
+        Dauer z = dauer;
+        if (z == null) { JSObject r = new JSObject(); r.put("ok", false); call.resolve(r); return; }
+        z.neu.set(Base64.decode(call.getString("bericht", ""), Base64.DEFAULT));
+        synchronized (z) { z.notifyAll(); }
+        JSObject r = new JSObject(); r.put("ok", true); r.put("gesendet", z.gesendet); call.resolve(r);
+    }
+
+    @PluginMethod
+    public void schliessen(PluginCall call) {
+        Dauer z = dauer;
+        String b64 = call.getString("aus", "");
+        if (z != null && b64 != null && !b64.isEmpty()) { try { schreiben(z, Base64.decode(b64, Base64.DEFAULT)); } catch (Exception e) { /* weg */ } }
+        schliessenIntern("geschlossen");
+        call.resolve();
     }
 
     private static void antwort(PluginCall call, boolean ok, String weg, String protokoll) {

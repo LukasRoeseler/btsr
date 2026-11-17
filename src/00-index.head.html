@@ -7144,6 +7144,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>DualSense-Trigger beim Fahren in der Android-App (WIP, neue APK). Ist der Controller per Bluetooth verbunden und steckt zus&#228;tzlich das USB-Kabel, kommen die Trigger-Effekte jetzt beim echten und beim virtuellen Fahren: Widerstand der Bremse, Vibration bei ABS und blockierendem Rad, beim Gas bei Schlupf und Traktionskontrolle. Die Verbindung kommt von selbst, sobald das Kabel steckt. H&#228;ngt der Controller nur am Kabel, bliebe er ohne Tasten; dann l&#228;sst die App die Trigger aus und sagt es. Abschaltbar unter Optionen &gt; Vibration. Au&#223;erdem sendet der Knopf &#8222;Vibration testen&#8220; wieder, vorher erreichte er keinen Controller.</li>
         <li>Streckeneditor: Unter Optionen gibt es jetzt &#8222;Boxengassen&#8220; als Anzahl statt &#8222;Boxengasse erzwingen&#8220;. Vorgabe sind so viele wie unter Meine Teile eingetragen, und die Zufallsstrecke enth&#228;lt genau so viele. Geht das mit den Teilen nicht, gibt es eine Meldung. Das Editor-Tutorial erkl&#228;rt jetzt auch Br&#252;cken und Boxengassen.</li>
         <li>Android-App (neue APK): Das Rumble des Controllers geht jetzt direkt &#252;ber Android an den Motor des Gamepads, &#252;ber Bluetooth und Kabel, auch wenn der Controller erst nach dem Start der App verbunden wird. Vorher lief es &#252;ber die Gamepad-Schnittstelle der Webansicht, die den Motor nur kannte, wenn der Controller schon beim Start da war. DualSense &#252;ber USB: Ist die Schnittstelle belegt (Controller nur am Kabel), sendet die Probe &#252;ber den Steuerkanal. Das Protokoll steht unter dem Knopf und l&#228;sst sich kopieren.</li>
         <li>Virtuell fahren: Wetter aus den Renneinstellungen vollst&#228;ndig. &#8222;Wechselhaft&#8220; wechselt jetzt auch virtuell zwischen trocken und Schauern (wie im Rennen, mit Meldung), und &#8222;Wetter &#228;ndert sich&#8220; bringt einen einmaligen Wechsel im mittleren Drittel der Fahrzeit. Beim Beenden gilt wieder das Wetter von vorher.</li>
@@ -12361,6 +12362,10 @@
           <small>Probe, ob die App die adaptiven Trigger &uuml;ber das USB-Kabel erreicht: 3 s fester Widerstand auf beiden Triggern, dann 2 s Vibration, dann aus. Danach gibt die App den Controller wieder frei. Bitte melden: Haben die Trigger reagiert, und gehen die Tasten danach noch? Das Protokoll steht im Live-Log. Braucht die neue APK.</small></div>
         <button type="button" id="ds-usb-test">Trigger testen</button>
         <span class="muted" id="ds-usb-lage" data-i18n-skip style="font-size:11px; text-align:right; max-width:34ch"></span></div>
+      <!-- v1.5 (WIP, Paket 6 Stufe 2): Trigger-Effekte beim Fahren ueber das Kabel (nur in der App sichtbar). -->
+      <div class="opt-row" id="ds-usb-dauer-zeile" hidden><div class="opt-label">Trigger beim Fahren über USB <span class="wip-tag">WIP</span>
+          <small>Die Trigger-Effekte (Widerstand, ABS, Schlupf) beim echten und virtuellen Fahren über das USB-Kabel. Android gibt die Trigger nur frei, wenn der Controller zusätzlich per Bluetooth verbunden ist: zuerst Bluetooth, dann das Kabel. Hängt er nur am Kabel, würden die Tasten ausfallen; dann bleibt es aus und die App sagt es.</small></div>
+        <label class="tgl"><input type="checkbox" id="ds-usb-an" checked data-preset-skip><span></span></label></div>
       <!-- v1.5: das Protokoll der Probe zum Kopieren (wie das Verbindungsprotokoll der Garage). -->
       <div class="opt-row opt-breit" id="ds-usb-proto-zeile" hidden>
         <textarea id="ds-usb-proto" readonly rows="6" data-i18n-skip style="width:100%; font:11px/1.3 monospace"></textarea>

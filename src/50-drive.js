@@ -911,8 +911,12 @@
       // AUSDRUECKLICH AN padRumble VORBEI, mit einer Art, die es nicht gibt: der Test soll
       // den WEG pruefen und nicht die Schalter. Wer den Hauptschalter aus hat, soll das als
       // Satz lesen und nicht als Schweigen.
+      // v1.5 GEMELDET: "the rumble does not do anything when I click the test rumble". ruettle() ohne Ziel hiess
+      // "undefined = keiner" (zielPads) - der Knopf hat nie etwas gesendet. null = alle Pads, in der App der
+      // Android-Vibrator (nativRuettler).
+      const nativ = typeof nativRuettler === 'function' && nativRuettler();
       const stoss = rumbleOn ? ruettle({ duration: 260, startDelay: 0,
-                                         strongMagnitude: 0.6, weakMagnitude: 0.4 }) : 0;
+                                         strongMagnitude: 0.6, weakMagnitude: 0.4 }, null) : 0;
       const teile = [];
       if (!lage.pads.length) {
         teile.push('Kein Controller gemeldet. Eine Taste dr\u00fccken \u2013 der Browser '
@@ -926,6 +930,7 @@
         }
       }
       if (!lage.hauptschalter) teile.push('Hauptschalter steht AUS \u2013 nichts gesendet.');
+      else if (nativ && stoss) teile.push('Stoss \u00fcber Android an den Controller gesendet.');
       else teile.push('Stoss an ' + stoss + ' von ' + lage.pads.length + ' gesendet.');
       out.textContent = teile.join(' | ');
       log('R\u00fcttelprobe: ' + teile.join(' | '), 'info');

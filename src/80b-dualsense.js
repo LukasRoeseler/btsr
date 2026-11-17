@@ -129,6 +129,8 @@
     return { id: 0x31, daten: d };
   }
   async function dsSenden(links, rechts) {
+    // v1.5: in der App ueber das USB-Kabel (OmegaDsUsbPlugin), wenn die Dauerverbindung steht.
+    if (dsUsb.offen) { dsUsbSenden(dsUsbBericht(links, rechts)); return; }
     if (!dsGeraet) return;
     const b = dsBericht(links, rechts, dsBt, dsFolge);
     dsFolge = (dsFolge + 1) & 0x0f;
@@ -184,7 +186,7 @@
     };
   }
   function dsTick() {
-    if (!dsGeraet) return;
+    if (!dsGeraet && !dsUsb.offen) return;
     const jetzt = performance.now();
     const a = dsTriggerArt(dsEingang());
     const l = dsBremseLinks() ? dsHalten('links', a.links, jetzt) : 'aus';
@@ -233,6 +235,14 @@
   });
   async function dsUsbTest() {
     if (!dsUsbPlugin()) { dsUsbLage(t('Braucht die neue APK.')); return; }
+    if (dsUsb.offen) {
+      const folge = [[dsWiderstand(1, 8, 8), dsWiderstand(1, 8, 8), 3000], [dsVibration(2, 7, DS_HZ.abs), dsVibration(1, 6, DS_HZ.spin), 2000], [dsAus(), dsAus(), 0]];
+      dsUsbLage(t('Läuft …'));
+      for (const [l, r, ms] of folge) { dsUsbSenden(dsUsbBericht(l, r)); if (ms) await new Promise((ok) => setTimeout(ok, ms)); }
+      dsZustand = null;
+      dsUsbLage(t('Gesendet ({w}). Haben die Trigger reagiert?').replace('{w}', 'USB'));
+      return;
+    }
     const C = window.Capacitor;
     dsUsbLage(t('Läuft …'));
     try {
@@ -247,6 +257,58 @@
     }
   }
   if ($('ds-usb-zeile')) $('ds-usb-zeile').hidden = !dsUsbApp();
+  if ($('ds-usb-dauer-zeile')) $('ds-usb-dauer-zeile').hidden = !dsUsbApp();
+
+  // ---- v1.5 (WIP, Paket 6 Stufe 2): DAUERVERBINDUNG BEIM FAHREN ----------------------------------------------
+  // BESTELLT: "Trigger-Effekte richtig ins virtuelle und echte Fahren einbauen." Alle DS_USB_SUCH_MS fragt die Seite, ob
+  // ein DualSense am Kabel haengt, und oeffnet die Verbindung (einmal Erlaubnis). Danach sendet dsTick ueber dsSenden
+  // dieselben Effekte wie am PC, nur ueber das Kabel. Meldet die App "tasten" (nur Kabel, Tasten fielen weg), bleibt es
+  // aus, bis das Kabel einmal abgezogen war.
+  const DS_USB_SUCH_MS = 3000;
+  const dsUsb = { offen: false, sucht: false, gesperrt: '', meldung: '' };
+  function dsUsbAn() { return !!($('ds-usb-an') ? $('ds-usb-an').checked : true); }
+  function dsUsbSenden(bytes) {
+    try { window.Capacitor.nativePromise('OmegaDsUsb', 'senden', { bericht: dsUsbBase64(bytes) }).catch(() => {}); } catch (e) { /* weiter */ }
+  }
+  async function dsUsbSuchen() {
+    if (!dsUsbPlugin() || dsUsb.sucht) return;
+    const C = window.Capacitor;
+    dsUsb.sucht = true;
+    try {
+      const l = await C.nativePromise('OmegaDsUsb', 'lage', {});
+      if (!l || !l.gefunden) { dsUsb.gesperrt = ''; if (dsUsb.offen) { dsUsb.offen = false; dsZustand = null; } return; }
+      if (l.offen === false && dsUsb.offen) { dsUsb.offen = false; dsZustand = null; }
+      if (!dsUsbAn()) { if (dsUsb.offen) await dsUsbZu(); return; }
+      if (dsUsb.offen || dsUsb.gesperrt) return;
+      const r = await C.nativePromise('OmegaDsUsb', 'oeffnen', { aus: dsUsbBase64(dsUsbBericht(dsAus(), dsAus())) });
+      if (r && r.ok) {
+        dsUsb.offen = true; dsZustand = null;
+        dsUsb.meldung = t('Trigger über USB aktiv ({w})').replace('{w}', r.weg || '?');
+        showHudToast(t('DualSense-Trigger über USB aktiv'));
+        log('DualSense USB: Trigger aktiv. ' + ((r && r.protokoll) || ''), 'ok');
+      } else {
+        dsUsb.gesperrt = (r && r.grund) || 'fehler';
+        dsUsb.meldung = dsUsb.gesperrt === 'tasten'
+          ? t('Nur am Kabel fallen die Tasten weg: Controller zuerst per Bluetooth verbinden, dann das Kabel einstecken.')
+          : dsUsb.gesperrt === 'erlaubnis' ? t('USB-Zugriff nicht erlaubt.') : t('Fehler, siehe Live-Log.');
+        if (dsUsb.gesperrt === 'tasten') showHudToast(dsUsb.meldung);
+        log('DualSense USB: ' + dsUsb.gesperrt + '. ' + ((r && r.protokoll) || ''), 'info');
+      }
+      dsUsbLage(dsUsb.meldung);
+    } catch (e) { /* alte APK: kein oeffnen */ dsUsb.gesperrt = 'apk'; }
+    finally { dsUsb.sucht = false; }
+  }
+  async function dsUsbZu() {
+    if (!dsUsb.offen) return;
+    dsUsb.offen = false; dsZustand = null;
+    try { await window.Capacitor.nativePromise('OmegaDsUsb', 'schliessen', { aus: dsUsbBase64(dsUsbBericht(dsAus(), dsAus())) }); } catch (e) { /* weg */ }
+    dsUsbLage('');
+  }
+  if (dsUsbApp()) {
+    setInterval(dsUsbSuchen, DS_USB_SUCH_MS);
+    try { window.Capacitor.addListener('OmegaDsUsb', 'dsUsbZu', (r) => { dsUsb.offen = false; dsZustand = null; dsUsbLage(''); log('DualSense USB: zu (' + ((r && r.grund) || '') + ').', 'info'); }); } catch (e) { /* alte Capacitor-Fassung */ }
+  }
+  if ($('ds-usb-an')) $('ds-usb-an').addEventListener('change', () => { if (!dsUsbAn()) dsUsbZu(); else { dsUsb.gesperrt = ''; dsUsbSuchen(); } });
   if ($('ds-usb-test')) $('ds-usb-test').addEventListener('click', dsUsbTest);
   if ('hid' in navigator) {
     navigator.hid.addEventListener('disconnect', (e) => { if (e.device === dsGeraet) { dsGeraet = null; dsLageZeigen(); } });

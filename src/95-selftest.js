@@ -26424,6 +26424,55 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  stAdd('DualSense v1.5: Trigger beim Fahren ueber USB (Dauerverbindung), Vibration-Testknopf sendet', async () => {
+    const f = [];
+    const merk = { cap: window.Capacitor, pad: window.OmegaPad, usb: Object.assign({}, dsUsb), zust: dsZustand, stand: Object.assign({}, nativRuettlerStand), an: $('ds-usb-an') && $('ds-usb-an').checked };
+    const gesendet = [];
+    let oeffnenArg = null;
+    try {
+      // Vibration-Testknopf: erreicht die Pads (hier ueber eine Attrappe des Android-Vibrators).
+      const stoesse = [];
+      window.OmegaPad = { ruettlerDa: () => 1, ruetteln: (a, b, ms) => { stoesse.push(ms); return true; }, lesen: () => '' };
+      nativRuettlerStand = { zeit: 0, n: 0 };
+      const merkRumble = rumbleOn; rumbleOn = true;
+      try { $('vib-test').click(); } finally { rumbleOn = merkRumble; }
+      if (stoesse.length !== 1) f.push('Testknopf sendet nicht (' + stoesse.length + ')');
+      // Dauerverbindung.
+      let antwortOeffnen = { ok: true, weg: 'interrupt', protokoll: '' };
+      window.Capacitor = { isNativePlatform: () => true, isPluginAvailable: (x) => x === 'OmegaDsUsb', addListener: () => {},
+        nativePromise: async (pl, m, arg) => {
+          if (m === 'lage') return { gefunden: true, offen: dsUsb.offen };
+          if (m === 'oeffnen') { oeffnenArg = arg; return antwortOeffnen; }
+          if (m === 'senden') { gesendet.push(atob(arg.bericht)); return { ok: true }; }
+          return {};
+        } };
+      if ($('ds-usb-an')) $('ds-usb-an').checked = true;
+      Object.assign(dsUsb, { offen: false, sucht: false, gesperrt: '', meldung: '' });
+      await dsUsbSuchen();
+      if (!dsUsb.offen) f.push('Dauerverbindung nicht offen');
+      if (!oeffnenArg || atob(oeffnenArg.aus).length !== 63) f.push('oeffnen ohne Aus-Bericht');
+      dsZustand = null;
+      dsSenden(dsWiderstand(1, 2, 7), dsWiderstand(1, 2, 3));
+      if (gesendet.length !== 1 || gesendet[0].length !== 63 || gesendet[0].charCodeAt(0) !== 2) f.push('senden: ' + gesendet.length);
+      // Nur am Kabel: gesperrt bis zum Abziehen.
+      Object.assign(dsUsb, { offen: false, gesperrt: '' });
+      antwortOeffnen = { ok: false, grund: 'tasten', protokoll: '' };
+      await dsUsbSuchen();
+      if (dsUsb.offen || dsUsb.gesperrt !== 'tasten') f.push('nur Kabel nicht gesperrt');
+      const vorher = gesendet.length;
+      await dsUsbSuchen();
+      if (gesendet.length !== vorher || dsUsb.offen) f.push('versucht es trotz Sperre erneut');
+    } catch (e) { f.push('Fehler: ' + e.message); }
+    finally {
+      if (merk.cap === undefined) delete window.Capacitor; else window.Capacitor = merk.cap;
+      if (merk.pad === undefined) delete window.OmegaPad; else window.OmegaPad = merk.pad;
+      Object.assign(dsUsb, merk.usb); dsZustand = merk.zust; nativRuettlerStand = merk.stand;
+      if ($('ds-usb-an')) $('ds-usb-an').checked = merk.an;
+      if ($('ds-usb-lage')) $('ds-usb-lage').textContent = '';
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Testknopf sendet, Dauerverbindung oeffnet mit Aus-Bericht, Effekte als 63-Byte-Bericht ueber USB, nur Kabel bleibt gesperrt' };
+  });
+
   stAdd('App v1.5: Rumble ueber den Android-Vibrator, wenn die APK ihn hat; USB-Probe zeigt ihr Protokoll', async () => {
     const f = [];
     const merk = { pad: window.OmegaPad, cap: window.Capacitor, stand: Object.assign({}, nativRuettlerStand) };
