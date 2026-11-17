@@ -2069,8 +2069,10 @@
       // Der Mischungsfaktor multipliziert HIER und nicht in tyreWearRate: weich frisst
       // sich schneller ab als hart, und das ist eine Eigenschaft des Gummis und keine
       // der Grundrate.
+      // v1.5: Karriere-Upgrade Reifenprogramm (98l-karriere.js), nur Auto 1, ausserhalb der Karriere 1.
+      const karReifen = (typeof karriereUpgrade === 'function' && typeof physEngine !== 'undefined' && st === physEngine.state) ? karriereUpgrade('reifen') : 1;
       const zuwachs = cfg.tyreWearRate * (cfg.tyreWearMix || 1) * pWear
-                      * cfg.tyreEffect * work * hotFactor * dt;
+                      * cfg.tyreEffect * work * hotFactor * dt * karReifen;
       const asym = Math.max(0, Math.min(2, cfg.tyreAsymEffect));
       for (let i = 0; i < 4; i++) {
         const last = asym > 0 ? st.load4[i] : 1;

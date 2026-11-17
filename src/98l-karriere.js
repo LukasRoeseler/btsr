@@ -45,6 +45,21 @@
     aufholen: 'Zwei Plätze gegenüber dem Startplatz gutmachen',
   };
   const KAR_ZIEL_GELD = 4000, KAR_ZIEL_XP = 40;
+  // Team-Upgrades (v1.5, nach Mokamit): wirken nur auf Auto 1 und nur in einer laufenden Karriere-Sitzung.
+  // Boxencrew in pitSpielDauer (70-race.js), Sprit im Verbrauch (70-race.js), Reifen im Verschleiss (40-physics.js).
+  // Mokamits "Zuverlaessigkeit" fehlt: OmegaSim hat keine Ausfaelle, auf die sie wirken koennte.
+  const KAR_UPGRADES = [
+    { id: 'crew', name: 'Boxencrew', text: 'Standzeit beim Boxenstopp −6 % je Stufe.', schritt: 0.06 },
+    { id: 'sprit', name: 'Spritverbrauch', text: 'Verbrauch −4 % je Stufe.', schritt: 0.04 },
+    { id: 'reifen', name: 'Reifenprogramm', text: 'Reifenverschleiß −5 % je Stufe.', schritt: 0.05 },
+  ];
+  const KAR_UPGRADE_PREIS = [15000, 30000, 55000];
+  function karriereUpgrade(id) {
+    const d = karD;
+    if (!d || !d.laeuft || !d.upgrades) return 1;
+    const u = KAR_UPGRADES.find((x) => x.id === id);
+    return u ? 1 - u.schritt * Math.max(0, Math.min(3, d.upgrades[id] || 0)) : 1;
+  }
 
   function karLesen() {
     try { const d = JSON.parse(localStorage.getItem(KARRIERE_STORE) || 'null'); return d && d.v === 1 ? d : null; } catch (e) { return null; }
@@ -75,7 +90,8 @@
   function karNeu(name, lang, minProStunde, stufe, saison) {
     const plan = lang === 'voll' ? KAR_SAISON_VOLL : KAR_SAISON_KURZ;
     return { v: 1, fahrer: name || t('Fahrer'), stufe: stufe || 0, xp: 0, credits: 0, lp: 0, saison: saison || 1, minProStunde: minProStunde || 6,
-             kalender: plan.map(([typ, st], i) => karRunde(typ, st, i)), idx: 0, tabelle: {}, laeuft: null, trophaeen: [], fertig: false, lang };
+             kalender: plan.map(([typ, st], i) => karRunde(typ, st, i)), idx: 0, tabelle: {}, laeuft: null, trophaeen: [], fertig: false, lang,
+             upgrades: { crew: 0, sprit: 0, reifen: 0 } };
   }
   function karLevel(xp) { return Math.floor(Math.sqrt(Math.max(0, xp) / 150)) + 1; }
   function karLevelXp(level) { return (level - 1) * (level - 1) * 150; }
@@ -319,7 +335,7 @@
   function karNeueSaison() {
     const alt = karD;
     const neu = karNeu(alt.fahrer, alt.lang, alt.minProStunde, alt.stufe, alt.saison + 1);
-    Object.assign(neu, { xp: alt.xp, credits: alt.credits, lp: alt.lp, trophaeen: alt.trophaeen });
+    Object.assign(neu, { xp: alt.xp, credits: alt.credits, lp: alt.lp, trophaeen: alt.trophaeen, upgrades: alt.upgrades || neu.upgrades });
     neu.kalender.forEach((r, i) => { if (alt.kalender[i]) { r.strecke = alt.kalender[i].strecke; r.ort = alt.kalender[i].ort; } });
     karD = neu; karBericht = null; karSpeichern();
   }
@@ -350,6 +366,8 @@
     .kar-tab tr.ich td { color: var(--k-blau, #00a3e0); font-weight: 700; }
     .kar-gut { color: var(--good); } .kar-schlecht { color: var(--bad); } .kar-jubel { color: #f5c542; font-weight: 700; }
     .kar-ziele li.fertig { color: var(--good); }
+    .kar-upgrades { list-style: none; margin: 0; padding: 0; }
+    .kar-upgrades li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--border); }
     .kar-kalender { margin: 0; padding-left: 1.4em; font-size: 13px; }
     .kar-kalender li { margin: 4px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
     .kar-kalender li::before { content: none; }
@@ -476,10 +494,17 @@
             + strecken.map((s) => '<option value="' + karEsc(s) + '"' + (r.strecke === s ? ' selected' : '') + '>' + karEsc(s) + '</option>').join('') + '</select>')
           + (i > d.idx ? karRow('<button type="button" data-kar-rtyp="' + i + '">' + karEsc(t('Sprint/Endurance tauschen')) + '</button>') : '') + '</li>';
       }).join('') + '</ol></section>';
+      if (!d.upgrades) d.upgrades = { crew: 0, sprit: 0, reifen: 0 };
+      h += '<section class="kar-karte"><h3>' + karEsc(t('Team-Upgrades')) + '</h3><ul class="kar-upgrades">' + KAR_UPGRADES.map((u) => {
+        const lv = d.upgrades[u.id] || 0, preis = KAR_UPGRADE_PREIS[lv];
+        return '<li><div><b>' + karEsc(t(u.name)) + '</b> <span class="kar-klein">' + '●'.repeat(lv) + '○'.repeat(3 - lv) + '</span><br><span class="kar-klein">' + karEsc(t(u.text)) + '</span></div>'
+          + (lv >= 3 ? '<span class="kar-klein">' + karEsc(t('Ausgebaut')) + '</span>'
+            : karRow('<button type="button" data-kar-kauf="' + u.id + '"' + (d.credits < preis ? ' disabled' : '') + '>' + karZahl(preis) + '</button>')) + '</li>';
+      }).join('') + '</ul><p class="kar-p kar-klein">' + karEsc(t('Wirkt auf dein Auto in Karriere-Sitzungen.')) + '</p></section>';
       h += '<section class="kar-karte"><h3>' + karEsc(t('Trophäen')) + '</h3>' + (d.trophaeen.length ? '<ul>' + d.trophaeen.slice().reverse().map((x) => '<li' + (x.titel ? ' class="kar-jubel"' : '') + '>🏆 ' + karEsc(x.text) + '</li>').join('') + '</ul>'
         : '<p class="kar-p kar-klein">' + karEsc(t('Siege, Lizenzen und Titel kommen hierher.')) + '</p>') + '</section>' + format
         + '<section class="kar-karte"><h3>' + karEsc(t('Karriere-Datei')) + '</h3><p class="kar-p kar-klein">' + karEsc(t('{m} min je Rennstunde.').replace('{m}', d.minProStunde)) + ' '
-        + karEsc(t('Team-Upgrades für das Preisgeld folgen.')) + '</p><div class="kar-knopfreihe">' + karRow('<button type="button" id="kar-ende">' + karEsc(t('Diese Karriere löschen')) + '</button>') + '</div></section></div>';
+        + '</p><div class="kar-knopfreihe">' + karRow('<button type="button" id="kar-ende">' + karEsc(t('Diese Karriere löschen')) + '</button>') + '</div></section></div>';
     }
     h += '<div class="kar-knopfreihe">' + karRow('<button type="button" id="kar-zu">' + karEsc(t('Schließen')) + '</button>') + '</div>';
     dlg.innerHTML = h;
@@ -504,6 +529,11 @@
         const i = Number(b.dataset.karRtyp), alt = d.kalender[i];
         const neu = karRunde(alt.typ === 'sprint' ? 'endurance' : 'sprint', alt.typ === 'sprint' ? 3 : 1, i);
         neu.ort = alt.ort; neu.strecke = alt.strecke; d.kalender[i] = neu; karSpeichern(); karZeichnen();
+      }));
+      dlg.querySelectorAll('[data-kar-kauf]').forEach((b) => klick(b, () => {
+        const id = b.dataset.karKauf, lv = d.upgrades[id] || 0, preis = KAR_UPGRADE_PREIS[lv];
+        if (lv >= 3 || d.credits < preis) return;
+        d.credits -= preis; d.upgrades[id] = lv + 1; karSpeichern(); showHudToast(t('Upgrade gekauft')); karZeichnen();
       }));
       klick(q('#kar-ende'), (e) => {
         if (e.target.dataset.arm !== '1') { e.target.dataset.arm = '1'; e.target.textContent = t('Zum Löschen noch einmal tippen'); return; }
@@ -558,6 +588,17 @@
       karWerten(feld([11, 60000, 5800], [10, 70000, 5900], [9, 61000, 6000]));
       if (karD.stufe !== 1) f.push('kein Aufstieg nach Sieg mit 11 Lizenzpunkten (Stufe ' + karD.stufe + ')');
       if (karD.idx !== 1) f.push('nach vier Sitzungen nicht in Runde 2');
+      // Upgrades: Kauf kostet, Faktor nur in einer laufenden Sitzung.
+      karD.credits = 20000; karD.upgrades = { crew: 0, sprit: 0, reifen: 0 };
+      karOeffnen();
+      const kauf = $('kar-dialog').querySelector('[data-kar-kauf="sprit"]');
+      if (!kauf) f.push('kein Kaufknopf');
+      else { kauf.click(); if (karD.upgrades.sprit !== 1 || karD.credits !== 5000) f.push('Kauf: Stufe ' + karD.upgrades.sprit + ', Geld ' + karD.credits); }
+      if (karriereUpgrade('sprit') !== 1) f.push('Upgrade wirkt ohne Sitzung');
+      karD.laeuft = { idx: 1, si: 0, art: 'quali', modus: 'qualifying', seit: Date.now(), minuten: 2, stopps: 0, fensterVon: null, fensterBis: null, stunden: 3, stoppsBei: [], pitVor: 0, zwischen: [], zwischenDone: 0 };
+      if (Math.abs(karriereUpgrade('sprit') - 0.96) > 1e-9 || karriereUpgrade('crew') !== 1) f.push('Faktoren ' + karriereUpgrade('sprit') + '/' + karriereUpgrade('crew'));
+      karD.laeuft = null;
+      karSchliessen();
       // Fenster und Knopf.
       karSpeichern();
       karOeffnen();
@@ -572,5 +613,5 @@
       karD = merk.d; karBericht = merk.b;
       try { if (roh === null) localStorage.removeItem(KARRIERE_STORE); else localStorage.setItem(KARRIERE_STORE, roh); } catch (e) { /* privat */ }
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Kalender 4/10, Minuten und Stopps, Pole + Boxenfenster-Strafe, 12 + 1 Punkte, Aufstieg auf Silber, Runde 2, Fenster und Knopf' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Kalender 4/10, Minuten und Stopps, Pole + Boxenfenster-Strafe, 12 + 1 Punkte, Aufstieg auf Silber, Runde 2, Upgrade-Kauf und Faktor 0,96 nur in der Sitzung, Fenster und Knopf' };
   });

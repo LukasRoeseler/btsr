@@ -5283,6 +5283,8 @@
       while (d > 0.05 && sek < 120) { d -= Math.max(0.01, repairRateAt(d)) * 0.05; sek += 0.05; }
       t = Math.max(t, sek);
     }
+    // v1.5: Karriere-Upgrade Boxencrew (98l-karriere.js), ausserhalb der Karriere 1.
+    if (typeof karriereUpgrade === 'function') t *= karriereUpgrade('crew');
     return Math.max(PIT_EMPTY_STOP_S, t) + rammStrafeOffen(playerCar);
   }
   function pitSpielStart() {
@@ -6592,7 +6594,9 @@
       const fuelBefore = fuel;
       // zevVerbrauch: 2 bei einem Tank-Leck (Zufallsevents), sonst 1 - ein Array-Zugriff je Takt.
       // v1.4.54: setupVerbrauch = Motorkennfeld aus dem Setup (98i-setup.js), sonst 1.
-      fuel = Math.max(0, fuel - Math.abs(throttle) * dt * fuelDrainPerSec * zevVerbrauch[1] * (physEngine.state.setupVerbrauch || 1));
+      // v1.5: Karriere-Upgrade Spritverbrauch (98l-karriere.js), ausserhalb der Karriere 1.
+      fuel = Math.max(0, fuel - Math.abs(throttle) * dt * fuelDrainPerSec * zevVerbrauch[1] * (physEngine.state.setupVerbrauch || 1)
+        * (typeof karriereUpgrade === 'function' ? karriereUpgrade('sprit') : 1));
       // Edge-triggered: without this it would rumble again on every 45ms heartbeat.
       if (fuelBefore > 0 && fuel <= 0) {
         padRumble(0.2, 0.12, 160, 'meldung');
