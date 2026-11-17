@@ -5863,7 +5863,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.62</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.64</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7144,6 +7144,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren: TV-Kamera (WIP). Sie ist eine neue Kamera in der Reihe (Kamera-Knopf oder R3). Kameras stehen alle drei Teile au&#223;en neben der Strecke, folgen dem Auto und zoomen mit dem Abstand. Geschnitten wird hart auf die n&#228;chste Kamera, sobald das Auto ihr deutlich n&#228;her ist, fr&#252;hestens nach 1,5 s.</li>
         <li>Virtuell fahren: Tageszeit (WIP). In der Garage unter Virtuell fahren gibt es die Zeile Tageszeit mit Mittag (wie bisher), Morgen und Abend. Sie f&#228;rbt Himmel, Dunst und das Licht auf Strecke und Autos, in Performance und Quality. Scheinwerfer und R&#252;cklichter bleiben hell.</li>
         <li>Virtuell fahren, Quality: Bildraten-Wache. Kommt das Ger&#228;t nicht mit (&#252;ber 4 s unter 40 Bildern pro Sekunde), schaltet Quality erst die Schatten ab, dann Aufl&#246;sung und Regentropfen auf das Ma&#223; von Performance, mit kurzer Meldung. In derselben Fahrt geht es nicht wieder hoch, damit nichts flackert.</li>
         <li>Zweiter Laptop (WIP, nach Hybrid-Dash von Mo Kamit, MIT-Lizenz): In der Garage verbindet &#8222;Zweiter Laptop&#8220; einen zweiten Rechner im selben WLAN als Bluetooth-Helfer. Der Helfer verbindet weitere Autos und reicht ihre Pakete &#252;ber einen direkten WebRTC-Kanal weiter, ohne Server. Auf dem Host erscheinen sie in der Garage wie jedes andere Auto. Gekoppelt wird einmal mit zwei Codes. Bricht die Verbindung ab, h&#228;lt der Helfer seine Autos sofort an. Jedes Helfer-Auto hat etwas mehr Verz&#246;gerung, am besten als NPC. Mit ?helfer in der Adresse &#246;ffnet sich eine eigene Helfer-Seite.</li>
@@ -17333,6 +17334,8 @@
     "Morgen": "Morning",
     "Abend": "Evening",
     "Virtuell fahren: Tageszeit (WIP). In der Garage unter Virtuell fahren gibt es die Zeile Tageszeit mit Mittag (wie bisher), Morgen und Abend. Sie färbt Himmel, Dunst und das Licht auf Strecke und Autos, in Performance und Quality. Scheinwerfer und Rücklichter bleiben hell.": "Virtual driving: time of day (WIP). In the Garage under Drive virtually there is a Time of day row with Noon (as before), Morning and Evening. It tints the sky, the haze and the light on track and cars, in Performance and Quality. Headlights and taillights stay bright.",
+    "TV-Kamera": "TV camera",
+    "Virtuell fahren: TV-Kamera (WIP). Sie ist eine neue Kamera in der Reihe (Kamera-Knopf oder R3). Kameras stehen alle drei Teile außen neben der Strecke, folgen dem Auto und zoomen mit dem Abstand. Geschnitten wird hart auf die nächste Kamera, sobald das Auto ihr deutlich näher ist, frühestens nach 1,5 s.": "Virtual driving: TV camera (WIP). It is a new camera in the cycle (camera button or R3). Cameras stand outside the track every three pieces, follow the car and zoom with the distance. It cuts hard to the next camera once the car is clearly closer to it, after 1.5 s at the earliest.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20203,6 +20206,7 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "TV-Kamera": "Cámara de TV",
     "Tageszeit": "Hora del día",
     "Mittag": "Mediodía",
     "Morgen": "Mañana",
@@ -44583,7 +44587,8 @@
   // langsamen Handy lief die Kamera vorher bei weniger Bildern spuerbar hinterher.
   const VF_KAMERAS = [{ id: 'verfolger', name: 'Verfolgerkamera' }, { id: 'nah', name: 'Nahe Verfolgerkamera' }, { id: 'haube', name: 'Motorhaube' },
                       { id: 'oben', name: 'Von oben (Start/Ziel)' },
-                      { id: 'fahrer', name: 'Fahrer am Rand', wip: true }];
+                      { id: 'fahrer', name: 'Fahrer am Rand', wip: true },
+                      { id: 'tv', name: 'TV-Kamera', wip: true }];
   const VF_KAMERA_STORE = 'omegasim-vf-kamera';
   function vfKameraId() {
     if (!VF.kamera) { try { VF.kamera = localStorage.getItem(VF_KAMERA_STORE) || 'verfolger'; } catch (e) { VF.kamera = 'verfolger'; } }
@@ -44621,7 +44626,7 @@
     return VF.dreh;
   }
   function vfDrehNull() { const D = vfDreh(); D.g = 0; D.n = 0; D.vg = 0; D.vn = 0; }
-  function vfDrehArt(id) { return id === 'haube' || id === 'fahrer' ? 'umsehen' : (id === 'oben' ? 'oben' : 'kreisen'); }
+  function vfDrehArt(id) { return id === 'haube' || id === 'fahrer' || id === 'tv' ? 'umsehen' : (id === 'oben' ? 'oben' : 'kreisen'); }
   // Grenzen der Hoehe n (Bogenmass): kreisen = Erhebung gegen die Standardhoehe, oben = Neigung aus der
   // Senkrechten, umsehen = Blick nach unten (positiv) / oben (negativ).
   function vfDrehGrenzen(art) {
@@ -44777,6 +44782,55 @@
     k.fov = z.fov;
     return k;
   }
+  // ---- v1.5 (WIP, Plan Paket 4 "TV-Kamera"): Kameras am Streckenrand, geschnitten wie im Fernsehen ----
+  // Posten alle VF_TV_ABSTAND Teile aussen neben der Bahn (frei von der Strecke, nicht im Innenfeld), hoeher
+  // als der Fahrer am Rand. Gezeigt wird der naechste Posten; gewechselt (harter Schnitt) erst, wenn ein
+  // anderer um VF_TV_HYST naeher ist und der aktuelle mindestens VF_TV_MIN_S lief. Jeder Posten folgt dem
+  // Auto wie die Fahrer-Kamera (vfFahrerKamera: weich schwenken, mit dem Abstand zoomen).
+  const VF_TV_ABSTAND = 3, VF_TV_HYST = 0.8, VF_TV_MIN_S = 1.5, VF_TV_HOEHE = 1.8;
+  function vfTvPosten(pts, nrm, tiles) {
+    const n = pts.length, rand = TRACK_HALF_W + TRACK_KERB_W, abst = VF_FAHRER_ABSTAND_CM * TRACK_UNITS_PER_CM * 1.5;
+    const innen = (x, y) => {
+      let c = false;
+      for (let i = 0, j = n - 1; i < n; j = i++) {
+        const a = pts[i], b = pts[j];
+        if ((a.y > y) !== (b.y > y) && x < (b.x - a.x) * (y - a.y) / (b.y - a.y) + a.x) c = !c;
+      }
+      return c;
+    };
+    const frei = (x, y) => { let d = Infinity; for (const q of pts) d = Math.min(d, Math.hypot(q.x - x, q.y - y)); return d - rand; };
+    const schritt = Math.max(1, Math.round(TRACK_SAMPLES_PER_TILE * VF_TV_ABSTAND));
+    const out = [];
+    for (let i = 0; i < n; i += schritt) {
+      let best = null;
+      for (const sg of [1, -1]) {
+        const x = pts[i].x + nrm[i].x * sg * (rand + abst), y = pts[i].y + nrm[i].y * sg * (rand + abst);
+        const wert = (frei(x, y) >= abst * 0.9 ? 0 : 1000) + (innen(x, y) ? 100 : 0);
+        if (!best || wert < best.wert) best = { x, y, wert };
+      }
+      if (best.wert < 1000) out.push({ ort: { x: best.x, y: best.y, h: VF_FAHRER_AUGE_CM * TRACK_UNITS_PER_CM * VF_TV_HOEHE, idx: i }, z: {}, k: null });
+    }
+    return out;
+  }
+  // Welcher Posten (rein, fuer den Selbsttest): T = { posten, aktiv, seit }, Auto bei (x, y), jetzt in s.
+  function vfTvWahl(T, x, y, jetzt) {
+    let best = -1, bd = Infinity;
+    T.posten.forEach((P, i) => { const d = Math.hypot(P.ort.x - x, P.ort.y - y); if (d < bd) { bd = d; best = i; } });
+    if (T.aktiv < 0) { T.aktiv = best; T.seit = jetzt; return true; }
+    if (best === T.aktiv) return false;
+    const A = T.posten[T.aktiv], da = Math.hypot(A.ort.x - x, A.ort.y - y);
+    if (bd < da * VF_TV_HYST && jetzt - T.seit >= VF_TV_MIN_S) {
+      T.aktiv = best; T.seit = jetzt;
+      T.posten[best].z = {};     // harter Schnitt: der neue Posten schaut sofort aufs Auto
+      return true;
+    }
+    return false;
+  }
+  function vfTvKamera(T, x, y, dt) {
+    T.uhr = (T.uhr || 0) + Math.max(0, dt || 0);
+    vfTvWahl(T, x, y, T.uhr);
+    return vfFahrerKamera(T.posten[T.aktiv], x, y, dt);
+  }
   function vfKamera(dt) {
     const r = VF.h * Math.PI / 180, fx = Math.sin(r), fz = -Math.cos(r);
     const id = vfKameraId();
@@ -44788,6 +44842,7 @@
   }
   function vfKameraBasis(id, fx, fz, dt, art, D) {
     if (id === 'fahrer' && VF.fahrer) { VF.kam = null; return vfFahrerKamera(VF.fahrer, VF.x, VF.y, dt); }
+    if (id === 'tv' && VF.tv && VF.tv.posten.length) { VF.kam = null; return vfTvKamera(VF.tv, VF.x, VF.y, dt); }
     if (id === 'haube') {
       // Auf der Motorhaube (Speed Dreams: Bonnet 0,75 m vor, 0,95 m hoch), fest am Auto.
       const s = VF.modell ? VF_AUTO.L / VF.modell.d.laenge : 2;
@@ -45242,6 +45297,7 @@
     // Kamera "Fahrer am Rand".
     try { VF.flaeche = vfFlaechenBauen(gl, VF.pts, VF.nrm, tiles, VF.grafik); } catch (e) { schicht.remove(); document.body.classList.remove('vf-an'); showHudToast('WebGL: ' + e.message); return false; }
     VF.fahrer = { ort: vfFahrerOrt(VF.pts, VF.nrm, tiles), z: {}, k: null };
+    try { VF.tv = { posten: vfTvPosten(VF.pts, VF.nrm, tiles), aktiv: -1, seit: 0, uhr: 0 }; } catch (e) { VF.tv = null; }
     // Das Auto: ein Garagenauto ohne Funk. Ein gesteuertes Auto gibt seine Rolle so lange ab.
     VF.vorherSpieler = playerCar;
     VF.vorherRolle = playerCar ? playerCar.role : null;
@@ -45688,7 +45744,7 @@
     // Tempo (und der Gang) der virtuellen Fahrt, bis das echte Auto sich bewegte.
     if (typeof physEngine !== 'undefined' && physEngine && typeof physEngine.reset === 'function') physEngine.reset();
     if (VF.schicht) VF.schicht.remove();
-    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.fahrer = null; VF.ui = null; VF.stick = null; VF.tasten = {};
+    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.stick = null; VF.tasten = {};
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
     // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).
@@ -118124,6 +118180,37 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   }
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
+
+  stAdd('Virtuell v1.5: TV-Kamera, Posten aussen neben der Bahn, naechster Posten mit Mindestdauer und Abstandsschwelle', () => {
+    const f = [];
+    const tiles = codeToTrack('SG4R4G4SLLSRR').tiles;
+    const pts = trackCenterline(tiles), nrm = trackNormals(pts);
+    const posten = vfTvPosten(pts, nrm, tiles);
+    if (posten.length < 3) f.push(posten.length + ' Posten');
+    const rand = TRACK_HALF_W + TRACK_KERB_W;
+    posten.forEach((P, i) => {
+      let d = Infinity; for (const q of pts) d = Math.min(d, Math.hypot(q.x - P.ort.x, q.y - P.ort.y));
+      if (d < rand) f.push('Posten ' + i + ' auf der Bahn');
+      if (!(P.ort.h > VF_FAHRER_AUGE_CM * TRACK_UNITS_PER_CM)) f.push('Posten ' + i + ' nicht hoeher als der Fahrer');
+    });
+    if (!VF_KAMERAS.some((k) => k.id === 'tv' && k.wip)) f.push('TV-Kamera nicht in der Liste (WIP)');
+    // Ein Auto faehrt die Mittellinie ab: Schnitte nur nach Mindestdauer, am Ende nahe am naechsten Posten.
+    const T = { posten, aktiv: -1, seit: 0 };
+    let schnitte = 0, zuFrueh = 0, letzt = 0;
+    pts.forEach((q, i) => {
+      const jetzt = i * 0.05;
+      const vor = T.aktiv;
+      if (vfTvWahl(T, q.x, q.y, jetzt) && vor >= 0) { schnitte++; if (jetzt - letzt < VF_TV_MIN_S) zuFrueh++; letzt = jetzt; }
+    });
+    if (schnitte < 2) f.push('nur ' + schnitte + ' Schnitte ueber eine Runde');
+    if (zuFrueh) f.push(zuFrueh + ' Schnitte vor der Mindestdauer');
+    // Ein Posten folgt dem Auto (Ziel in Richtung Auto).
+    const P = posten[0], q = pts[posten[0].ort.idx];
+    const k = vfFahrerKamera(P, q.x, q.y, 0.05);
+    const zx = k.ziel[0] - k.auge[0], zz = k.ziel[2] - k.auge[2], ax = q.x - P.ort.x, az = q.y - P.ort.y;
+    if ((zx * ax + zz * az) / (Math.hypot(zx, zz) * Math.hypot(ax, az)) < 0.95) f.push('Posten schaut nicht aufs Auto');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : posten.length + ' Posten neben der Bahn, ' + schnitte + ' Schnitte je Runde, keiner zu frueh, Blick aufs Auto' };
+  });
 
   stAdd('Virtuell v1.5: Tageszeit Mittag wie bisher, Morgen und Abend waermer, Garage-Zeile mit WIP', () => {
     const f = [];
