@@ -2383,7 +2383,8 @@
   // langsamen Handy lief die Kamera vorher bei weniger Bildern spuerbar hinterher.
   const VF_KAMERAS = [{ id: 'verfolger', name: 'Verfolgerkamera' }, { id: 'nah', name: 'Nahe Verfolgerkamera' }, { id: 'haube', name: 'Motorhaube' },
                       { id: 'oben', name: 'Von oben (Start/Ziel)' },
-                      { id: 'fahrer', name: 'Fahrer am Rand', wip: true }];
+                      { id: 'fahrer', name: 'Fahrer am Rand', wip: true },
+                      { id: 'tv', name: 'TV-Kamera', wip: true }];
   const VF_KAMERA_STORE = 'omegasim-vf-kamera';
   function vfKameraId() {
     if (!VF.kamera) { try { VF.kamera = localStorage.getItem(VF_KAMERA_STORE) || 'verfolger'; } catch (e) { VF.kamera = 'verfolger'; } }
@@ -2421,7 +2422,7 @@
     return VF.dreh;
   }
   function vfDrehNull() { const D = vfDreh(); D.g = 0; D.n = 0; D.vg = 0; D.vn = 0; }
-  function vfDrehArt(id) { return id === 'haube' || id === 'fahrer' ? 'umsehen' : (id === 'oben' ? 'oben' : 'kreisen'); }
+  function vfDrehArt(id) { return id === 'haube' || id === 'fahrer' || id === 'tv' ? 'umsehen' : (id === 'oben' ? 'oben' : 'kreisen'); }
   // Grenzen der Hoehe n (Bogenmass): kreisen = Erhebung gegen die Standardhoehe, oben = Neigung aus der
   // Senkrechten, umsehen = Blick nach unten (positiv) / oben (negativ).
   function vfDrehGrenzen(art) {
@@ -2577,6 +2578,55 @@
     k.fov = z.fov;
     return k;
   }
+  // ---- v1.5 (WIP, Plan Paket 4 "TV-Kamera"): Kameras am Streckenrand, geschnitten wie im Fernsehen ----
+  // Posten alle VF_TV_ABSTAND Teile aussen neben der Bahn (frei von der Strecke, nicht im Innenfeld), hoeher
+  // als der Fahrer am Rand. Gezeigt wird der naechste Posten; gewechselt (harter Schnitt) erst, wenn ein
+  // anderer um VF_TV_HYST naeher ist und der aktuelle mindestens VF_TV_MIN_S lief. Jeder Posten folgt dem
+  // Auto wie die Fahrer-Kamera (vfFahrerKamera: weich schwenken, mit dem Abstand zoomen).
+  const VF_TV_ABSTAND = 3, VF_TV_HYST = 0.8, VF_TV_MIN_S = 1.5, VF_TV_HOEHE = 1.8;
+  function vfTvPosten(pts, nrm, tiles) {
+    const n = pts.length, rand = TRACK_HALF_W + TRACK_KERB_W, abst = VF_FAHRER_ABSTAND_CM * TRACK_UNITS_PER_CM * 1.5;
+    const innen = (x, y) => {
+      let c = false;
+      for (let i = 0, j = n - 1; i < n; j = i++) {
+        const a = pts[i], b = pts[j];
+        if ((a.y > y) !== (b.y > y) && x < (b.x - a.x) * (y - a.y) / (b.y - a.y) + a.x) c = !c;
+      }
+      return c;
+    };
+    const frei = (x, y) => { let d = Infinity; for (const q of pts) d = Math.min(d, Math.hypot(q.x - x, q.y - y)); return d - rand; };
+    const schritt = Math.max(1, Math.round(TRACK_SAMPLES_PER_TILE * VF_TV_ABSTAND));
+    const out = [];
+    for (let i = 0; i < n; i += schritt) {
+      let best = null;
+      for (const sg of [1, -1]) {
+        const x = pts[i].x + nrm[i].x * sg * (rand + abst), y = pts[i].y + nrm[i].y * sg * (rand + abst);
+        const wert = (frei(x, y) >= abst * 0.9 ? 0 : 1000) + (innen(x, y) ? 100 : 0);
+        if (!best || wert < best.wert) best = { x, y, wert };
+      }
+      if (best.wert < 1000) out.push({ ort: { x: best.x, y: best.y, h: VF_FAHRER_AUGE_CM * TRACK_UNITS_PER_CM * VF_TV_HOEHE, idx: i }, z: {}, k: null });
+    }
+    return out;
+  }
+  // Welcher Posten (rein, fuer den Selbsttest): T = { posten, aktiv, seit }, Auto bei (x, y), jetzt in s.
+  function vfTvWahl(T, x, y, jetzt) {
+    let best = -1, bd = Infinity;
+    T.posten.forEach((P, i) => { const d = Math.hypot(P.ort.x - x, P.ort.y - y); if (d < bd) { bd = d; best = i; } });
+    if (T.aktiv < 0) { T.aktiv = best; T.seit = jetzt; return true; }
+    if (best === T.aktiv) return false;
+    const A = T.posten[T.aktiv], da = Math.hypot(A.ort.x - x, A.ort.y - y);
+    if (bd < da * VF_TV_HYST && jetzt - T.seit >= VF_TV_MIN_S) {
+      T.aktiv = best; T.seit = jetzt;
+      T.posten[best].z = {};     // harter Schnitt: der neue Posten schaut sofort aufs Auto
+      return true;
+    }
+    return false;
+  }
+  function vfTvKamera(T, x, y, dt) {
+    T.uhr = (T.uhr || 0) + Math.max(0, dt || 0);
+    vfTvWahl(T, x, y, T.uhr);
+    return vfFahrerKamera(T.posten[T.aktiv], x, y, dt);
+  }
   function vfKamera(dt) {
     const r = VF.h * Math.PI / 180, fx = Math.sin(r), fz = -Math.cos(r);
     const id = vfKameraId();
@@ -2588,6 +2638,7 @@
   }
   function vfKameraBasis(id, fx, fz, dt, art, D) {
     if (id === 'fahrer' && VF.fahrer) { VF.kam = null; return vfFahrerKamera(VF.fahrer, VF.x, VF.y, dt); }
+    if (id === 'tv' && VF.tv && VF.tv.posten.length) { VF.kam = null; return vfTvKamera(VF.tv, VF.x, VF.y, dt); }
     if (id === 'haube') {
       // Auf der Motorhaube (Speed Dreams: Bonnet 0,75 m vor, 0,95 m hoch), fest am Auto.
       const s = VF.modell ? VF_AUTO.L / VF.modell.d.laenge : 2;
@@ -3042,6 +3093,7 @@
     // Kamera "Fahrer am Rand".
     try { VF.flaeche = vfFlaechenBauen(gl, VF.pts, VF.nrm, tiles, VF.grafik); } catch (e) { schicht.remove(); document.body.classList.remove('vf-an'); showHudToast('WebGL: ' + e.message); return false; }
     VF.fahrer = { ort: vfFahrerOrt(VF.pts, VF.nrm, tiles), z: {}, k: null };
+    try { VF.tv = { posten: vfTvPosten(VF.pts, VF.nrm, tiles), aktiv: -1, seit: 0, uhr: 0 }; } catch (e) { VF.tv = null; }
     // Das Auto: ein Garagenauto ohne Funk. Ein gesteuertes Auto gibt seine Rolle so lange ab.
     VF.vorherSpieler = playerCar;
     VF.vorherRolle = playerCar ? playerCar.role : null;
@@ -3488,7 +3540,7 @@
     // Tempo (und der Gang) der virtuellen Fahrt, bis das echte Auto sich bewegte.
     if (typeof physEngine !== 'undefined' && physEngine && typeof physEngine.reset === 'function') physEngine.reset();
     if (VF.schicht) VF.schicht.remove();
-    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.fahrer = null; VF.ui = null; VF.stick = null; VF.tasten = {};
+    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.stick = null; VF.tasten = {};
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
     // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).

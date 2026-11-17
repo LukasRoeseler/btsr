@@ -26413,6 +26413,37 @@
 
   if ($('st-run')) $('st-run').addEventListener('click', runSelfTest);
 
+  stAdd('Virtuell v1.5: TV-Kamera, Posten aussen neben der Bahn, naechster Posten mit Mindestdauer und Abstandsschwelle', () => {
+    const f = [];
+    const tiles = codeToTrack('SG4R4G4SLLSRR').tiles;
+    const pts = trackCenterline(tiles), nrm = trackNormals(pts);
+    const posten = vfTvPosten(pts, nrm, tiles);
+    if (posten.length < 3) f.push(posten.length + ' Posten');
+    const rand = TRACK_HALF_W + TRACK_KERB_W;
+    posten.forEach((P, i) => {
+      let d = Infinity; for (const q of pts) d = Math.min(d, Math.hypot(q.x - P.ort.x, q.y - P.ort.y));
+      if (d < rand) f.push('Posten ' + i + ' auf der Bahn');
+      if (!(P.ort.h > VF_FAHRER_AUGE_CM * TRACK_UNITS_PER_CM)) f.push('Posten ' + i + ' nicht hoeher als der Fahrer');
+    });
+    if (!VF_KAMERAS.some((k) => k.id === 'tv' && k.wip)) f.push('TV-Kamera nicht in der Liste (WIP)');
+    // Ein Auto faehrt die Mittellinie ab: Schnitte nur nach Mindestdauer, am Ende nahe am naechsten Posten.
+    const T = { posten, aktiv: -1, seit: 0 };
+    let schnitte = 0, zuFrueh = 0, letzt = 0;
+    pts.forEach((q, i) => {
+      const jetzt = i * 0.05;
+      const vor = T.aktiv;
+      if (vfTvWahl(T, q.x, q.y, jetzt) && vor >= 0) { schnitte++; if (jetzt - letzt < VF_TV_MIN_S) zuFrueh++; letzt = jetzt; }
+    });
+    if (schnitte < 2) f.push('nur ' + schnitte + ' Schnitte ueber eine Runde');
+    if (zuFrueh) f.push(zuFrueh + ' Schnitte vor der Mindestdauer');
+    // Ein Posten folgt dem Auto (Ziel in Richtung Auto).
+    const P = posten[0], q = pts[posten[0].ort.idx];
+    const k = vfFahrerKamera(P, q.x, q.y, 0.05);
+    const zx = k.ziel[0] - k.auge[0], zz = k.ziel[2] - k.auge[2], ax = q.x - P.ort.x, az = q.y - P.ort.y;
+    if ((zx * ax + zz * az) / (Math.hypot(zx, zz) * Math.hypot(ax, az)) < 0.95) f.push('Posten schaut nicht aufs Auto');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : posten.length + ' Posten neben der Bahn, ' + schnitte + ' Schnitte je Runde, keiner zu frueh, Blick aufs Auto' };
+  });
+
   stAdd('Virtuell v1.5: Tageszeit Mittag wie bisher, Morgen und Abend waermer, Garage-Zeile mit WIP', () => {
     const f = [];
     let roh = null;
