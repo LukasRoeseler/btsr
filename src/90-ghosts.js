@@ -2221,6 +2221,8 @@
     }
     // v1.5 (WIP): Showroom (98k-showroom.js), Sammelkarten aller bekannten Autos.
     if (typeof showGarageZeile === 'function') links.appendChild(showGarageZeile());
+    // v1.5 (WIP): zweiter Laptop als Bluetooth-Helfer (98m-zwei-laptops.js).
+    if (typeof zlGarageZeile === 'function') links.appendChild(zlGarageZeile());
     // Rechte Seite: das gewaehlte Auto, oder die Optionen der virtuellen Fahrt.
     const car = (garVirtuellAuf || garKameraAuf) ? null : garAufAuto;
     if (garVirtuellAuf && typeof vfGarageOptionen === 'function') {
