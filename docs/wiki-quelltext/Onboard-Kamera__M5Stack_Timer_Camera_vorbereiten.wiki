@@ -1,0 +1,170 @@
+{{Stand|app=1.5.107|appdatum=2026-11-17}}
+Diese Seite erklärt, wie man die '''M5Stack Timer Camera''' (eine ESP32-Kamera) mit der '''Arduino IDE''' so vorbereitet, dass sie in [[OmegaSim]] als [[Onboard-Kamera]] im WLAN (MJPEG) funktioniert. Die Anleitung ist '''ungeprüft''' (WIP): Am Gerät sind Verzögerung über WLAN, Bildrate, Akkulaufzeit im Auto, Gewicht und Halter noch nicht getestet.
+
+== Was OmegaSim von der Kamera braucht ==
+Die Timer Camera X (ESP32 mit 8&nbsp;MB PSRAM, OV3660) sendet ein MJPEG-Bild über WLAN. OmegaSim braucht von der Firmware nur zwei Dinge:
+1. '''MJPEG-Strom''' (<code>multipart/x-mixed-replace</code>) unter einer Adresse, z.&nbsp;B. <code>http://192.168.1.50/stream</code>.
+2. Für '''Aufnahmen''' zusätzlich den Kopf <code>Access-Control-Allow-Origin: *</code> am Strom. Ohne ihn zeigt OmegaSim das Bild, nimmt aber nicht auf („ohne Aufnahme (CORS)“).
+
+== Firmware aufspielen ==
+Für die Timer Camera X (ESP32 mit 8&nbsp;MB PSRAM, OV3660) brauchst du die '''Arduino IDE'''. Dann gibt es zwei Wege.
+
+=== Weg 1: M5Stack-Bibliothek (einfach) ===
+Den '''M5Stack-Boardverwalter''' installieren (Board „M5TimerCAM“), in der Bibliotheksverwaltung die Bibliothek '''Timer-CAM''' von M5Stack installieren und das Web-Kamera-Beispiel öffnen. WLAN-Name und Passwort eintragen, hochladen. Das Beispiel bringt die richtige Pinbelegung mit.
+
+=== Weg 2: eigener Sketch ===
+Wenn du lieber alles selbst in der Hand hast (oder das M5Stack-Beispiel nicht passt), nimm diesen Sketch. Er baut einen MJPEG-Strom auf Port 80 mit dem CORS-Kopf, den OmegaSim für Aufnahmen braucht. Die Pinbelegung entspricht der offiziellen M5Stack-Dokumentation (TimerCamera-X).
+
+<syntaxhighlight lang="cpp">
+// M5Stack Timer Camera X (ESP32, OV3660) als MJPEG-Stream für OmegaSim
+// WIP, ungeprüft. Pinbelegung laut M5Stack-Dokumentation (TimerCamera-X).
+
+#include <WiFi.h>
+#include <esp_camera.h>
+#include <esp_http_server.h>
+
+// Für Batteriebetrieb: Braun-Out-Erkennung abschalten (empfohlen von M5Stack)
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
+
+// WLAN-Zugangsdaten
+const char* WIFI_SSID = "DEIN-WLAN";
+const char* WIFI_PASS = "DEIN-PASSWORT";
+
+// Pinbelegung der Timer Camera X (OV3660), laut M5Stack-Doku
+#define PWDN_GPIO_NUM  -1
+#define RESET_GPIO_NUM 15
+#define XCLK_GPIO_NUM  27
+#define SIOD_GPIO_NUM  25
+#define SIOC_GPIO_NUM  23
+#define Y9_GPIO_NUM    19   // D7
+#define Y8_GPIO_NUM    36   // D6
+#define Y7_GPIO_NUM    18   // D5
+#define Y6_GPIO_NUM    39   // D4
+#define Y5_GPIO_NUM    5    // D3
+#define Y4_GPIO_NUM    34   // D2
+#define Y3_GPIO_NUM    35   // D1
+#define Y2_GPIO_NUM    32   // D0
+#define VSYNC_GPIO_NUM 22
+#define HREF_GPIO_NUM  26
+#define PCLK_GPIO_NUM  21
+
+camera_config_t config = {
+  .pin_pwdn     = PWDN_GPIO_NUM,
+  .pin_reset    = RESET_GPIO_NUM,
+  .pin_xclk     = XCLK_GPIO_NUM,
+  .pin_sccb_sda = SIOD_GPIO_NUM,
+  .pin_sccb_scl = SIOC_GPIO_NUM,
+  .pin_d7       = Y9_GPIO_NUM,
+  .pin_d6       = Y8_GPIO_NUM,
+  .pin_d5       = Y7_GPIO_NUM,
+  .pin_d4       = Y6_GPIO_NUM,
+  .pin_d3       = Y5_GPIO_NUM,
+  .pin_d2       = Y4_GPIO_NUM,
+  .pin_d1       = Y3_GPIO_NUM,
+  .pin_d0       = Y2_GPIO_NUM,
+  .pin_vsync    = VSYNC_GPIO_NUM,
+  .pin_href     = HREF_GPIO_NUM,
+  .pin_pclk     = PCLK_GPIO_NUM,
+  .xclk_freq_hz = 20000000,          // 20 MHz
+  .ledc_timer   = LEDC_TIMER_0,
+  .ledc_channel = LEDC_CHANNEL_0,
+  .pixel_format = PIXFORMAT_JPEG,
+  .frame_size   = FRAMESIZE_VGA,     // 640x480
+  .jpeg_quality = 12,
+  .fb_count     = 2,
+  .fb_location  = CAMERA_FB_IN_PSRAM,
+  .grab_mode    = CAMERA_GRAB_LATEST
+};
+
+#define PART_BOUNDARY "123456789000000000000987654321"
+#define STREAM_BOUNDARY "\r\n--" PART_BOUNDARY "\r\n"
+#define STREAM_PART "Content-Type: image/jpeg\r\nContent-Length: %u\r\n\r\n"
+
+httpd_handle_t server = NULL;
+
+// /stream : MJPEG (multipart/x-mixed-replace), mit CORS-Kopf
+static esp_err_t stream_handler(httpd_req_t* req) {
+  httpd_resp_set_type(req, "multipart/x-mixed-replace;boundary=" PART_BOUNDARY);
+  httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+  while (true) {
+    camera_fb_t* fb = esp_camera_fb_get();
+    if (!fb) return ESP_FAIL;
+    char hdr[64];
+    size_t hlen = snprintf(hdr, sizeof(hdr), STREAM_PART, fb->len);
+    httpd_resp_send_chunk(req, hdr, hlen);
+    httpd_resp_send_chunk(req, (const char*)fb->buf, fb->len);
+    httpd_resp_send_chunk(req, STREAM_BOUNDARY, strlen(STREAM_BOUNDARY));
+    esp_camera_fb_return(fb);
+  }
+}
+
+// / : Testseite mit eingebettetem Bild
+static esp_err_t index_handler(httpd_req_t* req) {
+  const char* html =
+    "<html><body><h1>Timer Camera</h1>"
+    "<img src=\"/stream\" style=\"width:100%\"></body></html>";
+  httpd_resp_set_type(req, "text/html");
+  httpd_resp_send(req, html, HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
+}
+
+void startCamera() {
+  esp_err_t err = esp_camera_init(&config);
+  if (err != ESP_OK) { Serial.printf("Kamera-Fehler 0x%x\n", err); return; }
+  sensor_t* s = esp_camera_sensor_get();
+  if (s) s->set_vflip(s, 1);   // Bild aufrichten, je nach Einbau 0 oder 1
+}
+
+void startServer() {
+  httpd_config_t cfg = HTTPD_DEFAULT_CONFIG();
+  cfg.server_port = 80;
+  if (httpd_start(&server, &cfg) == ESP_OK) {
+    httpd_uri_t uri = { .uri = "/", .method = HTTP_GET, .handler = index_handler };
+    httpd_register_uri_handler(server, &uri);
+    httpd_uri_t stream = { .uri = "/stream", .method = HTTP_GET, .handler = stream_handler };
+    httpd_register_uri_handler(server, &stream);
+  }
+}
+
+void setup() {
+  // Batteriebetrieb (z. B. im Auto): Braun-Out-Erkennung abschalten
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+  Serial.begin(115200);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  while (WiFi.status() != WL_CONNECTED) delay(500);
+  Serial.print("IP: "); Serial.println(WiFi.localIP());
+  startCamera();
+  startServer();
+}
+
+void loop() {
+  delay(1000);
+}
+</syntaxhighlight>
+
+Ändern musst du darin:
+* '''WLAN''': <code>WIFI_SSID</code> und <code>WIFI_PASS</code>.
+* '''Auflösung''' (<code>frame_size</code>): <code>FRAMESIZE_VGA</code> (640×480) ist ein guter Anfang, kleiner hält die Verzögerung klein.
+* '''JPEG-Qualität''' (<code>jpeg_quality</code>): 12 ist ein guter Kompromiss; niedriger ist schärfer, aber langsamer.
+* '''Bild aufrichten''' (<code>set_vflip</code>): je nach Einbau 1 oder 0.
+Ohne den Kopf <code>Access-Control-Allow-Origin: *</code> am Strom zeigt OmegaSim das Bild, nimmt aber nicht auf („ohne Aufnahme (CORS)“). Der Sketch setzt ihn.
+
+'''Wichtig:''' Der '''PWR-Knopf''' muss zum Einschalten 2&nbsp;s gedrückt gehalten werden. Läuft die Kamera aus dem Akku (zum Beispiel im Auto), kann der '''Braun-Out-Schutz''' sie bei einem kurzen Spannungseinbruch neu starten; der Sketch schaltet ihn in <code>setup()</code> ab. Auf Windows braucht die Kamera unter Umständen den '''FTDI-VCP-Treiber''', sonst wird sie nicht als COM-Port erkannt.
+== In OmegaSim ==
+* Garage → Onboard-Kamera → Quelle „M5Stack Timer Camera (WLAN)“ → Adresse eintragen (z.&nbsp;B. <code>192.168.1.50</code>) → Einschalten.
+* Steht nur eine IP da, versucht OmegaSim zuerst <code>/stream</code> auf Port 80 und dann Port 81.
+* Am besten gibt der Router der Kamera eine feste IP.
+* Bricht das Bild ab, zum Beispiel weil der Akku im Auto gewechselt wurde, verbindet OmegaSim nach 4&nbsp;s von selbst neu, solange die Kamera eingeschaltet ist.
+
+== Wichtig: https ==
+Die veröffentlichte Webseite läuft über https, und ein Browser lädt dort kein <code>http://</code>-Kamerabild („gemischte Inhalte“). So geht es:
+'''Android-App:''' erlaubt es.
+'''„Start OmegaSim.bat“''' (localhost): erlaubt es.
+* Webseite über https: geht nur mit einer Kamera-Firmware, die selbst https anbietet. Das ist auf dem ESP32 aufwendig und hier nicht vorgesehen.
+
+== Stand ==
+WIP, '''ungeprüft'''. Am Gerät noch nicht getestet: Verzögerung über WLAN, Bildrate, Akkulaufzeit der Kamera im Auto, Gewicht und Halter. Video speichern in der Android-App braucht die neue APK.
+
+== Änderungen (diese Seite) ==
+Neu angelegt mit Stand 1.5.107; Anleitung zum Vorbereiten der M5Stack Timer Camera mit der Arduino IDE, als ungeprüft markiert.\n\n[[Kategorie:OmegaSim]]\n[[Kategorie:Software]]
