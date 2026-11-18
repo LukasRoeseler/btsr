@@ -175,12 +175,6 @@
     const st = physEngine && physEngine.state;
     const an = !!($('vib-trigger') ? $('vib-trigger').checked : true);
     if (!an || !physicsEnabled || !st) {
-      const jetzt = performance.now();
-      if (jetzt - dsDiagLetzte > 1000) {
-        dsDiagLetzte = jetzt;
-        showHudToast('DS physik=false: an=' + an + ' phys=' + physicsEnabled
-          + ' engine=' + !!physEngine + ' state=' + !!st);
-      }
       return { physik: false };
     }
     return {
@@ -195,8 +189,15 @@
     };
   }
   function dsTick() {
-    if (!dsGeraet && !dsUsb.offen) return;
     const jetzt = performance.now();
+    if (jetzt - dsDiagLetzte > 1000) {
+      dsDiagLetzte = jetzt;
+      const e = dsEingang();
+      showHudToast('DS: usbOffen=' + dsUsb.offen + ' geraet=' + !!dsGeraet
+        + ' physik=' + e.physik + ' bremseLinks=' + dsBremseLinks() + ' gasRechts=' + dsGasRechts()
+        + ' an=' + !!($('vib-trigger') ? $('vib-trigger').checked : true));
+    }
+    if (!dsGeraet && !dsUsb.offen) return;
     const a = dsTriggerArt(dsEingang());
     const l = dsBremseLinks() ? dsHalten('links', a.links, jetzt) : 'aus';
     const r = dsGasRechts() ? dsHalten('rechts', a.rechts, jetzt) : 'aus';
