@@ -3025,7 +3025,14 @@
     if (!el) return;
     el.textContent = msg;
     clearTimeout(hudToastTimer);
-    if (msg) hudToastTimer = setTimeout(() => { el.textContent = ''; }, 1500);
+    // Der Wrapper ist ein .gt3-banner (display:none ohne .on) - ohne .on bleibt der
+    // Toast unsichtbar, auch wenn der Text gesetzt ist. Deshalb hier schalten.
+    const wrap = el.parentElement;
+    if (wrap) wrap.classList.toggle('on', !!msg);
+    if (msg) hudToastTimer = setTimeout(() => {
+      el.textContent = '';
+      if (wrap) wrap.classList.remove('on');
+    }, 1500);
   }
 
   refreshTrackPreview();
