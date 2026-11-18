@@ -178,8 +178,8 @@
       const jetzt = performance.now();
       if (jetzt - dsDiagLetzte > 1000) {
         dsDiagLetzte = jetzt;
-        log('DualSense dsEingang physik=false: an=' + an + ' physicsEnabled=' + physicsEnabled
-          + ' physEngine=' + !!physEngine + ' state=' + !!st, 'info');
+        showHudToast('DS physik=false: an=' + an + ' phys=' + physicsEnabled
+          + ' engine=' + !!physEngine + ' state=' + !!st);
       }
       return { physik: false };
     }
