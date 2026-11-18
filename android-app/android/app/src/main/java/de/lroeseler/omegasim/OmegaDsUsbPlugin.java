@@ -200,13 +200,11 @@ public class OmegaDsUsbPlugin extends Plugin {
             if (z.belegt) {
                 SystemClock.sleep(700);
                 if (!sonyGamepadDa()) {
-                    // Kein Bluetooth-Gamepad mehr da (Controller haengt nur am Kabel). Die Schnittstelle
-                    // freigeben, damit der USB-Gamepad-Treiber die Tasten behaelt, und die Trigger ueber den
-                    // Steuerkanal (SET_REPORT, Endpunkt 0) senden - dieselbe Robustheit wie beim Test (abspielen).
-                    // Vorher brach oeffnen hier mit grund "tasten" ab, die Dauerverbindung kam nie zustande.
-                    try { z.c.releaseInterface(z.hid); } catch (Exception e) { /* weg */ }
-                    z.belegt = false;
-                    p.append("kein Gamepad nach dem Belegen: Schnittstelle freigegeben, Trigger ueber den Steuerkanal\n");
+                    // Kein Bluetooth-Gamepad mehr erkannt. Fuer die Trigger egal: Die Schnittstelle bleibt
+                    // belegt und die Trigger laufen ueber den Interrupt-Endpunkt - derselbe Weg, den der Test
+                    // (abspielen) erfolgreich nutzt. (Vorher wurde hier freigegeben und auf den Steuerkanal
+                    // ausgewichen; das war unzuverlaessig. Die Tasten L2/R2 kommen laut Nutzer trotzdem an.)
+                    p.append("kein Gamepad nach dem Belegen: Schnittstelle bleibt belegt, Trigger ueber den Interrupt-Endpunkt\n");
                 }
             }
             int n = aus.length > 0 ? schreiben(z, aus) : 0;
