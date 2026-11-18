@@ -5919,7 +5919,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.119</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.120</span></span>
         <span data-i18n-skip>OmegaSim &middot; MIT</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -66022,14 +66022,7 @@
     if (!el) return;
     el.textContent = msg;
     clearTimeout(hudToastTimer);
-    // Der Wrapper ist ein .gt3-banner (display:none ohne .on) - ohne .on bleibt der
-    // Toast unsichtbar, auch wenn der Text gesetzt ist. Deshalb hier schalten.
-    const wrap = el.parentElement;
-    if (wrap) wrap.classList.toggle('on', !!msg);
-    if (msg) hudToastTimer = setTimeout(() => {
-      el.textContent = '';
-      if (wrap) wrap.classList.remove('on');
-    }, 1500);
+    if (msg) hudToastTimer = setTimeout(() => { el.textContent = ''; }, 1500);
   }
 
   refreshTrackPreview();
@@ -66423,13 +66416,10 @@
   }
   // v1.5.29: der Drehzahl-Hinweis auf dem Gas (v1.3.107) entfaellt; LibreCorsa zeigt die Drehzahl am Leuchtbalken,
   // nicht am Trigger, und ein summendes Gas stoerte beim echten Fahren die feine Dosierung.
-  let dsDiagLetzte = 0;
   function dsEingang() {
     const st = physEngine && physEngine.state;
     const an = !!($('vib-trigger') ? $('vib-trigger').checked : true);
-    if (!an || !physicsEnabled || !st) {
-      return { physik: false };
-    }
+    if (!an || !physicsEnabled || !st) return { physik: false };
     return {
       physik: true,
       bremse: dsBremseLinks() ? Math.max(0, -(st.longUse || 0)) : 0,
@@ -66442,15 +66432,8 @@
     };
   }
   function dsTick() {
-    const jetzt = performance.now();
-    if (jetzt - dsDiagLetzte > 1000) {
-      dsDiagLetzte = jetzt;
-      const e = dsEingang();
-      showHudToast('DS: usbOffen=' + dsUsb.offen + ' geraet=' + !!dsGeraet
-        + ' physik=' + e.physik + ' bremseLinks=' + dsBremseLinks() + ' gasRechts=' + dsGasRechts()
-        + ' an=' + !!($('vib-trigger') ? $('vib-trigger').checked : true));
-    }
     if (!dsGeraet && !dsUsb.offen) return;
+    const jetzt = performance.now();
     const a = dsTriggerArt(dsEingang());
     const l = dsBremseLinks() ? dsHalten('links', a.links, jetzt) : 'aus';
     const r = dsGasRechts() ? dsHalten('rechts', a.rechts, jetzt) : 'aus';

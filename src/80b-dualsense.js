@@ -170,13 +170,10 @@
   }
   // v1.5.29: der Drehzahl-Hinweis auf dem Gas (v1.3.107) entfaellt; LibreCorsa zeigt die Drehzahl am Leuchtbalken,
   // nicht am Trigger, und ein summendes Gas stoerte beim echten Fahren die feine Dosierung.
-  let dsDiagLetzte = 0;
   function dsEingang() {
     const st = physEngine && physEngine.state;
     const an = !!($('vib-trigger') ? $('vib-trigger').checked : true);
-    if (!an || !physicsEnabled || !st) {
-      return { physik: false };
-    }
+    if (!an || !physicsEnabled || !st) return { physik: false };
     return {
       physik: true,
       bremse: dsBremseLinks() ? Math.max(0, -(st.longUse || 0)) : 0,
@@ -189,15 +186,8 @@
     };
   }
   function dsTick() {
-    const jetzt = performance.now();
-    if (jetzt - dsDiagLetzte > 1000) {
-      dsDiagLetzte = jetzt;
-      const e = dsEingang();
-      showHudToast('DS: usbOffen=' + dsUsb.offen + ' geraet=' + !!dsGeraet
-        + ' physik=' + e.physik + ' bremseLinks=' + dsBremseLinks() + ' gasRechts=' + dsGasRechts()
-        + ' an=' + !!($('vib-trigger') ? $('vib-trigger').checked : true));
-    }
     if (!dsGeraet && !dsUsb.offen) return;
+    const jetzt = performance.now();
     const a = dsTriggerArt(dsEingang());
     const l = dsBremseLinks() ? dsHalten('links', a.links, jetzt) : 'aus';
     const r = dsGasRechts() ? dsHalten('rechts', a.rechts, jetzt) : 'aus';
