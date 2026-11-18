@@ -802,6 +802,9 @@
     if (!motor.config.pacejka) return false;
     const st = motor.state;
     if (!st.pacZustand) return false;
+    // v1.5.125: mit angeschlossenem DualSense uebernimmt die Richtungshaptik auf den Griffmotoren
+    // das Unter-/Uebersteuern (Spieler 1); der allgemeine Pad-Rumble wuerde sonst doppelt kommen.
+    if (wer === 1 && typeof dsGripAktiv === 'function' && dsGripAktiv()) return false;
     const jetzt = performance.now();
     const takt = st.pacZustand === 'ueber' ? 150 : 250;
     if (jetzt - pacRumbleZuletzt[wer] < takt) return false;

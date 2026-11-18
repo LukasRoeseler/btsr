@@ -93,9 +93,24 @@
     return art;
   }
   // Die 47 Byte, die USB und Bluetooth gemeinsam haben.
-  function dsGemeinsam(links, rechts) {
+  // v1.5.125: dazu die Richtungshaptik auf den beiden Griffmotoren. Der linke (niedrig/schwer)
+  // steht auf Byte 3, der rechte (hoch/leicht) auf Byte 2 - wie bei LibreCorsa. Damit sie laufen,
+  // wird im valid_flag0 Bit 1 (HAPTICS_SELECT) gesetzt und die ueberarbeitete Rumble-Auslegung
+  // (Bit 2 von valid_flag2, COMPATIBLE_VIBRATION2, ab Firmware 2.21 / jeder DualSense Edge)
+  // angeschaltet. Ohne Grippmotor bleibt Bit 0 (COMPATIBLE_VIBRATION, die alte Auslegung) frei,
+  // damit ein reiner Trigger-Bericht nicht als Rumble gelesen wird.
+  function dsGemeinsam(links, rechts, gripL, gripR) {
     const c = new Uint8Array(47);
-    c[0] = 0x0C;                 // linker (0x08) + rechter (0x04) Trigger
+    let f0 = 0x0C;               // linker (0x08) + rechter (0x04) Trigger
+    const gl = Math.max(0, Math.min(1, +gripL || 0));
+    const gr = Math.max(0, Math.min(1, +gripR || 0));
+    if (gl > 0 || gr > 0) {
+      f0 |= 0x02;                // HAPTICS_SELECT: die beiden Grippmotor-Bytes gelten
+      c[38] |= 0x04;             // COMPATIBLE_VIBRATION2: ueberarbeitete Rumble-Auslegung
+      c[3] = Math.round(gl * 255);   // linker Grippmotor (niedrig/schwer)
+      c[2] = Math.round(gr * 255);   // rechter Grippmotor (hoch/leicht)
+    }
+    c[0] = f0;
     if (rechts) c.set(rechts, 10);
     if (links) c.set(links, 21);
     return c;
@@ -115,8 +130,8 @@
     return (crc ^ 0xffffffff) >>> 0;
   }
   // Rein, fuer den Selbsttest: die Bytes eines Berichts (ohne Berichtskennung) und die Kennung.
-  function dsBericht(links, rechts, bt, folge) {
-    const c = dsGemeinsam(links, rechts);
+  function dsBericht(links, rechts, bt, folge, gripL, gripR) {
+    const c = dsGemeinsam(links, rechts, gripL, gripR);
     if (!bt) return { id: 0x02, daten: c };
     const d = new Uint8Array(77);
     d[0] = (folge & 0x0f) << 4;
@@ -128,11 +143,11 @@
     d[73] = crc & 0xff; d[74] = (crc >>> 8) & 0xff; d[75] = (crc >>> 16) & 0xff; d[76] = (crc >>> 24) & 0xff;
     return { id: 0x31, daten: d };
   }
-  async function dsSenden(links, rechts) {
+  async function dsSenden(links, rechts, gripL, gripR) {
     // v1.5: in der App ueber das USB-Kabel (OmegaDsUsbPlugin), wenn die Dauerverbindung steht.
-    if (dsUsb.offen) { dsUsbSenden(dsUsbBericht(links, rechts)); return; }
+    if (dsUsb.offen) { dsUsbSenden(dsUsbBericht(links, rechts, gripL, gripR)); return; }
     if (!dsGeraet) return;
-    const b = dsBericht(links, rechts, dsBt, dsFolge);
+    const b = dsBericht(links, rechts, dsBt, dsFolge, gripL, gripR);
     dsFolge = (dsFolge + 1) & 0x0f;
     try { await dsGeraet.sendReport(b.id, b.daten); dsFehler = ''; }
     catch (e) { dsFehler = e.message || String(e); }
@@ -185,16 +200,55 @@
       kmh: Math.abs(st.speedKmh || 0),
     };
   }
+  // ---- RICHTUNGSHAPTIK AUF DEN GRIFFMOTOREN (v1.5.125) --------------------------------------
+  // BESTELLT: "Baue die Richtungshaptik auf den Griffmotoren ein. ... Untersteuern in linkskurve ->
+  // rechts vibrieren, untersteuern in rechtskurve -> links vibrieren. Uebersteuern in rechtskurve ->
+  // links vibrieren." Beim Gripverlust schiebt das Auto zur AUSSENSEITE der Kurve, also vibriert
+  // genau der Griff auf der Aussenseite - Untersteuern (Front schiebt) und Uebersteuern (Heck kommt)
+  // gleichermassen. Rueckgabewert: Staerke 0..1 je Griffmotor (links/rechts).
+  // Die Staerke lehnt sich an die Rueckmeldung aus pacejkaRueckmeldung (50-drive.js) an, nur eben
+  // auf EINE Seite statt auf beide Motoren, und wie bei LibreCorsa haelt sie, solange der Rutsch da ist.
+  function dsGripCue() {
+    const g = { links: 0, rechts: 0 };
+    const st = physEngine && physEngine.state;
+    if (!rumbleOn || !physicsEnabled || !st || !st.pacZustand) return g;
+    let dir = 0, mag = 0;
+    if (st.pacZustand === 'ueber' && st.pacUeber > 0.03) {
+      if (RUMBLE_ARTEN['rutschen'] === false) return g;
+      dir = st.pacRichtung || Math.sign(st.dampedSteering);
+      const max = (physEngine.config && physEngine.config.pacejkaUeberMax) || 0.35;
+      const k = Math.min(1, st.pacUeber / Math.max(0.01, max));
+      mag = 0.5 + 0.4 * k;              // stark, solange das Heck draussen ist
+    } else if (st.pacZustand === 'unter' && st.pacNutzV > 1) {
+      if (RUMBLE_ARTEN['untersteuern'] === false) return g;
+      dir = Math.sign(st.dampedSteering);
+      const k = Math.min(1, (1 - st.pacUnter) * 4);
+      mag = 0.25 + 0.35 * k;            // maessig, solange die Front schiebt
+    }
+    if (!dir) return g;
+    // Aussenseite = Gegenseite der Kurve: Rechtskurve (dir > 0) -> linker Griff, Linkskurve -> rechter Griff.
+    if (dir > 0) g.links = mag; else g.rechts = mag;
+    return g;
+  }
+  // Ob die Richtungshaptik den Unter-/Uebersteuer-Rumble uebernimmt. 50-drive.js fragt das, damit das
+  // Unter-/Uebersteuern nicht ZUSAETZLICH ueber den allgemeinen Pad-Rumble geht (doppelte Staerke).
+  function dsGripAktiv() {
+    return !!(dsGeraet || dsUsb.offen) && rumbleOn;
+  }
   function dsTick() {
     if (!dsGeraet && !dsUsb.offen) return;
     const jetzt = performance.now();
     const a = dsTriggerArt(dsEingang());
     const l = dsBremseLinks() ? dsHalten('links', a.links, jetzt) : 'aus';
     const r = dsGasRechts() ? dsHalten('rechts', a.rechts, jetzt) : 'aus';
-    const schluessel = l + '|' + r;
+    const grip = dsGripCue();
+    // Auf ganze 8-Bit-Werte gerundet, damit ein nur um 1/255 schwankender Rutsch nicht neu sendet.
+    const gl = Math.round(grip.links * 255);
+    const gr = Math.round(grip.rechts * 255);
+    const schluessel = l + '|' + r + '|' + gl + '|' + gr;
     if (schluessel === dsZustand) return;
     dsZustand = schluessel;
-    dsSenden(dsEffekt(l, true), dsEffekt(r, false));
+    dsSenden(dsEffekt(l, true), dsEffekt(r, false), gl / 255, gr / 255);
   }
   setInterval(dsTick, 60);
   if ($('ds-verbinden')) $('ds-verbinden').addEventListener('click', dsVerbinden);
@@ -205,19 +259,22 @@
   // reagieren UND die Tasten danach noch gehen, wird daraus der Dauerbetrieb im Fahren.
   function dsUsbApp() { const C = window.Capacitor; return !!(C && C.isNativePlatform && C.isNativePlatform()); }
   function dsUsbPlugin() { const C = window.Capacitor; return dsUsbApp() && C.isPluginAvailable && C.isPluginAvailable('OmegaDsUsb'); }
-  function dsUsbBericht(links, rechts) {
-    const b = dsBericht(links, rechts, false, 0);
+  function dsUsbBericht(links, rechts, gripL, gripR) {
+    const b = dsBericht(links, rechts, false, 0, gripL, gripR);
     const out = new Uint8Array(63);
     out[0] = b.id;
     out.set(b.daten, 1);
     return out;
   }
   function dsUsbBase64(bytes) { let s = ''; bytes.forEach((x) => { s += String.fromCharCode(x); }); return btoa(s); }
-  // Die Probe: 3 s Widerstand (beide fest), 2 s Vibration (links ABS, rechts durchdrehend), aus.
+  // Die Probe: 3 s Widerstand (beide fest), 2 s Vibration (links ABS, rechts durchdrehend), dann die
+  // Richtungshaptik (v1.5.125): erst der linke, dann der rechte Griffmotor (Staerke 0,6), zum Schluss aus.
   function dsUsbFolge() {
     return [
       { bericht: dsUsbBase64(dsUsbBericht(dsWiderstand(1, 8, 8), dsWiderstand(1, 8, 8))), ms: 3000 },
       { bericht: dsUsbBase64(dsUsbBericht(dsVibration(2, 7, DS_HZ.abs), dsVibration(1, 6, DS_HZ.spin))), ms: 2000 },
+      { bericht: dsUsbBase64(dsUsbBericht(dsAus(), dsAus(), 0.6, 0)), ms: 1500 },
+      { bericht: dsUsbBase64(dsUsbBericht(dsAus(), dsAus(), 0, 0.6)), ms: 1500 },
       { bericht: dsUsbBase64(dsUsbBericht(dsAus(), dsAus())), ms: 0 },
     ];
   }
@@ -236,9 +293,9 @@
   async function dsUsbTest() {
     if (!dsUsbPlugin()) { dsUsbLage(t('Braucht die neue APK.')); return; }
     if (dsUsb.offen) {
-      const folge = [[dsWiderstand(1, 8, 8), dsWiderstand(1, 8, 8), 3000], [dsVibration(2, 7, DS_HZ.abs), dsVibration(1, 6, DS_HZ.spin), 2000], [dsAus(), dsAus(), 0]];
+      const folge = [[dsWiderstand(1, 8, 8), dsWiderstand(1, 8, 8), 3000], [dsVibration(2, 7, DS_HZ.abs), dsVibration(1, 6, DS_HZ.spin), 2000], [dsAus(), dsAus(), 1500, 0.6, 0], [dsAus(), dsAus(), 1500, 0, 0.6], [dsAus(), dsAus(), 0]];
       dsUsbLage(t('Läuft …'));
-      for (const [l, r, ms] of folge) { dsUsbSenden(dsUsbBericht(l, r)); if (ms) await new Promise((ok) => setTimeout(ok, ms)); }
+      for (const [l, r, ms, gl, gr] of folge) { dsUsbSenden(dsUsbBericht(l, r, gl, gr)); if (ms) await new Promise((ok) => setTimeout(ok, ms)); }
       dsZustand = null;
       dsUsbLage(t('Gesendet ({w}). Haben die Trigger reagiert?').replace('{w}', 'USB'));
       return;

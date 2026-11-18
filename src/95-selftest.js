@@ -26715,18 +26715,22 @@
   });
 
   // v1.5 (WIP, Paket 6): der USB-Bericht fuer die Android-App ist der WebHID-Bericht mit Kennung davor, 63 Bytes.
-  stAdd('DualSense v1.5: USB-Bericht fuer die App (0x02, 63 Bytes), Probe aus drei Schritten, Zeile nur in der App', () => {
+  stAdd('DualSense v1.5: USB-Bericht fuer die App (0x02, 63 Bytes), Probe aus fuenf Schritten, Zeile nur in der App', () => {
     const f = [];
     const b = dsUsbBericht(dsWiderstand(1, 8, 8), dsAus());
     const web = dsBericht(dsWiderstand(1, 8, 8), dsAus(), false, 0);
     if (b.length !== 63 || b[0] !== 0x02) f.push('Laenge ' + b.length + ', Kennung ' + b[0]);
     for (let i = 0; i < web.daten.length; i++) if (b[i + 1] !== web.daten[i]) { f.push('Byte ' + (i + 1) + ' weicht ab'); break; }
     for (let i = 1 + web.daten.length; i < 63; i++) if (b[i] !== 0) { f.push('Rest nicht 0'); break; }
+    // v1.5.125: die Probe hat jetzt zwei Schritte Richtungshaptik dazwischen (linker, dann rechter Griffmotor).
     const folge = dsUsbFolge();
-    if (folge.length !== 3 || folge[2].ms !== 0 || atob(folge[0].bericht).length !== 63) f.push('Folge ' + folge.length);
-    if (atob(folge[2].bericht).charCodeAt(1 + 21) !== 0x05) f.push('letzter Schritt schaltet nicht aus');
+    if (folge.length !== 5 || folge[4].ms !== 0 || atob(folge[0].bericht).length !== 63) f.push('Folge ' + folge.length);
+    if (atob(folge[4].bericht).charCodeAt(1 + 21) !== 0x05) f.push('letzter Schritt schaltet nicht aus');
+    // Grip: linker Motor auf Byte 1+3, rechter auf Byte 1+2; Staerke 0,6 -> rund 153.
+    if (atob(folge[2].bericht).charCodeAt(1 + 3) !== 153 || atob(folge[2].bericht).charCodeAt(1 + 2) !== 0) f.push('linker Griffmotor fehlt');
+    if (atob(folge[3].bericht).charCodeAt(1 + 2) !== 153 || atob(folge[3].bericht).charCodeAt(1 + 3) !== 0) f.push('rechter Griffmotor fehlt');
     if ($('ds-usb-zeile') && !$('ds-usb-zeile').hidden && !dsUsbApp()) f.push('Zeile im Browser sichtbar');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : '63 Bytes mit 0x02, gleiche Daten wie WebHID, Probe Widerstand-Vibration-aus, Zeile nur in der App' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '63 Bytes mit 0x02, gleiche Daten wie WebHID, Probe Widerstand-Vibration-Griff links-Griff rechts-aus, Zeile nur in der App' };
   });
 
   // v1.5.36: Safety Car parkt bei zu wenig Platz an Start/Ziel auf dem naechsten Teil mit genug Platz.
