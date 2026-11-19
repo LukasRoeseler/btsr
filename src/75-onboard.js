@@ -219,6 +219,22 @@
     // Von selbst weiter versuchen, solange sie eingeschaltet ist (Akku im Auto gewechselt).
     setTimeout(() => { if (onbEinst().an && onbEinst().art === 'm5' && !onboardAktiv()) onbStarten(); }, ONB_M5_NEU_MS);
   }
+  // Batteriestand der WLAN-Kamera (Endpunkt /batt). Liefert {mv, level} als JSON.
+  // Wird alle ~5 s aufgerufen (siehe onbWache) und nur angezeigt, wenn die Kamera laeuft.
+  function onbM5Akku() {
+    const z = onbZustand();
+    if (!z.m5 || !z.m5.battUrl) return;
+    fetch(z.m5.battUrl)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const z2 = onbZustand();
+        if (!z2.m5 || z2.m5.url !== z.m5.url) return;
+        z2.m5.akku = (d && typeof d.level === 'number') ? { level: Math.max(0, Math.min(100, Math.round(d.level))), mv: d.mv } : null;
+        onbStatus();
+        onbHudMalen();
+      })
+      .catch(() => { /* Kamera kurz weg: beim naechsten Takt erneut */ });
+  }
   async function onbM5Starten() {
     const z = onbZustand();
     const e = onbEinst();
@@ -235,7 +251,8 @@
     // Der Strom wird per fetch (CORS) gelesen; die Kamera-Firmware setzt Access-Control-Allow-Origin: *.
     for (const url of kand) {
       if (lauf !== z.m5Neu || !e.an) return false;
-      z.m5 = { url, cors: true };
+      z.m5 = { url, cors: true, battUrl: '', akku: null, akkuZeit: 0 };
+      try { z.m5.battUrl = new URL(url).origin + '/batt'; } catch (e) { z.m5.battUrl = ''; }
       if (await onbM5Versuch(img, url)) {
         z.m5Cors = true;
         img.hidden = false;
@@ -266,8 +283,10 @@
         const img = $('onboard-bild');
         const bw = img.naturalWidth, bh = img.naturalHeight;
         const gr = (bw && bh) ? (' · ' + bw + '×' + bh) : '';
+        const a = z.m5.akku;
         zeile = t('An: {n}').replace('{n}', 'WLAN ' + z.m5.url.replace(/^https?:[/][/]/i, ''))
-          + gr + (z.m5Cors ? '' : ' · ' + t('ohne Aufnahme (CORS)'));
+          + gr + (z.m5Cors ? '' : ' · ' + t('ohne Aufnahme (CORS)'))
+          + (a ? (' · ' + t('Akku') + ' ' + a.level + '%') : '');
       } else if (onboardAktiv()) {
         const tr = z.stream.getVideoTracks()[0];
         const v = $('onboard-video');
@@ -527,6 +546,11 @@
     if (dEl) { const gut = /gut|good|neg|schneller/.test(w.deltaKlasse) || /^-/.test(w.delta), schlecht = /^\+/.test(w.delta);
       dEl.classList.toggle('gut', gut); dEl.classList.toggle('schlecht', !gut && schlecht); }
     set('onb-reifen-txt', w.reifenTxt); set('onb-zustand', w.zustand); set('onb-box', w.box); set('onb-akku', w.akku);
+    // Kamera-Akku (nur WLAN-Kamera): Kachel nur zeigen, wenn die Kamera einen Wert liefert.
+    const a = z.m5 && z.m5.akku;
+    const af = $('onb-akku-m5-feld');
+    if (af) af.hidden = !a;
+    set('onb-akku-m5', a ? (a.level + '%') : '–');
     w.reifen.forEach((c, i) => { const el = $('onb-r' + i); if (el && c && el.style.background !== c) el.style.background = c; });
     const ab = $('onb-akku-bar'); if (ab && w.akkuBreite && ab.style.width !== w.akkuBreite) ab.style.width = w.akkuBreite;
     set('onb-umin', String(Math.round(w.umin)));
@@ -543,7 +567,7 @@
       set('onb-l-runde', t('Runde')); set('onb-l-zeit', t('Zeit')); set('onb-l-letzte', t('Letzte'));
       set('onb-l-beste', t('Beste')); set('onb-l-tank', t('Tank')); set('onb-l-pos', t('Position'));
       set('onb-l-delta', t('Delta')); set('onb-l-reifen', t('Reifen')); set('onb-l-zustand', t('Reifenzustand'));
-      set('onb-l-box', t('Boxenstopp')); set('onb-l-akku', t('Batterie'));
+      set('onb-l-box', t('Boxenstopp')); set('onb-l-akku', t('Batterie')); set('onb-l-akku-m5', t('Kamera-Akku'));
     }
     const s = $('race-onboardscreen');
     if (s) s.classList.toggle('gelb', w.gelb);
@@ -818,6 +842,11 @@
     // Der Selbsttest gibt den Rennzustand vor, bis er null schickt - sonst saehe der Takt
     // dazwischen das echte 'idle' und braeche die Testaufnahme ab.
     if (zustandTest !== undefined) z.testZustand = zustandTest;
+    // Batteriestand der WLAN-Kamera alle ~5 s nachladen (nur solange die Kamera laeuft).
+    if (z.m5 && z.m5.battUrl && (!z.m5.akkuZeit || Date.now() - z.m5.akkuZeit > 5000)) {
+      z.m5.akkuZeit = Date.now();
+      onbM5Akku();
+    }
     const jetzt = z.testZustand ? z.testZustand
       : (typeof raceState !== 'undefined') ? raceState : 'idle';
     const vorher = z.zuletzt;

@@ -5924,7 +5924,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.141</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.143</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6529,6 +6529,7 @@
             <div class="onb-feld"><small id="onb-l-zustand">Reifenzustand</small><b id="onb-zustand">&ndash;</b></div>
             <div class="onb-feld"><small id="onb-l-box">Boxenstopp</small><span class="onb-klein" id="onb-box">&ndash;</span></div>
             <div class="onb-feld"><small id="onb-l-akku">Batterie</small><b id="onb-akku">&ndash;</b><i class="onb-balken"><i id="onb-akku-bar"></i></i></div>
+            <div class="onb-feld" id="onb-akku-m5-feld" hidden><small id="onb-l-akku-m5">Kamera-Akku</small><b id="onb-akku-m5">&ndash;</b></div>
             <div class="onb-feld"><small id="onb-l-tank">Tank</small><b id="onb-tank">&ndash;</b></div>
           </div>
           <div class="onb-unten">
@@ -7234,6 +7235,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Der Batteriestand der Kamera erscheint jetzt im Onboard-Bild (Fahrtbildschirm) als „Kamera-Akku“ in der rechten Leiste und in der Statuszeile. Die Kamera-Firmware liefert ihn über den neuen Endpunkt <code>/batt</code> (Spannung und Prozent); OmegaSim fragt ihn alle 5&#160;s ab, solange die Kamera läuft. Nützlich, um zu sehen, wann der Akku im Auto gewechselt werden muss.</li>
         <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Das Bild erscheint jetzt auch in der Android-App. Vorher zeigte die WebView den MJPEG-Strom der Kamera nicht an (naturalWidth blieb 0). Jetzt liest die App den Strom selbst und zeigt die Bilder einzeln an, dadurch klappt auch die Aufnahme (die Kamera-Firmware setzt Access-Control-Allow-Origin).</li>
         <li>Onboard-Kamera (WIP): neue Anzeige im Stil von Gran Turismo. Das Bild l&#228;uft im Vollbild und so gro&#223; wie m&#246;glich. Auf den schwarzen R&#228;ndern stehen links Position, Runde, Zeit, Delta, letzte und beste Runde und das Streckenlayout, rechts Reifen, Reifenzustand, Boxenstopp-Einstellungen, Batterie und Tank. Unten auf dem Bild Tempo, Gang, Drehzahlbalken, Licht und Schaltanzeige. Oben rechts ein Knopf zum n&#228;chsten Cockpit-Schirm.</li>
         <li>Showroom: Die R&#252;ckseiten der Karten sind jetzt auch auf Android lesbar. Dort schien die gespiegelte Vorderseite durch den Text der R&#252;ckseite.</li>
@@ -17576,6 +17578,7 @@
     "Showroom: Die Rückseiten der Karten sind jetzt auch auf Android lesbar. Dort schien die gespiegelte Vorderseite durch den Text der Rückseite.": "Showroom: the backs of the cards are now readable on Android too. There the mirrored front showed through the text on the back.",
     "Reifenzustand": "Tyre condition",
     "Batterie": "Battery",
+    "Kamera-Akku": "Camera battery",
     "Nächster Schirm": "Next screen",
     "Onboard-Kamera (WIP): neue Anzeige im Stil von Gran Turismo. Das Bild läuft im Vollbild und so groß wie möglich. Auf den schwarzen Rändern stehen links Position, Runde, Zeit, Delta, letzte und beste Runde und das Streckenlayout, rechts Reifen, Reifenzustand, Boxenstopp-Einstellungen, Batterie und Tank. Unten auf dem Bild Tempo, Gang, Drehzahlbalken, Licht und Schaltanzeige. Oben rechts ein Knopf zum nächsten Cockpit-Schirm.": "Onboard camera (WIP): new display in the style of Gran Turismo. The picture runs full screen and as large as possible. The black borders show position, lap, time, delta, last and best lap and the track layout on the left, and tyres, tyre condition, pit stop settings, battery and fuel on the right. At the bottom of the picture: speed, gear, rev bar, lights and shift light. Top right a button for the next cockpit screen.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
@@ -20455,6 +20458,7 @@
     "Akku": "Batería",
     "Reifenzustand": "Estado de neumáticos",
     "Batterie": "Batería",
+    "Kamera-Akku": "Batería de la cámara",
     "Nächster Schirm": "Pantalla siguiente",
     "Spider NG1 (Gnen54, WIP)": "Spider NG1 (Gnen54, WIP)",
     "Spider NG1: Aufbau von Gnen54 (OmegaSim CAD) auf der Karosserie MODIplay MP-1 Spider von Sturmkind, 3D-Daten für HYBRID von Thomas Strobel (FREAKPALACE Customs). Freigabe von Sturmkind am 16.11.2026: Verwendung erlaubt, solange die Karosserien nicht kommerziell verkauft werden. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.": "Spider NG1: construido por Gnen54 (OmegaSim CAD) sobre la carrocería MODIplay MP-1 Spider de Sturmkind, datos 3D para HYBRID de Thomas Strobel (FREAKPALACE Customs). Permiso de Sturmkind del 16/11/2026: se permite el uso siempre que las carrocerías no se vendan comercialmente. Piezas, colores y datos propios: Gnen54, CC BY 4.0.",
@@ -62213,6 +62217,22 @@
     // Von selbst weiter versuchen, solange sie eingeschaltet ist (Akku im Auto gewechselt).
     setTimeout(() => { if (onbEinst().an && onbEinst().art === 'm5' && !onboardAktiv()) onbStarten(); }, ONB_M5_NEU_MS);
   }
+  // Batteriestand der WLAN-Kamera (Endpunkt /batt). Liefert {mv, level} als JSON.
+  // Wird alle ~5 s aufgerufen (siehe onbWache) und nur angezeigt, wenn die Kamera laeuft.
+  function onbM5Akku() {
+    const z = onbZustand();
+    if (!z.m5 || !z.m5.battUrl) return;
+    fetch(z.m5.battUrl)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const z2 = onbZustand();
+        if (!z2.m5 || z2.m5.url !== z.m5.url) return;
+        z2.m5.akku = (d && typeof d.level === 'number') ? { level: Math.max(0, Math.min(100, Math.round(d.level))), mv: d.mv } : null;
+        onbStatus();
+        onbHudMalen();
+      })
+      .catch(() => { /* Kamera kurz weg: beim naechsten Takt erneut */ });
+  }
   async function onbM5Starten() {
     const z = onbZustand();
     const e = onbEinst();
@@ -62229,7 +62249,8 @@
     // Der Strom wird per fetch (CORS) gelesen; die Kamera-Firmware setzt Access-Control-Allow-Origin: *.
     for (const url of kand) {
       if (lauf !== z.m5Neu || !e.an) return false;
-      z.m5 = { url, cors: true };
+      z.m5 = { url, cors: true, battUrl: '', akku: null, akkuZeit: 0 };
+      try { z.m5.battUrl = new URL(url).origin + '/batt'; } catch (e) { z.m5.battUrl = ''; }
       if (await onbM5Versuch(img, url)) {
         z.m5Cors = true;
         img.hidden = false;
@@ -62260,8 +62281,10 @@
         const img = $('onboard-bild');
         const bw = img.naturalWidth, bh = img.naturalHeight;
         const gr = (bw && bh) ? (' · ' + bw + '×' + bh) : '';
+        const a = z.m5.akku;
         zeile = t('An: {n}').replace('{n}', 'WLAN ' + z.m5.url.replace(/^https?:[/][/]/i, ''))
-          + gr + (z.m5Cors ? '' : ' · ' + t('ohne Aufnahme (CORS)'));
+          + gr + (z.m5Cors ? '' : ' · ' + t('ohne Aufnahme (CORS)'))
+          + (a ? (' · ' + t('Akku') + ' ' + a.level + '%') : '');
       } else if (onboardAktiv()) {
         const tr = z.stream.getVideoTracks()[0];
         const v = $('onboard-video');
@@ -62521,6 +62544,11 @@
     if (dEl) { const gut = /gut|good|neg|schneller/.test(w.deltaKlasse) || /^-/.test(w.delta), schlecht = /^\+/.test(w.delta);
       dEl.classList.toggle('gut', gut); dEl.classList.toggle('schlecht', !gut && schlecht); }
     set('onb-reifen-txt', w.reifenTxt); set('onb-zustand', w.zustand); set('onb-box', w.box); set('onb-akku', w.akku);
+    // Kamera-Akku (nur WLAN-Kamera): Kachel nur zeigen, wenn die Kamera einen Wert liefert.
+    const a = z.m5 && z.m5.akku;
+    const af = $('onb-akku-m5-feld');
+    if (af) af.hidden = !a;
+    set('onb-akku-m5', a ? (a.level + '%') : '–');
     w.reifen.forEach((c, i) => { const el = $('onb-r' + i); if (el && c && el.style.background !== c) el.style.background = c; });
     const ab = $('onb-akku-bar'); if (ab && w.akkuBreite && ab.style.width !== w.akkuBreite) ab.style.width = w.akkuBreite;
     set('onb-umin', String(Math.round(w.umin)));
@@ -62537,7 +62565,7 @@
       set('onb-l-runde', t('Runde')); set('onb-l-zeit', t('Zeit')); set('onb-l-letzte', t('Letzte'));
       set('onb-l-beste', t('Beste')); set('onb-l-tank', t('Tank')); set('onb-l-pos', t('Position'));
       set('onb-l-delta', t('Delta')); set('onb-l-reifen', t('Reifen')); set('onb-l-zustand', t('Reifenzustand'));
-      set('onb-l-box', t('Boxenstopp')); set('onb-l-akku', t('Batterie'));
+      set('onb-l-box', t('Boxenstopp')); set('onb-l-akku', t('Batterie')); set('onb-l-akku-m5', t('Kamera-Akku'));
     }
     const s = $('race-onboardscreen');
     if (s) s.classList.toggle('gelb', w.gelb);
@@ -62812,6 +62840,11 @@
     // Der Selbsttest gibt den Rennzustand vor, bis er null schickt - sonst saehe der Takt
     // dazwischen das echte 'idle' und braeche die Testaufnahme ab.
     if (zustandTest !== undefined) z.testZustand = zustandTest;
+    // Batteriestand der WLAN-Kamera alle ~5 s nachladen (nur solange die Kamera laeuft).
+    if (z.m5 && z.m5.battUrl && (!z.m5.akkuZeit || Date.now() - z.m5.akkuZeit > 5000)) {
+      z.m5.akkuZeit = Date.now();
+      onbM5Akku();
+    }
     const jetzt = z.testZustand ? z.testZustand
       : (typeof raceState !== 'undefined') ? raceState : 'idle';
     const vorher = z.zuletzt;
