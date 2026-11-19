@@ -2534,7 +2534,10 @@
       }
     }
     VF.lenkWinkel = Math.max(-1, Math.min(1, lenk)) * (VF.P ? VF.P.lenkGrad : VF_GT3.lenkGrad) * Math.PI / 180;
+    // DIAGNOSE (temporaer, Latenz): Zeit fuer Streckenortung (vfOrt).
+    const tOrt0 = performance.now();
     const o = vfOrt(VF.pts, VF.nrm, VF.x, VF.y, VF.idx);
+    const ortMs = performance.now() - tOrt0;
     VF.idx = o.idx;
     if (VF.splits && VF.splits[VF.idx] === undefined) VF.splits[VF.idx] = rennZeitJetzt() - VF.rundeAb;
     // v1.5.84: in der Boxenbucht ist die Fahrbahn auf der Boxenseite breiter.
@@ -2561,6 +2564,8 @@
       if (rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
     }
     // NPCs: folgen ihrer Spur mit Stufe-1-Tempo und bremsen vor Kurven (vfNpcSteuern).
+    // DIAGNOSE (temporaer, Latenz): Zeit fuer NPC-Steuerung + Kollision (vfVerkehr).
+    const tNpc0 = performance.now();
     if (VF.npcs && VF.npcBogen) {
       for (const npc of VF.npcs) {
         if (npc.koAus || npc.derbyAus) continue;
@@ -2570,16 +2575,20 @@
     }
     // v1.3.94: Kollision, Schaden und Windschatten (dreckige Luft) mit den NPCs.
     vfVerkehr(dt);
+    const npcMs = performance.now() - tNpc0;
     // DIAGNOSE (temporaer, Latenz): wie lange das Malen dauert.
     const tMal0 = performance.now();
     vfMalen();
     const malMs = performance.now() - tMal0;
+    // DIAGNOSE (temporaer, Latenz): Zeit fuer das Cockpit (vfHud).
+    const tHud0 = performance.now();
     vfHud();
+    const hudMs = performance.now() - tHud0;
     // DIAGNOSE (temporaer, Latenz): alle ~2 s die Frame-Aufteilung ausgeben - ist die 500-Hz-Physik
     // (VF_TEIL.dt, hoechstens VF_TEIL.max Teilschritte) der Flaschenhals, oder das WebGL-Malen?
     if (window.MT_DIAG) {
-      const D = window.MT_DIAG.vf || (window.MT_DIAG.vf = { n: 0, phys: 0, mal: 0, bild: 0, seit: performance.now() });
-      D.n++; D.phys += physMs; D.mal += malMs; D.bild += dt * 1000;
+      const D = window.MT_DIAG.vf || (window.MT_DIAG.vf = { n: 0, phys: 0, mal: 0, bild: 0, ort: 0, npc: 0, hud: 0, seit: performance.now() });
+      D.n++; D.phys += physMs; D.mal += malMs; D.ort += ortMs; D.npc += npcMs; D.hud += hudMs; D.bild += dt * 1000;
       if (performance.now() - D.seit > 2000) {
         const b = D.bild / D.n;
         // DIAGNOSE (temporaer, Latenz): im Quality-Modus die Teilpaesse aufschluesseln, damit wir
@@ -2594,8 +2603,10 @@
           }
         }
         log('Virtuell-Diagnose: ' + Math.round(1000 / b) + ' Bilder/s · Bild ' + b.toFixed(1) + ' ms · Physik '
-          + (D.phys / D.n).toFixed(2) + ' ms (' + VF.teilschritte + ' Teilschritte) · Malen ' + (D.mal / D.n).toFixed(2) + ' ms' + pass, 'warn');
-        D.n = 0; D.phys = 0; D.mal = 0; D.bild = 0; D.seit = performance.now();
+          + (D.phys / D.n).toFixed(2) + ' ms (' + VF.teilschritte + ' Teilschritte) · Malen ' + (D.mal / D.n).toFixed(2) + ' ms'
+          + ' · Ort ' + (D.ort / D.n).toFixed(2) + ' · NPC ' + (D.npc / D.n).toFixed(2) + ' · HUD ' + (D.hud / D.n).toFixed(2)
+          + pass, 'warn');
+        D.n = 0; D.phys = 0; D.mal = 0; D.ort = 0; D.npc = 0; D.hud = 0; D.bild = 0; D.seit = performance.now();
       }
     }
   }
