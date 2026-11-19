@@ -478,6 +478,10 @@
   // auseinander (Soll 45 ms)? Ein ueberlasteter Hauptthread (App: Bluetooth-Meldungen ueber
   // die Bruecke) zeigt sich hier als Ausreisser - eine Eingabe wartet dann bis zum naechsten.
   const herzMess = { werte: [], dauer: [] };
+  // DIAGNOSE (temporaer, Latenz): sammelt, was den Hauptthread zwischen zwei Herzschlaegen belegt -
+  // die Verarbeitung der eingehenden Meldungen in onCarNotify (90-ghosts.js). Nur fuer einen
+  // Diagnose-Build, wird nach der Messung wieder entfernt. Aendert den Sendeweg nicht.
+  window.MT_DIAG = { notifyN: 0, notifyMs: 0, padLog: 0 };
   function herzStatistik() {
     const w = herzMess.werte.slice().sort((a, b) => a - b);
     if (!w.length) return null;
@@ -489,10 +493,19 @@
   function controlHeartbeat() {
     const herzJetzt = performance.now();
     if (herzschlagAt) {
-      herzMess.werte.push(herzJetzt - herzschlagAt);
+      const abstand = herzJetzt - herzschlagAt;
+      herzMess.werte.push(abstand);
       if (herzMess.werte.length > 400) herzMess.werte.shift();
+      // DIAGNOSE (temporaer, Latenz): bei einem Ausreisser melden, was den Hauptthread belegt hat.
+      if (abstand > 60) {
+        const m = window.MT_DIAG;
+        log('Herzschlag-Ausreisser: ' + Math.round(abstand) + ' ms (Soll 45) · Meldungen seit letztem Takt: '
+          + (m ? m.notifyN : '?') + ' (' + (m ? m.notifyMs.toFixed(1) : '?') + ' ms)', 'warn');
+      }
     }
     herzschlagAt = herzJetzt;
+    // DIAGNOSE (temporaer, Latenz): Zaehler fuer das naechste Intervall zuruecksetzen.
+    if (window.MT_DIAG) { window.MT_DIAG.notifyN = 0; window.MT_DIAG.notifyMs = 0; }
     try { controlHeartbeatInnen(); } finally {
       herzMess.dauer.push(performance.now() - herzJetzt);
       if (herzMess.dauer.length > 400) herzMess.dauer.shift();

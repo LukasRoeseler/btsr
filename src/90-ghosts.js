@@ -3159,6 +3159,9 @@
   function onCarNotify(car, e) {
     const b = notifyBytes(e.target.value);
     if (b.length < 16) return;
+    // DIAGNOSE (temporaer, Latenz): wie lange die Verarbeitung einer Meldung dauert.
+    const diag = window.MT_DIAG, t0 = diag ? performance.now() : 0;
+    try {
     meldetaktBeobachten(car, performance.now());
     if (rennPauseAktiv()) {
       car.tileCode = b[12]; car.tileCount = b[11];
@@ -3256,6 +3259,9 @@
     car.battery = akkuGlaetten(car, b[10], rennZeitJetzt());
     // v1.5 (WIP): Akku-Aufzeichnung fuer die Kennlinie (98n-akku-aufzeichnung.js).
     if (typeof akkuMitschreiben === 'function') akkuMitschreiben(car, b[10], b[11], performance.now());
+    } finally {
+      if (diag) { diag.notifyN++; diag.notifyMs += performance.now() - t0; }
+    }
   }
 
   function stopGhost(car) {
@@ -13195,6 +13201,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function padNativ(pad) {
     padNativLage.an = false;
     const o = window.OmegaPad;
+    // DIAGNOSE (temporaer, Latenz): ein paar Mal ausgeben, warum der Direktweg nicht greift.
+    if (window.MT_DIAG && window.MT_DIAG.padLog < 3) {
+      let dw = null, grund;
+      if (!pad) grund = 'kein Web-Pad';
+      else if (!o || typeof o.lesen !== 'function') grund = 'kein OmegaPad/lesen';
+      else if (pad.mapping !== 'standard') grund = 'mapping=' + pad.mapping;
+      else if (typeof zweiSpieler !== 'undefined' && zweiSpieler) grund = 'zweiSpieler-Modus';
+      else {
+        try { dw = String(o.lesen()).split(',').map(Number); } catch (e) { dw = null; }
+        if (!dw || dw.length < 8) grund = 'lesen() leer';
+        else if (dw[7] !== 1) grund = 'geraete=' + dw[7];
+        else if (!(dw[6] >= 0)) grund = 'alter=' + dw[6] + ' (noch kein Ereignis)';
+        else grund = 'unbekannt';
+      }
+      window.MT_DIAG.padLog++;
+      log('[Pad-Diagnose] Direktweg aus: ' + grund + (dw ? ' · geraete=' + dw[7] + ' · ereignisse=' + dw[8] : ''), 'warn');
+    }
     if (!pad || !o || typeof o.lesen !== 'function' || pad.mapping !== 'standard') return pad;
     if (typeof zweiSpieler !== 'undefined' && zweiSpieler) return pad;
     let w;

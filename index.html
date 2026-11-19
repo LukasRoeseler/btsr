@@ -5919,7 +5919,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.130</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.131</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -23337,6 +23337,10 @@
   // auseinander (Soll 45 ms)? Ein ueberlasteter Hauptthread (App: Bluetooth-Meldungen ueber
   // die Bruecke) zeigt sich hier als Ausreisser - eine Eingabe wartet dann bis zum naechsten.
   const herzMess = { werte: [], dauer: [] };
+  // DIAGNOSE (temporaer, Latenz): sammelt, was den Hauptthread zwischen zwei Herzschlaegen belegt -
+  // die Verarbeitung der eingehenden Meldungen in onCarNotify (90-ghosts.js). Nur fuer einen
+  // Diagnose-Build, wird nach der Messung wieder entfernt. Aendert den Sendeweg nicht.
+  window.MT_DIAG = { notifyN: 0, notifyMs: 0, padLog: 0 };
   function herzStatistik() {
     const w = herzMess.werte.slice().sort((a, b) => a - b);
     if (!w.length) return null;
@@ -23348,10 +23352,19 @@
   function controlHeartbeat() {
     const herzJetzt = performance.now();
     if (herzschlagAt) {
-      herzMess.werte.push(herzJetzt - herzschlagAt);
+      const abstand = herzJetzt - herzschlagAt;
+      herzMess.werte.push(abstand);
       if (herzMess.werte.length > 400) herzMess.werte.shift();
+      // DIAGNOSE (temporaer, Latenz): bei einem Ausreisser melden, was den Hauptthread belegt hat.
+      if (abstand > 60) {
+        const m = window.MT_DIAG;
+        log('Herzschlag-Ausreisser: ' + Math.round(abstand) + ' ms (Soll 45) · Meldungen seit letztem Takt: '
+          + (m ? m.notifyN : '?') + ' (' + (m ? m.notifyMs.toFixed(1) : '?') + ' ms)', 'warn');
+      }
     }
     herzschlagAt = herzJetzt;
+    // DIAGNOSE (temporaer, Latenz): Zaehler fuer das naechste Intervall zuruecksetzen.
+    if (window.MT_DIAG) { window.MT_DIAG.notifyN = 0; window.MT_DIAG.notifyMs = 0; }
     try { controlHeartbeatInnen(); } finally {
       herzMess.dauer.push(performance.now() - herzJetzt);
       if (herzMess.dauer.length > 400) herzMess.dauer.shift();
@@ -71301,6 +71314,9 @@
   function onCarNotify(car, e) {
     const b = notifyBytes(e.target.value);
     if (b.length < 16) return;
+    // DIAGNOSE (temporaer, Latenz): wie lange die Verarbeitung einer Meldung dauert.
+    const diag = window.MT_DIAG, t0 = diag ? performance.now() : 0;
+    try {
     meldetaktBeobachten(car, performance.now());
     if (rennPauseAktiv()) {
       car.tileCode = b[12]; car.tileCount = b[11];
@@ -71398,6 +71414,9 @@
     car.battery = akkuGlaetten(car, b[10], rennZeitJetzt());
     // v1.5 (WIP): Akku-Aufzeichnung fuer die Kennlinie (98n-akku-aufzeichnung.js).
     if (typeof akkuMitschreiben === 'function') akkuMitschreiben(car, b[10], b[11], performance.now());
+    } finally {
+      if (diag) { diag.notifyN++; diag.notifyMs += performance.now() - t0; }
+    }
   }
 
   function stopGhost(car) {
@@ -81337,6 +81356,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   function padNativ(pad) {
     padNativLage.an = false;
     const o = window.OmegaPad;
+    // DIAGNOSE (temporaer, Latenz): ein paar Mal ausgeben, warum der Direktweg nicht greift.
+    if (window.MT_DIAG && window.MT_DIAG.padLog < 3) {
+      let dw = null, grund;
+      if (!pad) grund = 'kein Web-Pad';
+      else if (!o || typeof o.lesen !== 'function') grund = 'kein OmegaPad/lesen';
+      else if (pad.mapping !== 'standard') grund = 'mapping=' + pad.mapping;
+      else if (typeof zweiSpieler !== 'undefined' && zweiSpieler) grund = 'zweiSpieler-Modus';
+      else {
+        try { dw = String(o.lesen()).split(',').map(Number); } catch (e) { dw = null; }
+        if (!dw || dw.length < 8) grund = 'lesen() leer';
+        else if (dw[7] !== 1) grund = 'geraete=' + dw[7];
+        else if (!(dw[6] >= 0)) grund = 'alter=' + dw[6] + ' (noch kein Ereignis)';
+        else grund = 'unbekannt';
+      }
+      window.MT_DIAG.padLog++;
+      log('[Pad-Diagnose] Direktweg aus: ' + grund + (dw ? ' · geraete=' + dw[7] + ' · ereignisse=' + dw[8] : ''), 'warn');
+    }
     if (!pad || !o || typeof o.lesen !== 'function' || pad.mapping !== 'standard') return pad;
     if (typeof zweiSpieler !== 'undefined' && zweiSpieler) return pad;
     let w;
