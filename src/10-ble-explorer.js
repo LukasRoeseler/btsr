@@ -58,6 +58,10 @@
   const setTxt = (id, v) => { const el = $(id); if (el) el.textContent = v; };
   const setSty = (id, k, v) => { const el = $(id); if (el) el.style[k] = v; };
   const logEl = $('log');
+  const warnEl = $('warn-log');
+  // Warnungen/Fehler, die aus dem Roll-Log fallen, bleiben hier erhalten (Kopier-Puffer + Anzeige).
+  const WARN_BUF_MAX = 20000;
+  const warnBuf = [];
   // Hier stand ein Wrapper um #conn-dot, und in ihm ein ECHTER FEHLER:
   //
   //     const statusEl = { set textContent(v) { dot.title = String(v); ... } };
@@ -80,14 +84,27 @@
   // minutes of driving and the resulting layout work stalled the main thread, which then
   // showed up as stuttering control.
   const LOG_MAX_LINES = 400;
+  const WARN_MAX_LINES = 2000;
   function log(msg, cls) {
     const line = document.createElement('div');
     if (cls) line.className = 'l-' + cls;
     const t = new Date().toLocaleTimeString();
-    line.textContent = `[${t}] ${msg}`;
+    const text = `[${t}] ${msg}`;
+    line.textContent = text;
     logEl.appendChild(line);
     while (logEl.childElementCount > LOG_MAX_LINES) logEl.removeChild(logEl.firstChild);
     logEl.scrollTop = logEl.scrollHeight;
+    // Warnungen und Fehler nicht verwerfen: sie landen zusaetzlich in einem eigenen Log.
+    if (warnEl && (cls === 'warn' || cls === 'err')) {
+      warnBuf.push(text);
+      if (warnBuf.length > WARN_BUF_MAX) warnBuf.shift();
+      const wl = document.createElement('div');
+      wl.className = 'l-' + cls;
+      wl.textContent = text;
+      warnEl.appendChild(wl);
+      while (warnEl.childElementCount > WARN_MAX_LINES) warnEl.removeChild(warnEl.firstChild);
+      warnEl.scrollTop = warnEl.scrollHeight;
+    }
   }
 
   function bufToHex(buf) {
@@ -362,6 +379,25 @@
   };
 
   $('btn-clear-log').onclick = () => { logEl.innerHTML = ''; };
+  // Kopieren des Live-Logs / der Warnungen (fuer die Latenz-Diagnose): der Roll-Log faellt zu
+  // schnell um, als dass man ihn von Hand mitlesen koennte - einmal antippen kopiert alles.
+  function logText(el) {
+    let s = '';
+    for (const c of el.children) s += c.textContent + '\n';
+    return s;
+  }
+  async function kopiereText(text, name) {
+    if (!text) { log(name + ' ist leer.', 'info'); return; }
+    try {
+      await navigator.clipboard.writeText(text);
+      log(name + ' kopiert (' + text.length + ' Zeichen).', 'info');
+    } catch (e) {
+      log(name + ': Kopieren nicht erlaubt - Text unten markiert, bitte selbst kopieren.', 'warn');
+    }
+  }
+  $('btn-copy-log').onclick = () => kopiereText(logText(logEl), 'Log');
+  if ($('btn-clear-warn')) $('btn-clear-warn').onclick = () => { warnEl.innerHTML = ''; warnBuf.length = 0; };
+  if ($('btn-copy-warn')) $('btn-copy-warn').onclick = () => kopiereText(warnBuf.join('\n'), 'Warnungen');
   // BESTELLT: "auto verbinden soll nur in garage tab moeglich sein" - der globale
   // Verbindungsknopf in der Kopfzeile ist damit ganz entfallen, nicht nur umgehaengt.
   // Verbunden wird jetzt ausschliesslich ueber #gar-connect in der Garage.
@@ -2922,6 +2958,11 @@
     "Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.": "Cold after the start and after a pit stop, worn after a hard stint. Left = off.",
     "Klick auf eine Zeile lässt die Lichter dieses Autos blinken": "Clicking a row makes that car's lights blink",
     "Kopieren": "Copy",
+    "Log kopieren": "Copy log",
+    "Warnungen": "Warnings",
+    "Warnungen und Fehler, die aus dem Roll-Log fallen würden, bleiben hier erhalten.": "Warnings and errors that would drop out of the rolling log are kept here.",
+    "Warnungen leeren": "Clear warnings",
+    "Warnungen kopieren": "Copy warnings",
     "Krümmung nimmt den größten Radius. Rundenzeit rechnet ein Geschwindigkeitsprofil und ist im Modell 1–8 % schneller; ob auch auf dem Teppich, sagen Rundenzeit und Abgänge.": "Curvature takes the largest possible radius. Lap time computes a speed profile and is 1-8 % quicker in the model; whether it is on the carpet too is answered by lap times and departures.",
     "Krümmung": "Curvature",
     "Kurbelwelle": "Crankshaft",

@@ -740,6 +740,11 @@
   #log .l-write { color: var(--warn); }
   #log .l-err { color: var(--bad); }
   #log .l-info { color: var(--muted); }
+  #warn-log {
+    height: 150px; overflow-y: auto; background: var(--panel-2); color: var(--warn); border: 1px solid var(--border);
+    border-radius: 4px; padding: 10px; font-family: monospace; font-size: 12px; line-height: 1.5;
+  }
+  #warn-log .l-err { color: var(--bad); }
 
   /* Control tab */
   .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -5919,7 +5924,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.131</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.134</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -9907,6 +9912,16 @@
       <div id="log"></div>
       <div class="row" style="margin-top:8px">
         <button id="btn-clear-log">Log leeren</button>
+        <button id="btn-copy-log">Log kopieren</button>
+      </div>
+      <h2 style="margin-top:18px">Warnungen</h2>
+      <p class="muted" style="font-size:11.5px;margin:2px 0 6px">
+        Warnungen und Fehler, die aus dem Roll-Log fallen w&uuml;rden, bleiben hier erhalten.
+      </p>
+      <div id="warn-log"></div>
+      <div class="row" style="margin-top:8px">
+        <button id="btn-clear-warn">Warnungen leeren</button>
+        <button id="btn-copy-warn">Warnungen kopieren</button>
       </div>
     </div>
     </div>
@@ -15421,6 +15436,10 @@
   const setTxt = (id, v) => { const el = $(id); if (el) el.textContent = v; };
   const setSty = (id, k, v) => { const el = $(id); if (el) el.style[k] = v; };
   const logEl = $('log');
+  const warnEl = $('warn-log');
+  // Warnungen/Fehler, die aus dem Roll-Log fallen, bleiben hier erhalten (Kopier-Puffer + Anzeige).
+  const WARN_BUF_MAX = 20000;
+  const warnBuf = [];
   // Hier stand ein Wrapper um #conn-dot, und in ihm ein ECHTER FEHLER:
   //
   //     const statusEl = { set textContent(v) { dot.title = String(v); ... } };
@@ -15443,14 +15462,27 @@
   // minutes of driving and the resulting layout work stalled the main thread, which then
   // showed up as stuttering control.
   const LOG_MAX_LINES = 400;
+  const WARN_MAX_LINES = 2000;
   function log(msg, cls) {
     const line = document.createElement('div');
     if (cls) line.className = 'l-' + cls;
     const t = new Date().toLocaleTimeString();
-    line.textContent = `[${t}] ${msg}`;
+    const text = `[${t}] ${msg}`;
+    line.textContent = text;
     logEl.appendChild(line);
     while (logEl.childElementCount > LOG_MAX_LINES) logEl.removeChild(logEl.firstChild);
     logEl.scrollTop = logEl.scrollHeight;
+    // Warnungen und Fehler nicht verwerfen: sie landen zusaetzlich in einem eigenen Log.
+    if (warnEl && (cls === 'warn' || cls === 'err')) {
+      warnBuf.push(text);
+      if (warnBuf.length > WARN_BUF_MAX) warnBuf.shift();
+      const wl = document.createElement('div');
+      wl.className = 'l-' + cls;
+      wl.textContent = text;
+      warnEl.appendChild(wl);
+      while (warnEl.childElementCount > WARN_MAX_LINES) warnEl.removeChild(warnEl.firstChild);
+      warnEl.scrollTop = warnEl.scrollHeight;
+    }
   }
 
   function bufToHex(buf) {
@@ -15725,6 +15757,25 @@
   };
 
   $('btn-clear-log').onclick = () => { logEl.innerHTML = ''; };
+  // Kopieren des Live-Logs / der Warnungen (fuer die Latenz-Diagnose): der Roll-Log faellt zu
+  // schnell um, als dass man ihn von Hand mitlesen koennte - einmal antippen kopiert alles.
+  function logText(el) {
+    let s = '';
+    for (const c of el.children) s += c.textContent + '\n';
+    return s;
+  }
+  async function kopiereText(text, name) {
+    if (!text) { log(name + ' ist leer.', 'info'); return; }
+    try {
+      await navigator.clipboard.writeText(text);
+      log(name + ' kopiert (' + text.length + ' Zeichen).', 'info');
+    } catch (e) {
+      log(name + ': Kopieren nicht erlaubt - Text unten markiert, bitte selbst kopieren.', 'warn');
+    }
+  }
+  $('btn-copy-log').onclick = () => kopiereText(logText(logEl), 'Log');
+  if ($('btn-clear-warn')) $('btn-clear-warn').onclick = () => { warnEl.innerHTML = ''; warnBuf.length = 0; };
+  if ($('btn-copy-warn')) $('btn-copy-warn').onclick = () => kopiereText(warnBuf.join('\n'), 'Warnungen');
   // BESTELLT: "auto verbinden soll nur in garage tab moeglich sein" - der globale
   // Verbindungsknopf in der Kopfzeile ist damit ganz entfallen, nicht nur umgehaengt.
   // Verbunden wird jetzt ausschliesslich ueber #gar-connect in der Garage.
@@ -18285,6 +18336,11 @@
     "Kalt nach Start und Boxenstopp, abgenutzt nach hartem Stint. Links = aus.": "Cold after the start and after a pit stop, worn after a hard stint. Left = off.",
     "Klick auf eine Zeile lässt die Lichter dieses Autos blinken": "Clicking a row makes that car's lights blink",
     "Kopieren": "Copy",
+    "Log kopieren": "Copy log",
+    "Warnungen": "Warnings",
+    "Warnungen und Fehler, die aus dem Roll-Log fallen würden, bleiben hier erhalten.": "Warnings and errors that would drop out of the rolling log are kept here.",
+    "Warnungen leeren": "Clear warnings",
+    "Warnungen kopieren": "Copy warnings",
     "Krümmung nimmt den größten Radius. Rundenzeit rechnet ein Geschwindigkeitsprofil und ist im Modell 1–8 % schneller; ob auch auf dem Teppich, sagen Rundenzeit und Abgänge.": "Curvature takes the largest possible radius. Lap time computes a speed profile and is 1-8 % quicker in the model; whether it is on the carpet too is answered by lap times and departures.",
     "Krümmung": "Curvature",
     "Kurbelwelle": "Crankshaft",
@@ -45066,7 +45122,10 @@
     const kmh = (st.speedKmh || 0) * (VF.tempoFaktor || 1);
     const hand = vfHandling();
     const reifenModus = hand === 'gran' || hand === 'acc' || hand === 'librecorsa';
+    // DIAGNOSE (temporaer, Latenz): wie lange die Physik-Teilschritte dauern.
+    const tPhys0 = performance.now();
     vfFahrPhysik(dt, kmh, st, hand, reifenModus);
+    const physMs = performance.now() - tPhys0;
     const lenk = VF.lenkIst;
     // Geist: jede Runde wird von Linie zu Linie aufgezeichnet; die beste faehrt als Kopie mit (vfGeistRunde).
     if (VF.geist) {
@@ -45124,8 +45183,23 @@
     }
     // v1.3.94: Kollision, Schaden und Windschatten (dreckige Luft) mit den NPCs.
     vfVerkehr(dt);
+    // DIAGNOSE (temporaer, Latenz): wie lange das Malen dauert.
+    const tMal0 = performance.now();
     vfMalen();
+    const malMs = performance.now() - tMal0;
     vfHud();
+    // DIAGNOSE (temporaer, Latenz): alle ~2 s die Frame-Aufteilung ausgeben - ist die 500-Hz-Physik
+    // (VF_TEIL.dt, hoechstens VF_TEIL.max Teilschritte) der Flaschenhals, oder das WebGL-Malen?
+    if (window.MT_DIAG) {
+      const D = window.MT_DIAG.vf || (window.MT_DIAG.vf = { n: 0, phys: 0, mal: 0, bild: 0, seit: performance.now() });
+      D.n++; D.phys += physMs; D.mal += malMs; D.bild += dt * 1000;
+      if (performance.now() - D.seit > 2000) {
+        const b = D.bild / D.n;
+        log('Virtuell-Diagnose: ' + Math.round(1000 / b) + ' Bilder/s · Bild ' + b.toFixed(1) + ' ms · Physik '
+          + (D.phys / D.n).toFixed(2) + ' ms (' + VF.teilschritte + ' Teilschritte) · Malen ' + (D.mal / D.n).toFixed(2) + ' ms', 'info');
+        D.n = 0; D.phys = 0; D.mal = 0; D.bild = 0; D.seit = performance.now();
+      }
+    }
   }
   // Kollision mit NPCs: Schaden, Abbremsen, Rumpeln; und Windschatten (dreckige Luft): dicht hinter
   // einem NPC in der Spur verliert das eigene Auto Grip vorn (wie dirtyAirLevel in 90-ghosts.js).

@@ -2509,7 +2509,10 @@
     const kmh = (st.speedKmh || 0) * (VF.tempoFaktor || 1);
     const hand = vfHandling();
     const reifenModus = hand === 'gran' || hand === 'acc' || hand === 'librecorsa';
+    // DIAGNOSE (temporaer, Latenz): wie lange die Physik-Teilschritte dauern.
+    const tPhys0 = performance.now();
     vfFahrPhysik(dt, kmh, st, hand, reifenModus);
+    const physMs = performance.now() - tPhys0;
     const lenk = VF.lenkIst;
     // Geist: jede Runde wird von Linie zu Linie aufgezeichnet; die beste faehrt als Kopie mit (vfGeistRunde).
     if (VF.geist) {
@@ -2567,8 +2570,23 @@
     }
     // v1.3.94: Kollision, Schaden und Windschatten (dreckige Luft) mit den NPCs.
     vfVerkehr(dt);
+    // DIAGNOSE (temporaer, Latenz): wie lange das Malen dauert.
+    const tMal0 = performance.now();
     vfMalen();
+    const malMs = performance.now() - tMal0;
     vfHud();
+    // DIAGNOSE (temporaer, Latenz): alle ~2 s die Frame-Aufteilung ausgeben - ist die 500-Hz-Physik
+    // (VF_TEIL.dt, hoechstens VF_TEIL.max Teilschritte) der Flaschenhals, oder das WebGL-Malen?
+    if (window.MT_DIAG) {
+      const D = window.MT_DIAG.vf || (window.MT_DIAG.vf = { n: 0, phys: 0, mal: 0, bild: 0, seit: performance.now() });
+      D.n++; D.phys += physMs; D.mal += malMs; D.bild += dt * 1000;
+      if (performance.now() - D.seit > 2000) {
+        const b = D.bild / D.n;
+        log('Virtuell-Diagnose: ' + Math.round(1000 / b) + ' Bilder/s · Bild ' + b.toFixed(1) + ' ms · Physik '
+          + (D.phys / D.n).toFixed(2) + ' ms (' + VF.teilschritte + ' Teilschritte) · Malen ' + (D.mal / D.n).toFixed(2) + ' ms', 'info');
+        D.n = 0; D.phys = 0; D.mal = 0; D.bild = 0; D.seit = performance.now();
+      }
+    }
   }
   // Kollision mit NPCs: Schaden, Abbremsen, Rumpeln; und Windschatten (dreckige Luft): dicht hinter
   // einem NPC in der Spur verliert das eigene Auto Grip vorn (wie dirtyAirLevel in 90-ghosts.js).
