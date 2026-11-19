@@ -5924,7 +5924,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.138</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.139</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -45545,7 +45545,12 @@
     const blick = vfBlick(k.auge, k.ziel, k.oben || VF_OBEN);
     const pv = vfMal(vfPerspektive(k.fov * Math.PI / 180, w / Math.max(1, h), k.nah, k.fern || 1300), blick);
     // v1.3.113 Quality: echte Schatten aus der Schattenkarte (Spielerauto + NPCs), vor dem Boden.
-    if (VF.grafik && VF.schatte && VF.schatteProg && vfWacheStufe() < 1) {
+    // v1.5.139: Die Schattenkarte kostet auf schwachen GPUs viel (alle Modelle werden jedes Bild in eine
+    // 2048x2048-Karte gerendert; das ist die GPU-Fill-Last, die mit der Modell-Komplexitaet skaliert und
+    // das Ruckeln bei Spyder/NPCs erklaert - die CPU-Zeit bleibt winzig, nur die GPU raetert). Deshalb
+    // wird die Karte nur jedes 2. Bild neu gerendert; das Schattenbild bleibt dann 1 Bild alt (ca. 16 ms,
+    // nicht wahrnehmbar). Das halbiert die GPU-Last des Schattenpasses.
+    if (VF.grafik && VF.schatte && VF.schatteProg && vfWacheStufe() < 1 && (VF.schatteZ = (VF.schatteZ || 0) + 1) % 2 === 0) {
       vfPassZeit('sch', () => {
         VF.schM = vfSchattenMatrix([VF.x, 0, VF.y]);
         vfSchattenPass(gl);
