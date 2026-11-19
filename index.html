@@ -5924,7 +5924,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.136</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.137</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -45219,8 +45219,19 @@
       D.n++; D.phys += physMs; D.mal += malMs; D.bild += dt * 1000;
       if (performance.now() - D.seit > 2000) {
         const b = D.bild / D.n;
+        // DIAGNOSE (temporaer, Latenz): im Quality-Modus die Teilpaesse aufschluesseln, damit wir
+        // sehen, ob Schattenkarte, Umgebungskarte, Bloom oder Regen die Zeit fressen.
+        let pass = '';
+        if (VF.grafik) {
+          const P = window.MT_DIAG.vfP;
+          if (P && D.n > 0) {
+            pass = ' · Schatten ' + (P.sch / D.n).toFixed(2) + ' · Umgebung ' + (P.umw / D.n).toFixed(2)
+                 + ' · Bloom ' + (P.bloom / D.n).toFixed(2) + ' · Regen ' + (P.regen / D.n).toFixed(2);
+            P.sch = 0; P.umw = 0; P.bloom = 0; P.regen = 0;
+          }
+        }
         log('Virtuell-Diagnose: ' + Math.round(1000 / b) + ' Bilder/s · Bild ' + b.toFixed(1) + ' ms · Physik '
-          + (D.phys / D.n).toFixed(2) + ' ms (' + VF.teilschritte + ' Teilschritte) · Malen ' + (D.mal / D.n).toFixed(2) + ' ms', 'warn');
+          + (D.phys / D.n).toFixed(2) + ' ms (' + VF.teilschritte + ' Teilschritte) · Malen ' + (D.mal / D.n).toFixed(2) + ' ms' + pass, 'warn');
         D.n = 0; D.phys = 0; D.mal = 0; D.bild = 0; D.seit = performance.now();
       }
     }
@@ -45455,6 +45466,14 @@
     showHudToast(ergebnis || (t('Rennen beendet') + ': ' + was));
     rennZeitTimeout(() => { if (VF.aktiv) virtuellBeenden(); }, 1600);
   }
+  // DIAGNOSE (temporaer, Latenz): misst die Quality-Teilpaesse (Schattenkarte, Umgebungskarte,
+  // Bloom, Regen) einzeln, damit wir wissen, was auf dem Handy im Quality-Modus wirklich kostet.
+  function vfPassZeit(key, fn) {
+    const P = (window.MT_DIAG && (window.MT_DIAG.vfP || (window.MT_DIAG.vfP = { sch: 0, bloom: 0, regen: 0, umw: 0 })));
+    const t0 = performance.now();
+    fn();
+    if (P) P[key] += performance.now() - t0;
+  }
   function vfMalen() {
     const gl = VF.gl, cv = VF.cv;
     if (gl.isContextLost()) return;   // webglcontextlost beendet die Fahrt (virtuellStarten)
@@ -45477,9 +45496,11 @@
     VF.augeJetzt = k.auge;
     // v1.5.94 (G2): Umgebungskarte fuer den Lack (nur Quality-Autoshader), alle 2 s neu (Wolken, Regen).
     if (VF.tprog && VF.tprog.qual && vfWacheStufe() < 1) {
-      try { vfUmweltMalen(gl, VF.dtBild || 0.016); } catch (e) { VF.umw = null; VF.umwKaputt = true; }
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.viewport(0, 0, w, h);
+      vfPassZeit('umw', () => {
+        try { vfUmweltMalen(gl, VF.dtBild || 0.016); } catch (e) { VF.umw = null; VF.umwKaputt = true; }
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, w, h);
+      });
     }
     gl.disable(gl.DEPTH_TEST);
     gl.useProgram(VF.himmelProg.p);
@@ -45514,10 +45535,12 @@
     const pv = vfMal(vfPerspektive(k.fov * Math.PI / 180, w / Math.max(1, h), k.nah, k.fern || 1300), blick);
     // v1.3.113 Quality: echte Schatten aus der Schattenkarte (Spielerauto + NPCs), vor dem Boden.
     if (VF.grafik && VF.schatte && VF.schatteProg && vfWacheStufe() < 1) {
-      VF.schM = vfSchattenMatrix([VF.x, 0, VF.y]);
-      vfSchattenPass(gl);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.viewport(0, 0, w, h);
+      vfPassZeit('sch', () => {
+        VF.schM = vfSchattenMatrix([VF.x, 0, VF.y]);
+        vfSchattenPass(gl);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, w, h);
+      });
     }
     // v1.3.39: Boden, Fahrbahn und Randsteine mit Texturen (vorher Eckfarben in VF.bahn).
     vfFlaechenMalen(gl, pv, k.auge);
@@ -45578,9 +45601,9 @@
     // v1.5.84: der Geist als durchscheinende Kopie des gewaehlten Autos, nach allen undurchsichtigen Autos.
     if (geistDa && VF.modell && VF.tprog) vfGeistMalen(gl, pv, blick, k.auge);
     // v1.5 (Quality): Bloom auf das fertige Bild, vor dem Regen. Scheitert er einmal, bleibt er fuer die Fahrt aus.
-    if (vfBloomAn()) { try { vfBloomMalen(gl, w, h); } catch (e) { VF.bloomKaputt = true; VF.bloom = null; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h); log('Virtuell: Bloom aus (' + e.message + ').', 'info'); } }
+    if (vfBloomAn()) vfPassZeit('bloom', () => { try { vfBloomMalen(gl, w, h); } catch (e) { VF.bloomKaputt = true; VF.bloom = null; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h); log('Virtuell: Bloom aus (' + e.message + ').', 'info'); } });
     // v1.5.19: Regen zuletzt (durchsichtig, ohne Tiefe zu schreiben).
-    try { vfRegenMalen(gl, pv, k.auge, VF.dtBild || 0.016); } catch (e) { VF.regen = null; }
+    vfPassZeit('regen', () => { try { vfRegenMalen(gl, pv, k.auge, VF.dtBild || 0.016); } catch (e) { VF.regen = null; } });
   }
   // ---- BLOOM (v1.5, Quality, Plan Paket 4) -------------------------------------------------------------------
   // Helles (Scheinwerfer, Glanzlichter, Ruecklichter) strahlt leicht ueber. Die Szene bleibt im Bildschirm-Puffer
