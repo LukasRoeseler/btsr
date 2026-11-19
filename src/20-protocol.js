@@ -256,6 +256,7 @@
     writeInFlight = false;
   }
 
+  let keinZielLetzte = 0;   // Rate-Limit fuer die "(kein Ziel)"-Meldung, s.u.
   async function sendControlValue(overrideSteer, overrideThrottle) {
     const steer = overrideSteer !== undefined ? overrideSteer : steerX;
     let throttle = overrideThrottle !== undefined ? overrideThrottle : throttleY;
@@ -341,7 +342,16 @@
     }
     const uuid = controlSelect.value;
     if (!uuid) {
-      log(`(kein Ziel) steer=${steer.toFixed(2)} throttle=${throttle.toFixed(2)} bytes=${bufToHex(payload)}`, 'info');
+      // Nur melden, wenn wirklich Eingaben anliegen (Lenken/Gas), und hoechstens alle 1,5 s.
+      // Vorher spammte diese Zeile bei jedem Takt - im virtuellen Fahren ohne Schreibziel
+      // waren das tausende "steer=0.00 throttle=0.00"-Zeilen pro Fahrt, die die Diagnose-Zeilen
+      // (Virtuell-Diagnose, Herzschlag-Ausreisser) im Log verschluckten.
+      const nichtIdle = Math.abs(steer) > 0.005 || Math.abs(throttle) > 0.005;
+      const jetzt = performance.now();
+      if (nichtIdle && jetzt - keinZielLetzte > 1500) {
+        keinZielLetzte = jetzt;
+        log(`(kein Ziel) steer=${steer.toFixed(2)} throttle=${throttle.toFixed(2)} bytes=${bufToHex(payload)}`, 'info');
+      }
       return;
     }
     const entry = charByUuid.get(uuid);
