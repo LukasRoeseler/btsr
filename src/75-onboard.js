@@ -191,12 +191,29 @@
               while (true) {
                 const f = p.extrahiere();
                 if (!f) break;
-                const u2 = URL.createObjectURL(new Blob([f], { type: 'image/jpeg' }));
+                const blob = new Blob([f], { type: 'image/jpeg' });
+                const u2 = URL.createObjectURL(blob);
                 if (urlObjekt) URL.revokeObjectURL(urlObjekt);
                 urlObjekt = u2;
                 strom.url = u2;
                 img.src = u2;
                 if (!fertig) { z.m5.bild = true; ende(true); }
+                // v1.5.143: Fuer die Aufnahme einen stabilen, bereits dekodierten Frame vorhalten.
+                // Das <img> ist beim Blob-Wechsel kurz naturalWidth=0 (Decoder laedt), die Aufnahme
+                // (onbCanvasMalen -> onbQuelleBild) wuerde dann schwarze Bilder einstreuen. Ein
+                // ImageBitmap ist immer fertig dekodiert. Nur waehrend der Aufnahme dekodieren,
+                // sonst kostet es im Normalbetrieb nichts.
+                if (onbZustand().rec) {
+                  try {
+                    createImageBitmap(blob).then((bmp) => {
+                      const z2 = onbZustand();
+                      if (z2.m5 && z2.m5.strom === strom) {
+                        if (z2.m5.bildBmp) z2.m5.bildBmp.close();
+                        z2.m5.bildBmp = bmp;
+                      } else if (bmp) bmp.close();
+                    }).catch(() => { /* Bild gerade nicht dekodierbar: naechster Frame */ });
+                  } catch (e) { /* createImageBitmap nicht verfuegbar */ }
+                }
               }
             }
             if (!fertig) { ende(false); return; }
@@ -251,7 +268,7 @@
     // Der Strom wird per fetch (CORS) gelesen; die Kamera-Firmware setzt Access-Control-Allow-Origin: *.
     for (const url of kand) {
       if (lauf !== z.m5Neu || !e.an) return false;
-      z.m5 = { url, cors: true, battUrl: '', akku: null, akkuZeit: 0 };
+      z.m5 = { url, cors: true, battUrl: '', akku: null, akkuZeit: 0, bildBmp: null };
       try { z.m5.battUrl = new URL(url).origin + '/batt'; } catch (e) { z.m5.battUrl = ''; }
       if (await onbM5Versuch(img, url)) {
         z.m5Cors = true;
@@ -578,6 +595,8 @@
   function onbQuelleBild() {
     const z = onbZustand();
     if (z.m5) {
+      const bmp = z.m5.bildBmp;   // v1.5.143: stabiler, dekodierter Frame fuer die Aufnahme
+      if (bmp) return { el: bmp, w: bmp.width, h: bmp.height };
       const img = $('onboard-bild');
       return img && img.naturalWidth > 0 ? { el: img, w: img.naturalWidth, h: img.naturalHeight } : null;
     }
