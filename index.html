@@ -5924,7 +5924,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.139</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.140</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -45239,10 +45239,17 @@
             P.sch = 0; P.umw = 0; P.bloom = 0; P.regen = 0;
           }
         }
+        // DIAGNOSE (temporaer, Latenz): Modell-Last (Teile/Indizes, Spieler+NPCs) und Canvas-Aufloesung,
+        // um zu sehen, ob das Ruckeln fill-lastig (grosse Aufloesung) oder vertex-/drawcall-lastig (viele Teile) ist.
+        let mTeile = 0, mIdx = 0;
+        const zaehle = (M) => { if (!M) return; const z = (arr) => { if (arr) for (const t of arr) { mTeile++; mIdx += (t.indizes || 0); } }; z(M.aufbauTeile); z(M.radTeile); };
+        zaehle(VF.modell);
+        if (VF.npcs) for (const npc of VF.npcs) zaehle(npc.modell);
+        const cv = VF.cv ? (VF.cv.width + 'x' + VF.cv.height) : '?';
         log('Virtuell-Diagnose: ' + Math.round(1000 / b) + ' Bilder/s · Bild ' + b.toFixed(1) + ' ms · Physik '
           + (D.phys / D.n).toFixed(2) + ' ms (' + VF.teilschritte + ' Teilschritte) · Malen ' + (D.mal / D.n).toFixed(2) + ' ms'
           + ' · Ort ' + (D.ort / D.n).toFixed(2) + ' · NPC ' + (D.npc / D.n).toFixed(2) + ' · HUD ' + (D.hud / D.n).toFixed(2)
-          + pass, 'warn');
+          + pass + ' · Modell ' + mTeile + ' Teile/' + mIdx + ' Indizes · Canvas ' + cv, 'warn');
         D.n = 0; D.phys = 0; D.mal = 0; D.ort = 0; D.npc = 0; D.hud = 0; D.bild = 0; D.seit = performance.now();
       }
     }
@@ -45545,12 +45552,10 @@
     const blick = vfBlick(k.auge, k.ziel, k.oben || VF_OBEN);
     const pv = vfMal(vfPerspektive(k.fov * Math.PI / 180, w / Math.max(1, h), k.nah, k.fern || 1300), blick);
     // v1.3.113 Quality: echte Schatten aus der Schattenkarte (Spielerauto + NPCs), vor dem Boden.
-    // v1.5.139: Die Schattenkarte kostet auf schwachen GPUs viel (alle Modelle werden jedes Bild in eine
-    // 2048x2048-Karte gerendert; das ist die GPU-Fill-Last, die mit der Modell-Komplexitaet skaliert und
-    // das Ruckeln bei Spyder/NPCs erklaert - die CPU-Zeit bleibt winzig, nur die GPU raetert). Deshalb
-    // wird die Karte nur jedes 2. Bild neu gerendert; das Schattenbild bleibt dann 1 Bild alt (ca. 16 ms,
-    // nicht wahrnehmbar). Das halbiert die GPU-Last des Schattenpasses.
-    if (VF.grafik && VF.schatte && VF.schatteProg && vfWacheStufe() < 1 && (VF.schatteZ = (VF.schatteZ || 0) + 1) % 2 === 0) {
+    // v1.5.140: Die Schattenkarte wird wieder jedes Bild gerendert. (1.5.139 rendert sie nur jedes 2. Bild,
+    // das liess den Schatten 1 Bild "nachziehen" -> Flackern bei schnellen Bewegungen.) Die GPU-Last wird
+    // stattdessen ueber die Aufloesung geregelt: vfSchattenBauen nutzt 1024 auf Touch, 2048 auf Desktop.
+    if (VF.grafik && VF.schatte && VF.schatteProg && vfWacheStufe() < 1) {
       vfPassZeit('sch', () => {
         VF.schM = vfSchattenMatrix([VF.x, 0, VF.y]);
         vfSchattenPass(gl);
@@ -46580,8 +46585,9 @@
     // Erweiterung bleibt der weiche Blob-Schatten (M.schatten).
     VF.schatte = null; VF.schatteProg = null;
     if (VF.grafik) {
-      // v1.3.124: 2048er Karte (fällt auf 1024 zurück, wenn der Framebuffer sonst unvollständig bleibt).
-      try { VF.schatte = vfSchattenBauen(gl, 2048) || vfSchattenBauen(gl, 1024); VF.schatteProg = VF.schatte ? vfProgrammSchatten(gl) : null; } catch (e) { VF.schatte = null; VF.schatteProg = null; }
+      // v1.3.124: 2048er Karte auf Desktop, 1024er auf Touch (das Handy-GPU kann die 2048er Fill-Last nicht;
+      // v1.5.140). Faellt auf die jeweils kleinere Karte zurueck, wenn der Framebuffer sonst unvollstaendig bleibt.
+      try { const sz = navigator.maxTouchPoints > 0 ? 1024 : 2048; VF.schatte = vfSchattenBauen(gl, sz) || vfSchattenBauen(gl, sz / 2); VF.schatteProg = VF.schatte ? vfProgrammSchatten(gl) : null; } catch (e) { VF.schatte = null; VF.schatteProg = null; }
     }
     vfHudBauen(schicht);
     vfDrehNull(); VF.stick = null; VF.tasten = {};
