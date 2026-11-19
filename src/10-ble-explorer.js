@@ -91,19 +91,23 @@
     const t = new Date().toLocaleTimeString();
     const text = `[${t}] ${msg}`;
     line.textContent = text;
+    // Nur ans Ende springen, wenn der Nutzer schon unten ist: sonst rollt das Log/ die
+    // Warnungsliste waehrend des Lesens weg (Gemeldet: "Die Warnungsliste aendert sich dauernd").
+    const untenLog = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 4;
     logEl.appendChild(line);
     while (logEl.childElementCount > LOG_MAX_LINES) logEl.removeChild(logEl.firstChild);
-    logEl.scrollTop = logEl.scrollHeight;
+    if (untenLog) logEl.scrollTop = logEl.scrollHeight;
     // Warnungen und Fehler nicht verwerfen: sie landen zusaetzlich in einem eigenen Log.
     if (warnEl && (cls === 'warn' || cls === 'err')) {
       warnBuf.push(text);
       if (warnBuf.length > WARN_BUF_MAX) warnBuf.shift();
+      const untenWarn = warnEl.scrollHeight - warnEl.scrollTop - warnEl.clientHeight < 4;
       const wl = document.createElement('div');
       wl.className = 'l-' + cls;
       wl.textContent = text;
       warnEl.appendChild(wl);
       while (warnEl.childElementCount > WARN_MAX_LINES) warnEl.removeChild(warnEl.firstChild);
-      warnEl.scrollTop = warnEl.scrollHeight;
+      if (untenWarn) warnEl.scrollTop = warnEl.scrollHeight;
     }
   }
 
@@ -388,10 +392,19 @@
   }
   async function kopiereText(text, name) {
     if (!text) { log(name + ' ist leer.', 'info'); return; }
+    const feld = $('kopie-feld');
+    let ok = false;
     try {
       await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch (e) { ok = false; }
+    if (ok) {
+      if (feld) feld.hidden = true;
       log(name + ' kopiert (' + text.length + ' Zeichen).', 'info');
-    } catch (e) {
+    } else {
+      // Fallback wie beim Verbindungsprotokoll: den Text in ein markiertes Feld legen,
+      // damit er sich von Hand kopieren laesst, wenn die Zwischenablage nicht erlaubt ist.
+      if (feld) { feld.hidden = false; feld.value = text; try { feld.select(); } catch (e) { /* egal */ } }
       log(name + ': Kopieren nicht erlaubt - Text unten markiert, bitte selbst kopieren.', 'warn');
     }
   }

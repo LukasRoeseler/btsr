@@ -5924,7 +5924,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.134</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.135</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -9923,6 +9923,7 @@
         <button id="btn-clear-warn">Warnungen leeren</button>
         <button id="btn-copy-warn">Warnungen kopieren</button>
       </div>
+      <textarea id="kopie-feld" readonly data-i18n-skip style="display:none; width:100%; height:90px; margin-top:8px; background:var(--panel-2); color:var(--ink-2); border:1px solid var(--border); border-radius:4px; padding:8px; font-family:monospace; font-size:12px"></textarea>
     </div>
     </div>
 
@@ -15469,19 +15470,23 @@
     const t = new Date().toLocaleTimeString();
     const text = `[${t}] ${msg}`;
     line.textContent = text;
+    // Nur ans Ende springen, wenn der Nutzer schon unten ist: sonst rollt das Log/ die
+    // Warnungsliste waehrend des Lesens weg (Gemeldet: "Die Warnungsliste aendert sich dauernd").
+    const untenLog = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 4;
     logEl.appendChild(line);
     while (logEl.childElementCount > LOG_MAX_LINES) logEl.removeChild(logEl.firstChild);
-    logEl.scrollTop = logEl.scrollHeight;
+    if (untenLog) logEl.scrollTop = logEl.scrollHeight;
     // Warnungen und Fehler nicht verwerfen: sie landen zusaetzlich in einem eigenen Log.
     if (warnEl && (cls === 'warn' || cls === 'err')) {
       warnBuf.push(text);
       if (warnBuf.length > WARN_BUF_MAX) warnBuf.shift();
+      const untenWarn = warnEl.scrollHeight - warnEl.scrollTop - warnEl.clientHeight < 4;
       const wl = document.createElement('div');
       wl.className = 'l-' + cls;
       wl.textContent = text;
       warnEl.appendChild(wl);
       while (warnEl.childElementCount > WARN_MAX_LINES) warnEl.removeChild(warnEl.firstChild);
-      warnEl.scrollTop = warnEl.scrollHeight;
+      if (untenWarn) warnEl.scrollTop = warnEl.scrollHeight;
     }
   }
 
@@ -15766,10 +15771,19 @@
   }
   async function kopiereText(text, name) {
     if (!text) { log(name + ' ist leer.', 'info'); return; }
+    const feld = $('kopie-feld');
+    let ok = false;
     try {
       await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch (e) { ok = false; }
+    if (ok) {
+      if (feld) feld.hidden = true;
       log(name + ' kopiert (' + text.length + ' Zeichen).', 'info');
-    } catch (e) {
+    } else {
+      // Fallback wie beim Verbindungsprotokoll: den Text in ein markiertes Feld legen,
+      // damit er sich von Hand kopieren laesst, wenn die Zwischenablage nicht erlaubt ist.
+      if (feld) { feld.hidden = false; feld.value = text; try { feld.select(); } catch (e) { /* egal */ } }
       log(name + ': Kopieren nicht erlaubt - Text unten markiert, bitte selbst kopieren.', 'warn');
     }
   }
@@ -45196,7 +45210,7 @@
       if (performance.now() - D.seit > 2000) {
         const b = D.bild / D.n;
         log('Virtuell-Diagnose: ' + Math.round(1000 / b) + ' Bilder/s · Bild ' + b.toFixed(1) + ' ms · Physik '
-          + (D.phys / D.n).toFixed(2) + ' ms (' + VF.teilschritte + ' Teilschritte) · Malen ' + (D.mal / D.n).toFixed(2) + ' ms', 'info');
+          + (D.phys / D.n).toFixed(2) + ' ms (' + VF.teilschritte + ' Teilschritte) · Malen ' + (D.mal / D.n).toFixed(2) + ' ms', 'warn');
         D.n = 0; D.phys = 0; D.mal = 0; D.bild = 0; D.seit = performance.now();
       }
     }

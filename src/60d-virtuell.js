@@ -2583,7 +2583,7 @@
       if (performance.now() - D.seit > 2000) {
         const b = D.bild / D.n;
         log('Virtuell-Diagnose: ' + Math.round(1000 / b) + ' Bilder/s · Bild ' + b.toFixed(1) + ' ms · Physik '
-          + (D.phys / D.n).toFixed(2) + ' ms (' + VF.teilschritte + ' Teilschritte) · Malen ' + (D.mal / D.n).toFixed(2) + ' ms', 'info');
+          + (D.phys / D.n).toFixed(2) + ' ms (' + VF.teilschritte + ' Teilschritte) · Malen ' + (D.mal / D.n).toFixed(2) + ' ms', 'warn');
         D.n = 0; D.phys = 0; D.mal = 0; D.bild = 0; D.seit = performance.now();
       }
     }
