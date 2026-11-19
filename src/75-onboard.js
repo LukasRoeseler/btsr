@@ -378,6 +378,8 @@
         if (st.ctrl) try { st.ctrl.abort(); } catch (e) { /* schon zu */ }
         if (st.url) URL.revokeObjectURL(st.url);
       }
+      // v1.5.143: den fuer die Aufnahme dekodierten Frame freigeben (sonst Leck beim Stoppen).
+      if (z.m5.bildBmp) { try { z.m5.bildBmp.close(); } catch (e) { /* weg */ } z.m5.bildBmp = null; }
       z.m5 = null;
       const img = $('onboard-bild');
       // Erst den Fehler-Haken weg, dann die Quelle: sonst meldete das Leeren einen Abriss.
