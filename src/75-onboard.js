@@ -70,10 +70,7 @@
   function onboardAktiv() {
     const z = onbZ;
     if (!z) return false;
-    if (z.m5) {
-      const img = $('onboard-bild');
-      return !!(img && img.naturalWidth > 0);
-    }
+    if (z.m5) return !!z.m5.bild;   // WLAN-Kamera: sobald der erste Frame kam (bleibt stabil, auch wenn naturalWidth beim Blob kurz 0 ist)
     if (!z.stream) return false;
     const tr = z.stream.getVideoTracks()[0];
     return !!(tr && tr.readyState === 'live');
@@ -120,17 +117,107 @@
     h.hidden = !gesperrt;
     if (gesperrt) h.textContent = t('Diese Seite läuft über https und darf das http-Bild der Kamera nicht laden. In der Android-App oder über „Start OmegaSim.bat“ geht es.');
   }
-  // Ein Versuch: das erste Bild abwarten (naturalWidth), Fehler oder Zeitablauf heisst: naechster Kandidat.
-  function onbM5Versuch(img, url, cors) {
+  // Der MJPEG-Strom der M5-Kamera ist multipart/x-mixed-replace, aber in einer etwas eigenen Form:
+  //   "Content-Type: image/jpeg\r\nContent-Length: N\r\n\r\n" + <N Bytes JPEG> + "\r\n--BOUNDARY\r\n"
+  // (wiederholt; die erste Part hat KEIN fuehrendes "--BOUNDARY\r\n"). Ein <img> bekommt diesen
+  // Strom in manchen WebViews nicht angezeigt (naturalWidth bleibt 0), deshalb lesen wir ihn selbst
+  // und geben jede Part als einzelnen JPEG-BLOB ins <img> - das funktioniert ueberall und haelt
+  // auch die Aufnahme am Laufen (onbQuelleBild nutzt naturalWidth des <img>).
+  function onbM5Parser() {
+    let buf = new Uint8Array(0);
+    const enc = new TextEncoder().encode('Content-Length: ');
+    const crlf = new TextEncoder().encode('\r\n');
+    function suchen(hay, needle, von) {
+      const n = needle.length, h = hay.length;
+      for (let i = von || 0; i + n <= h; i++) {
+        let passt = true;
+        for (let j = 0; j < n; j++) if (hay[i + j] !== needle[j]) { passt = false; break; }
+        if (passt) return i;
+      }
+      return -1;
+    }
+    function anhaengen(chunk) {
+      const neu = new Uint8Array(buf.length + chunk.length);
+      neu.set(buf, 0); neu.set(chunk, buf.length);
+      buf = neu;
+      if (buf.length > 3000000) buf = buf.slice(-65536);   // Notbremse gegen entgleiste Daten
+    }
+    function extrahiere() {
+      const s = suchen(buf, enc);
+      if (s < 0) return null;
+      const numStart = s + enc.length;
+      const numEnd = suchen(buf, crlf, numStart);
+      if (numEnd < 0) return null;
+      let N = 0;
+      for (let i = numStart; i < numEnd; i++) {
+        const c = buf[i];
+        if (c < 48 || c > 57) return null;
+        N = N * 10 + (c - 48);
+      }
+      if (numEnd + 4 > buf.length) return null;              // "\r\n\r\n" noch nicht komplett
+      if (buf[numEnd] !== 13 || buf[numEnd + 1] !== 10 || buf[numEnd + 2] !== 13 || buf[numEnd + 3] !== 10) return null;
+      const jpegStart = numEnd + 4;
+      const jpegEnd = jpegStart + N;
+      if (buf.length < jpegEnd) return null;                 // Part noch nicht vollstaendig
+      const jpeg = buf.slice(jpegStart, jpegEnd);
+      buf = buf.slice(jpegEnd);
+      return jpeg;
+    }
+    return { anhaengen, extrahiere };
+  }
+  // Ein Versuch: den Strom per fetch (CORS) lesen und die JPEG-Parts als Blob ins <img> geben.
+  // Die erste Part gilt als Erfolg; danach laeuft der Strom im Hintergrund weiter (Livebild).
+  // Verbindungsende (ohne bewussten Abbruch) heisst "Kamera getrennt" und stoesst einen Neuversuch an.
+  function onbM5Versuch(img, url) {
+    const z = onbZustand();
     return new Promise((ja) => {
       let fertig = false;
-      const ende = (ok) => { if (fertig) return; fertig = true; clearInterval(takt); clearTimeout(uhr); img.onerror = null; ja(ok); };
-      img.onerror = () => ende(false);
-      if (cors) img.crossOrigin = 'anonymous'; else img.removeAttribute('crossorigin');
-      img.src = url;
-      const takt = setInterval(() => { if (img.naturalWidth > 0) ende(true); }, 150);
-      const uhr = setTimeout(() => ende(false), ONB_M5_WARTE_MS);
+      const ctrl = new AbortController();
+      const uhr = setTimeout(() => { try { ctrl.abort(); } catch (e) {} log('Onboard-Kamera (WLAN): kein Bild in ' + (ONB_M5_WARTE_MS / 1000) + ' s bei ' + url, 'err'); ende(false); }, ONB_M5_WARTE_MS);
+      const ende = (ok) => { if (fertig) return; fertig = true; clearTimeout(uhr); if (!ok) try { ctrl.abort(); } catch (e) {} ja(ok); };
+      fetch(url, { signal: ctrl.signal })
+        .then(async (res) => {
+          if (!res.ok || !res.body) { ende(false); return; }
+          const reader = res.body.getReader();
+          const p = onbM5Parser();
+          const strom = { ctrl, reader, url: '' };
+          z.m5 = Object.assign({}, z.m5, { strom, bild: false });
+          let urlObjekt = '';
+          try {
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              p.anhaengen(value);
+              while (true) {
+                const f = p.extrahiere();
+                if (!f) break;
+                const u2 = URL.createObjectURL(new Blob([f], { type: 'image/jpeg' }));
+                if (urlObjekt) URL.revokeObjectURL(urlObjekt);
+                urlObjekt = u2;
+                strom.url = u2;
+                img.src = u2;
+                if (!fertig) { z.m5.bild = true; ende(true); }
+              }
+            }
+            if (!fertig) { ende(false); return; }
+            onbM5Getrennt(url);
+          } catch (e) {
+            if (!fertig) { ende(false); return; }
+            if (e && e.name === 'AbortError') return;   // bewusst abgebrochen (onbStoppen)
+            onbM5Getrennt(url);
+          }
+        })
+        .catch((e) => { log('Onboard-Kamera (WLAN): fetch-Fehler bei ' + url + ' -> ' + ((e && e.message) || e), 'err'); ende(false); });
     });
+  }
+  function onbM5Getrennt(url) {
+    const z = onbZustand();
+    if (!z.m5 || z.m5.url !== url) return;
+    log('Onboard-Kamera (WLAN) getrennt.', 'err');
+    z.fehler = t('Kamera getrennt.');
+    onbStoppen();
+    // Von selbst weiter versuchen, solange sie eingeschaltet ist (Akku im Auto gewechselt).
+    setTimeout(() => { if (onbEinst().an && onbEinst().art === 'm5' && !onboardAktiv()) onbStarten(); }, ONB_M5_NEU_MS);
   }
   async function onbM5Starten() {
     const z = onbZustand();
@@ -145,30 +232,20 @@
     }
     onbStatus(t('Suche …'));
     const lauf = ++z.m5Neu;
-    // Zuerst mit CORS (dann geht auch die Aufnahme), danach ohne (nur Bild).
-    for (const cors of [true, false]) {
-      for (const url of kand) {
-        if (lauf !== z.m5Neu || !e.an) return false;
-        z.m5 = { url, cors };
-        if (await onbM5Versuch(img, url, cors)) {
-          z.m5Cors = cors;
-          img.hidden = false;
-          const v = $('onboard-video'); if (v) v.hidden = true;
-          img.onerror = () => {
-            if (!z.m5 || z.m5.url !== url) return;
-            log('Onboard-Kamera (WLAN) getrennt.', 'err');
-            z.fehler = t('Kamera getrennt.');
-            onbStoppen(true);
-            // Von selbst weiter versuchen, solange sie eingeschaltet ist (Akku im Auto gewechselt).
-            setTimeout(() => { if (onbEinst().an && onbEinst().art === 'm5' && !onboardAktiv()) onbStarten(); }, ONB_M5_NEU_MS);
-          };
-          log('Onboard-Kamera (WLAN) an: ' + url + (cors ? '' : ' (ohne CORS, keine Aufnahme)'), 'info');
-          onbBildDrehen();
-          onbWacheStellen();
-          if (typeof cockpitPunkteMalen === 'function') cockpitPunkteMalen();
-          onbStatus();
-          return true;
-        }
+    // Der Strom wird per fetch (CORS) gelesen; die Kamera-Firmware setzt Access-Control-Allow-Origin: *.
+    for (const url of kand) {
+      if (lauf !== z.m5Neu || !e.an) return false;
+      z.m5 = { url, cors: true };
+      if (await onbM5Versuch(img, url)) {
+        z.m5Cors = true;
+        img.hidden = false;
+        const v = $('onboard-video'); if (v) v.hidden = true;
+        log('Onboard-Kamera (WLAN) an: ' + url, 'info');
+        onbBildDrehen();
+        onbWacheStellen();
+        if (typeof cockpitPunkteMalen === 'function') cockpitPunkteMalen();
+        onbStatus();
+        return true;
       }
     }
     z.m5 = null;
@@ -187,8 +264,10 @@
       if (text) zeile = text;
       else if (onboardAktiv() && z.m5) {
         const img = $('onboard-bild');
+        const bw = img.naturalWidth, bh = img.naturalHeight;
+        const gr = (bw && bh) ? (' · ' + bw + '×' + bh) : '';
         zeile = t('An: {n}').replace('{n}', 'WLAN ' + z.m5.url.replace(/^https?:[/][/]/i, ''))
-          + ' · ' + img.naturalWidth + '×' + img.naturalHeight + (z.m5Cors ? '' : ' · ' + t('ohne Aufnahme (CORS)'));
+          + gr + (z.m5Cors ? '' : ' · ' + t('ohne Aufnahme (CORS)'));
       } else if (onboardAktiv()) {
         const tr = z.stream.getVideoTracks()[0];
         const v = $('onboard-video');
@@ -258,6 +337,11 @@
     if (v) { v.srcObject = null; v.hidden = false; }
     z.m5Neu++;
     if (z.m5) {
+      const st = z.m5.strom;
+      if (st) {
+        if (st.ctrl) try { st.ctrl.abort(); } catch (e) { /* schon zu */ }
+        if (st.url) URL.revokeObjectURL(st.url);
+      }
       z.m5 = null;
       const img = $('onboard-bild');
       // Erst den Fehler-Haken weg, dann die Quelle: sonst meldete das Leeren einen Abriss.
