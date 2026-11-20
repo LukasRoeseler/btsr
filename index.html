@@ -5924,7 +5924,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.156</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.157</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -44722,8 +44722,11 @@
         + ' float sheen = pow(max(dot(N, normalize(L + V)), 0.0), 64.0) * 0.45;'
         + ' float l = mix(1.0, 0.30 + 0.72 * d, licht);'
         + ' vec3 c = pow(tb, vec3(2.2)) * tint * ((amb * 0.55 + l) * sonne + emis);'
-        + ' c += vec3(pow(rv, 24.0) * 0.60 * licht + sheen * licht);'
-        + ' c += vec3(0.05, 0.06, 0.07) * klar * pow(rv, 6.0) * 1.2;'
+        // v1.5.157: Lack glaenzender. Der Hauptglanz wird enger (45 statt 24) und heller; der Klarlack
+        // bekommt einen engen, kräftigeren Glanzpunkt statt der breiten Streuung (Exponent 6), und klar
+        // steigt (0.3 -> 0.5), damit die Karosserie mehr Umgebung spiegelt ("nasser" Lack, v.a. Quality).
+        + ' c += vec3(pow(rv, 45.0) * 0.72 * licht + sheen * licht);'
+        + ' c += vec3(0.06, 0.07, 0.08) * klar * pow(rv, 45.0) * 1.6;'
         + ' vec3 Rv = reflect(-V, N); vec3 env = pow(mix(horizont, zenit, clamp(Rv.y * 1.5 + 0.1, 0.0, 1.0)), vec3(2.2));'
         // v1.5.94 (G2): der echte Himmel (Wolken, Sonne, Boden) aus der Umgebungskarte, leicht unscharf.
         + ' if (umwAn > 0.5) env = pow(textureCube(umw, Rv, 1.5).rgb, vec3(2.2)) * 1.15;'
@@ -46408,7 +46411,9 @@
       // Karosserie mit leichtem Clear-Coat-Glanz (klar, nur Quality), Scheiben/Glas dagegen nicht.
       // Der Lack betrifft nur Karosserieteile: Scheinwerfer, Ruecklichter und Scheiben bleiben unveraendert.
       const lackTeil = !t.rolle || t.rolle === 'karosserie' || t.rolle === 'lack';
-      setze(aufbau, lackTeil ? lackTint : VF_WEISS, emis, 1, 0, 1, 0.3, 0, lackTeil && lackHex ? 1 : 0);
+      // v1.5.157: klar 0.3 -> 0.5 (mehr Klarlack-Glanz in Quality). Die Raeder bleiben bei 0.2, das
+      // Glas unveraendert - nur die Karosserie bekommt den naesseren Glanz.
+      setze(aufbau, lackTeil ? lackTint : VF_WEISS, emis, 1, 0, 1, 0.5, 0, lackTeil && lackHex ? 1 : 0);
       teil(t);
     }
     // 3. Raeder: Mitte auf Reifenradius, vorn eingeschlagen, alle drehen; rechts gespiegelt (Muttern aussen)

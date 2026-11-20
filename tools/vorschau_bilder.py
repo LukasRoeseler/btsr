@@ -277,6 +277,28 @@ def decimiere(verts, teile_alt, daten, ab, ziel):
     return verts_neu, teile_neu
 
 
+def _lade_fallback_rad():
+    """Gemeinsamer Rad-Fallback wie im Spiel: die Rad-Teile der Vulture V5.R (mit Texturen),
+    damit auch Modelle ohne eigene Rad-Geometrie (z. B. FMC GT4, Boxer 96, Lynx 220) Raeder
+    zeigen. Liefert (verts, textur, teile) mit teile[i]['idx'] als 1D-Eckenindex."""
+    pfad = os.path.join(AUTOS, "v5r")
+    if not os.path.exists(os.path.join(pfad, "auto.json")):
+        return None
+    meta, verts, daten, textur = lade(pfad)
+    ab = meta["indexAb"]
+    teile = []
+    for t in meta["teile"]:
+        if t.get("gruppe") != "rad":
+            continue
+        idx = (np.frombuffer(daten, dtype="<u2", count=t["indizes"],
+                             offset=ab + t["index0"] * 2).astype(np.int64) + t["ecke0"])
+        teile.append({"name": t.get("name"), "rolle": t.get("rolle"), "gruppe": t.get("gruppe"),
+                      "tex": t["tex"], "achse": t.get("achse"), "idx": idx})
+    if not teile:
+        return None
+    return verts, textur, teile
+
+
 def zeichne(meta, verts, daten, textur):
     """Rendert das Modell als Seitenansicht, gibt das PIL-Bild zurueck."""
     bild = np.zeros((HOEHE, BREITE, 3), dtype=np.float32)
@@ -299,7 +321,10 @@ def zeichne(meta, verts, daten, textur):
                  for t in meta["teile"]]
 
     # Projektion aus der Karosserie (ohne Raeder - die liegen im Modell am Ursprung).
-    koerper_idx = np.concatenate([t["idx"] for t in teile if t.get("gruppe") != "rad"]) \
+    # v1.5.157: Bei reduzierten Modellen ist t["idx"] (T,3) (je Dreieck drei Ecken); fuer die
+    # Projektion muss der Index flach (1D) sein, sonst wird verts[koerper_idx] 3D und die
+    # Rahmenbox falsch (Auto viel zu klein). reshape(-1) macht aus beiden Formen 1D.
+    koerper_idx = np.concatenate([t["idx"].reshape(-1) for t in teile if t.get("gruppe") != "rad"]) \
         if any(t.get("gruppe") != "rad" for t in teile) else np.arange(verts.shape[0])
     proj = seiten_projektion(verts[koerper_idx])
     sx_all, sy_all, tf_all = proj(verts[:, 0], verts[:, 1], verts[:, 2])
@@ -307,38 +332,52 @@ def zeichne(meta, verts, daten, textur):
     ph = meta["physik"]
     achs = {"vorn": ph["vorderachse"], "hinten": ph["hinterachse"]}
 
+    # Eigene Raeder des Modells, sonst der gemeinsame Rad-Fallback (Vulture V5.R) wie im Spiel,
+    # damit auch Modelle ohne eigene Rad-Geometrie (FMC GT4, Boxer 96, Lynx 220) Raeder zeigen.
+    rad_teile = [t for t in teile if t.get("gruppe") == "rad"]
+    rad_quelle = (verts, textur, rad_teile) if rad_teile else _lade_fallback_rad()
+
+    def rad_zeichne(quelle, seite, ax):
+        if quelle is None:
+            return
+        rverts, rtex, rteile = quelle
+        r = ph["reifen"][ax]
+        z = achs[ax]
+        skala = np.array([seite * r["breite"], 2 * r["radius"], 2 * r["radius"]])
+        versatz = np.array([seite * r["spur"] / 2, r["radius"], z])
+        for t in rteile:
+            if t.get("achse") and t.get("achse") != ax:
+                continue
+            idx = t["idx"]
+            if idx.size < 3:
+                continue
+            T = idx.size // 3
+            tex = rtex[t["tex"]]
+            pos = (rverts[idx, :3] * skala + versatz).reshape(T, 3, 3)   # (T,3,3)
+            sx, sy, tf = proj(pos[:, :, 0], pos[:, :, 1], pos[:, :, 2])
+            uu = rverts[idx, 6].reshape(T, 3)
+            vv = rverts[idx, 7].reshape(T, 3)
+            nx = rverts[idx, 3].reshape(T, 3) * seite
+            ny = rverts[idx, 4].reshape(T, 3)
+            nz = rverts[idx, 5].reshape(T, 3)
+            # v1.5.157: kein Backface-Culling - das Rad zeigt so unabhaengig von Windung/Orientierung
+            # immer seine Aussenflaeche; die nahe Seite gewinnt die Tiefe, die ferne bleibt verdeckt.
+            for i in range(T):
+                p = np.empty((3, 8), dtype=np.float32)
+                p[:, 0] = sx[i]; p[:, 1] = sy[i]; p[:, 2] = tf[i]
+                p[:, 3] = uu[i]; p[:, 4] = vv[i]
+                p[:, 5] = nx[i]; p[:, 6] = ny[i]; p[:, 7] = nz[i]
+                rasterisiere(p, tex, tiefe, bild, False)
+
     for t in teile:
         idx = t["idx"]
         if idx.size < 3:
             continue
+        if t.get("gruppe") == "rad":
+            continue
         T = idx.size // 3
         tex = textur[t["tex"]]
         glas = t.get("rolle") in GLAS_ROLLEN
-        # Raeder: im Modell am Ursprung und massstabsfrei - erst an die Achse legen.
-        if t.get("gruppe") == "rad":
-            achsen = [t.get("achse")] if t.get("achse") else ["vorn", "hinten"]
-            for ax in achsen:
-                r = ph["reifen"][ax]
-                z = achs[ax]
-                skala = np.array([r["breite"], 2 * r["radius"], 2 * r["radius"]])
-                versatz = np.array([-r["spur"] / 2, r["radius"], z])   # nahe Seite (Kamera bei -x)
-                pos = (verts[idx, :3] * skala + versatz).reshape(T, 3, 3)   # (T,3,3)
-                sx, sy, tf = proj(pos[:, :, 0], pos[:, :, 1], pos[:, :, 2])
-                uu = verts[idx, 6].reshape(T, 3)
-                vv = verts[idx, 7].reshape(T, 3)
-                nx = verts[idx, 3].reshape(T, 3)
-                ny = verts[idx, 4].reshape(T, 3)
-                nz = verts[idx, 5].reshape(T, 3)
-                flaeche = (sx[:, 1] - sx[:, 0]) * (sy[:, 2] - sy[:, 0]) - (sx[:, 2] - sx[:, 0]) * (sy[:, 1] - sy[:, 0])
-                for i in range(T):
-                    if flaeche[i] >= 0:
-                        continue
-                    p = np.empty((3, 8), dtype=np.float32)
-                    p[:, 0] = sx[i]; p[:, 1] = sy[i]; p[:, 2] = tf[i]
-                    p[:, 3] = uu[i]; p[:, 4] = vv[i]
-                    p[:, 5] = nx[i]; p[:, 6] = ny[i]; p[:, 7] = nz[i]
-                    rasterisiere(p, tex, tiefe, bild, glas)
-            continue
         sx = sx_all[idx].reshape(T, 3)
         sy = sy_all[idx].reshape(T, 3)
         tf = tf_all[idx].reshape(T, 3)
@@ -356,6 +395,12 @@ def zeichne(meta, verts, daten, textur):
             p[:, 3] = uu[i]; p[:, 4] = vv[i]
             p[:, 5] = nx[i]; p[:, 6] = ny[i]; p[:, 7] = nz[i]
             rasterisiere(p, tex, tiefe, bild, glas)
+
+    # Raeder auf beide Seiten (Kamera bei -x): die nahe (seite -1) ist gespiegelt und zeigt so die
+    # Felge/Aussenseite zur Kamera; die ferne liegt hinter der Karosserie.
+    for seite in (-1, 1):
+        for ax in ("vorn", "hinten"):
+            rad_zeichne(rad_quelle, seite, ax)
     return Image.fromarray(np.clip(bild, 0, 255).astype(np.uint8))
 
 
