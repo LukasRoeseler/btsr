@@ -1355,8 +1355,12 @@
     P = P || VF_GT3;
     const g = 9.81, L = P.a + P.b;
     const delta = Math.max(-1, Math.min(1, lenk)) * P.lenkGrad * Math.PI / 180;
+    // v1.5.155: Scheitelwinkel je Achse (Schraeglauf bei maximaler Seitenkraft) - daraus die
+    // Reifenausnutzung fuer das Quietschen: 1 = am Scheitel, darueber rutscht die Achse
+    // (Unter-/Uebersteuern).
+    const spV = Math.tan(Math.PI / (2 * P.C)) / P.BV, spH = Math.tan(Math.PI / (2 * P.C)) / P.BH;
     if (vx < 3) {
-      z.vy = 0; z.r = vx * Math.tan(delta) / L; z.aV = 0; z.aH = 0;
+      z.vy = 0; z.r = vx * Math.tan(delta) / L; z.aV = 0; z.aH = 0; z.nutzung = 0;
       return z;
     }
     const f = mu === undefined ? 1 : mu;
@@ -1388,6 +1392,7 @@
     }
     z.vy = Math.max(-vx, Math.min(vx, z.vy));
     z.r = Math.max(-5, Math.min(5, z.r));
+    z.nutzung = Math.max(Math.abs(z.aV) / spV, Math.abs(z.aH) / spH);
     return z;
   }
   // ---- DAS AUTO AUS SPEED DREAMS (v1.1.9) ------------------------------------------------------
@@ -2593,7 +2598,9 @@
     vfWacheMessen(VF.letztRoh ? now - VF.letztRoh : 0, now);
     VF.letztRoh = now;
     if (rennPauseAktiv()) {
-      VF.letzt = now; VF.dtBild = 0; vfMalen(); vfHud(); return;
+      VF.letzt = now; VF.dtBild = 0; vfMalen(); vfHud();
+      if (physEngine && physEngine.state) physEngine.state.vfNutzung = 0;
+      return;
     }
     const dt = VF.letzt ? Math.min(0.05, (now - VF.letzt) / 1000) : 0.016;
     VF.letzt = now;
@@ -2632,7 +2639,28 @@
         g.h = p0[2] + (p1[2] - p0[2]) * f;
       }
     }
-    VF.lenkWinkel = Math.max(-1, Math.min(1, lenk)) * (VF.P ? VF.P.lenkGrad : VF_GT3.lenkGrad) * Math.PI / 180;
+    // v1.5.155: Die Vorderraeder zeigen den TATSÄCHLICHEN Einschlag, nicht den Stick-Eingang.
+    // atan(L*r/vx) ist der Einschlag, der die beobachtete Gierrate im Einspurmodell erzeugt:
+    // beim Untersteuern dreht das Auto weniger, als die Raeder zeigen (Raeder wirken "gerade"),
+    // beim Uebersteuern mehr (Raeder wirken "ueberdreht"). Beim Rueckwaertsfahren/Stand bleibt
+    // der Eingabe-Einschlag (das Auto dreht sich nicht, aber die Raeder koennen eingeschlagen
+    // sein), und der Einschlag ist auf die Lenkbegrenzung gedeckelt (mehr kann das Rad nicht).
+    const Pw = VF.P || VF_GT3;
+    const lenkGradW = Pw.lenkGrad * Math.PI / 180;
+    if (kmh <= 0) {
+      VF.lenkWinkel = Math.max(-1, Math.min(1, lenk)) * lenkGradW;
+    } else {
+      const vVoll = kmh * REAL_SCALE / 3.6;
+      const L = Pw.a + Pw.b;
+      VF.lenkWinkel = Math.max(-lenkGradW, Math.min(lenkGradW,
+        Math.atan2(L * ((VF.dyn && VF.dyn.r) || 0), Math.max(0.1, vVoll))));
+    }
+    // v1.5.155: Reifenausnutzung fuer das Quietschen (siehe vfDynamik). In der virtuellen Fahrt
+    // treibt der echte Schraeglauf das Quietschen ueber physEngine.state.vfNutzung; der
+    // Eingabe-basierte latUse des Einspurmodells faengt Unter-/Uebersteuern nicht.
+    if (physEngine && physEngine.state) {
+      physEngine.state.vfNutzung = (VF.dyn && VF.dyn.nutzung) || 0;
+    }
     // DIAGNOSE (temporaer, Latenz): Zeit fuer Streckenortung (vfOrt).
     const tOrt0 = performance.now();
     const o = vfOrt(VF.pts, VF.nrm, VF.x, VF.y, VF.idx);
@@ -4545,7 +4573,7 @@
     }
     VF.lichtVorher = null;
     try { releaseInput(SRC.TOUCH); } catch (e) { /* egal */ }
-    if (physEngine && physEngine.state) physEngine.state.dirtyAir = 0;
+    if (physEngine && physEngine.state) { physEngine.state.dirtyAir = 0; physEngine.state.vfNutzung = 0; }
     document.body.classList.remove('vf-an');
     cancelAnimationFrame(VF.raf);
     clearInterval(VF.takt);
