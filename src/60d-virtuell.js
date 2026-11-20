@@ -3715,11 +3715,16 @@
     };
     const ort = (w, p) => [w[0] * p[0] + w[4] * p[1] + w[8] * p[2] + w[12], w[1] * p[0] + w[5] * p[1] + w[9] * p[2] + w[13], w[2] * p[0] + w[6] * p[1] + w[10] * p[2] + w[14]];
     // 1. Schatten unter dem Auto (Boden, nicht mitgeneigt); der Geist wirft keinen.
-    if (M.schatten && !vfGeistA) {
+    // v1.5.156: Bei echter Schattenkarte (Quality) nicht mehr zeichnen - der Blob war ein
+    // hellgrauer Fleck unter dem Auto, der nicht mit der Sonne wanderte, waehrend die
+    // Schattenkarte den richtigen (sonnenabhaengigen) Schatten schon wirft. Ohne Schattenkarte
+    // (Performance, oder wenn das Framebuffer scheitert) bleibt er als weicher Kontaktschatten
+    // der Fallback, damit das Auto nicht "schwebt".
+    if (M.schatten && !vfGeistA && !hatSch) {
       gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
-      // v1.3.124: mit echter Schattenkarte wird der Blob ein kleiner Kontaktschatten direkt am Auto.
-      const kd = hatSch ? 0.5 : 1;
-      setze(VF_EINS, [1, 1, 1], 0, hatSch ? 0.45 : 0.75, 1, 0, 0, 0);
+      // Weicher Blob (nur noch als Fallback ohne Schattenkarte): voller Umriss, gut sichtbar.
+      const kd = 1;
+      setze(VF_EINS, [1, 1, 1], 0, 0.75, 1, 0, 0, 0);
       const hb = d.breite * 0.62 * kd, hl = d.laenge * 0.55 * kd;
       const q = [[hb, 0.012, hl + zSp, 0, 0], [-hb, 0.012, hl + zSp, 1, 0], [-hb, 0.012, -hl + zSp, 1, 1], [hb, 0.012, -hl + zSp, 0, 1]].map((p) => ort(lage, p).concat(p.slice(3)));
       flaeche([q[0], q[1], q[2], q[0], q[2], q[3]], M.schatten);
