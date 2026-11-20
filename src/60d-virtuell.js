@@ -2032,7 +2032,8 @@
         + 'void main(){ vec4 q = w * vec4(p, 1.0); gl_Position = m * q; vuv = uv; vn = nm * n; vd = gl_Position.w;'
         + ' vv = auge - q.xyz; vsp = (schM * q).xyz * 0.5 + 0.5;' + ' vec2 dd_ = q.xz - auge.xz; vsd = max(dot(dd_, vec2(0.8137, 0.5812)), 0.0) * inversesqrt(dot(dd_, dd_) + 0.0001);' + '}'));
       gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
-        'precision mediump float;\n' + VF_HP
+        '#ifdef GL_OES_standard_derivatives\n#extension GL_OES_standard_derivatives : enable\n#endif\n'
+        + 'precision mediump float;\n' + VF_HP
         + 'varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vv; varying HP vec3 vsp; varying float vsd; uniform vec3 dunst;'
         + 'uniform samplerCube umw; uniform float umwAn;'
         + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
@@ -2057,9 +2058,19 @@
         // Schattenkarte: Bias waechst mit flachem Lichteinfall (Streifen auf schraegen Blechen).
         + ' if (schatt > 0.5 && vsp.x > 0.0 && vsp.x < 1.0 && vsp.y > 0.0 && vsp.y < 1.0 && vsp.z > 0.0 && vsp.z <= 1.0) {'
         + '   HP float b = vsp.z - bias * (1.0 + 3.0 * (1.0 - d)); float s = 0.0;'
-        + '   for (int ox = -2; ox <= 2; ox++) for (int oy = -2; oy <= 2; oy++)'
-        + '     s += step(schTiefe(texture2D(sch, vsp.xy + vec2(float(ox), float(oy)) * biasPixel)), b);'
-        + '   c *= mix(1.0, 0.55, s / 25.0); }'
+        // v1.5.154: bildschirm-adaptiver PCF-Kern. biasPixel ist der feste Kern in Texeln; fwidth(vsp.xy)
+        // ist der Fussabdruck der Schattenkarte in Bildpunkten. max(..., biasPixel) nimmt immer mindestens
+        // einen Texel, damit die Kante bei vergroesserter Karte (Auto nah, Verfolger) nicht eckig bleibt,
+        // und passt sich bei entfernter Karte (TV, Stativ) an - dort verhindert der breitere Kern das Flimmern.
+        // 7x7 (49 Abtastungen) statt 3x3/5x5: der Bodenschatten bleibt beim 3x3-Kern. Ohne die Erweiterung
+        // (GL_OES_standard_derivatives) faellt der Kern auf den festen biasPixel zurueck.
+        + '   HP float k = biasPixel;'
+        + '   #ifdef GL_OES_standard_derivatives'
+        + '   k = max(max(fwidth(vsp.x), fwidth(vsp.y)), biasPixel);'
+        + '   #endif'
+        + '   for (int ox = -3; ox <= 3; ox++) for (int oy = -3; oy <= 3; oy++)'
+        + '     s += step(schTiefe(texture2D(sch, vsp.xy + vec2(float(ox), float(oy)) * k)), b);'
+        + '   c *= mix(1.0, 0.55, s / 49.0); }'
         + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, mix(nebel, dunst, vsd * vsd), f), mix(alpha, alpha * t.a, am)); }'));
     }
     gl.linkProgram(p);
@@ -4017,6 +4028,9 @@
     const cv = schicht.querySelector('canvas');
     const gl = cv.getContext('webgl', { antialias: true }) || cv.getContext('experimental-webgl');
     if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
+    // v1.5.154: OES_standard_derivatives (fwidth) fuer den bildschirm-adaptiven Schatten-PCF des Autos.
+    // Ohne die Erweiterung bleibt der feste Kern; der Shader prueft das selbst ueber GL_OES_standard_derivatives.
+    gl.getExtension('OES_standard_derivatives');
     // Verliert das Handy den Grafikkontext (Speicherdruck, App im Hintergrund), sauber beenden statt
     // mit toten Puffern weiterzuzeichnen. Wiederherstellen lohnt nicht: die Fahrt startet neu in Sekunden.
     cv.addEventListener('webglcontextlost', () => {
