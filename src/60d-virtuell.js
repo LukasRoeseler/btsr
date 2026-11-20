@@ -2917,7 +2917,7 @@
     // v1.3.113 Quality: echte Schatten aus der Schattenkarte (Spielerauto + NPCs), vor dem Boden.
     // v1.5.140: Die Schattenkarte wird wieder jedes Bild gerendert. (1.5.139 rendert sie nur jedes 2. Bild,
     // das liess den Schatten 1 Bild "nachziehen" -> Flackern bei schnellen Bewegungen.) Die GPU-Last wird
-    // stattdessen ueber die Aufloesung geregelt: vfSchattenBauen nutzt 1024 auf Touch, 2048 auf Desktop.
+    // stattdessen ueber die Aufloesung geregelt: vfSchattenBauen nutzt 512 auf Touch, 1024 auf Desktop (v1.5.141).
     if (VF.grafik && VF.schatte && VF.schatteProg && vfWacheStufe() < 1) {
       vfPassZeit('sch', () => {
         VF.schM = vfSchattenMatrix([VF.x, 0, VF.y]);
@@ -3948,9 +3948,10 @@
     // Erweiterung bleibt der weiche Blob-Schatten (M.schatten).
     VF.schatte = null; VF.schatteProg = null;
     if (VF.grafik) {
-      // v1.3.124: 2048er Karte auf Desktop, 1024er auf Touch (das Handy-GPU kann die 2048er Fill-Last nicht;
-      // v1.5.140). Faellt auf die jeweils kleinere Karte zurueck, wenn der Framebuffer sonst unvollstaendig bleibt.
-      try { const sz = navigator.maxTouchPoints > 0 ? 1024 : 2048; VF.schatte = vfSchattenBauen(gl, sz) || vfSchattenBauen(gl, sz / 2); VF.schatteProg = VF.schatte ? vfProgrammSchatten(gl) : null; } catch (e) { VF.schatte = null; VF.schatteProg = null; }
+      // v1.3.124: 1024er Karte auf Desktop, 512er auf Touch (das Handy-GPU kann die 2048er Fill-Last nicht;
+      // v1.5.141: nochmal halbiert, damit auch der Desktop ohne Ruckeln mitkommt - Performance-Modus hat
+      // ohnehin keine Schatten). Faellt auf die jeweils kleinere Karte zurueck, wenn der Framebuffer sonst unvollstaendig bleibt.
+      try { const sz = navigator.maxTouchPoints > 0 ? 512 : 1024; VF.schatte = vfSchattenBauen(gl, sz) || vfSchattenBauen(gl, sz / 2); VF.schatteProg = VF.schatte ? vfProgrammSchatten(gl) : null; } catch (e) { VF.schatte = null; VF.schatteProg = null; }
     }
     vfHudBauen(schicht);
     vfDrehNull(); VF.stick = null; VF.tasten = {};

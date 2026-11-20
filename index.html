@@ -5924,7 +5924,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.146</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.147</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7235,6 +7235,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Virtuelles Fahren, Quality-Modus: Die Schattenkarte ist kleiner (Touch 512, Desktop 1024 statt vorher 1024/2048) und wird weiterhin jedes Bild gerendert. Das senkt die GPU-Last sp&#252;rbar, ohne das Schatten-Flackern (das jede-2.-Bild-Rendern verursachte) wiederzubringen. Im Performance-Modus gibt es weiterhin keine Schatten.</li>
         <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Die Aufnahme flackert nicht mehr schwarz. Beim Anzeigen jedes Bildes setzt die App die Bild-URL neu; dabei war das Live-Bild kurz ohne Frame (naturalWidth 0) und die Aufnahme bekam schwarze Bilder. Jetzt h&#228;lt die App einen bereits dekodierten Bild-Frame f&#252;r die Aufnahme vor.</li>
         <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Der Batteriestand der Kamera erscheint jetzt im Onboard-Bild (Fahrtbildschirm) als „Kamera-Akku“ in der rechten Leiste und in der Statuszeile. Die Kamera-Firmware liefert ihn über den neuen Endpunkt <code>/batt</code> (Spannung und Prozent); OmegaSim fragt ihn alle 5&#160;s ab, solange die Kamera läuft. Nützlich, um zu sehen, wann der Akku im Auto gewechselt werden muss.</li>
         <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Das Bild erscheint jetzt auch in der Android-App. Vorher zeigte die WebView den MJPEG-Strom der Kamera nicht an (naturalWidth blieb 0). Jetzt liest die App den Strom selbst und zeigt die Bilder einzeln an, dadurch klappt auch die Aufnahme (die Kamera-Firmware setzt Access-Control-Allow-Origin).</li>
@@ -45560,7 +45561,7 @@
     // v1.3.113 Quality: echte Schatten aus der Schattenkarte (Spielerauto + NPCs), vor dem Boden.
     // v1.5.140: Die Schattenkarte wird wieder jedes Bild gerendert. (1.5.139 rendert sie nur jedes 2. Bild,
     // das liess den Schatten 1 Bild "nachziehen" -> Flackern bei schnellen Bewegungen.) Die GPU-Last wird
-    // stattdessen ueber die Aufloesung geregelt: vfSchattenBauen nutzt 1024 auf Touch, 2048 auf Desktop.
+    // stattdessen ueber die Aufloesung geregelt: vfSchattenBauen nutzt 512 auf Touch, 1024 auf Desktop (v1.5.141).
     if (VF.grafik && VF.schatte && VF.schatteProg && vfWacheStufe() < 1) {
       vfPassZeit('sch', () => {
         VF.schM = vfSchattenMatrix([VF.x, 0, VF.y]);
@@ -46591,9 +46592,10 @@
     // Erweiterung bleibt der weiche Blob-Schatten (M.schatten).
     VF.schatte = null; VF.schatteProg = null;
     if (VF.grafik) {
-      // v1.3.124: 2048er Karte auf Desktop, 1024er auf Touch (das Handy-GPU kann die 2048er Fill-Last nicht;
-      // v1.5.140). Faellt auf die jeweils kleinere Karte zurueck, wenn der Framebuffer sonst unvollstaendig bleibt.
-      try { const sz = navigator.maxTouchPoints > 0 ? 1024 : 2048; VF.schatte = vfSchattenBauen(gl, sz) || vfSchattenBauen(gl, sz / 2); VF.schatteProg = VF.schatte ? vfProgrammSchatten(gl) : null; } catch (e) { VF.schatte = null; VF.schatteProg = null; }
+      // v1.3.124: 1024er Karte auf Desktop, 512er auf Touch (das Handy-GPU kann die 2048er Fill-Last nicht;
+      // v1.5.141: nochmal halbiert, damit auch der Desktop ohne Ruckeln mitkommt - Performance-Modus hat
+      // ohnehin keine Schatten). Faellt auf die jeweils kleinere Karte zurueck, wenn der Framebuffer sonst unvollstaendig bleibt.
+      try { const sz = navigator.maxTouchPoints > 0 ? 512 : 1024; VF.schatte = vfSchattenBauen(gl, sz) || vfSchattenBauen(gl, sz / 2); VF.schatteProg = VF.schatte ? vfProgrammSchatten(gl) : null; } catch (e) { VF.schatte = null; VF.schatteProg = null; }
     }
     vfHudBauen(schicht);
     vfDrehNull(); VF.stick = null; VF.tasten = {};
