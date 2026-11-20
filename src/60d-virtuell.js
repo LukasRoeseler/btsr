@@ -1235,7 +1235,7 @@
       gl.uniform1i(u.sch, 1);
       gl.uniform1f(u.belichtung, VF_BELICHTUNG);
       gl.uniform1f(u.bias, VF_SCHATTEN_BIAS);
-      gl.uniform1f(u.biasPixel, VF_SCHATTEN_BIAS_PIXEL);
+      gl.uniform1f(u.biasPixel, VF.schatte ? VF_SCHATTEN_PCF / VF.schatte.size : 0);
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, VF.schatte ? VF.schatte.tex : null);
       gl.activeTexture(gl.TEXTURE0);
@@ -1628,7 +1628,11 @@
   const VF_BUMP_BAHN = vfReglerLesen('omegasim-vf-bump-bahn', 0.6);
   const VF_AO_INNEN = vfReglerLesen('omegasim-vf-ao-innen', 0.6);
   const VF_SCHATTEN_BIAS = vfReglerLesen('omegasim-vf-schatten-bias', 0.0015);
-  const VF_SCHATTEN_BIAS_PIXEL = vfReglerLesen('omegasim-vf-schatten-bias-pixel', 0.0004);
+  // v1.5.151: PCF-Kernradius in Texeln (statt der festen 0.0004 in UV). Der Kern wird im Draw-Pfad mit der
+  // Kartengroesse skaliert (biasPixel = VF_SCHATTEN_PCF / size), damit die Kante bei 512 und bei 1024 gleich
+  // weich ist. 1.0 = 3x3-Kern auf den Texelzentren (sauber, keine Rundungsties); der alte Regler
+  // 'omegasim-vf-schatten-bias-pixel' (0.0004) war kleiner als ein Texel und liess die Kante eckig.
+  const VF_SCHATTEN_PCF = vfReglerLesen('omegasim-vf-schatten-pcf', 1.0);
   // Studienmodus: FOV aus Bildschirm/Abstand, Zoom der Fahrer-Kamera aus, fester NPC-Seed. Nur aktiv,
   // wenn der Nutzer die Schluessel in der Konsole setzt (siehe Bestellung). Das JSON-Log (Bildzeiten)
   // ist entfernt: es lief nie (sein Zaehler stieg nur in ihm selbst) und kostete je Bild ein shift().
@@ -2030,7 +2034,7 @@
         + 'varying vec2 vuv; varying vec3 vn; varying float vd; varying vec3 vv; varying HP vec3 vsp; varying float vsd; uniform vec3 dunst;'
         + 'uniform samplerCube umw; uniform float umwAn;'
         + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel;'
-        + 'uniform float klar; uniform float glas; uniform sampler2D sch; uniform float schatt; uniform HP float bias; uniform float lack; uniform vec3 sonne;'
+        + 'uniform float klar; uniform float glas; uniform sampler2D sch; uniform float schatt; uniform HP float bias; uniform HP float biasPixel; uniform float lack; uniform vec3 sonne;'
         + 'uniform vec3 horizont; uniform vec3 zenit;'
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
         + 'HP float schTiefe(HP vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
@@ -2050,13 +2054,16 @@
         + ' c = pow(filmic(c * 1.05), vec3(1.0/2.2));'
         // Schattenkarte: Bias waechst mit flachem Lichteinfall (Streifen auf schraegen Blechen).
         + ' if (schatt > 0.5 && vsp.x > 0.0 && vsp.x < 1.0 && vsp.y > 0.0 && vsp.y < 1.0 && vsp.z > 0.0 && vsp.z <= 1.0) {'
-        + '   if (schTiefe(texture2D(sch, vsp.xy)) < vsp.z - bias * (1.0 + 3.0 * (1.0 - d))) c *= 0.55; }'
+        + '   HP float b = vsp.z - bias * (1.0 + 3.0 * (1.0 - d)); float s = 0.0;'
+        + '   for (int ox = -1; ox <= 1; ox++) for (int oy = -1; oy <= 1; oy++)'
+        + '     s += step(schTiefe(texture2D(sch, vsp.xy + vec2(float(ox), float(oy)) * biasPixel)), b);'
+        + '   c *= mix(1.0, 0.55, s / 9.0); }'
         + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, mix(nebel, dunst, vsd * vsd), f), mix(alpha, alpha * t.a, am)); }'));
     }
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
     const u = {};
-    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'sonne', 'horizont', 'zenit', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'lack', 'dunst', 'aug', 'umw', 'umwAn'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
+    ['m', 'w', 'nm', 'tx', 'tint', 'emis', 'alpha', 'am', 'licht', 'nebel', 'sonne', 'horizont', 'zenit', 'auge', 'klar', 'glas', 'sch', 'schM', 'schatt', 'bias', 'biasPixel', 'lack', 'dunst', 'aug', 'umw', 'umwAn'].forEach((k) => { u[k] = gl.getUniformLocation(p, k); });
     // Feste Zwischenspeicher fuer die Matrizen je Teil (keine Float32Array je Teil und Bild).
     return { p, u, qual: !!qual, f16: new Float32Array(16), f9: new Float32Array(9), pv: new Float32Array(16), schM: new Float32Array(16),
              ap: gl.getAttribLocation(p, 'p'), an: gl.getAttribLocation(p, 'n'), auv: gl.getAttribLocation(p, 'uv') };
@@ -3623,6 +3630,7 @@
       if (hatSch) { for (let i = 0; i < 16; i++) T.schM[i] = VF.schM[i]; gl.uniformMatrix4fv(u.schM, false, T.schM); }
       else gl.uniformMatrix4fv(u.schM, false, VF_EINS);
       gl.uniform1f(u.bias, VF_SCHATTEN_BIAS);
+      gl.uniform1f(u.biasPixel, VF.schatte ? VF_SCHATTEN_PCF / VF.schatte.size : 0);
       gl.uniform1i(u.sch, 1);
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, VF.schatte ? VF.schatte.tex : null);
