@@ -1453,8 +1453,8 @@
   // v1.5.10 BESTELLT: "Vorschau vom Auto, Farbwahl". Lackfarbe der virtuellen Fahrt (WIP): eine eigene Wahl, unabhaengig
   // von der echten Fahrzeugfarbe. Die Karosserie wird umgefaerbt (Helligkeit des Texels mal Farbe, die Texturen behalten ihre
   // Details); Scheiben, Raeder und Leuchten bleiben unveraendert. '' = die Farbe des Modells.
-  // Die Vorschaubilder (img/autos/<modell>/vorschau_<id>.jpg) sind Aufnahmen genau dieser Darstellung
-  // (tools/vorschau_bilder.py), eines je Auto und Farbe.
+  // Die Vorschaubilder (img/autos/<modell>/vorschau.jpg) sind Seitenansichten in der Originalfarbe
+  // (tools/vorschau_bilder.py), eines je Auto.
   const VF_LACK_STORE = 'omegasim-vf-lack';
   const VF_LACK_FARBEN = [
     { id: 'auto', v: '', n: 'Original' },
@@ -1475,7 +1475,7 @@
   // Eine gespeicherte Wahl, die es nicht mehr gibt (z. B. 'porsche', 1.3.94-1.3.131, entfernt), faellt
   // still auf den Vulture V5.R zurueck - kein 404 beim Laden und kein Absturz.
   function vfAutoWahl() {
-    try { const v = localStorage.getItem(VF_AUTO_STORE); return (v === 'kasten' || (v && Object.prototype.hasOwnProperty.call(VF_MODELL_PFADE, v))) ? v : 'v5r'; } catch (e) { return 'v5r'; }
+    try { const v = localStorage.getItem(VF_AUTO_STORE); return (v && Object.prototype.hasOwnProperty.call(VF_MODELL_PFADE, v)) ? v : 'v5r'; } catch (e) { return 'v5r'; }
   }
   // Schaltung (Automatik/Manuell) fuer die virtuelle Fahrt. Manuell schaltet der Fahrer mit I/K.
   const VF_SCHALTUNG_STORE = 'omegasim-vf-schaltung';
@@ -4112,13 +4112,11 @@
     if (!VF.tprog) { try { VF.tprog = vfProgrammTex(gl, false); } catch (e) { VF.tprog = null; } }
     if (VF.tprog) {
       vfRadModellBauen(gl).then((rad) => { if (VF.aktiv && VF.gl === gl) VF.radModell = rad; });
-      if (vfAutoWahl() !== 'kasten') {
-        vfModellDaten().then((daten) => {
-          if (!VF.aktiv || VF.gl !== gl) return;
-          VF.modell = vfModellBauen(gl, daten);
-          VF.P = vfHandlingProfil(vfPhysikAus(daten.meta.physik));
-        }).catch(() => showHudToast(t('Auto-Modell nicht ladbar – es fährt der Kasten')));
-      }
+      vfModellDaten().then((daten) => {
+        if (!VF.aktiv || VF.gl !== gl) return;
+        VF.modell = vfModellBauen(gl, daten);
+        VF.P = vfHandlingProfil(vfPhysikAus(daten.meta.physik));
+      }).catch(() => showHudToast(t('Auto-Modell nicht ladbar – es fährt der Kasten')));
     }
     // Start eine halbe Kachel vor Start/Ziel, in Fahrtrichtung.
     const s = Math.max(0, VF.pts.findIndex((p) => p.tile >= 0 && tiles[p.tile] && tiles[p.tile].type === TILE_TYPE.START));
@@ -4266,16 +4264,16 @@
                    { v: 'spider', name: t('Spider NG1 (Gnen54, WIP)') },
                    // v1.5.150: Eigenbau von Gnen54 auf der Vehicle-World-Karosserie (schriftliche Freigabe),
                    // siehe img/autos/caravelle/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
-                   { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') },
-                   { v: 'kasten', name: t('Einfaches Modell') }];
+                   { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') }];
     const ja = Math.max(0, autos.findIndex((a) => a.v === vfAutoWahl()));
     const autoWahl = (dd) => {
       try { localStorage.setItem(VF_AUTO_STORE, autos[(ja + dd + autos.length) % autos.length].v); } catch (e) { /* egal */ }
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Auto'), autos[ja].name, () => autoWahl(-1), () => autoWahl(1)));
-    // v1.5.10 (WIP): Vorschau des gewaehlten Autos in der gewaehlten Farbe (eine Aufnahme der echten Darstellung) und
-    // die Lackfarbe. Der Kasten hat keine Vorschau; fehlt ein Bild, verschwindet die Zeile still.
+    // v1.5.10 (WIP): Vorschau des gewaehlten Autos (Seitenansicht in der Originalfarbe) und die Lackfarbe.
+    // Die Vorschau ist ein Bild je Auto (img/autos/<modell>/vorschau.jpg, tools/vorschau_bilder.py);
+    // fehlt ein Bild, verschwindet die Zeile still.
     {
       const jl = Math.max(0, VF_LACK_FARBEN.findIndex((f) => f.v === vfLack()));
       const lackWahl = (dd) => { vfLackSetzen(VF_LACK_FARBEN[(jl + dd + VF_LACK_FARBEN.length) % VF_LACK_FARBEN.length].v); renderGarage(); };
@@ -4293,17 +4291,15 @@
         palette.appendChild(b);
       });
       zeile.querySelector('.gk-w').appendChild(palette);
-      if (autos[ja].v !== 'kasten') {
-        const vor = document.createElement('div');
-        vor.className = 'opt-row opt-breit vf-vorschau';
-        const img = document.createElement('img');
-        img.className = 'vf-vorschau-bild';
-        img.alt = autos[ja].name;
-        img.src = vfModellPfad(autos[ja].v) + 'vorschau_' + vfLackId(vfLack()) + '.jpg';
-        img.onerror = () => { vor.remove(); };
-        vor.appendChild(img);
-        rechts.appendChild(vor);
-      }
+      const vor = document.createElement('div');
+      vor.className = 'opt-row opt-breit vf-vorschau';
+      const img = document.createElement('img');
+      img.className = 'vf-vorschau-bild';
+      img.alt = autos[ja].name;
+      img.src = vfModellPfad(autos[ja].v) + 'vorschau.jpg';
+      img.onerror = () => { vor.remove(); };
+      vor.appendChild(img);
+      rechts.appendChild(vor);
       rechts.appendChild(zeile);
     }
     // v1.3.39 (WIP): der Fussboden unter der Bahn, Dielen in echten Massen (siehe VF_BOEDEN).
@@ -4386,7 +4382,7 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('NPCs'), nNpc === 0 ? t('Aus') : String(nNpc), () => npcWahl(-1), () => npcWahl(1)));
-    if (autos[ja].v !== 'kasten') {
+    {
       const jf = VF_FEDER_WERTE.indexOf(vfFederSicht());
       const federWahl = (dd) => {
         try { localStorage.setItem(VF_FEDER_STORE, String(VF_FEDER_WERTE[Math.max(0, Math.min(VF_FEDER_WERTE.length - 1, jf + dd))])); } catch (e) { /* egal */ }

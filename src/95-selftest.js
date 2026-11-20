@@ -27429,7 +27429,7 @@
     if (!(Math.abs(zb.r) < Math.abs(za.r) * 0.97)) f.push('dreckige Luft ohne Wirkung vorn (' + za.r.toFixed(3) + ' / ' + zb.r.toFixed(3) + ')');
     return { ok: !f.length, mass: f.length ? f.join('; ') : 'kalt ' + (cfg.brakeColdMax * 100) + ' %, Scheitel gehalten, Gier in dreckiger Luft ' + (zb.r / za.r * 100).toFixed(0) + ' %' };
   });
-  stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto und Farbe', async () => {
+  stAdd('Virtuell v1.5.10: Lackfarbe umfaerbt nur die Karosserie, Vorschaubild je Auto', async () => {
     const f = [];
     // Daten: acht Farben plus Original, eindeutige Kennungen, jede Farbe wird gefunden.
     const ids = VF_LACK_FARBEN.map((x) => x.id);
@@ -27451,18 +27451,16 @@
     // Der Shader kennt das Umfaerben (beide Varianten) - ohne den Wert fiele die Farbe stillschweigend weg.
     const quelle = Array.from(document.scripts).map((x) => x.text).join(' ');
     if ((quelle.match(/uniform float lack;/g) || []).length < 2) f.push('Shader ohne uniform lack in beiden Varianten');
-    // Vorschaubilder: jedes Auto in jeder Farbe.
+    // Vorschaubilder: ein Seitenbild je Auto (img/autos/<modell>/vorschau.jpg).
     const fehlt = [];
     for (const m of Object.keys(VF_MODELL_PFADE)) {
-      for (const id of ids) {
-        try {
-          const r = await fetch(VF_MODELL_PFADE[m] + 'vorschau_' + id + '.jpg', { method: 'HEAD', cache: 'no-store' });
-          if (!r.ok) fehlt.push(m + '/' + id);
-        } catch (e) { fehlt.push(m + '/' + id); }
-      }
+      try {
+        const r = await fetch(VF_MODELL_PFADE[m] + 'vorschau.jpg', { method: 'HEAD', cache: 'no-store' });
+        if (!r.ok) fehlt.push(m);
+      } catch (e) { fehlt.push(m); }
     }
     if (fehlt.length) f.push(fehlt.length + ' Vorschaubilder fehlen: ' + fehlt.slice(0, 6).join(', '));
-    return { ok: !f.length, mass: f.length ? f.join('; ') : ids.length + ' Farben, Umfaerben im Shader, ' + Object.keys(VF_MODELL_PFADE).length * ids.length + ' Vorschaubilder vorhanden' };
+    return { ok: !f.length, mass: f.length ? f.join('; ') : ids.length + ' Farben, Umfaerben im Shader, ' + Object.keys(VF_MODELL_PFADE).length + ' Vorschaubilder vorhanden' };
   });
 
   // v1.5.3: Die Bruecke der Android-App mit einer Attrappe von Capacitor. Vorher gab es fuer diesen Weg keinen
