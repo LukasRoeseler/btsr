@@ -5924,7 +5924,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.152</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.153</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -44302,6 +44302,8 @@
   // Kartengroesse skaliert (biasPixel = VF_SCHATTEN_PCF / size), damit die Kante bei 512 und bei 1024 gleich
   // weich ist. 1.0 = 3x3-Kern auf den Texelzentren (sauber, keine Rundungsties); der alte Regler
   // 'omegasim-vf-schatten-bias-pixel' (0.0004) war kleiner als ein Texel und liess die Kante eckig.
+  // v1.5.152: das Auto nutzt einen 5x5-Kern (25 Abtastungen, gleicher Radius) - die Selbstschatten des Autos
+  // liegen nah an der Kamera und brauchen die breitere Kante; der Boden bleibt beim 3x3-Kern.
   const VF_SCHATTEN_PCF = vfReglerLesen('omegasim-vf-schatten-pcf', 1.0);
   // Studienmodus: FOV aus Bildschirm/Abstand, Zoom der Fahrer-Kamera aus, fester NPC-Seed. Nur aktiv,
   // wenn der Nutzer die Schluessel in der Konsole setzt (siehe Bestellung). Das JSON-Log (Bildzeiten)
@@ -44725,9 +44727,9 @@
         // Schattenkarte: Bias waechst mit flachem Lichteinfall (Streifen auf schraegen Blechen).
         + ' if (schatt > 0.5 && vsp.x > 0.0 && vsp.x < 1.0 && vsp.y > 0.0 && vsp.y < 1.0 && vsp.z > 0.0 && vsp.z <= 1.0) {'
         + '   HP float b = vsp.z - bias * (1.0 + 3.0 * (1.0 - d)); float s = 0.0;'
-        + '   for (int ox = -1; ox <= 1; ox++) for (int oy = -1; oy <= 1; oy++)'
+        + '   for (int ox = -2; ox <= 2; ox++) for (int oy = -2; oy <= 2; oy++)'
         + '     s += step(schTiefe(texture2D(sch, vsp.xy + vec2(float(ox), float(oy)) * biasPixel)), b);'
-        + '   c *= mix(1.0, 0.55, s / 9.0); }'
+        + '   c *= mix(1.0, 0.55, s / 25.0); }'
         + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, mix(nebel, dunst, vsd * vsd), f), mix(alpha, alpha * t.a, am)); }'));
     }
     gl.linkProgram(p);
@@ -46716,8 +46718,10 @@
     if (VF.grafik) {
       // v1.3.124: 1024er Karte auf Desktop, 512er auf Touch (das Handy-GPU kann die 2048er Fill-Last nicht;
       // v1.5.141: nochmal halbiert, damit auch der Desktop ohne Ruckeln mitkommt - Performance-Modus hat
-      // ohnehin keine Schatten). Faellt auf die jeweils kleinere Karte zurueck, wenn der Framebuffer sonst unvollstaendig bleibt.
-      try { const sz = navigator.maxTouchPoints > 0 ? 512 : 1024; VF.schatte = vfSchattenBauen(gl, sz) || vfSchattenBauen(gl, sz / 2); VF.schatteProg = VF.schatte ? vfProgrammSchatten(gl) : null; } catch (e) { VF.schatte = null; VF.schatteProg = null; }
+      // ohnehin keine Schatten). v1.5.152: auf Desktop 2048er Karte (feinere Texel, weichere Schattenkante auf
+      // dem Auto); kleine Touch-Geraete bleiben bei 512. Faellt auf die jeweils kleinere Karte zurueck, wenn der
+      // Framebuffer sonst unvollstaendig bleibt.
+      try { const mobil = navigator.maxTouchPoints > 0 && Math.min(screen.width || 1024, screen.height || 768) < 700; const sz = mobil ? 512 : 2048; VF.schatte = vfSchattenBauen(gl, sz) || vfSchattenBauen(gl, sz / 2) || vfSchattenBauen(gl, sz / 4); VF.schatteProg = VF.schatte ? vfProgrammSchatten(gl) : null; } catch (e) { VF.schatte = null; VF.schatteProg = null; }
     }
     vfHudBauen(schicht);
     vfDrehNull(); VF.stick = null; VF.tasten = {};
