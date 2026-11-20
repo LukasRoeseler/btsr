@@ -207,6 +207,8 @@
   const vfTexDaten = { bahn: null, rand: null, boden: null, bodenId: null };
   const vfTexZaehler = { bahn: 0, rand: 0, boden: 0 };
   function vfBodenWahl() {
+    // Freie Strecken (nur virtuell) liegen immer auf Rasen.
+    if (VF.frei || (!VF.aktiv && VF.frei === undefined && typeof vfFreiWahl === 'function' && vfFreiWahl())) return 'rasen';
     // v1.5: Rasen ist der Standard (ohne gespeicherte Wahl).
     try { const v = localStorage.getItem(VF_BODEN_STORE); return VF_BOEDEN.some((b) => b.id === v) ? v : 'rasen'; } catch (e) { return 'rasen'; }
   }
@@ -681,7 +683,8 @@
   // 20 % weich aufgeht, dann gut eine Fahrbahnhaelfte (VF_BOX_TIEFE x halbe Breite) breit bleibt und in den letzten 20 %
   // zurueckgeht. In der Bucht weisse Parkstriche, an der Fahrbahnkante eine Punktreihe. Seite wie im Editor (-1 = rechts,
   // siehe 60-track.js "Pit bulge").
-  const VF_BOX_SEITE = -1, VF_BOX_TIEFE = 1.1, VF_BOX_RAMPE = 0.2;
+  let VF_BOX_SEITE = -1;   // Boxenseite: -1 = rechts (Editor), freie Strecken setzen sie um (boxSeite)
+  const VF_BOX_TIEFE = 1.1, VF_BOX_RAMPE = 0.2;
   function vfBoxForm(u) {
     const sm = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
     return u < VF_BOX_RAMPE ? sm(u / VF_BOX_RAMPE) : u > 1 - VF_BOX_RAMPE ? sm((1 - u) / VF_BOX_RAMPE) : 1;
@@ -699,9 +702,19 @@
         const acc = [0];
         for (let k = i; k <= j; k++) acc.push(acc[acc.length - 1] + Math.hypot(pts[k + 1].x - pts[k].x, pts[k + 1].y - pts[k].y));
         const L = acc[acc.length - 1] || 1;
-        for (let k = i; k <= j + 1; k++) { const uu = acc[k - i] / L; u[k] = uu; b[k] = Math.max(b[k], VF_BOX_TIEFE * TRACK_HALF_W * vfBoxForm(uu)); }
+        for (let k = i; k <= j + 1; k++) {
+          const uu = acc[k - i] / L; u[k] = uu;
+          // v1.5.150: freie Strecken bringen die Bucht-Tiefe je Punkt mit (echte Boxengasse der DXF).
+          const tiefe = pts[k].bucht !== undefined ? pts[k].bucht : VF_BOX_TIEFE * TRACK_HALF_W * vfBoxForm(uu);
+          b[k] = Math.max(b[k], tiefe);
+        }
       }
       i = j + 1;
+    }
+    // v1.5.150: freie Strecken: die Bucht-Tiefe je Punkt kommt aus der Datei (buchtPkt) und kann ueber
+    // ein PIT-Teil hinausgehen (die Gasse der DXF ist laenger). Ueberall anwenden, wo sie definiert ist.
+    for (let k = 0; k < n; k++) {
+      if (pts[k].bucht !== undefined) b[k] = Math.max(b[k], pts[k].bucht);
     }
     return { b, u };
   }
@@ -785,6 +798,23 @@
         }
       }
       for (const sg of [1, -1]) {
+        if (tiles[tl.T] && tiles[tl.T].frei) {
+          // Freie Strecke (nur virtuell): statt Carrera-Randstein eine weisse Randlinie am Bahnrand
+          // (BESTELLT Gnen54 18.11.: "Fahrbahnraender nur weiss markiert"). Asphalt-Schulter bis zur
+          // Kante, dazu die weisse Linie; an der offenen Boxenbucht keine Linie (dort geht es hinein).
+          const uk = sg > 0 ? ua : ub, um = (sg > 0 ? 4 : 132) / VF_RAND_B, lw = kw * 0.1;
+          for (let i = tl.i0; i <= tl.i1; i++) {
+            const hi = hw(i, sg), hi1 = hw(i + 1, sg);
+            const iA = off(i, hi * sg), iB = off(i + 1, hi1 * sg);
+            const oA = off(i, (hi + kw) * sg), oB = off(i + 1, (hi1 + kw) * sg);
+            vfViereck(strasse, [iA[0], 0, iA[1], uk, 0.3], [iB[0], 0, iB[1], uk, 0.4], [oB[0], 0, oB[1], uk, 0.4], [oA[0], 0, oA[1], uk, 0.3], ct);
+            if (sg !== VF_BOX_SEITE || (bucht[i] < 1e-3 && bucht[i + 1] < 1e-3)) {
+              const lA = off(i, (hi + kw - lw) * sg), lB = off(i + 1, (hi1 + kw - lw) * sg);
+              vfViereck(rand, [lA[0], 0.012, lA[1], um, 0.1], [lB[0], 0.012, lB[1], um, 0.1], [oB[0], 0.012, oB[1], um, 0.2], [oA[0], 0.012, oA[1], um, 0.2], [1, 1, 1]);
+            }
+          }
+          continue;
+        }
         const accS = [0];
         for (let i = tl.i0; i <= tl.i1; i++) {
           const p = off(i, (hw(i, sg) + kw / 2) * sg), q = off(i + 1, (hw(i + 1, sg) + kw / 2) * sg);
@@ -1367,8 +1397,57 @@
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
-  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/' };
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/' };
   function vfModellPfad(auto) { return VF_MODELL_PFADE[auto || vfAutoWahl()] || 'img/autos/v5r/'; }
+  // v1.5.150: FREIE STRECKEN nur fuer die virtuelle Fahrt (BESTELLT Gnen54: "eine nicht fuer Carrera gedachte
+  // Strecke, rein fuer virtuelles Fahren", aus gnen54/omegasim). Die Datei bringt die Mittellinie (Einheiten
+  // wie der Editor, Abstand ~2,86) und Pseudo-Kacheln (START / STRAIGHT / PIT), damit Runden, Randsteine,
+  // Boxenbucht und NPCs unveraendert funktionieren. Erzeugt aus der DXF InDeQ-Ring-V1a von Gnen54.
+  const VF_STRECKE_STORE = 'omegasim-vf-strecke';
+  const VF_FREIE = { indeq: { name: 'Törnerschleife 2.0', pfad: 'img/strecken/indeq-ring.json' } };
+  function vfFreiWahl() { try { const v = localStorage.getItem(VF_STRECKE_STORE) || ''; return VF_FREIE[v] ? v : ''; } catch (e) { return ''; } }
+  const vfFreiCache = {};
+  function vfFreiLaden(k) {
+    if (vfFreiCache[k]) return Promise.resolve(vfFreiCache[k]);
+    return fetch(VF_FREIE[k].pfad).then((r) => { if (!r.ok) throw new Error(VF_FREIE[k].pfad + ' ' + r.status); return r.json(); }).then((d) => {
+      // PIT-Kacheln bringen die Tiefe ihrer Bucht mit (halbe Bahnbreiten, echte Boxengasse).
+      const tiles = d.kacheln.map((ty) => ({ type: TILE_TYPE[ty] !== undefined ? TILE_TYPE[ty] : TILE_TYPE.STRAIGHT, frei: true,
+        bucht: ty === 'PIT' ? d.boxBucht : undefined, seite: ty === 'PIT' ? (d.boxSeite || -1) : undefined }));
+      // buchtPkt: Tiefe der Boxengasse je Punkt (Karteneinheiten jenseits der halben Bahn) - die feste Tiefe
+      // mit S-Rampe ueberschlug sich sonst in der Kurve vor der Gasse (GEMELDET Gnen54).
+      const bp = Array.isArray(d.buchtPkt) ? d.buchtPkt : null;
+      const pts = d.pts.map((q, i) => ({ x: q[0], y: q[1], tile: q[2], z: q[3] || 0, bucht: bp ? (bp[i] || 0) : undefined }));
+      // geschlossen wie trackCenterline: letzter Punkt = erster (sonst fehlt das letzte Stueck Bahn).
+      pts.push({ x: pts[0].x, y: pts[0].y, tile: pts[pts.length - 1].tile, z: pts[0].z, bucht: pts[0].bucht });
+      // Fahrtrichtung wie trackCenterline: Richtung (sin h, -cos h), h in Grad.
+      pts.forEach((p, i) => {
+        const m = pts.length - 1, a = pts[(i - 1 + m) % m], c = pts[(i + 1) % m];
+        p.heading = Math.atan2(c.x - a.x, -(c.y - a.y)) * 180 / Math.PI;
+      });
+      vfFreiCache[k] = { name: d.name, tiles, pts, seite: d.boxSeite || -1 };
+      return vfFreiCache[k];
+    });
+  }
+  // Fuer Fahren, Zaehlen und NPCs die an der Schliessstelle gekuerzte Mittellinie: die freie Strecke
+  // schliesst die Schleife mit einem letzten Punkt gleich dem ersten (sonst klafft beim Zeichnen ein
+  // Loch), aber der doppelte Punkt liesse die Zeitnahme an Start/Ziel pendeln (eine "Runde" von 0,3 s).
+  // Also die Punkte abnehmen, die am Anfang noch einmal ankommen (innerhalb einer halben Bahnbreite).
+  function vfSchliessstelle(pts) {
+    const n = pts.length;
+    if (n < 8) return pts;
+    const p0 = pts[0], l = Math.hypot(pts[1].x - p0.x, pts[1].y - p0.y) || 1;
+    const dx = (pts[1].x - p0.x) / l, dy = (pts[1].y - p0.y) / l;
+    let ende = n;
+    while (ende > n - 24) {
+      const p = pts[ende - 1], q = pts[ende - 2];
+      const vor = (p.x - p0.x) * dx + (p.y - p0.y) * dy;
+      const quer = Math.abs((p.x - p0.x) * -dy + (p.y - p0.y) * dx);
+      const sl = Math.hypot(p.x - q.x, p.y - q.y) || 1;
+      const gleich = ((p.x - q.x) * dx + (p.y - q.y) * dy) / sl > 0.7;
+      if (vor > -0.3 && quer < TRACK_HALF_W && gleich) ende--; else break;
+    }
+    return ende < n ? pts.slice(0, ende) : pts;
+  }
   const VF_FEDER_STORE = 'omegasim-vf-feder';
   const VF_FEDER_WERTE = [1, 2, 3, 5, 8];
   // v1.5.10 BESTELLT: "Vorschau vom Auto, Farbwahl". Lackfarbe der virtuellen Fahrt (WIP): eine eigene Wahl, unabhaengig
@@ -3888,7 +3967,16 @@
     // des virtuellen Autos werden beim Beenden wieder zurueckgenommen.
     VF.tilesVorher = currentTrackTiles;
     try { VF.editorVorher = localStorage.getItem(EDITOR_STRECKE_STORE); } catch (e) { VF.editorVorher = undefined; }
-    const tiles = opts.tiles && opts.tiles.length >= 3 ? opts.tiles : vfTilesWaehlen();
+    // v1.5.150: freie Strecke (nur virtuell) statt der gebauten Bahn - erst laden, dann neu starten.
+    const freiK = !(opts.tiles && opts.tiles.length >= 3) && !opts.studie ? vfFreiWahl() : '';
+    if (freiK && !vfFreiCache[freiK]) {
+      vfFreiLaden(freiK).then(() => virtuellStarten(opts), () => showHudToast(t('Strecke konnte nicht geladen werden')));
+      return true;
+    }
+    const frei = freiK ? vfFreiCache[freiK] : null;
+    VF.frei = frei;
+    VF_BOX_SEITE = frei ? frei.seite : -1;   // freie Strecken: Box auf der Seite der DXF (boxSeite)
+    const tiles = frei ? frei.tiles : (opts.tiles && opts.tiles.length >= 3 ? opts.tiles : vfTilesWaehlen());
     if (!tiles) { showHudToast(t('Erst eine Strecke bauen')); return false; }
     VF.studie = !!opts.studie;
     const schicht = document.createElement('div');
@@ -3958,11 +4046,15 @@
     vfTouchBauen();   // v1.3.122: Beruehrungs-Steuerung (Touch), falls Geraet und kein Gamepad
     VF.splits = null; VF.besteSplits = null;
     VF.tiles = tiles;
-    VF.pts = trackCenterline(tiles);
+    // Gezeichnet wird die volle Mittellinie (sonst klafft an der Schliessstelle ein Loch in der Bahn),
+    // gefahren, gezaehlt und von den NPCs befahren die an der Schliessstelle gekuerzte: die freie Strecke
+    // schliesst die Schleife mit einem letzten Punkt gleich dem ersten (vfSchliessstelle nimmt ihn ab).
+    const ptsVoll = frei ? frei.pts : trackCenterline(tiles);
+    VF.pts = frei ? vfSchliessstelle(frei.pts) : ptsVoll;
     VF.nrm = trackNormals(VF.pts);
     // v1.3.39: Flaechen mit Texturen (die Pixel entstehen nur beim ersten Mal) und der feste Platz der
     // Kamera "Fahrer am Rand".
-    try { VF.flaeche = vfFlaechenBauen(gl, VF.pts, VF.nrm, tiles, VF.grafik); } catch (e) { schicht.remove(); document.body.classList.remove('vf-an'); showHudToast('WebGL: ' + e.message); return false; }
+    try { VF.flaeche = vfFlaechenBauen(gl, ptsVoll, ptsVoll === VF.pts ? VF.nrm : trackNormals(ptsVoll), tiles, VF.grafik); } catch (e) { schicht.remove(); document.body.classList.remove('vf-an'); showHudToast('WebGL: ' + e.message); return false; }
     // v1.5: Baeume in der Ferne, nur auf Rasen (ein Puffer, 6 Zahlen je Ecke wie die Farbmodelle).
     // v1.5.84: Boxenbucht je Punkt (Abseits, Randstein) und die Parkstriche.
     VF.boxBucht = vfBoxBucht(VF.pts, tiles); VF.boxStriche = null;
@@ -4112,7 +4204,7 @@
   const VF_MOTOR_GLOBAL = '~global';
   // Standard ist der Vulture V5.R (wie das Auto); "Wie in Optionen" folgt dem globalen Ton (sentinel).
   function vfMotorGewaehlt() {
-    const def = ({ v5r: 'sd_v5r', lynx220: 'sd_lynx', fmcgt4: 'sd_fmc', boxer96: 'sd_boxer', kaefer: 'boxster986', spider: 'listerstorm' })[vfAutoWahl()] || 'sd_v5r';
+    const def = ({ v5r: 'sd_v5r', lynx220: 'sd_lynx', fmcgt4: 'sd_fmc', boxer96: 'sd_boxer', kaefer: 'boxster986', spider: 'listerstorm', caravelle: 'boxster986' })[vfAutoWahl()] || 'sd_v5r';
     try { const v = localStorage.getItem(VF_MOTOR_STORE); return v === null ? def : v; } catch (e) { return def; }
   }
   function vfMotorZiel() { const g = vfMotorGewaehlt(); if (g && g !== VF_MOTOR_GLOBAL) return g; return $('sound-profile') ? $('sound-profile').value : ''; }
@@ -4164,6 +4256,9 @@
                    // v1.5.104: Eigenbau von Gnen54 auf der Modiplay-MP1-Karosserie (Freigabe Sturmkind, nicht kommerziell),
                    // PR 3 auf Luuke42/omegasim. WIP: Fahrdaten geschaetzt (Lister Storm LMP), siehe img/autos/spider/LIZENZ.txt
                    { v: 'spider', name: t('Spider NG1 (Gnen54, WIP)') },
+                   // v1.5.150: Eigenbau von Gnen54 auf der Vehicle-World-Karosserie (schriftliche Freigabe),
+                   // siehe img/autos/caravelle/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
+                   { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') },
                    { v: 'kasten', name: t('Einfaches Modell') }];
     const ja = Math.max(0, autos.findIndex((a) => a.v === vfAutoWahl()));
     const autoWahl = (dd) => {
@@ -4210,6 +4305,17 @@
     bodenZeile.dataset.vfBoden = '1';
     bodenZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(bodenZeile);
+    // v1.5.150: freie Strecke (Törnerschleife, nur virtuell) oder die gebaute Bahn des Editors.
+    const freiListe = ['', ...Object.keys(VF_FREIE)];
+    const jf = Math.max(0, freiListe.indexOf(vfFreiWahl()));
+    const freiWahl = (dd) => {
+      const ni = (jf + dd + freiListe.length) % freiListe.length;
+      try { localStorage.setItem(VF_STRECKE_STORE, freiListe[ni]); } catch (e) { /* egal */ }
+      renderGarage();
+    };
+    const freiZeile = garWertZeile(t('Strecke'), freiListe[jf] ? VF_FREIE[freiListe[jf]].name : t('Gebaute Bahn'), () => freiWahl(-1), () => freiWahl(1));
+    freiZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+    rechts.appendChild(freiZeile);
     // Schaltung: Automatik oder Manuell (schalten dann mit I/K).
     const autoSch = vfSchaltungAuto();
     const schaltWahl = () => {
@@ -4382,6 +4488,8 @@
     } catch (e) { /* ohne Ton weiterfahren */ }
   }
   function virtuellBeenden() {
+    VF.frei = undefined;
+    VF_BOX_SEITE = -1;   // zurueck auf die Editor-Boxenseite (rechts)
     rennPauseBeenden();
     if (!VF.aktiv) return;
     // Laeuft eine Challenge (z. B. die Studienfahrt) mit dem virtuellen Auto, endet sie mit: abgebrochen,

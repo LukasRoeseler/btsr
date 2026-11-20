@@ -2808,6 +2808,17 @@
     return true;
   }
 
+  // Richtungs-Rumble fuer Unter-/Uebersteuern (50-drive.js): Beim Gripverlust schiebt das Auto
+  // zur AUSSENSEITE der Kurve, also vibriert genau die Seite aussen. dir > 0 = Rechtskurve ->
+  // linke Seite, dir < 0 = Linkskurve -> rechte Seite. Auf dem Standard-Pad ist der linke Griff
+  // der schwere Motor (strongMagnitude), der rechte der leichte (weakMagnitude) - dieselbe
+  // Zuordnung wie beim DualSense (80b-dualsense.js). So brummt EIN Motor statt beide, und die
+  // Staerke liegt deutlich unter der alten. `art`/'wer' reichen an padRumble durch (Schalter).
+  function padRumbleRichtung(dir, mag, ms, art, wer) {
+    const links = dir > 0;
+    return padRumble(links ? mag : 0, links ? 0 : mag, ms, art, wer);
+  }
+
   // ---- Der Trigger-Effekt, und warum er still bleiben darf ---------------------------
   //
   // 'trigger-rumble' ist eine ANDERE Effektart als 'dual-rumble', und nicht jeder Pad kann

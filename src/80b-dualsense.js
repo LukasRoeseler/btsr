@@ -218,12 +218,12 @@
       dir = st.pacRichtung || Math.sign(st.dampedSteering);
       const max = (physEngine.config && physEngine.config.pacejkaUeberMax) || 0.35;
       const k = Math.min(1, st.pacUeber / Math.max(0.01, max));
-      mag = 0.5 + 0.4 * k;              // stark, solange das Heck draussen ist
+      mag = 0.4 + 0.25 * k;              // stark, solange das Heck draussen ist (v1.5.150: schwaechere Staerke)
     } else if (st.pacZustand === 'unter' && st.pacNutzV > 1) {
       if (RUMBLE_ARTEN['untersteuern'] === false) return g;
       dir = Math.sign(st.dampedSteering);
       const k = Math.min(1, (1 - st.pacUnter) * 4);
-      mag = 0.25 + 0.35 * k;            // maessig, solange die Front schiebt
+      mag = 0.2 + 0.2 * k;            // maessig, solange die Front schiebt (v1.5.150: schwaechere Staerke)
     }
     if (!dir) return g;
     // Aussenseite = Gegenseite der Kurve: Rechtskurve (dir > 0) -> linker Griff, Linkskurve -> rechter Griff.

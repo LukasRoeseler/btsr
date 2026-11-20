@@ -790,13 +790,13 @@
   // ---- Rueckmeldung aus dem Pacejka-Modus: Vibration ------------------------------------
   //
   // BESTELLT: "Beim Unter- und Uebersteuern soll Controllervibration getriggert werden."
-  // Untersteuern ist ein ZUSTAND (die Front schiebt) - ein leises Brummen im weichen Motor,
-  // solange es anhaelt. Uebersteuern ist ein EREIGNIS (das Heck kommt) - ein kraeftiger
-  // Stoss im starken Motor. Hoechstens alle 250 ms ein Aufruf je Spieler, sonst stapeln
-  // sich die Effekte im Pad. `wer` sorgt dafuer, dass nur der eigene Pad ruettelt.
-  // STAERKER SEIT v0.8.24 (BESTELLT: "Vibration staerker machen"): Uebersteuern alle
-  // 150 ms, 0,65 bis 1,0 im starken Motor, dazu der schwache; kam das Heck unter Gas, ein
-  // zusaetzlicher kurzer Stoss hinterher - das "Hinterrad".
+  // Untersteuern ist ein ZUSTAND (die Front schiebt) - ein leises Brummen im leichten Motor,
+  // solange es anhaelt. Uebersteuern ist ein EREIGNIS (das Heck kommt) - ein Stoss im starken
+  // Motor. Hoechstens alle 250 ms ein Aufruf je Spieler, sonst stapeln sich die Effekte im Pad.
+  // `wer` sorgt dafuer, dass nur der eigene Pad ruettelt.
+  // v1.5.150: RICHTUNG und SCHWAECHER (wie LibreCorsa). Beim Gripverlust schiebt das Auto zur
+  // AUSSENSEITE der Kurve, also vibriert genau die Seite aussen: Rechtskurve -> linke Seite,
+  // Linkskurve -> rechte Seite. padRumbleRichtung (40-physics.js) verteilt das auf die Motoren.
   const pacRumbleZuletzt = { 1: 0, 2: 0, 3: 0 };
   function pacejkaRueckmeldung(motor, wer) {
     if (!motor.config.pacejka) return false;
@@ -810,9 +810,14 @@
     if (jetzt - pacRumbleZuletzt[wer] < takt) return false;
     pacRumbleZuletzt[wer] = jetzt;
     if (st.pacZustand === 'ueber') {
+      // v1.5.150: Richtungs-Rumble und deutlich schwaechere Staerke (wie LibreCorsa). Beim
+      // Uebersteuern schiebt das Heck zur AUSSENSEITE der Kurve: Rechtskurve -> linke Seite,
+      // Linkskurve -> rechte Seite (padRumbleRichtung in 40-physics.js).
       const k = Math.min(1, st.pacUeber / motor.config.pacejkaUeberMax);
-      const ok = padRumble(0.65 + 0.35 * k, 0.35, 170, 'rutschen', wer);
-      if (ok && st.pacLeistung) setTimeout(() => padRumble(0.2, 0.9, 60, 'rutschen', wer), 90);
+      const dir = st.pacRichtung || Math.sign(st.dampedSteering);
+      const mag = 0.3 + 0.2 * k;   // vorher 0,65..1,0 im starken Motor
+      const ok = padRumbleRichtung(dir, mag, 170, 'rutschen', wer);
+      if (ok && st.pacLeistung) setTimeout(() => padRumbleRichtung(dir, 0.12, 60, 'rutschen', wer), 90);
       return ok;
     }
     // v1.1.42 GEMELDET: "Mein Gamepad rumbled dauerhaft beim Gas geben." pacUnter enthaelt auch die
@@ -820,7 +825,9 @@
     // wird jetzt nur, wenn die Front wirklich ueber der Haftgrenze ist (pacNutzV > 1), eigene Art 'untersteuern'.
     if (!(st.pacNutzV > 1)) return false;
     const k = Math.min(1, (1 - st.pacUnter) * 4);
-    return padRumble(0, 0.18 + 0.4 * k, 260, 'untersteuern', wer);
+    // v1.5.150: auch beim Untersteuern die AUSSENSEITE (Rechtskurve -> links) und schwaechere Staerke.
+    const dir = Math.sign(st.dampedSteering);
+    return padRumbleRichtung(dir, 0.12 + 0.18 * k, 260, 'untersteuern', wer);
   }
 
   if ($('setting-countersteer')) {
