@@ -5924,7 +5924,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.147</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.149</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7235,6 +7235,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Die Kamera l&#228;sst sich jetzt in der Garage ausschalten. Der Knopf hei&#223;t jetzt &#8222;Koppeln&#8220; / &#8222;Entkoppeln&#8220; (Verbindung zur Kamera herstellen bzw. trennen); daneben gibt es &#8222;Ausschalten&#8220; (neuer Endpunkt <code>/off</code> auf der Kamera: Batterie-Hold LOW + Deep-Sleep, wie die Stock-Firmware). Au&#223;erdem geht die Kamera von selbst aus, wenn 2 Minuten lang niemand auf den Strom schaut &#8211; praktisch im Auto, um den Akku zu schonen. Wieder einschalten geht mit frischem Strom (USB/Kabel oder PWR-Knopf).</li>
         <li>Virtuelles Fahren, Quality-Modus: Die Schattenkarte ist kleiner (Touch 512, Desktop 1024 statt vorher 1024/2048) und wird weiterhin jedes Bild gerendert. Das senkt die GPU-Last sp&#252;rbar, ohne das Schatten-Flackern (das jede-2.-Bild-Rendern verursachte) wiederzubringen. Im Performance-Modus gibt es weiterhin keine Schatten.</li>
         <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Die Aufnahme flackert nicht mehr schwarz. Beim Anzeigen jedes Bildes setzt die App die Bild-URL neu; dabei war das Live-Bild kurz ohne Frame (naturalWidth 0) und die Aufnahme bekam schwarze Bilder. Jetzt h&#228;lt die App einen bereits dekodierten Bild-Frame f&#252;r die Aufnahme vor.</li>
         <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Der Batteriestand der Kamera erscheint jetzt im Onboard-Bild (Fahrtbildschirm) als „Kamera-Akku“ in der rechten Leiste und in der Statuszeile. Die Kamera-Firmware liefert ihn über den neuen Endpunkt <code>/batt</code> (Spannung und Prozent); OmegaSim fragt ihn alle 5&#160;s ab, solange die Kamera läuft. Nützlich, um zu sehen, wann der Akku im Auto gewechselt werden muss.</li>
@@ -10277,7 +10278,10 @@
           <div class="opt-row"><div class="opt-label">Onboard-Kamera <span class="wip-tag">WIP</span>
               <small>Livebild einer Kamera im Auto. Im Cockpit als eigener Schirm &bdquo;Onboard&ldquo; mit Zeiten oben links und Tempo, Gang und Tank unten in der Mitte, wie beim virtuellen Fahren. Aufnahme mit dem Knopf im Bild oder der W&auml;hltaste (X).</small>
               <div id="onboard-status" class="muted" style="font-size:12px;margin-top:4px" data-i18n-skip>Aus.</div></div>
-            <button type="button" id="onboard-an">Einschalten</button></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap">
+              <button type="button" id="onboard-an">Koppeln</button>
+              <button type="button" id="onboard-aus" hidden>Ausschalten</button>
+            </div></div>
           <div class="opt-row"><div class="opt-label">Quelle<small>USB: ein Empf&auml;nger oder eine Kamera, die sich wie eine Webcam meldet (z.&nbsp;B. FPV-Mikrokamera mit USB-Empf&auml;nger). WLAN: M5Stack Timer Camera oder eine andere ESP32-Kamera mit MJPEG-Strom, Anleitung im Projekt unter tools/onboard.</small></div>
             <select id="onboard-art" data-preset-skip><option value="usb">USB-Kamera</option><option value="m5">M5Stack Timer Camera (WLAN)</option></select></div>
           <div class="opt-row" id="onboard-zeile-usb"><div class="opt-label">Kamera<small>Die Namen stehen hier, sobald die Kamera einmal erlaubt wurde.</small></div>
@@ -20070,8 +20074,11 @@
     "ohne Aufnahme (CORS)": "no recording (CORS)",
     "Aufnahme braucht CORS in der Kamera-Firmware (tools/onboard).": "Recording needs CORS in the camera firmware (tools/onboard).",
     "Onboard-Kamera": "Onboard camera",
-    "Einschalten": "Turn on",
-    "Ausschalten": "Turn off",
+    "Koppeln": "Pair",
+    "Entkoppeln": "Unpair",
+    "Ausschalten": "Power off",
+    "Kamera wird ausgeschaltet …": "Powering off camera …",
+    "Kamera ausgeschaltet.": "Camera off.",
     "Die Namen stehen hier, sobald die Kamera einmal erlaubt wurde.": "The names appear here once the camera has been allowed.",
     "Bild um 180° drehen": "Rotate picture by 180°",
     "Wenn die Kamera kopfüber im Auto sitzt.": "If the camera sits upside down in the car.",
@@ -22037,8 +22044,11 @@
     "ohne Aufnahme (CORS)": "sin grabación (CORS)",
     "Aufnahme braucht CORS in der Kamera-Firmware (tools/onboard).": "La grabación necesita CORS en el firmware de la cámara (tools/onboard).",
     "Onboard-Kamera": "Cámara a bordo",
-    "Einschalten": "Encender",
+    "Koppeln": "Emparejar",
+    "Entkoppeln": "Desemparejar",
     "Ausschalten": "Apagar",
+    "Kamera wird ausgeschaltet …": "Apagando la cámara …",
+    "Kamera ausgeschaltet.": "Cámara apagada.",
     "Die Namen stehen hier, sobald die Kamera einmal erlaubt wurde.": "Los nombres aparecen aquí cuando se haya permitido la cámara.",
     "Bild um 180° drehen": "Girar la imagen 180°",
     "Wenn die Kamera kopfüber im Auto sitzt.": "Si la cámara está montada al revés en el coche.",
@@ -62008,7 +62018,7 @@
   // wie eine WEBCAM - also braucht es hier nichts als getUserMedia, keine eigene Hardware-
   // Schnittstelle wie bei der Startampel.
   //
-  //   Garage -> Onboard-Kamera (v1.5)         Einschalten, Quelle (USB oder WLAN), Bild drehen
+  //   Garage -> Onboard-Kamera (v1.5)         Koppeln/Entkoppeln, Ausschalten (WLAN), Quelle (USB oder WLAN), Bild drehen
   //   (bei gnen54 unter Optionen -> AddOn; OmegaSim hat keine AddOn-Seite)
   //   Cockpit, Schirm "Onboard"               Livebild mit Runde, Zeit, km/h
   //   Aufnahme (Knopf oder Waehltaste X)      Video MIT Anzeige (Runde, Zeit, km/h, Ampel,
@@ -62253,6 +62263,29 @@
       })
       .catch(() => { /* Kamera kurz weg: beim naechsten Takt erneut */ });
   }
+  // WLAN-Kamera ausschalten: /off auf der Kamera-Firmware (Batterie-Hold LOW + Deep-Sleep),
+  // dann in der App entkoppeln. Nur fuer die M5Stack-Kamera; eine USB-Kamera geht nicht.
+  async function onbM5Aus() {
+    const e = onbEinst();
+    const z = onbZustand();
+    if (e.art !== 'm5') return;
+    const url = onbM5Url(e.m5);
+    const offUrl = url ? (new URL(url).origin + '/off') : '';
+    if (!offUrl) { z.fehler = t('Erst die Adresse der Kamera eintragen.'); onbStatus(); return; }
+    onbStatus(t('Kamera wird ausgeschaltet …'));
+    try {
+      const r = await fetch(offUrl, { method: 'GET' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+    } catch (err) {
+      log('Onboard-Kamera: /off fehlgeschlagen -> ' + ((err && err.message) || err), 'err');
+    }
+    // In der App entkoppeln, auch wenn /off nicht antwortete (Kamera evtl. schon aus).
+    e.an = false;
+    onbSpeichern();
+    onbStoppen();
+    z.fehler = '';
+    onbStatus(t('Kamera ausgeschaltet.'));
+  }
   async function onbM5Starten() {
     const z = onbZustand();
     const e = onbEinst();
@@ -62315,7 +62348,9 @@
       s.textContent = zeile;
     }
     const b = $('onboard-an');
-    if (b) b.textContent = onbEinst().an ? t('Ausschalten') : t('Einschalten');
+    if (b) b.textContent = onbEinst().an ? t('Entkoppeln') : t('Koppeln');
+    const a = $('onboard-aus');
+    if (a) a.hidden = onbEinst().art !== 'm5';   // Ausschalten gibt es nur bei der WLAN-Kamera (/off)
     const leer = $('onboard-leer');
     if (leer) leer.hidden = onboardAktiv();
     if (typeof konsoleFahrenGeraete === 'function') konsoleFahrenGeraete();
@@ -62909,6 +62944,9 @@
       await onbStarten();
     });
   }
+  if ($('onboard-aus')) {
+    $('onboard-aus').addEventListener('click', async () => { await onbM5Aus(); });
+  }
   if ($('onboard-quelle')) {
     $('onboard-quelle').addEventListener('change', (ev) => {
       const e = onbEinst();
@@ -62977,7 +63015,7 @@
       erlaubt = p.state === 'granted';
     } catch (e) { /* die App-WebView kennt die Abfrage nicht */ }
     if (erlaubt) { onbStarten(); return; }
-    // Nur fuer diese Sitzung aus (nicht gespeichert): der Knopf zeigt "Einschalten".
+    // Nur fuer diese Sitzung aus (nicht gespeichert): der Knopf zeigt "Koppeln".
     onbEinst().an = false;
     onbStatus();
   })();

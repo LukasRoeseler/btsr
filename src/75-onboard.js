@@ -7,7 +7,7 @@
   // wie eine WEBCAM - also braucht es hier nichts als getUserMedia, keine eigene Hardware-
   // Schnittstelle wie bei der Startampel.
   //
-  //   Garage -> Onboard-Kamera (v1.5)         Einschalten, Quelle (USB oder WLAN), Bild drehen
+  //   Garage -> Onboard-Kamera (v1.5)         Koppeln/Entkoppeln, Ausschalten (WLAN), Quelle (USB oder WLAN), Bild drehen
   //   (bei gnen54 unter Optionen -> AddOn; OmegaSim hat keine AddOn-Seite)
   //   Cockpit, Schirm "Onboard"               Livebild mit Runde, Zeit, km/h
   //   Aufnahme (Knopf oder Waehltaste X)      Video MIT Anzeige (Runde, Zeit, km/h, Ampel,
@@ -252,6 +252,29 @@
       })
       .catch(() => { /* Kamera kurz weg: beim naechsten Takt erneut */ });
   }
+  // WLAN-Kamera ausschalten: /off auf der Kamera-Firmware (Batterie-Hold LOW + Deep-Sleep),
+  // dann in der App entkoppeln. Nur fuer die M5Stack-Kamera; eine USB-Kamera geht nicht.
+  async function onbM5Aus() {
+    const e = onbEinst();
+    const z = onbZustand();
+    if (e.art !== 'm5') return;
+    const url = onbM5Url(e.m5);
+    const offUrl = url ? (new URL(url).origin + '/off') : '';
+    if (!offUrl) { z.fehler = t('Erst die Adresse der Kamera eintragen.'); onbStatus(); return; }
+    onbStatus(t('Kamera wird ausgeschaltet …'));
+    try {
+      const r = await fetch(offUrl, { method: 'GET' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+    } catch (err) {
+      log('Onboard-Kamera: /off fehlgeschlagen -> ' + ((err && err.message) || err), 'err');
+    }
+    // In der App entkoppeln, auch wenn /off nicht antwortete (Kamera evtl. schon aus).
+    e.an = false;
+    onbSpeichern();
+    onbStoppen();
+    z.fehler = '';
+    onbStatus(t('Kamera ausgeschaltet.'));
+  }
   async function onbM5Starten() {
     const z = onbZustand();
     const e = onbEinst();
@@ -314,7 +337,9 @@
       s.textContent = zeile;
     }
     const b = $('onboard-an');
-    if (b) b.textContent = onbEinst().an ? t('Ausschalten') : t('Einschalten');
+    if (b) b.textContent = onbEinst().an ? t('Entkoppeln') : t('Koppeln');
+    const a = $('onboard-aus');
+    if (a) a.hidden = onbEinst().art !== 'm5';   // Ausschalten gibt es nur bei der WLAN-Kamera (/off)
     const leer = $('onboard-leer');
     if (leer) leer.hidden = onboardAktiv();
     if (typeof konsoleFahrenGeraete === 'function') konsoleFahrenGeraete();
@@ -908,6 +933,9 @@
       await onbStarten();
     });
   }
+  if ($('onboard-aus')) {
+    $('onboard-aus').addEventListener('click', async () => { await onbM5Aus(); });
+  }
   if ($('onboard-quelle')) {
     $('onboard-quelle').addEventListener('change', (ev) => {
       const e = onbEinst();
@@ -976,7 +1004,7 @@
       erlaubt = p.state === 'granted';
     } catch (e) { /* die App-WebView kennt die Abfrage nicht */ }
     if (erlaubt) { onbStarten(); return; }
-    // Nur fuer diese Sitzung aus (nicht gespeichert): der Knopf zeigt "Einschalten".
+    // Nur fuer diese Sitzung aus (nicht gespeichert): der Knopf zeigt "Koppeln".
     onbEinst().an = false;
     onbStatus();
   })();

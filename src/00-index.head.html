@@ -5924,7 +5924,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.5.147</span></span>
+        <span class="foot-ver">v<span id="app-version">1.5.149</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7235,6 +7235,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
+        <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Die Kamera l&#228;sst sich jetzt in der Garage ausschalten. Der Knopf hei&#223;t jetzt &#8222;Koppeln&#8220; / &#8222;Entkoppeln&#8220; (Verbindung zur Kamera herstellen bzw. trennen); daneben gibt es &#8222;Ausschalten&#8220; (neuer Endpunkt <code>/off</code> auf der Kamera: Batterie-Hold LOW + Deep-Sleep, wie die Stock-Firmware). Au&#223;erdem geht die Kamera von selbst aus, wenn 2 Minuten lang niemand auf den Strom schaut &#8211; praktisch im Auto, um den Akku zu schonen. Wieder einschalten geht mit frischem Strom (USB/Kabel oder PWR-Knopf).</li>
         <li>Virtuelles Fahren, Quality-Modus: Die Schattenkarte ist kleiner (Touch 512, Desktop 1024 statt vorher 1024/2048) und wird weiterhin jedes Bild gerendert. Das senkt die GPU-Last sp&#252;rbar, ohne das Schatten-Flackern (das jede-2.-Bild-Rendern verursachte) wiederzubringen. Im Performance-Modus gibt es weiterhin keine Schatten.</li>
         <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Die Aufnahme flackert nicht mehr schwarz. Beim Anzeigen jedes Bildes setzt die App die Bild-URL neu; dabei war das Live-Bild kurz ohne Frame (naturalWidth 0) und die Aufnahme bekam schwarze Bilder. Jetzt h&#228;lt die App einen bereits dekodierten Bild-Frame f&#252;r die Aufnahme vor.</li>
         <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Der Batteriestand der Kamera erscheint jetzt im Onboard-Bild (Fahrtbildschirm) als „Kamera-Akku“ in der rechten Leiste und in der Statuszeile. Die Kamera-Firmware liefert ihn über den neuen Endpunkt <code>/batt</code> (Spannung und Prozent); OmegaSim fragt ihn alle 5&#160;s ab, solange die Kamera läuft. Nützlich, um zu sehen, wann der Akku im Auto gewechselt werden muss.</li>
@@ -10277,7 +10278,10 @@
           <div class="opt-row"><div class="opt-label">Onboard-Kamera <span class="wip-tag">WIP</span>
               <small>Livebild einer Kamera im Auto. Im Cockpit als eigener Schirm &bdquo;Onboard&ldquo; mit Zeiten oben links und Tempo, Gang und Tank unten in der Mitte, wie beim virtuellen Fahren. Aufnahme mit dem Knopf im Bild oder der W&auml;hltaste (X).</small>
               <div id="onboard-status" class="muted" style="font-size:12px;margin-top:4px" data-i18n-skip>Aus.</div></div>
-            <button type="button" id="onboard-an">Einschalten</button></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap">
+              <button type="button" id="onboard-an">Koppeln</button>
+              <button type="button" id="onboard-aus" hidden>Ausschalten</button>
+            </div></div>
           <div class="opt-row"><div class="opt-label">Quelle<small>USB: ein Empf&auml;nger oder eine Kamera, die sich wie eine Webcam meldet (z.&nbsp;B. FPV-Mikrokamera mit USB-Empf&auml;nger). WLAN: M5Stack Timer Camera oder eine andere ESP32-Kamera mit MJPEG-Strom, Anleitung im Projekt unter tools/onboard.</small></div>
             <select id="onboard-art" data-preset-skip><option value="usb">USB-Kamera</option><option value="m5">M5Stack Timer Camera (WLAN)</option></select></div>
           <div class="opt-row" id="onboard-zeile-usb"><div class="opt-label">Kamera<small>Die Namen stehen hier, sobald die Kamera einmal erlaubt wurde.</small></div>
