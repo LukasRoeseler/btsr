@@ -2943,6 +2943,15 @@
 
   function updateEngineSound(throttleMagnitude) {
     if (!soundEnabled || !engineOsc) return;
+    // v1.6.27 (Issue #15): Der RC Stunt Copter hat keinen Motor, nur den Rotor-Ton (vfHubTon). Der
+    // Motor-Ton darf dann weder laufen noch weiterspielen, auch wenn dieser Takt ihn treibt (W drueckt
+    // im Helikopter das Gas, und ohne den Ausstieg hoerte man den Motor-Ton mitlaufen).
+    if (typeof VF !== 'undefined' && VF && VF.hubschrauber && audioCtx) {
+      const t = audioCtx.currentTime;
+      engineGain.gain.setTargetAtTime(0, t, 0.05);
+      if (sampleEngine && sampleEngine.master) sampleEngine.master.gain.setTargetAtTime(0, t, 0.05);
+      return;
+    }
     const st = physEngine.state, p = soundProfile;
     let pitchNorm, load;
     if (physicsEnabled) {

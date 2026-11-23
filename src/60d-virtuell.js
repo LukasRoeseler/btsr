@@ -1412,6 +1412,86 @@
       box(sx * B / 2 - 0.5, sx * B / 2 + 0.5, 0, 1.6, sz * L * 0.32 - 1.0, sz * L * 0.32 + 1.0, [0.05, 0.05, 0.06]));
     return vfPuffer(gl, a);
   }
+  // ---- RC STUNT COPTER (v1.6.27, Issue #15) ---------------------------------------------------
+  // Der Hubschrauber hat kein auto.json/auto.bin; sein Modell wird hier aus farbigen Kasten gebaut
+  // (wie der weisse Kasten, aber als Hubschrauber). Er liegt in der gleichen Pufferform wie vfAutoBauen
+  // (6 Zahlen je Ecke: Lage + Farbe) und wird in vfMalen ueber die eigene Weltmatrix vfHubLage gezeichnet.
+  // Forward = +z (wie das Auto), oben = +y. Massstaebe in Modell-Einheiten, der Rumpf ist ~2,3 lang.
+  function vfHubschrauberBauen(gl, farbe) {
+    const a = [];
+    const box = (x0, x1, y0, y1, z0, z1, f) => {
+      const s = (k) => [f[0] * k, f[1] * k, f[2] * k];
+      const v = [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]];
+      const fl = [[4, 5, 6, 7, 1.0], [1, 0, 3, 2, 0.55], [0, 4, 7, 3, 0.75], [5, 1, 2, 6, 0.75], [3, 7, 6, 2, 1.15], [0, 1, 5, 4, 0.4]];
+      fl.forEach(([p, q, r, u, k]) => [p, q, r, p, r, u].forEach((i) => a.push(v[i][0], v[i][1], v[i][2], ...s(k))));
+    };
+    const dunkel = [0.10, 0.12, 0.16], glas = [0.18, 0.22, 0.27], rotor = [0.05, 0.05, 0.06];
+    const metall = [0.42, 0.44, 0.48], kufe = [0.20, 0.20, 0.22];
+    // Rumpf: Kabine, Nase, Cockpit-Fenster.
+    box(-0.60, 0.60, 0.70, 1.70, -1.10, 1.10, farbe);
+    box(-0.50, 0.50, 0.90, 1.55, 1.10, 1.75, farbe);
+    box(-0.42, 0.42, 1.22, 1.58, 0.30, 1.55, glas);
+    // Heckausleger (Boom) und Seitenleitwerk.
+    box(-0.16, 0.16, 1.02, 1.34, -4.30, -1.05, farbe);
+    box(-0.05, 0.05, 1.02, 2.05, -4.62, -4.10, metall);
+    box(-0.05, 0.05, 1.38, 1.72, -4.46, -4.30, dunkel);
+    // Hauptrotor-Mast.
+    box(-0.08, 0.08, 1.70, 2.02, -0.08, 0.08, metall);
+    // Heckrotor (stehend, seitlich am Leitwerk) - bleibt stehen (Nur der Hauptrotor dreht sich).
+    box(-0.05, 0.05, 1.40, 1.68, -4.44, -4.28, metall);
+    // Kufen: zwei Schienen + Streben.
+    box(-0.85, -0.74, 0.10, 0.18, -1.00, 0.90, kufe);
+    box(0.74, 0.85, 0.10, 0.18, -1.00, 0.90, kufe);
+    box(-0.72, -0.66, 0.18, 0.72, -0.78, -0.70, kufe);
+    box(-0.72, -0.66, 0.18, 0.72, 0.62, 0.70, kufe);
+    box(0.66, 0.72, 0.18, 0.72, -0.78, -0.70, kufe);
+    box(0.66, 0.72, 0.18, 0.72, 0.62, 0.70, kufe);
+    return vfPuffer(gl, a);
+  }
+  // Die drehenden Hauptrotorblätter (flaches Kreuz) als eigener Puffer, damit sie sich drehen können.
+  function vfHubRotorBauen(gl) {
+    const a = [];
+    const box = (x0, x1, y0, y1, z0, z1, f) => {
+      const s = (k) => [f[0] * k, f[1] * k, f[2] * k];
+      const v = [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]];
+      const fl = [[4, 5, 6, 7, 1.0], [1, 0, 3, 2, 0.55], [0, 4, 7, 3, 0.75], [5, 1, 2, 6, 0.75], [3, 7, 6, 2, 1.15], [0, 1, 5, 4, 0.4]];
+      fl.forEach(([p, q, r, u, k]) => [p, q, r, p, r, u].forEach((i) => a.push(v[i][0], v[i][1], v[i][2], ...s(k))));
+    };
+    const rotor = [0.05, 0.05, 0.06];
+    box(-2.30, 2.30, 2.00, 2.09, -0.09, 0.09, rotor);   // Blatt laengs (x)
+    box(-0.09, 0.09, 2.00, 2.09, -2.30, 2.30, rotor);   // Blatt quer (z)
+    return vfPuffer(gl, a);
+  }
+  // v1.6.27 (Issue #15): Das TREX-700-Modell (img/vf/hub.bin, aus tools/blend_to_vf.py) nachladen.
+  // Der Kasten (vfHubschrauberBauen) ist der sofortige Fallback; sobald die Daten da sind, werden Rumpf
+  // und Rotor ersetzt. Die Daten sind schon in App-Koordinaten und -Einheiten (siehe hub.json): je Ecke
+  // x y z r g b (Float32), Body und Rotor getrennt, damit der Rotor weiter um die Hochachse dreht.
+  let vfHubModell = null;
+  function vfHubModellLaden(gl) {
+    if (vfHubModell && vfHubModell.gl === gl) return;   // schon fuer diesen Grafikkontext
+    vfHubModell = { gl };
+    fetch('img/vf/hub.bin').then((r) => { if (!r.ok) throw new Error('hub.bin ' + r.status); return r.arrayBuffer(); })
+      .then((bin) => {
+        if (bin.byteLength < 8) throw new Error('hub.bin zu kurz');
+        const dv = new DataView(bin);
+        const bodyEcken = dv.getUint32(0, true), rotorEcken = dv.getUint32(4, true);
+        if (bin.byteLength < 8 + (bodyEcken + rotorEcken) * 24) throw new Error('hub.bin unvollstaendig');
+        const bodyF = new Float32Array(bin, 8, bodyEcken * 6);
+        const rotorF = new Float32Array(bin, 8 + bodyEcken * 24, rotorEcken * 6);
+        if (!VF.aktiv || VF.gl !== gl) return;
+        VF.auto = vfPuffer(gl, bodyF);
+        VF.hubRotor = vfPuffer(gl, rotorF);
+        VF.hubTrex = true;
+      }).catch(() => { /* Kasten bleibt */ });
+  }
+  // Weltmatrix des Hubschraubers: x/y in der Bahnebene, z = Hoehe (Welt +y), dazu Gier (h),
+  // Nicken (um die Querachse) und Rollen (um die Laengsachse) - wie das Auto, nur mit Hoehe.
+  function vfHubLage(x, y, h, z, roll, pitch) {
+    // Vorzeichen: +pitch (Eingabe vor) neigt die Nase nach vorn (vfRx senkt +z), +roll (Eingabe rechts)
+    // rollt nach rechts, also rechts tiefer. Im Modell ist +x die LINKe Seite (Modell +z = vorn, +y = oben,
+    // rechtshaendig), vfRz(+roll) hebt deshalb die linke Seite - das ist genau das "rechts tiefer".
+    return vfKette(vfT(x, z, y), vfRy(Math.PI - h * Math.PI / 180), vfRx(pitch), vfRz(roll));
+  }
   // Matrizen (spaltenweise, wie WebGL sie will).
   function vfPerspektive(fovy, asp, n, f) {
     const t = 1 / Math.tan(fovy / 2);
@@ -1589,7 +1669,17 @@
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
   const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/' };
-  function vfModellPfad(auto) { return VF_MODELL_PFADE[auto || vfAutoWahl()] || 'img/autos/v5r/'; }
+  // v1.6.27 (Issue #15): der RC Stunt Copter in der Garage. Er ist KEIN Auto: er hat kein
+  // auto.json/auto.bin (VF_MODELL_PFADE), sondern wird als eigener Hubschrauber gebaut und
+  // mit zwei Sticks geflogen. Ueberall, wo ein Auto-Modell oder ein Fahrprofil gebraucht wird,
+  // weicht der Code auf den Helikopter-Zweig aus (vfHubschrauber()).
+  const VF_HELIKOPTER = 'hubschrauber';
+  function vfHubschrauber() { return vfAutoWahl() === VF_HELIKOPTER; }
+  function vfModellPfad(auto) {
+    auto = auto || vfAutoWahl();
+    if (auto === VF_HELIKOPTER) return '';
+    return VF_MODELL_PFADE[auto] || 'img/autos/v5r/';
+  }
   // v1.5.150: FREIE STRECKEN nur fuer die virtuelle Fahrt (BESTELLT Gnen54: "eine nicht fuer Carrera gedachte
   // Strecke, rein fuer virtuelles Fahren", aus gnen54/omegasim). Die Datei bringt die Mittellinie (Einheiten
   // wie der Editor, Abstand ~2,86) und Pseudo-Kacheln (START / STRAIGHT / PIT), damit Runden, Randsteine,
@@ -1710,8 +1800,13 @@
   // Eine gespeicherte Wahl, die es nicht mehr gibt (z. B. 'porsche', 1.3.94-1.3.131, entfernt), faellt
   // still auf den Vulture V5.R zurueck - kein 404 beim Laden und kein Absturz.
   // v1.6.23: die Liste der virtuellen Autos (Garage und Autos-Kachel auf FAHREN im Modus Virtuell).
+  // v1.6.27 BESTELLT: "Der Helikopter sollte nur im freien Training waehlbar sein." Ausserhalb des Trainings steht er
+  // nicht in der Liste, und eine gespeicherte Wahl faehrt dort als Vulture (vfAutoWahl) - gespeichert bleibt sie.
+  function vfHeliErlaubt() { const rm = typeof $ === 'function' ? $('race-mode') : null; return !!(rm && rm.value === 'practice'); }
   function vfAutoListe() {
-    return [{ v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
+    // v1.6.27 (Issue #15): der RC Stunt Copter zuoberst - er wird nicht gefahren, sondern geflogen.
+    return (vfHeliErlaubt() ? [{ v: 'hubschrauber', name: t('RC Stunt Copter') + ' (' + t('nur Training') + ', WIP)' }] : []).concat([
+            { v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
             { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
             // Eigenbau von Gnen54 (CC BY 4.0), WIP: Fahrdaten geschaetzt, siehe img/autos/kaefer/LIZENZ.txt
             { v: 'kaefer', name: t('VW Käfer 1303 RS mit Boxster-Motor (Gnen54, WIP)') },
@@ -1720,13 +1815,17 @@
             { v: 'spider', name: t('Spider NG1 (Gnen54, WIP)') },
             // v1.5.150: Eigenbau von Gnen54 auf der Vehicle-World-Karosserie (schriftliche Freigabe),
             // siehe img/autos/caravelle/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
-            { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') }];
+            { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') }]);
   }
   function vfAutoName(id) { const a = vfAutoListe().find((x) => x.v === id); return a ? a.name : id; }
   // Name der gewaehlten Strecke der virtuellen Fahrt (freie Strecke oder die gebaute Bahn).
   function vfStreckeName() { const k = vfFreiWahl(); return k ? t(VF_FREIE[k].name) : t('Gebaute Bahn'); }
   function vfAutoWahl() {
-    try { const v = localStorage.getItem(VF_AUTO_STORE); return (v && Object.prototype.hasOwnProperty.call(VF_MODELL_PFADE, v)) ? v : 'v5r'; } catch (e) { return 'v5r'; }
+    try {
+      const v = localStorage.getItem(VF_AUTO_STORE);
+      if (v === VF_HELIKOPTER) return vfHeliErlaubt() ? v : 'v5r';
+      return (v && Object.prototype.hasOwnProperty.call(VF_MODELL_PFADE, v)) ? v : 'v5r';
+    } catch (e) { return 'v5r'; }
   }
   // Schaltung (Automatik/Manuell) fuer die virtuelle Fahrt. Manuell schaltet der Fahrer mit I/K.
   const VF_SCHALTUNG_STORE = 'omegasim-vf-schaltung';
@@ -1838,6 +1937,31 @@
   function vfGrafikSetzen(id) {
     try { localStorage.setItem(VF_GRAFIK_STORE, id); } catch (e) { /* egal */ }
   }
+  // ---- RC STUNT COPTER: STEUER-OPTIONEN (v1.6.27, Issue #15) ---------------------------------
+  // Aus dem RC-Spiel (invertRoll, gyroAssist): Rollen/Nicken umkehrbar und eine Gyro-Stabilisierung,
+  // die den Helikopter ohne Eingang von selbst aufrichtet. Gespeichert unter eigenen Schluesseln.
+  const VF_HUB_INVERT_ROLL_STORE = 'omegasim-vf-hub-invert-roll';
+  const VF_HUB_INVERT_PITCH_STORE = 'omegasim-vf-hub-invert-pitch';
+  const VF_HUB_GYRO_STORE = 'omegasim-vf-hub-gyro';
+  function vfHubInvertRoll() { try { return localStorage.getItem(VF_HUB_INVERT_ROLL_STORE) === 'an'; } catch (e) { return false; } }
+  function vfHubInvertPitch() { try { return localStorage.getItem(VF_HUB_INVERT_PITCH_STORE) === 'an'; } catch (e) { return false; } }
+  function vfHubGyro() { try { return localStorage.getItem(VF_HUB_GYRO_STORE) !== 'aus'; } catch (e) { return true; } }
+  function vfHubSetzen(key, an) { try { localStorage.setItem(key, an ? 'an' : 'aus'); } catch (e) { /* egal */ } }
+  // Optionen > Virtuell (sub-opt-virtuell, 00-index.head.html): die Seite mit den gespeicherten
+  // Werten fuellen und bei Aenderung auf dieselben Schluessel schreiben, die vfGrafik/vfHubGyro
+  // beim Fahren lesen. Laeuft einmal beim Start (das Skript steht am Ende des Body).
+  function vfOptionenVirtuellInit() {
+    const g = $('setting-vf-grafik');
+    if (g) { g.value = vfGrafik(); g.addEventListener('change', () => vfGrafikSetzen(g.value)); }
+    const ir = $('setting-vf-hub-invert-roll');
+    if (ir) { ir.checked = vfHubInvertRoll(); ir.addEventListener('change', () => vfHubSetzen(VF_HUB_INVERT_ROLL_STORE, ir.checked)); }
+    const ip = $('setting-vf-hub-invert-pitch');
+    if (ip) { ip.checked = vfHubInvertPitch(); ip.addEventListener('change', () => vfHubSetzen(VF_HUB_INVERT_PITCH_STORE, ip.checked)); }
+    const gy = $('setting-vf-hub-gyro');
+    if (gy) { gy.checked = vfHubGyro(); gy.addEventListener('change', () => vfHubSetzen(VF_HUB_GYRO_STORE, gy.checked)); }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', vfOptionenVirtuellInit);
+  else vfOptionenVirtuellInit();
   // v1.5 (WIP, Plan Paket 4 "Tageszeit"): Farbstimmung der virtuellen Fahrt. Himmel (Horizont, Zenit), Nebel
   // und die Farbe des Lichts auf allem Beleuchteten; selbstleuchtende Teile (Lichter) bleiben, wie sie sind.
   // Die Sonnenrichtung bleibt fest (die Schattenkarte haengt an ihr). Keine Nacht: es gibt keine Lichtkegel.
@@ -2158,8 +2282,61 @@
   // haelt den Winkel bei etwa 25 Grad. Abgestimmt am Pruefstand (Node-Nachbau von vfDynamik, je 6 s Kreisfahrt):
   //   Vollgas ab 10 m/s: Schwimmwinkel 24-27 Grad, stabil (Streuung < 1,3 Grad bei halbem Einschlag), kein Dreher bis 45 m/s;
   //   halbes Gas: 0,4-10 Grad (Griff), Rollen: < 7 Grad. Ohne Grenze und Gyro drehte sich das Auto bei Vollgas ein.
+  // v1.6.27 GEMELDET: "Wenn ich lenke und Vollgas gebe, sollte das Heck direkt kommen." Bis 1.6.26 brauchte der Drift
+  // 0,6-1,2 s (tc 0,9, Gierträgheit des GT3). Jetzt: die Traktion darf den ganzen Hinterachsgriff nehmen (tc 1), das
+  // Traegheitsmoment ist das eines leichten Autos (x0,25) und der Gyro etwas weicher (0,15). Pruefstand: Lenken + Vollgas
+  // bringt das Heck in 0,25-0,43 s auf 15 Grad, der Drift steht dann bei 28-33 Grad; halbes Gas greift weiter (< 12 Grad).
   const VF_DRIFT_PROFIL = (P) => ({ muV: P.muV * 0.55, muH: P.muH * 0.6, BV: (P.BV || 9) * 0.7, BH: (P.BH || 11) * 0.5, C: 1.15,
-    lenkGrad: 35, yawDamp: 0.6, tc: 0.9, kV: 0, kH: 0, lastEmpf: 0.05, gyro: 0.2, gyroV: 10, driftGrenze: 25 });
+    lenkGrad: 35, yawDamp: 0.6, tc: 1.0, kV: 0, kH: 0, lastEmpf: 0.05, gyro: 0.15, gyroV: 10, driftGrenze: 25, Iz: (P.Iz || 2300) * 0.25 });
+  // ---- DRIFT-RAUCH (v1.6.27, WIP) ----
+  // BESTELLT: "low-poly smoke einfuegen, der ganz am Anfang nur leicht ist und dann mehr wird, wenn die Reifen heisser
+  // werden." Rutscht die Hinterachse (Schraeglauf hinten > 0,12 rad, ab 3 m/s), steigen an beiden Hinterraedern Wolken
+  // auf: ein Ikosaeder (20 Flaechen, grau schattiert), das waechst, steigt und verblasst. Die Driftwaerme VF.driftHitze
+  // (0..1) heizt mit Schlupf mal Tempo (Zeitkonstante 3 s) und kuehlt ohne Rutschen (6 s); von ihr haengen Menge
+  // (4 bis 34 Wolken/s), Deckkraft (0,10 bis 0,55) und Groesse ab. Hoechstens VF_RAUCH_MAX Wolken, je eine Zeichnung.
+  const VF_RAUCH_MAX = 70;
+  function vfRauchHitze(H, schlupf, vMs, dt) {
+    const arbeit = Math.min(1.2, Math.max(0, (Math.abs(schlupf) - 0.08) / 0.35) * Math.min(1, vMs / 15));
+    const tau = arbeit > H ? 3 : 6;
+    return Math.max(0, Math.min(1, H + (arbeit - H) * dt / tau));
+  }
+  function vfRauchSchritt(dt, vMs, drift) {
+    const R = VF.rauch || (VF.rauch = []);
+    for (let i = R.length - 1; i >= 0; i--) {
+      const p = R[i];
+      p.t += dt;
+      if (p.t >= p.leben) { R.splice(i, 1); continue; }
+      p.y += p.steig * dt; p.x += p.vx * dt; p.z += p.vz * dt;
+    }
+    const aH = VF.dyn && VF.dyn.aH ? VF.dyn.aH : 0;
+    VF.driftHitze = drift ? vfRauchHitze(VF.driftHitze || 0, aH, vMs, dt) : Math.max(0, (VF.driftHitze || 0) - dt / 6);
+    if (!drift || Math.abs(aH) < 0.12 || vMs < 3) return;
+    const H = VF.driftHitze || 0;
+    VF.rauchSoll = (VF.rauchSoll || 0) + (4 + 30 * H) * dt;
+    const h = VF.h * Math.PI / 180, fx = Math.sin(h), fz = -Math.cos(h), rx = Math.cos(h), rz = Math.sin(h);
+    while (VF.rauchSoll >= 1) {
+      VF.rauchSoll -= 1;
+      if (R.length >= VF_RAUCH_MAX) R.shift();
+      const seite = Math.random() < 0.5 ? -1 : 1, hinten = VF_AUTO.L * 0.32, quer = VF_AUTO.B * 0.42 * seite;
+      R.push({ x: VF.x - fx * hinten + rx * quer, y: 0.6, z: VF.y - fz * hinten + rz * quer, t: 0,
+        leben: 1.2 + 0.9 * H + Math.random() * 0.4, steig: 1.2 + Math.random() * 0.8,
+        vx: -fx * 1.5 + (Math.random() - 0.5) * 1.2, vz: -fz * 1.5 + (Math.random() - 0.5) * 1.2,
+        s0: 0.7 + Math.random() * 0.3, s1: 2.6 + 3.2 * H, a0: 0.10 + 0.45 * H, dreh: Math.random() * 6.3 });
+    }
+  }
+  // Ein Ikosaeder mit Radius 1, Flaechen grau abgestuft (oben heller), 6 Zahlen je Ecke wie die Farbmodelle.
+  function vfRauchPufferBauen(gl) {
+    const g = (1 + Math.sqrt(5)) / 2, e = [[-1, g, 0], [1, g, 0], [-1, -g, 0], [1, -g, 0], [0, -1, g], [0, 1, g], [0, -1, -g], [0, 1, -g],
+      [g, 0, -1], [g, 0, 1], [-g, 0, -1], [-g, 0, 1]].map((v) => { const l = Math.hypot(v[0], v[1], v[2]); return v.map((c) => c / l); });
+    const f = [[0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
+      [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9], [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1]];
+    const a = [];
+    f.forEach((tr) => {
+      const ny = (e[tr[0]][1] + e[tr[1]][1] + e[tr[2]][1]) / 3, k = 0.62 + 0.3 * (ny + 1) / 2;
+      tr.forEach((i) => a.push(e[i][0], e[i][1], e[i][2], k, k, k * 1.02));
+    });
+    return vfPuffer(gl, a);
+  }
   function vfHandlingProfil(P) {
     if (!P) return P;
     const h = vfHandling();
@@ -2688,9 +2865,10 @@
     const genugWeg = VF.rundeAb ? VF.fort > VF.pts.length * 0.75 : VF.fort >= 0;
     if (ueber < 0) VF.zielRueck = (VF.zielRueck || 0) + 1;          // rueckwaerts ueber die Linie: die naechste zaehlt nicht
     else if (ueber > 0 && VF.zielRueck) VF.zielRueck--;
-    else if (ueber > 0 && !VF.abseits && genugWeg) {
+    else if (ueber > 0 && !VF.abseits && genugWeg && (!VF.hubschrauber || vfHubRundeErlaubt(jetzt))) {
       VF.zielAt = jetzt;
       VF.fort = 0;
+      if (VF.hubschrauber) vfHubRundeGezaehlt();
       vfRundeAnLinie(jetzt);
     }
     const b = new Uint8Array(19);
@@ -2881,6 +3059,7 @@
       const rich = VF.h * Math.PI / 180 + beta;
       VF.x += Math.sin(rich) * vE * sdt;
       VF.y -= Math.cos(rich) * vE * sdt;
+      vfRauchSchritt(sdt, vVoll, hand === 'drift');
     }
     // Raeder drehen mit dem Weg, Federung folgt Laengs- und Querbeschleunigung (neben der Bahn ruettelt es).
     const wegE = kmh / 3.6 * 100 * TRACK_UNITS_PER_CM * sdt;
@@ -2891,6 +3070,422 @@
       const stoss = VF.abseits && Math.abs(kmh) > 0.05 ? (Math.random() - 0.5) * VF.modell.d.masse * 9 * Math.sqrt(Math.max(1, (VF.dtBild || sdt) / sdt)) : 0;
       vfFederung(VF.feder, VF.ax || 0, VF.ay || 0, sdt, VF.modell.d, stoss);
     }
+  }
+  // ---- RC STUNT COPTER: EINGABE UND FLUG (v1.6.27, Issue #15) ----------------------------------
+  // Zwei Sticks, Mode 2 (Standard-Hubschrauber): linker Stick hoch/tief = Gas/Steigen (collective),
+  // links/rechts = Drehen (yaw); rechter Stick hoch/tief = Neigen (pitch), links/rechts = Rollen (roll).
+  // Die rechte Achse der Kamera wird im Helikopter-Modus nicht mehr als Kamera gelesen (vfDrehEingabe).
+  // Flugmodell wie im Vorbild (v1.6.27, Issue #15): Der Hubschrauber schwebt auf seinem Schubvektor.
+  // Nicken/Rollen kippt den Schub aus der Senkrechten - so verliert er beim Vorwaertsfliegen an Hoehe
+  // (der Schub hebt ihn nicht mehr voll), und der Luftwiderstand begrenzt das Tempo statt eines Deckels.
+  // Ein Regler (Gyro, Vorgabe) haelt die Lage am Stick und richtet ihn ohne Eingang von selbst auf.
+  const VF_HUB_GRAV = 15.8;     // Einheiten/s^2 Schwerkraft (wie im Vorbild; 1 Einheit ~ 1 cm)
+  const VF_HUB_THRUST = 28.5;   // Einheiten/s^2 max. Schub (Verhaeltnis 1,8 wie im Vorbild)
+  const VF_HUB_DRAG = 0.58;     // 1/s Luftwiderstand (Endtempo = Schubanteil / Drag)
+  const VF_HUB_BANK = 0.80;     // rad max. Schraeglage (~46 Grad), wie im Vorbild
+  const VF_HUB_ANG_GAIN = 7.8;  // 1/s Gyro: die Lage folgt dem Stick (proportional, wie im Vorbild)
+  const VF_HUB_ANG_RATE = 3.6;  // rad/s max. Drehgeschwindigkeit ohne Gyro (Stick = Drehrate, wie im Vorbild)
+  const VF_HUB_YAW = 166;       // Grad/s max. Drehgeschwindigkeit (~2,9 rad/s, wie im Vorbild)
+  const VF_HUB_MAXH = 120;      // Einheiten Decke (Flughoehe)
+  const VF_HUB_CRASH_VZ = 7;    // Einheiten/s Abwaerts-Tempo beim Aufprall, das kracht (wie im Vorbild)
+  const VF_HUB_CRASH_VH = 11;   // Einheiten/s Horizontaltempo beim Aufprall, das kracht (wie im Vorbild)
+  const VF_HUB_MAXV = 60;       // Einheiten/s Spitzentempo (nur fuer die Ton-Normalisierung)
+  const VF_HUB_ROTOR_DREH = 48; // rad/s Hauptrotor bei voller Drehzahl (Drehzahl F.rpm 0..1,15, wie im Vorbild)
+  // Der collective-Wert in der Stick-Mitte, wie im Vorbild: GRAV/THRUST. (Nicht der exakte
+  // Schwebe-Punkt, sondern die Mitte des Gaswegs: ohne Eingang sinkt er leicht, ein kleiner
+  // Gas-Stoss haelt die Hoehe - genau wie im Vorbild.) Voller Ausschlag nach oben = 1,0.
+  const VF_HUB_HOVER = VF_HUB_GRAV / VF_HUB_THRUST;
+  // Tasten fuer den Helikopter (eigener Satz, damit die Pfeiltasten nicht die Kamera bedienen).
+  const VF_HUB_TASTEN = { w: 'collHoch', s: 'collTief', arrowup: 'pitchVorn', arrowdown: 'pitchHinten',
+                          arrowleft: 'rollLinks', arrowright: 'rollRechts', a: 'yawLinks', d: 'yawRechts' };
+  function vfHubTaste(e, an) {
+    if (!VF.aktiv || !VF.hubschrauber || e.ctrlKey || e.altKey || e.metaKey) return;
+    const k = (e.key || '').toLowerCase();
+    const t = VF_HUB_TASTEN[k];
+    if (!t) return;
+    if (!VF.hubTasten) VF.hubTasten = {};
+    VF.hubTasten[t] = an;
+    e.preventDefault();
+  }
+  window.addEventListener('keydown', (e) => vfHubTaste(e, true));
+  window.addEventListener('keyup', (e) => vfHubTaste(e, false));
+  window.addEventListener('blur', () => { VF.hubTasten = {}; });
+  // Eingabe: [collective(-1..1), yaw, pitch, roll] - positive Werte = steigen / Nase rechts / vorwaerts / rechts.
+  function vfHubEingabe() {
+    let coll = 0, yaw = 0, pitch = 0, roll = 0;
+    const sL = VF.stickL, sR = VF.stick;
+    const frisch = (s) => s && performance.now() - s.t < VF_DREH_PAD_MS;
+    if (frisch(sL)) { coll += -sL.y; yaw += sL.x; }        // linker Stick: hoch = steigen, rechts = rechts drehen
+    if (frisch(sR)) { pitch += -sR.y; roll += sR.x; }      // rechter Stick: hoch = vorwaerts, rechts = rechts rollen
+    const k = VF.hubTasten || {};
+    if (k.collHoch) coll += 1; if (k.collTief) coll -= 1;
+    if (k.yawLinks) yaw -= 1; if (k.yawRechts) yaw += 1;
+    if (k.pitchVorn) pitch += 1; if (k.pitchHinten) pitch -= 1;
+    if (k.rollLinks) roll -= 1; if (k.rollRechts) roll += 1;
+    return [Math.max(-1, Math.min(1, coll)), Math.max(-1, Math.min(1, yaw)),
+            Math.max(-1, Math.min(1, pitch)), Math.max(-1, Math.min(1, roll))];
+  }
+  // Ein Bildschritt des Flugmodells. Ersetzt im Helikopter-Modus vfFahrPhysik + die Auto-Logik.
+  // Wie im Vorbild: Der Schub wirkt laengs des "oben"-Vektors des Modells. Nicken/Rollen kippt den
+  // Schub aus der Senkrechten, deshalb verliert der Copter beim Vorwaertsfliegen an Hoehe, und der
+  // Luftwiderstand begrenzt das Tempo. Ohne Gyro richtet er sich nicht selbst auf (Lage bleibt).
+  function vfHubPhysik(dt) {
+    const e = vfHubEingabe();
+    let coll = e[0], yaw = e[1], pitch = e[2], roll = e[3];
+    // Steuer-Optionen (Optionen > VIRTUAL): Rollen/Nicken umkehrbar, Gyro richtet ohne Eingang auf.
+    if (vfHubInvertRoll()) roll = -roll;
+    if (vfHubInvertPitch()) pitch = -pitch;
+    const gyro = vfHubGyro();
+    const F = VF.flug || (VF.flug = { vz: 0, vx: 0, vy: 0, rpm: 0, collective: 0, yawRate: 0, angPitch: 0, angRoll: 0 });
+    const inLuft = (VF.z || 0) > 0.0001;
+
+    // --- Collective & Drehzahl (wie im Vorbild): Mitte = leichtes Schweben, hoch = steigen, runter = sinken.
+    // Am Boden ohne Eingang bleibt der Rotor aus, so startet der Copter aus dem Stand.
+    let zielColl = VF_HUB_HOVER + coll * (coll >= 0 ? (1 - VF_HUB_HOVER) : VF_HUB_HOVER);
+    if (!inLuft && coll <= 0.05) zielColl = 0;
+    zielColl = Math.max(0, Math.min(1, zielColl));
+    F.collective = (F.collective || 0) + (zielColl - (F.collective || 0)) * Math.min(1, dt * 9);
+    const zielRpm = F.collective > 0.04 ? Math.max(0.48, Math.min(1.15, 0.55 + F.collective * 0.55)) : 0;
+    const spool = zielRpm > (F.rpm || 0) ? 2.8 : 1.4;
+    F.rpm = (F.rpm || 0) + (zielRpm - (F.rpm || 0)) * Math.min(1, dt * spool);
+
+    // --- Lage: Gyro haelt die Schraeglage am Stick (begrenzt); ohne Gyro ist der Stick eine Drehrate.
+    const zielPitch = Math.max(-VF_HUB_BANK, Math.min(VF_HUB_BANK, pitch * VF_HUB_BANK));
+    const zielRoll = Math.max(-VF_HUB_BANK, Math.min(VF_HUB_BANK, roll * VF_HUB_BANK));
+    if (gyro) {
+      // Proportional: der Winkel folgt dem Befehl, losgelassen richtet er sich von selbst auf.
+      VF.pitch = (VF.pitch || 0) + (zielPitch - (VF.pitch || 0)) * Math.min(1, dt * VF_HUB_ANG_GAIN);
+      VF.roll = (VF.roll || 0) + (zielRoll - (VF.roll || 0)) * Math.min(1, dt * VF_HUB_ANG_GAIN);
+    } else {
+      // Ohne Gyro: der Stick ist eine Drehrate. Laesst man ihn los, richtet ein Pendel den Copter
+      // langsam wieder auf (wie das Vorbild ohne GyroAssist): je schraeger er steht, desto staerker.
+      const stickAus = Math.max(0, 1 - Math.hypot(pitch, roll) * 1.6);
+      const pendPitch = -VF.pitch * 2.4 * stickAus * (0.35 + 0.65 * Math.abs(Math.cos(VF.pitch || 0)));
+      const pendRoll = -VF.roll * 2.4 * stickAus * (0.35 + 0.65 * Math.abs(Math.cos(VF.roll || 0)));
+      F.angPitch = (F.angPitch || 0) + (pitch * VF_HUB_ANG_RATE + pendPitch - (F.angPitch || 0)) * Math.min(1, dt * 7.5);
+      F.angRoll = (F.angRoll || 0) + (roll * VF_HUB_ANG_RATE + pendRoll - (F.angRoll || 0)) * Math.min(1, dt * 7.5);
+      VF.pitch = (VF.pitch || 0) + F.angPitch * dt;
+      VF.roll = (VF.roll || 0) + F.angRoll * dt;
+    }
+    // Am Boden legt er sich flach (wie das Vorbild: euler.x/z werden gedämpft).
+    if (!inLuft) {
+      VF.pitch = (VF.pitch || 0) * Math.max(0, 1 - dt * 5);
+      VF.roll = (VF.roll || 0) * Math.max(0, 1 - dt * 5);
+    }
+
+    // --- Drehen (yaw): die Nase dreht weich zur Eingabe (Grad/s).
+    const zielYaw = yaw * VF_HUB_YAW;
+    F.yawRate = (F.yawRate || 0) + (zielYaw - (F.yawRate || 0)) * Math.min(1, dt * 9.5);
+    VF.h += F.yawRate * dt;
+
+    // --- Schubvektor: der "oben"-Vektor des Modells in Weltkoordinaten (Welt +y = Hoehe).
+    // Lage = vfRy(H) * vfRx(pitch) * vfRz(roll) mit H = PI - h*PI/180 (siehe vfHubLage). Der Schub
+    // wirkt laengs dieses Vektors, die Schwerkraft senkrecht nach unten, der Luftwiderstand gegen die Bewegung.
+    const H = Math.PI - VF.h * Math.PI / 180;
+    const cP = Math.cos(VF.pitch || 0), sP = Math.sin(VF.pitch || 0);
+    const cR = Math.cos(VF.roll || 0), sR = Math.sin(VF.roll || 0);
+    const cH = Math.cos(H), sH = Math.sin(H);
+    const ux = cH * sR - sH * sP * cR;   // Welt X (VF.x)
+    const uy = cP * cR;                  // Welt Y = Hoehe (VF.z)
+    const uz = sH * sR + cH * sP * cR;   // Welt Z (VF.y)
+    const lift = (F.rpm || 0) * (F.collective || 0) * VF_HUB_THRUST;
+
+    // --- Kraefte & Geschwindigkeit.
+    F.vx = (F.vx || 0) + (ux * lift) * dt;
+    F.vz = (F.vz || 0) + (uy * lift - VF_HUB_GRAV) * dt;
+    F.vy = (F.vy || 0) + (uz * lift) * dt;
+    const d = Math.exp(-VF_HUB_DRAG * dt);
+    F.vx *= d; F.vz *= d; F.vy *= d;
+
+    // --- Ort.
+    VF.x += F.vx * dt;
+    VF.z += F.vz * dt;
+    VF.y += F.vy * dt;
+
+    // --- Boden/Decke/Crash (wie im Vorbild: eine harte Landung kracht, eine sanfte setzt ihn ab).
+    if (VF.z <= 0) {
+      const warLuft = VF.hubLuft;
+      VF.hubLuft = false;
+      const hart = warLuft && ((F.vz || 0) <= -VF_HUB_CRASH_VZ || Math.hypot(F.vx || 0, F.vy || 0) > VF_HUB_CRASH_VH || uy < 0.45);
+      if (hart) { vfHubCrash(); return; }
+      VF.z = 0; if ((F.vz || 0) < 0) F.vz = 0;
+      F.vx = (F.vx || 0) * 0.88; F.vy = (F.vy || 0) * 0.88;
+    } else VF.hubLuft = true;
+    if (VF.z > VF_HUB_MAXH) { VF.z = VF_HUB_MAXH; if ((F.vz || 0) > 0) F.vz = 0; }
+
+    // --- Rotor-Optik & Werte fuer den Ton.
+    VF.rotor = ((VF.rotor || 0) + (F.rpm || 0) * VF_HUB_ROTOR_DREH * dt) % (Math.PI * 2);
+    VF.hubLast = Math.abs(coll) + Math.hypot(pitch, roll) * 0.45;
+    VF.hubSpeed = Math.hypot(F.vx || 0, F.vy || 0);
+  }
+  // ---- ROTOR-TON DES RC STUNT COPTERS (v1.6.27, Issue #15) -----------------------------
+  // Synthetisch wie im Vorbild (Web Audio, keine Dateien): ein tiefer, pulsierender Blatt-Schlag
+  // (BVI) aus rosa Rauschen durch einen Bandpass, dazu das mechanische Getriebe-Wimmern (zwei
+  // Oszillatoren), der Heckrotor-Schlag und das Luftrauschen. Alles laeuft ueber die Drehzahl
+  // F.rpm (0..1,15) wie im Vorbild: hohes Gas dreht den Rotor hoch, der Ton wird schneller/heller.
+  // Der Klang haengt am gleichen audioCtx wie der Motorsound (80-sound.js), also an der Sound-Einstellung.
+  const vfHubTon = {
+    ctx: null, master: null, bvi: null, bviFilter: null, bviGain: null,
+    tail: null, tailFilter: null, tailGain: null,
+    gear1: null, gear2: null, gearFilter: null, gearGain: null,
+    air: null, airFilter: null, airGain: null,
+    phase: 0, tailPhase: 0, letzt: 0,
+    // Einen rosa (oder weissen) Rausch-Puffer bauen, wie im Vorbild.
+    rausch(sek, rosa) {
+      const n = Math.floor(this.ctx.sampleRate * sek);
+      const buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (let i = 0; i < n; i++) {
+        const w = Math.random() * 2 - 1;
+        if (rosa) {
+          b0 = 0.99886 * b0 + w * 0.0555179;
+          b1 = 0.99332 * b1 + w * 0.0750759;
+          b2 = 0.96900 * b2 + w * 0.1538520;
+          b3 = 0.86650 * b3 + w * 0.3104856;
+          b4 = 0.55000 * b4 + w * 0.5329522;
+          b5 = -0.7616 * b5 - w * 0.0168980;
+          d[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.06;
+          b6 = w * 0.115926;
+        } else d[i] = w * 0.5;
+      }
+      return buf;
+    },
+    init() {
+      if (this.ctx || !audioCtx) return;
+      try {
+        this.ctx = audioCtx;
+        this.master = this.ctx.createGain();
+        this.master.gain.value = 0.8;
+        this.master.connect(this.ctx.destination);
+        const pink = this.rausch(3.0, true);
+        // 1. Hauptrotor (BVI): rosa Rauschen durch einen Bandpass, pulsierend (Blatt-Schlag).
+        const bviNoise = this.ctx.createBufferSource();
+        bviNoise.buffer = pink; bviNoise.loop = true;
+        this.bviFilter = this.ctx.createBiquadFilter();
+        this.bviFilter.type = 'bandpass'; this.bviFilter.frequency.value = 115; this.bviFilter.Q.value = 1.65;
+        this.bviGain = this.ctx.createGain(); this.bviGain.gain.value = 0.0001;
+        bviNoise.connect(this.bviFilter).connect(this.bviGain).connect(this.master);
+        bviNoise.start();
+        // 2. Heckrotor-Schlag (~4,5x schneller als der Hauptrotor).
+        const tailNoise = this.ctx.createBufferSource();
+        tailNoise.buffer = pink; tailNoise.loop = true;
+        this.tailFilter = this.ctx.createBiquadFilter();
+        this.tailFilter.type = 'bandpass'; this.tailFilter.frequency.value = 900; this.tailFilter.Q.value = 2.2;
+        this.tailGain = this.ctx.createGain(); this.tailGain.gain.value = 0.0001;
+        tailNoise.connect(this.tailFilter).connect(this.tailGain).connect(this.master);
+        tailNoise.start();
+        // 3. Getriebe (Hauptzahnrad + Ritzel): zwei Oszillatoren durch einen Bandpass.
+        this.gear1 = this.ctx.createOscillator(); this.gear1.type = 'sawtooth'; this.gear1.frequency.value = 380;
+        this.gear2 = this.ctx.createOscillator(); this.gear2.type = 'triangle'; this.gear2.frequency.value = 763;
+        this.gearFilter = this.ctx.createBiquadFilter();
+        this.gearFilter.type = 'bandpass'; this.gearFilter.frequency.value = 620; this.gearFilter.Q.value = 3.2;
+        this.gearGain = this.ctx.createGain(); this.gearGain.gain.value = 0.0001;
+        this.gear1.connect(this.gearFilter); this.gear2.connect(this.gearFilter);
+        this.gearFilter.connect(this.gearGain).connect(this.master);
+        this.gear1.start(); this.gear2.start();
+        // 4. Luftrauschen (Abwind + Fahrtwind).
+        const airNoise = this.ctx.createBufferSource();
+        airNoise.buffer = pink; airNoise.loop = true;
+        this.airFilter = this.ctx.createBiquadFilter();
+        this.airFilter.type = 'bandpass'; this.airFilter.frequency.value = 820; this.airFilter.Q.value = 0.85;
+        this.airGain = this.ctx.createGain(); this.airGain.gain.value = 0.0001;
+        airNoise.connect(this.airFilter).connect(this.airGain).connect(this.master);
+        airNoise.start();
+        this.letzt = this.ctx.currentTime;
+      } catch (e) { this.ctx = null; }
+    },
+    update(rpm, load, airspeed, dist, aus) {
+      if (!this.ctx || !audioCtx || this.ctx.state !== 'running') return;
+      const now = this.ctx.currentTime;
+      const dt = Math.min(0.05, Math.max(0.001, now - this.letzt));
+      this.letzt = now;
+      const r = Math.max(0.04, Math.min(1.3, rpm));
+      const last = Math.max(0, Math.min(1.5, load));
+      const speed = Math.min(1.0, airspeed);
+      const atten = 1 / (1 + (dist || 0) * 0.032);
+      if (aus || rpm <= 0.025) {
+        const g = 0.0001;
+        this.bviGain.gain.setTargetAtTime(g, now, 0.07);
+        this.tailGain.gain.setTargetAtTime(g, now, 0.07);
+        this.gearGain.gain.setTargetAtTime(g, now, 0.07);
+        this.airGain.gain.setTargetAtTime(g, now, 0.07);
+        return;
+      }
+      // Hauptrotor: Blatt-Passfrequenz (22 Hz Leerlauf -> 46 Hz voll) und Pulsform (scharfer Angriff, Abfall).
+      const bp = 18 + r * 28 + last * 3.5;
+      this.phase = (this.phase + bp * dt) % 1.0;
+      const pulse = Math.pow(1 - this.phase, 2.6);
+      const slap = 0.32 + 0.68 * pulse;
+      this.bviFilter.frequency.setTargetAtTime(95 + r * 75 + last * 65 + pulse * 45, now, 0.015);
+      this.bviGain.gain.setTargetAtTime(Math.min(0.68, (0.14 + r * 0.34 + last * 0.22) * slap * atten), now, 0.012);
+      // Heckrotor.
+      const tp = bp * 4.5;
+      this.tailPhase = (this.tailPhase + tp * dt) % 1.0;
+      const tPulse = 0.45 + 0.55 * Math.pow(1 - this.tailPhase, 2.0);
+      this.tailFilter.frequency.setTargetAtTime(460 + r * 260, now, 0.02);
+      this.tailGain.gain.setTargetAtTime(Math.min(0.24, (0.04 + r * 0.11 + last * 0.05) * tPulse * atten), now, 0.015);
+      // Getriebe.
+      const pin = 260 + r * 540 + last * 95;
+      this.gear1.frequency.setTargetAtTime(pin, now, 0.03);
+      this.gear2.frequency.setTargetAtTime(pin * 2.01, now, 0.03);
+      this.gearFilter.frequency.setTargetAtTime(pin * 1.4, now, 0.03);
+      this.gearGain.gain.setTargetAtTime(Math.min(0.11, (0.018 + r * 0.042 + last * 0.025) * atten), now, 0.03);
+      // Luftrauschen.
+      this.airFilter.frequency.setTargetAtTime(520 + speed * 780 + last * 260, now, 0.04);
+      this.airGain.gain.setTargetAtTime(Math.min(0.36, (0.03 + r * 0.12 + speed * 0.24 + last * 0.08) * atten), now, 0.04);
+    },
+    // Ein kurzer Ton (fuer den Crash): Oszillator mit Frequenz- und Lautstaerke-Abfall.
+    ton(freq, endFreq, dur, typ, gain) {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      try {
+        const now = this.ctx.currentTime, osc = this.ctx.createOscillator(), g = this.ctx.createGain();
+        osc.type = typ;
+        osc.frequency.setValueAtTime(freq, now);
+        if (endFreq) osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + dur);
+        g.gain.setValueAtTime(gain, now);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        osc.connect(g).connect(this.ctx.destination);
+        osc.start(); osc.stop(now + dur + 0.02);
+      } catch (e) { /* egal */ }
+    },
+    // Crash: ein Rausch-Knall plus tiefer Stoß und metallische Klaenge (wie im Vorbild).
+    crash(intensitaet) {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      try {
+        const now = this.ctx.currentTime;
+        const amp = Math.min(1.4, Math.max(0.4, intensitaet || 1));
+        const buf = this.rausch(0.5, true);
+        const src = this.ctx.createBufferSource(); src.buffer = buf;
+        const g = this.ctx.createGain();
+        g.gain.setValueAtTime(0.55 * amp, now);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+        src.connect(g).connect(this.ctx.destination); src.start();
+        this.ton(125, 30, 0.30, 'sine', 0.52 * amp);
+        setTimeout(() => this.ton(420, 180, 0.12, 'triangle', 0.22 * amp), 65);
+        setTimeout(() => this.ton(310, 140, 0.10, 'triangle', 0.15 * amp), 140);
+      } catch (e) { /* egal */ }
+    },
+    ausblenden() {
+      if (!this.ctx || this.ctx.state !== 'running') return;
+      const now = this.ctx.currentTime;
+      this.bviGain.gain.setTargetAtTime(0.0001, now, 0.07);
+      this.tailGain.gain.setTargetAtTime(0.0001, now, 0.07);
+      this.gearGain.gain.setTargetAtTime(0.0001, now, 0.07);
+      this.airGain.gain.setTargetAtTime(0.0001, now, 0.07);
+    }
+  };
+  // Crash: Ton, und der Copter wird auf die Bahn zurueckgesetzt (wie das Auto).
+  function vfHubCrash() {
+    if (soundEnabled) vfHubTon.crash(1);
+    VF.hubLuft = false;
+    vfZuruecksetzen();
+    showHudToast('Crash!');   // ueberschreibt den Standard-Text von vfZuruecksetzen
+  }
+  // Je Bild: den Rotor-Ton mit der aktuellen Drehzahl, Last und Entfernung fahren (nach vfMalen,
+  // dann ist VF.augeJetzt frisch fuer die Entfernungsdaempfung).
+  function vfHubTonSchritt(dt) {
+    if (!VF.hubschrauber) return;
+    if (!soundEnabled) { vfHubTon.ausblenden(); return; }
+    vfHubTon.init();
+    if (!vfHubTon.ctx) return;
+    const F = VF.flug;
+    const rpm = F ? (F.rpm || 0) : 0;
+    const last = VF.hubLast || 0;
+    const speed = Math.min(1, (VF.hubSpeed || 0) / VF_HUB_MAXV);
+    const auge = VF.augeJetzt;
+    const dist = auge ? Math.hypot(auge[0] - VF.x, auge[1] - (VF.z || 0), auge[2] - VF.y) : 0;
+    vfHubTon.update(rpm, last, speed, dist, false);
+  }
+  // ---- LEUCHTENDE TORE FUER DEN HELI (v1.6.27, WIP) ----
+  // BESTELLT: "Dort wo Sektoren sind, bitte - wenn der Heli ausgewaehlt ist - leuchtende Tore an der Strecke senkrecht
+  // hochziehen. Wenn sie durchflogen werden und dann das Start/Ziel-Tor, dann soll eine Runde gezaehlt werden. Mit Tore
+  // meine ich links und rechts am Streckenrand Lichtstangen, die in die Hoehe gehen."
+  // Tore an den Sektoranfaengen der gebauten Bahn (sektorAnfaenge, 60-track.js), sonst (freie Strecke, kurze Bahn ohne
+  // Sektoren) bei einem und zwei Dritteln der Strecke; das letzte Tor ist Start/Ziel (VF.zielIdx). Je Tor zwei Stangen
+  // jenseits des Randsteins, VF_HUB_TOR_H hoch. Durchflogen = die Strecke vom letzten zum jetzigen Flugort schneidet die
+  // Linie zwischen den Stangen, unterhalb der Spitze. Die Runde (vfPaket) zaehlt beim Heli nur, wenn er eben durch das
+  // Start/Ziel-Tor geflogen ist und vorher alle anderen Tore der Reihe nach (die erste Ueberfahrt startet nur die Uhr).
+  const VF_HUB_TOR_H = 40, VF_HUB_TOR_B = 0.9;
+  function vfHubToreBauen() {
+    const pts = VF.pts, nrm = VF.nrm, n = pts.length;
+    let idx = [];
+    try {
+      const anf = !VF.frei && typeof sektorAnfaenge === 'function' ? sektorAnfaenge(VF.tiles, true, true) : null;
+      if (anf && anf.length > 1) {
+        anf.slice(1).forEach((k) => { const i = pts.findIndex((p) => p.tile === k); if (i >= 0) idx.push(i); });
+      }
+    } catch (e) { idx = []; }
+    const z = VF.zielIdx || 0;
+    if (!idx.length) idx = [Math.round(n / 3), Math.round(2 * n / 3)].map((d) => (z + d) % n);
+    idx.sort((a, b) => ((a - z + n) % n) - ((b - z + n) % n));
+    idx.push(z);
+    const r = TRACK_HALF_W + TRACK_KERB_W + 1.5;
+    return { naechstes: 0, sfAt: 0, liste: idx.map((i, j) => ({ i, sf: j === idx.length - 1,
+      l: [pts[i].x + nrm[i].x * r, pts[i].y + nrm[i].y * r], r: [pts[i].x - nrm[i].x * r, pts[i].y - nrm[i].y * r] })) };
+  }
+  // Schneiden sich die Strecken a-b (Flug) und c-d (Tor) in der Ebene?
+  function vfStreckenSchnitt(a, b, c, d) {
+    const k = (p, q, r) => (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]);
+    const d1 = k(c, d, a), d2 = k(c, d, b), d3 = k(a, b, c), d4 = k(a, b, d);
+    return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0)) && d1 !== 0 && d2 !== 0;
+  }
+  // Je Flugschritt: geht der Flug durch das naechste Tor (oder durch Start/Ziel)?
+  function vfHubToreSchritt(vorX, vorY) {
+    const T = VF.hubTore;
+    if (!T) return;
+    const a = [vorX, vorY], b = [VF.x, VF.y], hoch = (VF.z || 0) <= VF_HUB_TOR_H;
+    const sf = T.liste[T.liste.length - 1];
+    if (hoch && vfStreckenSchnitt(a, b, sf.l, sf.r)) T.sfAt = rennZeitJetzt();
+    const g = T.liste[T.naechstes];
+    if (g && !g.sf && hoch && vfStreckenSchnitt(a, b, g.l, g.r)) {
+      T.naechstes++;
+      VF.hubTorPuffer = null;   // neu zeichnen: durchflogene Tore werden gruen
+      showHudToast(t('Tor') + ' ' + T.naechstes + '/' + (T.liste.length - 1));
+    }
+  }
+  // Fuer vfPaket: darf diese Ueberfahrt der Linie eine Runde sein?
+  function vfHubRundeErlaubt(jetzt) {
+    const T = VF.hubTore;
+    if (!T) return true;
+    const durchSf = T.sfAt && jetzt - T.sfAt < 1500;
+    return !!durchSf && (!VF.rundeAb || T.naechstes >= T.liste.length - 1);
+  }
+  function vfHubRundeGezaehlt() { if (VF.hubTore) { VF.hubTore.naechstes = 0; VF.hubTore.sfAt = 0; VF.hubTorPuffer = null; } }
+  // Die Stangen als Farbkasten (6 Zahlen je Ecke), in Weltkoordinaten (x, Hoehe, y). Offene Tore leuchten cyan,
+  // durchflogene gruen, Start/Ziel gelb.
+  function vfHubTorPufferBauen(gl) {
+    const T = VF.hubTore, a = [];
+    const kasten = (x, y, f) => {
+      const b = VF_HUB_TOR_B / 2, x0 = x - b, x1 = x + b, z0 = y - b, z1 = y + b, y0 = 0, y1 = VF_HUB_TOR_H;
+      const v = [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]];
+      [[4, 5, 6, 7], [1, 0, 3, 2], [0, 4, 7, 3], [5, 1, 2, 6], [3, 7, 6, 2]].forEach(([p, q, r, u]) =>
+        [p, q, r, p, r, u].forEach((i) => a.push(v[i][0], v[i][1], v[i][2], f[0], f[1], f[2])));
+    };
+    T.liste.forEach((g, j) => {
+      const f = g.sf ? [1.6, 1.4, 0.3] : j < T.naechstes ? [0.3, 1.5, 0.45] : [0.35, 1.4, 1.7];
+      kasten(g.l[0], g.l[1], f); kasten(g.r[0], g.r[1], f);
+    });
+    return vfPuffer(gl, a);
+  }
+  // Ein Bildschritt des Helikopters (ersetzt den ganzen Auto-Zweig von vfBild).
+  function vfHubSchritt(dt) {
+    const st = physEngine.state;
+    if (st) st.speedKmh = 0;
+    VF.dtBild = dt;
+    const vorX = VF.x, vorY = VF.y;
+    vfHubPhysik(dt);
+    vfHubToreSchritt(vorX, vorY);
+    // Streckenort fuer die Rundenzaehlung (Start/Ziel, vfPaket) und die Hoehe ueber der Bahn.
+    const o = vfOrt(VF.pts, VF.nrm, VF.x, VF.y, VF.idx);
+    VF.idx = o.idx;
+    if (VF.splits && VF.splits[VF.idx] === undefined) VF.splits[VF.idx] = rennZeitJetzt() - VF.rundeAb;
+    VF.abseits = false;   // fliegt, "neben der Bahn" gibt es nicht
+    // VF.zielVor wird hier NICHT gesetzt: vfPaket (Takt) vergleicht es mit VF.idx, um die Start/Ziel-Linie zu zaehlen.
+    vfMalen();
+    vfHud();
+    // Rotor-Ton nach dem Malen (dann ist VF.augeJetzt frisch fuer die Entfernungsdaempfung).
+    vfHubTonSchritt(dt);
   }
   function vfBild(now) {
     if (!VF.aktiv) return;
@@ -2906,6 +3501,7 @@
     if (rennPauseAktiv()) {
       VF.letzt = now; VF.dtBild = 0; vfMalen(); vfHud();
       if (physEngine && physEngine.state) physEngine.state.vfNutzung = 0;
+      if (VF.hubschrauber) vfHubTon.ausblenden();
       return;
     }
     const dt = VF.letzt ? Math.min(0.05, (now - VF.letzt) / 1000) : 0.016;
@@ -2913,6 +3509,15 @@
     if (VF.wxEinmalAt && rennZeitJetzt() >= VF.wxEinmalAt) vfWetterEinmal();
     const st = physEngine.state;
     VF.dtBild = dt;
+    // RC Stunt Copter: der ganze Auto-Zweig entfaellt - Flug, Zeiten und Anzeige laufen ueber vfHubSchritt.
+    if (VF.hubschrauber) {
+      if (VF.modus && (VF.modus === 'endurance' || VF.modus === 'qualifying') && VF.limit) {
+        VF.modusZeit += dt;
+        if (VF.modusZeit >= VF.limit * 60) vfRennenEnde();
+      }
+      vfHubSchritt(dt);
+      return;
+    }
     // Zeitmodi (Endurance, Qualifying): laufen gegen die Rennzeit.
     if (VF.modus && (VF.modus === 'endurance' || VF.modus === 'qualifying') && VF.limit) {
       VF.modusZeit += dt;
@@ -3294,6 +3899,8 @@
   function vfZuruecksetzen() {
     const p = VF.pts[VF.idx];
     VF.x = p.x; VF.y = p.y; VF.h = p.heading;
+    // v1.6.27 (Issue #15): beim Hubschrauber setzt das Zuruecksetzen auch die Flughoehe zurueck.
+    if (VF.hubschrauber) { VF.z = 0; VF.flug = null; VF.roll = 0; VF.pitch = 0; VF.hubLuft = false; }
     physEngine.state.speedKmh = 0;
     VF.abseits = false;
     VF.dyn = { vy: 0, r: 0 };
@@ -3440,9 +4047,31 @@
       gl.disable(gl.BLEND);
       gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
     }
-    if (VF.modell && VF.tprog) vfModellMalen(gl, pv, blick, k.auge);
+    if (VF.hubschrauber) {
+      // RC Stunt Copter: Rumpf mit der Fluglage (Hoehe, Schraeglage, Nicken), darueber der drehende Hauptrotor.
+      gl.uniform1f(L.alf, 1.0);
+      const welt = vfHubLage(VF.x, VF.y, VF.h, VF.z || 0, VF.roll || 0, VF.pitch || 0);
+      zeichne(VF.auto, welt);
+      if (VF.hubRotor) zeichne(VF.hubRotor, vfMal(welt, vfRy(VF.rotor || 0)));
+      if (VF.hubTore) { if (!VF.hubTorPuffer) VF.hubTorPuffer = vfHubTorPufferBauen(gl); zeichne(VF.hubTorPuffer, vfT(0, 0, 0)); }
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    } else if (VF.modell && VF.tprog) vfModellMalen(gl, pv, blick, k.auge);
     else {
       zeichne(VF.auto, vfLage(VF.x, VF.y, VF.h));
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
+    // v1.6.27: Drift-Rauch (halbdurchsichtig, schreibt keine Tiefe), mit dem Farbprogramm.
+    if (VF.rauch && VF.rauch.length) {
+      gl.useProgram(VF.prog);
+      if (!VF.rauchPuffer) VF.rauchPuffer = vfRauchPufferBauen(gl);
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+      for (const p of VF.rauch) {
+        const u = p.t / p.leben, s = p.s0 + (p.s1 - p.s0) * Math.sqrt(u);
+        gl.uniform1f(L.alf, p.a0 * (1 - u) * Math.min(1, u * 8));
+        zeichne(VF.rauchPuffer, vfKette(vfT(p.x, p.y, p.z), vfRy(p.dreh + u), vfS(s, s * 0.8, s)));
+      }
+      gl.uniform1f(L.alf, 1.0);
+      gl.depthMask(true); gl.disable(gl.BLEND);
       gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
     }
     // NPCs: ihre eigenen Modelle an ihren Stellen.
@@ -3834,16 +4463,18 @@
   // Stick (aus pollGamepad): x/y nach Totzone und Kennlinie, mit Zeitstempel - bleibt der Takt aus
   // (Pad weg, Menue-Abfang), zaehlt der alte Wert nach VF_DREH_PAD_MS nicht mehr.
   function vfStickSetzen(pad, b) {
-    if (!pad || pad.mapping !== 'standard') { VF.stick = null; return; }
+    if (!pad || pad.mapping !== 'standard') { VF.stick = null; VF.stickL = null; return; }
     const belegt = (i) => Object.keys(b || {}).some((k) => b[k] && b[k].type === 'axis' && b[k].index === i);
-    const achse = (i) => {
-      if (belegt(i)) return 0;
+    const achse = (i, roh) => {
+      if (!roh && belegt(i)) return 0;
       const v = (pad.axes || [])[i] || 0, m = Math.abs(v);
       if (m < VF_DREH_TOT) return 0;
       const s = Math.min(1, (m - VF_DREH_TOT) / (1 - VF_DREH_TOT));
       return Math.sign(v) * s * s;
     };
     VF.stick = { x: achse(2), y: achse(3), t: performance.now() };
+    // Linker Stick (Achsen 0/1) fuer den Hubschrauber: roh, unabhaengig von der Auto-Belegung.
+    VF.stickL = { x: achse(0, true), y: achse(1, true), t: performance.now() };
   }
   function vfDrehTaste(e, an) {
     if (!VF.aktiv || e.ctrlKey || e.altKey || e.metaKey) return;
@@ -3857,7 +4488,8 @@
   window.addEventListener('blur', () => { VF.tasten = {}; });
   function vfDrehEingabe() {
     let x = 0, y = 0;
-    const s = VF.stick;
+    // Im Helikopter-Modus gehoert der rechte Stick dem Flug (pitch/roll), nicht der Kamera.
+    const s = VF.hubschrauber ? null : VF.stick;
     if (s && performance.now() - s.t < VF_DREH_PAD_MS) { x = s.x; y = s.y; }
     const k = VF.tasten;
     if (k) { x += (k.rechts ? 1 : 0) - (k.links ? 1 : 0); y += (k.runter ? 1 : 0) - (k.hoch ? 1 : 0); }
@@ -4029,7 +4661,10 @@
     const art = vfDrehArt(id), D = vfDreh(), ein = vfDrehEingabe();
     vfDrehSchritt(D, ein[0], ein[1], dt, vfDrehGrenzen(art));
     const k0 = vfKameraBasis(id, fx, fz, dt, art, D);
-    const k = art === 'kreisen' ? k0 : vfDrehAnwenden(k0, art, D, VF.x, 0, VF.y);
+    // Der Hubschrauber fliegt in der Hoehe: auch der Dreh-Mittelpunkt liegt dann auf der Flughoehe,
+    // sonst schwenkt die Kamera beim Umsehen/Oben um den Boden (nur sichtbar, wenn VF.z > 0).
+    const drehH = VF.hubschrauber ? (VF.z || 0) : 0;
+    const k = art === 'kreisen' ? k0 : vfDrehAnwenden(k0, art, D, VF.x, drehH, VF.y);
     // Bruecke (aus PR 4 von gnen54): die Kamera faehrt mit hoch; im Auto (Haube, Fahrer) neigt sich der Blick mit
     // der Rampe.
     const H = vfHzSpieler();
@@ -4049,24 +4684,28 @@
       // Haube hoeher liegt als die Speed-Dreams-Werte (z. B. Kaefer: Kofferraumhaube ~1,1 m hoch).
       const hb = VF.modell && VF.modell.meta && VF.modell.meta.haube;
       const vor = (hb ? hb.vor : 0.75) * s, hoch = (hb ? hb.hoch : 0.95 + (VF.modell ? 0.07 : 0.25)) * s;
-      const auge = [VF.x + fx * vor, hoch, VF.y + fz * vor];
+      const hubH = VF.hubschrauber ? (VF.z || 0) : 0;
+      const auge = [VF.x + fx * vor, hoch + hubH, VF.y + fz * vor];
       VF.kam = auge;
-      return { auge, ziel: [auge[0] + fx * 30, hoch - 1.2, auge[2] + fz * 30], fov: 70, nah: 0.3 };
+      return { auge, ziel: [auge[0] + fx * 30, hoch + hubH - 1.2, auge[2] + fz * 30], fov: 70, nah: 0.3 };
     }
     if (id === 'oben') {
       // Von oben, parallel zur Start/Ziel-Geraden: die Kamera schwebt mit dem Auto mit (x/y) und
       // dreht sich NICHT mit - das "Oben" der Ansicht zeigt immer entlang der Geraden.
       const oben = [Math.sin(VF.startH * Math.PI / 180), 0, -Math.cos(VF.startH * Math.PI / 180)];
-      const auge = [VF.x, 85, VF.y];
+      const hubH = VF.hubschrauber ? (VF.z || 0) : 0;
+      const auge = [VF.x, 85 + hubH, VF.y];
       VF.kam = null;
-      return { auge, ziel: [VF.x, 0, VF.y], oben, fov: 62, nah: 0.5 };
+      return { auge, ziel: [VF.x, hubH, VF.y], oben, fov: 62, nah: 0.5 };
     }
     const nah = id === 'nah';
     const hinten = nah ? 9 : 15, hoehe = nah ? 3.8 : 8, tau = nah ? 0.08 : 0.15;
     // Gedreht kreist der SOLL-Ort um das Auto; die Nachfuehrung (tau) bleibt dieselbe.
     const zh = nah ? 2.0 : 1.4, vor = nah ? 8 : 12;
-    const k = vfDrehAnwenden({ auge: [VF.x - fx * hinten, hoehe, VF.y - fz * hinten], ziel: [VF.x + fx * vor, zh, VF.y + fz * vor] },
-      art, D, VF.x, zh, VF.y);
+    // Der Hubschrauber fliegt in der Hoehe (VF.z): Kamera und Ziel folgen mit, der Kreis dreht um den Flugort.
+    const hubH = VF.hubschrauber ? (VF.z || 0) : 0;
+    const k = vfDrehAnwenden({ auge: [VF.x - fx * hinten, hoehe + hubH, VF.y - fz * hinten], ziel: [VF.x + fx * vor, zh + hubH, VF.y + fz * vor] },
+      art, D, VF.x, zh + hubH, VF.y);
     const soll = k.auge;
     const a = 1 - Math.exp(-Math.max(0, dt) / tau);
     VF.kam = VF.kam ? VF.kam.map((q, i) => q + (soll[i] - q) * a) : soll;
@@ -4328,7 +4967,8 @@
     VF.ui = { runde: q('.vf-runde'), letzte: q('.vf-letzte'), beste: q('.vf-beste'), delta: q('.vf-delta'), deltaBar: q('.vf-delta-bar > i'),
               modus: q('.vf-modus'), abseits: q('.vf-abseits'), acc: q('.vf-acc'), tempo: q('.vf-acc .vf-tempo'), gang: q('.vf-gang'),
               rpm: q('.vf-rpm'), reifen: Array.from(schicht.querySelectorAll('.vf-reifen > i')), tank: q('.vf-tank'), tankBar: q('.vf-tank-bar > i'),
-              dreh: q('.vf-dreh-stab'), kamFrei: q('.vf-kamfrei'), alt: {} };
+              dreh: q('.vf-dreh-stab'), kamFrei: q('.vf-kamfrei'),
+              hub: { box: q('.vf-hub'), z: q('.vf-hub-z'), v: q('.vf-hub-v') }, alt: {} };
     VF.wetterKnopf = q('[data-vf="wetter"]'); VF.wetterNass = null;
   }
   function vfHud() {
@@ -4376,6 +5016,20 @@
     if (u.abseits.hidden === VF.abseits) u.abseits.hidden = !VF.abseits;
     const frei = vfKameraGedreht();
     if (u.kamFrei.hidden === frei) u.kamFrei.hidden = !frei;
+    // v1.6.27 (Issue #15): Helikopter - statt Tacho-Block die Anzeige von Hoehe und Tempo.
+    if (u.hub && u.hub.box) {
+      const an = !!VF.hubschrauber;
+      if (A.hub !== an) { A.hub = an; u.hub.box.hidden = !an; u.acc.hidden = an; }
+      if (an) {
+        const F = VF.flug || { vx: 0, vy: 0 };
+        const hz = Math.max(0, Math.round((VF.z || 0) / TRACK_UNITS_PER_CM));   // Modell-cm ueber der Bahn
+        txt(u.hub.z, 'hz', hz + ' cm');
+        // Tempo in echten km/h (kein TACHO_SCALE: der Hubschrauber fliegt in echten Streckeneinheiten).
+        const hv = Math.round(Math.hypot(F.vx, F.vy) * 3.6 / (100 * TRACK_UNITS_PER_CM));
+        txt(u.hub.v, 'hv', String(hv));
+        return;   // der Tacho-Block entfaellt
+      }
+    }
     // Tacho-Block: Tempo, Gang, Drehzahl, Reifen, Tank - dieselben Werte wie das Cockpit.
     txt(u.tempo, 'v', String(kmh));
     txt(u.rpm, 'r', String(Math.round(motorDrehzahl(st) / 10) * 10));
@@ -4631,6 +5285,8 @@
   function vfLadeTonFertig(jetzt) {
     try {
       if (!soundEnabled || location.protocol === 'file:') return true;
+      // v1.6.27 (Issue #15): der Hubschrauber hat keinen Motorsound - der Ladebildschirm soll nicht auf ihn warten.
+      if (VF.hubschrauber) return true;
       if (jetzt - (VF.ladeAb || 0) > VF_LADE_TON_MAX_MS) return true;
       if (vfTonGeladen(vfMotorZiel())) return true;
       return !sampleEngine.loading;
@@ -4811,6 +5467,10 @@
       + '<div class="vf-acc-werte"><div class="vf-acc-wert"><b class="vf-tempo"></b>' + lbl('km/h') + '</div>'
       + '<b class="vf-gang"></b><div class="vf-acc-wert"><b class="vf-rpm"></b>' + lbl('1/min') + '</div></div></div>'
       + '<div class="vf-kachel vf-acc-tank">' + lbl(t('Tank')) + '<b class="vf-tank"></b><i class="vf-tank-bar"><i></i></i></div></div>'
+      // v1.6.27 (Issue #15): Helikopter-Anzeige (Hoehe + Tempo) statt des Tacho-Blocks.
+      + '<div class="vf-acc vf-hub" hidden data-i18n-skip>'
+      + '<div class="vf-kachel vf-hub-k"><div class="vf-hub-lbl">' + lbl(t('Höhe')) + '</div><b class="vf-hub-z"></b></div>'
+      + '<div class="vf-kachel vf-hub-k"><div class="vf-hub-lbl">' + lbl(t('Tempo')) + '</div><b class="vf-hub-v"></b></div></div>'
       + vfKnopfLeisteHtml()
       + '<span class="vf-kamfrei" hidden data-i18n-skip>' + t('Kamera frei') + ' · R3 / V: ' + t('Standard') + ' <span class="wip-tag">WIP</span></span>'
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>'
@@ -4931,24 +5591,37 @@
     if (playerCar) setCarRole(playerCar, 'none');
     setCarRole(car, 'player');
     VF.car = car;
-    VF.auto = vfAutoBauen(gl, vfHex(carColor(car).hex));
+    // v1.6.27 (Issue #15): RC Stunt Copter - fliegt statt zu fahren. Kein auto.json/auto.bin, keine
+    // Fahrphysik, kein Motorsound, kein Geist und keine NPC-Autos; der Hubschrauber wird aus Kasten gebaut.
+    VF.hubschrauber = vfHubschrauber();
+    // Lackfarbe (Garage) gilt auch fuer den Hubschrauber: gesetzt -> die gewaehlte Farbe, sonst Autofarbe.
+    const hubFarbe = VF.hubschrauber ? (vfLack() ? vfHex(vfLack()) : vfHex(carColor(car).hex)) : vfHex(carColor(car).hex);
+    VF.auto = VF.hubschrauber ? vfHubschrauberBauen(gl, hubFarbe) : vfAutoBauen(gl, hubFarbe);
+    VF.hubRotor = VF.hubschrauber ? vfHubRotorBauen(gl) : null;
+    if (VF.hubschrauber) vfHubModellLaden(gl);   // TREX 700 nachladen (Kasten bleibt bis dahin)
     VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
-    VF.geist = { an: vfGeistAn(), aufzeichnung: [], beste: null, aktiv: false, zeit: 0, t: 0, i: 0, x: 0, y: 0, h: 0 };
+    VF.geist = { an: vfGeistAn() && !VF.hubschrauber, aufzeichnung: [], beste: null, aktiv: false, zeit: 0, t: 0, i: 0, x: 0, y: 0, h: 0 };
     VF.modell = null; VF.modellFehl = false; VF.radModell = null; VF.radFehl = false; VF.P = vfHandlingProfil(VF_GT3); VF.feder = null; VF.raddreh = 0;
     VF.texOffen = 0; VF.texGesamt = 0;   // Ladebild: Bilder der Modelle dieser Fahrt
     VF.tyreTemp = 0;   // v1.3.5: jede Fahrt beginnt mit kalten Reifen (vorher blieb die alte Temperatur stehen)
+    VF.rauch = []; VF.rauchPuffer = null; VF.driftHitze = 0; VF.rauchSoll = 0;   // v1.6.27 Drift-Rauch
     VF.tempoFaktor = vfTempoFaktor();
+    VF.z = 0; VF.roll = 0; VF.pitch = 0; VF.rotor = 0; VF.flug = null; VF.hubTasten = {};   // Flugzustand
+    VF.hubLuft = false; VF.hubLast = 0; VF.hubSpeed = 0;   // Copter: Bodenflag + Werte fuer den Rotor-Ton
     // Quality-Autoshader, sonst (oder wenn er nicht kompiliert) der von Performance; ohne beide bleibt der Kasten.
+    // Der Hubschrauber hat kein Auto-Modell, braucht also keinen Textur-Shader.
     VF.tprog = null;
-    if (VF.grafik) { try { VF.tprog = vfProgrammTex(gl, true); } catch (e) { VF.tprog = null; VF.qualFehler = String(e && e.message || e).slice(0, 300); log('Virtuell: Quality-Autoshader kompiliert nicht, Performance statt dessen: ' + VF.qualFehler, 'warn'); } }
-    if (!VF.tprog) { try { VF.tprog = vfProgrammTex(gl, false); } catch (e) { VF.tprog = null; } }
-    if (VF.tprog) {
-      vfRadModellBauen(gl).then((rad) => { if (VF.aktiv && VF.gl === gl) VF.radModell = rad; }, () => { if (VF.gl === gl) VF.radFehl = true; });
-      vfModellDaten().then((daten) => {
-        if (!VF.aktiv || VF.gl !== gl) return;
-        VF.modell = vfModellBauen(gl, daten);
-        VF.P = vfHandlingProfil(vfPhysikAus(daten.meta.physik));
-      }).catch(() => { if (VF.gl === gl) VF.modellFehl = true; showHudToast(t('Auto-Modell nicht ladbar – es fährt der Kasten')); });
+    if (!VF.hubschrauber) {
+      if (VF.grafik) { try { VF.tprog = vfProgrammTex(gl, true); } catch (e) { VF.tprog = null; VF.qualFehler = String(e && e.message || e).slice(0, 300); log('Virtuell: Quality-Autoshader kompiliert nicht, Performance statt dessen: ' + VF.qualFehler, 'warn'); } }
+      if (!VF.tprog) { try { VF.tprog = vfProgrammTex(gl, false); } catch (e) { VF.tprog = null; } }
+      if (VF.tprog) {
+        vfRadModellBauen(gl).then((rad) => { if (VF.aktiv && VF.gl === gl) VF.radModell = rad; }, () => { if (VF.gl === gl) VF.radFehl = true; });
+        vfModellDaten().then((daten) => {
+          if (!VF.aktiv || VF.gl !== gl) return;
+          VF.modell = vfModellBauen(gl, daten);
+          VF.P = vfHandlingProfil(vfPhysikAus(daten.meta.physik));
+        }).catch(() => { if (VF.gl === gl) VF.modellFehl = true; showHudToast(t('Auto-Modell nicht ladbar – es fährt der Kasten')); });
+      }
     }
     // Start eine halbe Kachel vor Start/Ziel, in Fahrtrichtung (oben berechnet, auch fuer die Gegenrichtung).
     VF.zielVor = null; VF.zielRueck = 0; VF.zielAt = 0;
@@ -4961,7 +5634,10 @@
     Object.assign(VF, { x: VF.pts[start].x, y: VF.pts[start].y, h: VF.pts[start].heading, idx: start, zaehler: 0, kachel: -2,
                         abseits: false, letzt: 0, kam: null, rundeAb: 0, letzte: null, beste: null, aktiv: true,
                         startX: VF.pts[start].x, startY: VF.pts[start].y, startH: VF.pts[start].heading });
-    vfNpcStarten(gl, start);
+    if (!VF.hubschrauber) vfNpcStarten(gl, start);
+    VF.hubTorPuffer = null;
+    VF.hubTore = null;
+    if (VF.hubschrauber) { try { VF.hubTore = vfHubToreBauen(); } catch (e) { VF.hubTore = null; } }
     physEngine.state.speedKmh = 0;
     // Ladebild (siehe vfLadeSchritt): ab hier zaehlt die Ladezeit.
     VF.laedt = true; VF.ladeAb = performance.now();
@@ -5035,7 +5711,7 @@
     }
     if (VF.modus === 'knockout') showHudToast(t('NPC-Knockout') + ': ' + (VF.npcs ? VF.npcs.length : 0) + ' ' + t('Gegner') + ' · 3 ' + t('Leben'));
     else if (VF.modus === 'derby') showHudToast(t('Derby') + ': ' + (VF.npcs ? VF.npcs.length : 0) + ' ' + t('Gegner') + ' · ' + t('Health') + ' 100');
-    vfMotorsound();
+    if (!VF.hubschrauber) vfMotorsound();
     if (typeof showTab === 'function') showTab('race');
     VF.takt = setInterval(vfPaket, VF_TAKT_MS);
     VF.raf = requestAnimationFrame(vfBild);
@@ -5417,6 +6093,7 @@
     VF_BOX_SEITE = -1;   // zurueck auf die Editor-Boxenseite (rechts)
     VF.hoehe = null;
     rennPauseBeenden();
+    if (VF.hubschrauber) vfHubTon.ausblenden();
     if (!VF.aktiv) return;
     // Laeuft eine Challenge (z. B. die Studienfahrt) mit dem virtuellen Auto, endet sie mit: abgebrochen,
     // nicht gewertet (VF.abbruch sagt das der Studie, 98f-studie.js).

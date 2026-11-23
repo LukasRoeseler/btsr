@@ -4096,6 +4096,12 @@
   .vf-tank { font-size: 1.25em; font-weight: 700; line-height: 1; }
   .vf-tank-bar { display: block; width: 100%; height: .35em; background: rgba(255,255,255,.13); }
   .vf-tank-bar > i { display: block; height: 100%; background: var(--vf-linie); transform-origin: 0 50%; }
+  /* v1.6.27 (Issue #15): Der Tacho-Block (.vf-acc) wird im Hubschrauber-Modus ausgeblendet und die
+     Hubschrauber-Anzeige (.vf-hub) dafuer gezeigt. [hidden] muss gegen das display:flex von .vf-acc gewinnen. */
+  .vf-acc[hidden], .vf-hub[hidden] { display: none !important; }
+  .vf-hub-k { padding: .4em .6em; display: grid; gap: .25em; justify-items: center; min-width: 5em; }
+  .vf-hub-lbl { font-size: .78em; opacity: .7; text-transform: uppercase; letter-spacing: .12em; }
+  .vf-hub-k b { font-size: 1.5em; font-weight: 700; line-height: 1; }
   /* Knoepfe oben rechts im selben Stil */
   .vf-knoepfe { position: absolute; right: max(8px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top)); display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
   .vf-knoepfe button { background: var(--vf-bg); color: #f3f4f6; border: 0; border-top: 2px solid var(--vf-linie); border-radius: 0;
@@ -7273,6 +7279,8 @@
       <p class="muted">Spider NG1: Aufbau von Gnen54 (OmegaSim CAD) auf der Karosserie MODIplay MP-1 Spider von Sturmkind, 3D-Daten f&uuml;r HYBRID von Thomas Strobel (FREAKPALACE Customs). Freigabe von Sturmkind am 16.11.2026: Verwendung erlaubt, solange die Karosserien nicht kommerziell verkauft werden. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.</p>
       <p class="muted">VW Caravelle (Bulli): Aufbau von Gnen54 (OmegaSim CAD) auf einer Karosserie von Vehicle World (Designerin Revantika), mit schriftlicher Erlaubnis von Vehicle World zur Weitergabe an die Carrera-Hybrid-Community. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.</p>
       <p class="muted">Strecke T&ouml;rnerschleife 2.0: Streckenlayout von Driftstrecken.de (driftstrecken.de), schriftlich freigegeben am 18.11.2026 f&uuml;r OmegaSim unter Nennung der Urheberrechte; Umsetzung Gnen54.</p>
+      <p class="muted">Der RC Stunt Copter in der virtuellen Fahrt: Modell &bdquo;RcHeli&ldquo; (TREX&nbsp;700) von Belzar Sirus (Sketchfab), Creative Commons Namensnennung 4.0 (CC BY 4.0). Umgewandelt mit tools/blend_to_vf.py (Koordinaten gedreht, Materialfarben als Eckenfarben, Massstab 1:50).</p>
+      <p class="dank-quelle" data-i18n-skip><a href="https://skfb.ly/6BDFN" target="_blank" rel="noopener noreferrer">skfb.ly/6BDFN</a> &middot; img/vf/LIZENZ.txt</p>
       <p class="muted">Die Cockpit-Ansicht &bdquo;Mokamit&ldquo; (Digital Dash), die KI-Pers&ouml;nlichkeit der NPCs, der Showroom, die Karriere und der Modus mit zwei Laptops stammen aus Hybrid-Dash von Mo Kamit, MIT-Lizenz.</p>
       <p class="dank-quelle" data-i18n-skip><a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html" target="_blank" rel="noopener noreferrer">gnu.org/licenses/old-licenses/gpl-2.0</a> &middot; img/autos/*/LIZENZ.txt</p>
       <!-- BESTELLT: "in den Credits das GitHub von engine sim verlinken und ggf. die wiss.
@@ -7301,6 +7309,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren: RC Stunt Copter (WIP, von DeepSeek gebaut, gepr&#252;ft) im freien Training: fliegt mit zwei Sticks (Mode 2, Tastatur W/S, A/D, Pfeile), Modell TREX 700 von Belzar Sirus (CC BY 4.0), Rotor-Ton, H&#246;he und Tempo im HUD, Steuer-Optionen unter Optionen &gt; Virtuell. An den Sektoren und an Start/Ziel stehen leuchtende Tore aus zwei Lichtstangen; eine Runde z&#228;hlt nur, wenn alle Tore der Reihe nach und dann das Start/Ziel-Tor durchflogen wurden. Drift: mit Lenken und Vollgas kommt das Heck jetzt sofort, dazu Low-Poly-Rauch an den Hinterr&#228;dern, erst leicht und mit hei&#223;en Reifen immer dichter. Sektoren (WIP): auf der Streckenkarte je Sektor ein farbiger Saum und die Nummer im Kreis; am Ende eines Sektors pulsiert sein Saum, eine Sektor-Bestzeit wird angesagt (Schalter unter Optionen &gt; Ansagen).</li>
         <li>Virtuell fahren: neues Fahrgef&#252;hl &#8222;Drift&#8220; (WIP) wie ein RC-Driftauto mit Gyro: rutschige Reifen, unter Vollgas bricht das Heck aus, der Gyro lenkt gegen und h&#228;lt den Drift bei etwa 25 Grad, mit halbem Gas greift das Auto wieder. &#8222;Schnell&#8220; hei&#223;t jetzt &#8222;Pacejka&#8220; (WIP) und nutzt die Reifenkurve des echten Fahrens; der Abgleich mit echten Rundenzeiten folgt. Neue Steuerung &#8222;Neigen&#8220; (WIP) auf Handy und Tablet: der Knopf &#8222;Steuerung&#8220; schaltet reihum Touch, Neigen und aus; bei Neigen das Handy quer halten und wie ein Lenkrad drehen, rechts bleibt das Pedal.</li>
         <li>FAHREN: Umschalter Echt | Virtuell (WIP) statt der Kachel &#8222;Virtuell fahren&#8220;. Im Modus Virtuell zeigt die Autos-Kachel das virtuelle Auto, Garage &#246;ffnet die Optionen der virtuellen Fahrt, die Startkachel startet sie, und die Strecken-Kachel bl&#228;ttert durch die gebaute Bahn und die Rollrennstrecken T&#246;rnerschleife 2.0, T&#246;rnerschleife 2.0 mit Br&#252;cke und neu Heckenhoim (von Gnen54 und Thorsten), mit Vorschau von oben und einem Knopf f&#252;r die Fahrtrichtung.</li>
         <li>Virtuell fahren: Das Ladebild zeigt jetzt die aktuelle Strecke von oben &#252;ber das ganze Bild (wie im Editor, bei der T&#246;rnerschleife ihr Umriss mit Br&#252;cke), in der Mitte dreht sich das Streckenteil &#252;ber Titel und Fortschrittsbalken. Aus Gnen54s Testversion &#252;bernommen: Pad-Diagnose w&#228;hrend der Fahrt (Knopf in der Leiste oder F8) mit Pad-Namen, Belegung, gelernter Ruhelage der Trigger, Rohwerten und der Stelle, an der die Abfrage aussteigt, und in der Anleitung der Abschnitt &#8222;Gamepad einrichten&#8220; mit Hinweisen zum EasySMX X05 (Gas und Bremse auf dem rechten Stick).</li>
@@ -11106,6 +11115,14 @@
           <b>Fahrgef&uuml;hl</b>
           <span>Fahrhilfe, Fahrwerk, Getriebe, Masse und Reifen, Lenkung.</span>
         </button>
+        <!-- v1.6.27 (Issue #15): Virtuell - Grafik der virtuellen Fahrt und Steuerung des
+             RC Stunt Copters (Optionen > Virtuell). -->
+        <button class="misc-tile subpage-open" data-sub="opt-virtuell">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 13a7 7 0 0 1 7 7c0 5-3 7-3 11h-8c0-4-3-6-3-11a7 7 0 0 1 7-7z"/><path d="M21 9h6M24 9v4" stroke="var(--bad)"/><path d="M9 38h30M12 42h24"/><path d="M13 31l-3 7M35 31l3 7"/></svg>
+          <b>Virtuell</b>
+          <span>Virtuelle Fahrt: Grafik und Steuerung des RC Stunt Copters.</span>
+        </button>
         <!-- BESTELLT: "Renneinstellungen als eine kachel in den optionen tab verschieben
              (an 3. Stelle)." goto-tab statt subpage-open: die Karte dahinter ist ein
              eigenes tabpage (#tab-control) und bleibt es - nur der Knopf in der
@@ -11575,6 +11592,31 @@
           <span class="opt-val" id="setting-repair-time-val">10 s</span>
         </div></div>
     </div>
+    </div>
+    <!-- v1.6.27 (Issue #15): VIRTUAL - Grafik der virtuellen Fahrt und Steuerung des RC Stunt Copters.
+         Die Seite liegt unter Optionen > Virtuell; die Werte schreibt 60d-virtuell.js auf dieselben
+         Schluessel, die vfGrafik/vfHubGyro beim Fahren lesen. -->
+    <div class="card subpage" id="sub-opt-virtuell">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Virtuell</h2>
+      <div class="opt-head" style="margin-top:0">Virtuelle Fahrt</div>
+      <div class="opt-row"><div class="opt-label">Grafik<small>Quality (Vorgabe) bringt Schatten,
+          Tonemapping und besseren Lack und kostet mehr Rechenzeit; Performance ist f&uuml;r
+          schwache Handys.</small></div>
+        <select id="setting-vf-grafik" data-preset-skip>
+          <option value="perf">Performance</option>
+          <option value="qual" selected>Quality</option>
+        </select></div>
+      <div class="opt-head">RC Stunt Copter</div>
+      <div class="opt-row"><div class="opt-label">Rollen umkehren<small>Rechter Stick nach links
+          kippt den Hubschrauber nach rechts statt nach links.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-vf-hub-invert-roll" data-preset-skip><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Nicken umkehren<small>Rechter Stick nach vorn
+          kippt die Nase nach hinten statt nach vorn.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-vf-hub-invert-pitch" data-preset-skip><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Gyro-Stabilisierung<small>An (Vorgabe): ohne Eingang
+          richtet sich der Hubschrauber von selbst wieder auf. Aus: die Schr&auml;glage bleibt stehen.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-vf-hub-gyro" checked data-preset-skip><span></span></label></div>
     </div>
     <div class="card subpage" id="sub-opt-feel">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>

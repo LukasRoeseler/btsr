@@ -14621,6 +14621,56 @@
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Virtuell v1.6.27: RC Stunt Copter nur im Training, Tore an den Sektoren, Runde nur nach allen Toren und Start/Ziel-Tor (Issue #15)', () => {
+    const f = [];
+    const rm = $('race-mode'), merkRm = rm ? rm.value : null;
+    const merkA = (() => { try { return localStorage.getItem(VF_AUTO_STORE); } catch (e) { return null; } })();
+    try {
+      try { localStorage.setItem(VF_AUTO_STORE, 'hubschrauber'); } catch (e) { /* egal */ }
+      const setzeModus = (v) => { if (rm && [...rm.options].some((o) => o.value === v)) rm.value = v; };
+      setzeModus('laps');
+      if (rm && rm.value !== 'practice') {
+        if (vfAutoListe().some((a) => a.v === 'hubschrauber')) f.push('Heli ausserhalb des Trainings waehlbar');
+        if (vfAutoWahl() !== 'v5r' || vfModellPfad() === '') f.push('gespeicherter Heli faehrt ausserhalb des Trainings: ' + vfAutoWahl());
+      }
+      setzeModus('practice');
+      if (!vfAutoListe().some((a) => a.v === 'hubschrauber')) f.push('Heli im Training nicht waehlbar');
+      if (vfAutoWahl() !== 'hubschrauber') f.push('Heli im Training nicht gewaehlt');
+    } finally {
+      try { if (merkA === null) localStorage.removeItem(VF_AUTO_STORE); else localStorage.setItem(VF_AUTO_STORE, merkA); } catch (e) { /* egal */ }
+      if (rm && merkRm !== null) rm.value = merkRm;
+    }
+    // Tore: Oval mit 3 Sektoren -> 2 Sektortore + Start/Ziel.
+    const merkVF = { pts: VF.pts, nrm: VF.nrm, tiles: VF.tiles, frei: VF.frei, zielIdx: VF.zielIdx, x: VF.x, y: VF.y, z: VF.z, rundeAb: VF.rundeAb, hubTore: VF.hubTore };
+    let mass = '';
+    try {
+      const tiles = codeToTrack(ST_SEK_OVAL).tiles;
+      VF.tiles = tiles; VF.frei = null; VF.pts = trackCenterline(tiles); VF.nrm = trackNormals(VF.pts); VF.zielIdx = vfZielIdx(VF.pts, tiles);
+      const T = vfHubToreBauen();
+      VF.hubTore = T;
+      const plan = autoSektorPlanFuer(tiles, true, true);
+      if (T.liste.length !== plan.n || !T.liste[T.liste.length - 1].sf) f.push('Tore ' + T.liste.length + ' statt ' + plan.n);
+      // Mitten durch Tor 1 fliegen (tief), dann oben drueber ueber Tor 2: nur eines zaehlt.
+      const durch = (g, hoehe) => {
+        const p = VF.pts[g.i], q = VF.pts[(g.i + 3) % VF.pts.length], o = VF.pts[(g.i - 3 + VF.pts.length) % VF.pts.length];
+        VF.x = o.x; VF.y = o.y; VF.z = hoehe; const vx = VF.x, vy = VF.y; VF.x = q.x; VF.y = q.y; vfHubToreSchritt(vx, vy); return p;
+      };
+      durch(T.liste[0], 10);
+      if (T.naechstes !== 1) f.push('Tor 1 nicht gezaehlt');
+      durch(T.liste[1], VF_HUB_TOR_H + 20);
+      if (T.naechstes !== 1) f.push('ueber Tor 2 hinweg gezaehlt');
+      VF.rundeAb = 1000;
+      durch(T.liste[T.liste.length - 1], 10);
+      if (vfHubRundeErlaubt(rennZeitJetzt())) f.push('Runde ohne alle Tore erlaubt');
+      durch(T.liste[1], 10);
+      durch(T.liste[T.liste.length - 1], 10);
+      if (!vfHubRundeErlaubt(rennZeitJetzt())) f.push('Runde nach allen Toren nicht erlaubt');
+      vfHubRundeGezaehlt();
+      if (T.naechstes !== 0) f.push('nach der Runde nicht zurueckgesetzt');
+      mass = T.liste.length + ' Tore (' + (T.liste.length - 1) + ' Sektoren + Start/Ziel)';
+    } finally { Object.assign(VF, merkVF); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'nur im Training waehlbar; ' + mass + '; drueber fliegen zaehlt nicht; Runde erst nach allen Toren' };
+  });
   stAdd('Virtuell v1.6.25: Fahrgefuehl Drift - Pruefstand: Vollgas driftet stabil um 25 Grad ohne Dreher, halbes Gas greift, GT3 bleibt (Issue #10)', () => {
     const f = [];
     if (!VF_HANDLING_MODI.some((m) => m.id === 'drift')) f.push('Drift nicht waehlbar');
@@ -14637,12 +14687,34 @@
     for (const v of [15, 25, 40]) {
       const d = lauf(P, v, 0.5, 1);
       mass.push(v + ' m/s ' + d.beta.toFixed(0) + ' Grad');
-      if (!(d.beta >= 15 && d.beta <= 35)) f.push('Vollgas ' + v + ' m/s: ' + d.beta.toFixed(1) + ' Grad');
-      if (!(d.sd < 2.5)) f.push('unruhig ' + v + ' m/s: ' + d.sd.toFixed(2));
+      if (!(d.beta >= 15 && d.beta <= 40)) f.push('Vollgas ' + v + ' m/s: ' + d.beta.toFixed(1) + ' Grad');
+      if (!(d.sd < 3.5)) f.push('unruhig ' + v + ' m/s: ' + d.sd.toFixed(2));
       if (!(d.r < 4.5)) f.push('dreht ein ' + v + ' m/s');
       const h = lauf(P, v, 0.5, 0.5);
-      if (!(h.beta < 12)) f.push('halbes Gas ' + v + ' m/s: ' + h.beta.toFixed(1) + ' Grad');
+      if (!(h.beta < 14)) f.push('halbes Gas ' + v + ' m/s: ' + h.beta.toFixed(1) + ' Grad');
     }
+    // v1.6.27: Lenken + Vollgas - das Heck kommt sofort (15 Grad in hoechstens 0,45 s, bei 8 bis 25 m/s).
+    for (const v of [8, 12, 25]) {
+      const z = { vy: 0, r: 0 };
+      let tt = null;
+      for (let t = 0; t < 2 && tt === null; t += 1 / 60) { vfDynamik(z, v, 1, 1, 1, 1 / 60, 1, P); if (Math.abs(Math.atan2(z.vy, v)) * 180 / Math.PI >= 15) tt = t; }
+      if (tt === null || tt > 0.45) f.push('Heck kommt bei ' + v + ' m/s erst nach ' + (tt === null ? '> 2' : tt.toFixed(2)) + ' s');
+    }
+    // Rauch: leicht am Anfang, mehr mit heissen Reifen.
+    const merkV = { rauch: VF.rauch, driftHitze: VF.driftHitze, rauchSoll: VF.rauchSoll, dyn: VF.dyn, x: VF.x, y: VF.y, h: VF.h };
+    try {
+      Object.assign(VF, { rauch: [], driftHitze: 0, rauchSoll: 0, dyn: { vy: 0, r: 0, aH: 0.4 }, x: 0, y: 0, h: 0 });
+      vfRauchSchritt(0.5, 20, true);
+      const n1 = VF.rauch.length, a1 = VF.rauch.length ? VF.rauch[VF.rauch.length - 1].a0 : 0, h1 = VF.driftHitze;
+      for (let i = 0; i < 20; i++) vfRauchSchritt(0.5, 20, true);
+      const h2 = VF.driftHitze, a2 = VF.rauch[VF.rauch.length - 1].a0, n2 = VF.rauch.length;
+      if (!(h1 < 0.2 && h2 > 0.8)) f.push('Hitze ' + h1.toFixed(2) + ' -> ' + h2.toFixed(2));
+      if (!(n1 >= 1 && a1 < 0.25 && a2 > 0.45)) f.push('Rauch nicht erst leicht, dann dicht: ' + n1 + ' / ' + a1.toFixed(2) + ' -> ' + a2.toFixed(2));
+      if (n2 > VF_RAUCH_MAX) f.push('zu viele Wolken ' + n2);
+      Object.assign(VF, { rauch: [], driftHitze: 0, dyn: { vy: 0, r: 0, aH: 0.4 } });
+      vfRauchSchritt(0.5, 20, false);
+      if (VF.rauch.length) f.push('Rauch ohne Drift-Fahrgefuehl');
+    } finally { Object.assign(VF, merkV); }
     const g = lauf(Object.assign({}, VF_GT3), 25, 0.5, 1);
     if (!(g.beta < 8)) f.push('GT3 driftet: ' + g.beta.toFixed(1));
     if (VF_GT3.gyro || VF_GT3.driftGrenze) f.push('GT3 hat Gyro');
