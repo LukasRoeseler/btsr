@@ -4281,6 +4281,33 @@
   .tp-karte .sektor-saum.sektor-puls { stroke-width: 4.5; animation: sektorPuls .53s ease-in-out 3; }
   @keyframes sektorPuls { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .3; } }
   @media (prefers-reduced-motion: reduce) { .tp-karte .sektor-saum.sektor-puls { animation: none; } }
+  /* v1.6.32: virtuelle Garage. Quer (Handy quer, Tablet, PC): Vorschau links fest, Optionen rechts scrollen.
+     Hochformat: Vorschau oben (hoechstens 30 % der Hoehe), Optionen darunter. */
+  #tab-vgarage { background: #0d1118; padding: 6px max(10px, env(safe-area-inset-right)) 12px max(10px, env(safe-area-inset-left)); }
+  .vg-kopf { display: flex; align-items: center; gap: 12px; }
+  .vg-kopf h2 { margin: 0; font-size: clamp(15px, 2.2vw, 22px); }
+  .vg-zurueck { min-height: 32px; padding: 4px 10px; }
+  .vg-raster { display: grid; grid-template-columns: minmax(0, 40%) minmax(0, 1fr); gap: 12px; margin-top: 6px; align-items: start; }
+  .vg-vorschau { position: sticky; top: 6px; display: flex; flex-direction: column; gap: 8px; }
+  .vg-vorschau .vf-vorschau { display: grid; place-items: center; padding: 0; border: 0; overflow: hidden; aspect-ratio: 16 / 9;
+    max-height: 58vh; background: radial-gradient(ellipse at 50% 60%, #263043 0%, #0f141c 75%); border-radius: 8px; }
+  .vg-vorschau .vf-vorschau-bild { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; }
+  .vg-vorschau .vg-heli { width: 55%; height: 75%; color: #9fd8ff; }
+  .vg-name { font-weight: 700; font-size: clamp(13px, 1.8vw, 18px); text-align: center; }
+  .vg-vorschau .vf-los-zeile { display: flex; gap: 8px; justify-content: center; border: 0; padding: 0; }
+  .vg-vorschau .vf-los-zeile .primary { flex: 1 1 auto; min-height: 44px; font-size: 1.05em; }
+  .vg-optionen { min-width: 0; }
+  .vg-optionen .gar-a-titel { margin-top: 0; }
+  .vg-optionen .gk-zeile { display: grid; grid-template-columns: minmax(84px, 36%) minmax(0, 1fr); align-items: center; gap: 4px 8px; }
+  .vg-optionen .gk-w { flex-wrap: wrap; justify-content: center; }
+  .vg-optionen .gk-w > b { width: auto; flex: 1 1 6em; min-width: 0; }
+  .vg-optionen .vf-lack-palette { display: flex; flex-wrap: wrap; justify-content: center; flex: 1 1 100%; margin: 4px 0 0; }
+  .vg-vorschau .vf-los-zeile .vf-hilfe { flex: 0 0 44px; min-height: 44px; }
+  @media (orientation: portrait) {
+    .vg-raster { grid-template-columns: minmax(0, 1fr); }
+    .vg-vorschau { position: static; }
+    .vg-vorschau .vf-vorschau { max-height: 28vh; }
+  }
   .lade-traeger { position: relative; }
   .lade-ueber { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.78); }
@@ -5858,6 +5885,7 @@
   <button class="tab-btn active" data-tab="home" hidden style="display:none">Home</button>
   <button class="tab-btn" data-tab="fahren" hidden style="display:none">Fahren</button>
   <button class="tab-btn" data-tab="garage">Garage</button>
+  <button class="tab-btn" data-tab="vgarage" data-parent="fahren" hidden style="display:none">Virtuelle Garage</button>
   <button class="tab-btn" data-tab="race">Cockpit</button>
   <button class="tab-btn" data-tab="options">Optionen</button>
   <button class="tab-btn" data-tab="track">Strecke</button>
@@ -5986,7 +6014,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.31</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.36</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7278,6 +7306,8 @@
       <p class="muted">Der VW K&auml;fer 1303 RS ist eine eigene Konstruktion von Gnen54 (OmegaSim CAD) und steht unter Creative Commons Namensnennung 4.0 (CC BY 4.0).</p>
       <p class="muted">Spider NG1: Aufbau von Gnen54 (OmegaSim CAD) auf der Karosserie MODIplay MP-1 Spider von Sturmkind, 3D-Daten f&uuml;r HYBRID von Thomas Strobel (FREAKPALACE Customs). Freigabe von Sturmkind am 16.11.2026: Verwendung erlaubt, solange die Karosserien nicht kommerziell verkauft werden. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.</p>
       <p class="muted">VW Caravelle (Bulli): Aufbau von Gnen54 (OmegaSim CAD) auf einer Karosserie von Vehicle World (Designerin Revantika), mit schriftlicher Erlaubnis von Vehicle World zur Weitergabe an die Carrera-Hybrid-Community. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.</p>
+      <p class="muted">Audi RS5 DTM 2019: Modell „2019 Audi RS5 DTM“ von Dave Love (Sketchfab), Creative Commons Namensnennung 4.0 (CC BY 4.0). F&uuml;r OmegaSim umgewandelt und verkleinert, Fahrdaten gesch&auml;tzt. Marken und Logos auf der Lackierung geh&ouml;ren ihren Inhabern.</p>
+      <p class="dank-quelle" data-i18n-skip><a href="https://skfb.ly/pMuFP" target="_blank" rel="noopener noreferrer">skfb.ly/pMuFP</a> &middot; img/autos/audirs5/LIZENZ.txt</p>
       <p class="muted">Strecke T&ouml;rnerschleife 2.0: Streckenlayout von Driftstrecken.de (driftstrecken.de), schriftlich freigegeben am 18.11.2026 f&uuml;r OmegaSim unter Nennung der Urheberrechte; Umsetzung Gnen54.</p>
       <p class="muted">Der RC Stunt Copter in der virtuellen Fahrt: Modell &bdquo;RcHeli&ldquo; (TREX&nbsp;700) von Belzar Sirus (Sketchfab), Creative Commons Namensnennung 4.0 (CC BY 4.0). Umgewandelt mit tools/blend_to_vf.py (Koordinaten gedreht, Materialfarben als Eckenfarben, Massstab 1:50).</p>
       <p class="dank-quelle" data-i18n-skip><a href="https://skfb.ly/6BDFN" target="_blank" rel="noopener noreferrer">skfb.ly/6BDFN</a> &middot; img/vf/LIZENZ.txt</p>
@@ -7309,7 +7339,9 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
-        <li>Virtuell fahren: RC Stunt Copter (WIP, von DeepSeek gebaut, gepr&#252;ft) im freien Training: fliegt mit zwei Sticks (Mode 2, Tastatur W/S, A/D, Pfeile), Modell TREX 700 von Belzar Sirus (CC BY 4.0), Rotor-Ton, H&#246;he und Tempo im HUD, Steuer-Optionen unter Optionen &gt; Virtuell. An den Sektoren und an Start/Ziel stehen leuchtende Tore aus zwei Lichtstangen; eine Runde z&#228;hlt nur, wenn alle Tore der Reihe nach und dann das Start/Ziel-Tor durchflogen wurden. Drift: mit Lenken und Vollgas kommt das Heck jetzt sofort, dazu Low-Poly-Rauch an den Hinterr&#228;dern, erst leicht und mit hei&#223;en Reifen immer dichter. Sektoren (WIP): auf der Streckenkarte je Sektor ein farbiger Saum und die Nummer im Kreis; am Ende eines Sektors pulsiert sein Saum, eine Sektor-Bestzeit wird angesagt (Schalter unter Optionen &gt; Ansagen).</li>
+        <li>Neues virtuelles Auto: Audi RS5 DTM 2019 (WIP), Modell von Dave Love (Sketchfab, CC BY 4.0) mit seiner Lackierung; Fahrdaten gesch&#228;tzt.</li>
+        <li>Virtuelle Garage (WIP) als eigene Seite, auch f&#252;rs Handy gebaut: quer links das gro&#223;e Vorschaubild mit Name, Losfahren und Anleitung, rechts alle Optionen der virtuellen Fahrt; hochkant steht die Vorschau oben. Sie &#246;ffnet sich &#252;ber FAHREN im Modus Virtuell (Garage oder Autos-Kachel) und nach jeder virtuellen Fahrt. Die echte Garage zeigt keine virtuellen Optionen mehr, ihr Knopf &#8222;Virtuell fahren&#8220; f&#252;hrt in die virtuelle Garage. Die Steuer-Optionen des RC Stunt Copters (Gyro, Rollen und Nicken umkehren) stehen jetzt dort statt unter Optionen.</li>
+        <li>Virtuell fahren: RC Stunt Copter (WIP, von DeepSeek gebaut, gepr&#252;ft) im freien Training: fliegt mit zwei Sticks (Mode 2, Tastatur W/S, A/D, Pfeile), Modell TREX 700 von Belzar Sirus (CC BY 4.0), Rotor-Ton, H&#246;he und Tempo im HUD, Steuer-Optionen in der virtuellen Garage. An den Sektoren und an Start/Ziel stehen leuchtende Tore aus zwei Lichtstangen; eine Runde z&#228;hlt nur, wenn alle Tore der Reihe nach und dann das Start/Ziel-Tor durchflogen wurden. Drift: mit Lenken und Vollgas kommt das Heck jetzt sofort, dazu Low-Poly-Rauch an den Hinterr&#228;dern, erst leicht und mit hei&#223;en Reifen immer dichter. Sektoren (WIP): auf der Streckenkarte je Sektor ein farbiger Saum und die Nummer im Kreis; am Ende eines Sektors pulsiert sein Saum, eine Sektor-Bestzeit wird angesagt (Schalter unter Optionen &gt; Ansagen).</li>
         <li>Virtuell fahren: neues Fahrgef&#252;hl &#8222;Drift&#8220; (WIP) wie ein RC-Driftauto mit Gyro: rutschige Reifen, unter Vollgas bricht das Heck aus, der Gyro lenkt gegen und h&#228;lt den Drift bei etwa 25 Grad, mit halbem Gas greift das Auto wieder. &#8222;Schnell&#8220; hei&#223;t jetzt &#8222;Pacejka&#8220; (WIP) und nutzt die Reifenkurve des echten Fahrens; der Abgleich mit echten Rundenzeiten folgt. Neue Steuerung &#8222;Neigen&#8220; (WIP) auf Handy und Tablet: der Knopf &#8222;Steuerung&#8220; schaltet reihum Touch, Neigen und aus; bei Neigen das Handy quer halten und wie ein Lenkrad drehen, rechts bleibt das Pedal.</li>
         <li>FAHREN: Umschalter Echt | Virtuell (WIP) statt der Kachel &#8222;Virtuell fahren&#8220;. Im Modus Virtuell zeigt die Autos-Kachel das virtuelle Auto, Garage &#246;ffnet die Optionen der virtuellen Fahrt, die Startkachel startet sie, und die Strecken-Kachel bl&#228;ttert durch die gebaute Bahn und die Rollrennstrecken T&#246;rnerschleife 2.0, T&#246;rnerschleife 2.0 mit Br&#252;cke und neu Heckenhoim (von Gnen54 und Thorsten), mit Vorschau von oben und einem Knopf f&#252;r die Fahrtrichtung.</li>
         <li>Virtuell fahren: Das Ladebild zeigt jetzt die aktuelle Strecke von oben &#252;ber das ganze Bild (wie im Editor, bei der T&#246;rnerschleife ihr Umriss mit Br&#252;cke), in der Mitte dreht sich das Streckenteil &#252;ber Titel und Fortschrittsbalken. Aus Gnen54s Testversion &#252;bernommen: Pad-Diagnose w&#228;hrend der Fahrt (Knopf in der Leiste oder F8) mit Pad-Namen, Belegung, gelernter Ruhelage der Trigger, Rohwerten und der Stelle, an der die Abfrage aussteigt, und in der Anleitung der Abschnitt &#8222;Gamepad einrichten&#8220; mit Hinweisen zum EasySMX X05 (Gas und Bremse auf dem rechten Stick).</li>
@@ -10311,6 +10343,18 @@
   </section>
 
   <!-- FAHREN TAB: redesigned as a racing-HUD style drive screen instead of a form/dashboard -->
+  <!-- v1.6.32 BESTELLT: "Die virtuelle Garage sollte komplett eigenstaendig sein und mit der Vorschau fuer Handy optimiert."
+       Gefuellt von vfGarageSeite (60d-virtuell.js): links/oben Vorschau, Name, Losfahren; rechts/unten die Optionen. -->
+  <section class="tabpage" id="tab-vgarage">
+    <div class="vg-kopf">
+      <button type="button" class="vg-zurueck" id="vg-zurueck">&larr; Fahren</button>
+      <h2>Virtuelle Garage <span class="wip-tag">WIP</span></h2>
+    </div>
+    <div class="vg-raster">
+      <div class="vg-vorschau" id="vg-vorschau"></div>
+      <div class="vg-optionen" id="vg-optionen"></div>
+    </div>
+  </section>
   <section class="tabpage" id="tab-garage">
     <div class="card">
       <h2>Garage</h2>
@@ -11115,14 +11159,6 @@
           <b>Fahrgef&uuml;hl</b>
           <span>Fahrhilfe, Fahrwerk, Getriebe, Masse und Reifen, Lenkung.</span>
         </button>
-        <!-- v1.6.27 (Issue #15): Virtuell - Grafik der virtuellen Fahrt und Steuerung des
-             RC Stunt Copters (Optionen > Virtuell). -->
-        <button class="misc-tile subpage-open" data-sub="opt-virtuell">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 13a7 7 0 0 1 7 7c0 5-3 7-3 11h-8c0-4-3-6-3-11a7 7 0 0 1 7-7z"/><path d="M21 9h6M24 9v4" stroke="var(--bad)"/><path d="M9 38h30M12 42h24"/><path d="M13 31l-3 7M35 31l3 7"/></svg>
-          <b>Virtuell</b>
-          <span>Virtuelle Fahrt: Grafik und Steuerung des RC Stunt Copters.</span>
-        </button>
         <!-- BESTELLT: "Renneinstellungen als eine kachel in den optionen tab verschieben
              (an 3. Stelle)." goto-tab statt subpage-open: die Karte dahinter ist ein
              eigenes tabpage (#tab-control) und bleibt es - nur der Knopf in der
@@ -11592,31 +11628,6 @@
           <span class="opt-val" id="setting-repair-time-val">10 s</span>
         </div></div>
     </div>
-    </div>
-    <!-- v1.6.27 (Issue #15): VIRTUAL - Grafik der virtuellen Fahrt und Steuerung des RC Stunt Copters.
-         Die Seite liegt unter Optionen > Virtuell; die Werte schreibt 60d-virtuell.js auf dieselben
-         Schluessel, die vfGrafik/vfHubGyro beim Fahren lesen. -->
-    <div class="card subpage" id="sub-opt-virtuell">
-      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
-      <h2>Virtuell</h2>
-      <div class="opt-head" style="margin-top:0">Virtuelle Fahrt</div>
-      <div class="opt-row"><div class="opt-label">Grafik<small>Quality (Vorgabe) bringt Schatten,
-          Tonemapping und besseren Lack und kostet mehr Rechenzeit; Performance ist f&uuml;r
-          schwache Handys.</small></div>
-        <select id="setting-vf-grafik" data-preset-skip>
-          <option value="perf">Performance</option>
-          <option value="qual" selected>Quality</option>
-        </select></div>
-      <div class="opt-head">RC Stunt Copter</div>
-      <div class="opt-row"><div class="opt-label">Rollen umkehren<small>Rechter Stick nach links
-          kippt den Hubschrauber nach rechts statt nach links.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-vf-hub-invert-roll" data-preset-skip><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Nicken umkehren<small>Rechter Stick nach vorn
-          kippt die Nase nach hinten statt nach vorn.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-vf-hub-invert-pitch" data-preset-skip><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Gyro-Stabilisierung<small>An (Vorgabe): ohne Eingang
-          richtet sich der Hubschrauber von selbst wieder auf. Aus: die Schr&auml;glage bleibt stehen.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-vf-hub-gyro" checked data-preset-skip><span></span></label></div>
     </div>
     <div class="card subpage" id="sub-opt-feel">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
@@ -17767,9 +17778,8 @@
     "Höhe": "Height",
     "Tempo": "Speed",
     "Tor": "Gate",
-    "Virtuell fahren: RC Stunt Copter (WIP, von DeepSeek gebaut, geprüft) im freien Training: fliegt mit zwei Sticks (Mode 2, Tastatur W/S, A/D, Pfeile), Modell TREX 700 von Belzar Sirus (CC BY 4.0), Rotor-Ton, Höhe und Tempo im HUD, Steuer-Optionen unter Optionen > Virtuell. An den Sektoren und an Start/Ziel stehen leuchtende Tore aus zwei Lichtstangen; eine Runde zählt nur, wenn alle Tore der Reihe nach und dann das Start/Ziel-Tor durchflogen wurden. Drift: mit Lenken und Vollgas kommt das Heck jetzt sofort, dazu Low-Poly-Rauch an den Hinterrädern, erst leicht und mit heißen Reifen immer dichter. Sektoren (WIP): auf der Streckenkarte je Sektor ein farbiger Saum und die Nummer im Kreis; am Ende eines Sektors pulsiert sein Saum, eine Sektor-Bestzeit wird angesagt (Schalter unter Optionen > Ansagen).": "Virtual driving: RC stunt copter (WIP, built by DeepSeek, reviewed) in free practice: flies with two sticks (mode 2, keyboard W/S, A/D, arrows), TREX 700 model by Belzar Sirus (CC BY 4.0), rotor sound, height and speed in the HUD, control options under Options > Virtual. Glowing gates of two light poles stand at the sectors and at start/finish; a lap only counts after flying through all gates in order and then the start/finish gate. Drift: steering with full throttle now kicks the rear out at once, plus low-poly smoke at the rear wheels, light at first and denser as the tyres heat up. Sectors (WIP): on the track map each sector has a coloured edge and its number in a circle; at the end of a sector its edge pulses, a best sector time is announced (switch under Options > Announcements).",
+    "Virtuell fahren: RC Stunt Copter (WIP, von DeepSeek gebaut, geprüft) im freien Training: fliegt mit zwei Sticks (Mode 2, Tastatur W/S, A/D, Pfeile), Modell TREX 700 von Belzar Sirus (CC BY 4.0), Rotor-Ton, Höhe und Tempo im HUD, Steuer-Optionen in der virtuellen Garage. An den Sektoren und an Start/Ziel stehen leuchtende Tore aus zwei Lichtstangen; eine Runde zählt nur, wenn alle Tore der Reihe nach und dann das Start/Ziel-Tor durchflogen wurden. Drift: mit Lenken und Vollgas kommt das Heck jetzt sofort, dazu Low-Poly-Rauch an den Hinterrädern, erst leicht und mit heißen Reifen immer dichter. Sektoren (WIP): auf der Streckenkarte je Sektor ein farbiger Saum und die Nummer im Kreis; am Ende eines Sektors pulsiert sein Saum, eine Sektor-Bestzeit wird angesagt (Schalter unter Optionen > Ansagen).": "Virtual driving: RC stunt copter (WIP, built by DeepSeek, reviewed) in free practice: flies with two sticks (mode 2, keyboard W/S, A/D, arrows), TREX 700 model by Belzar Sirus (CC BY 4.0), rotor sound, height and speed in the HUD, control options in the virtual garage. Glowing gates of two light poles stand at the sectors and at start/finish; a lap only counts after flying through all gates in order and then the start/finish gate. Drift: steering with full throttle now kicks the rear out at once, plus low-poly smoke at the rear wheels, light at first and denser as the tyres heat up. Sectors (WIP): on the track map each sector has a coloured edge and its number in a circle; at the end of a sector its edge pulses, a best sector time is announced (switch under Options > Announcements).",
     "Virtuelle Fahrt": "Virtual driving",
-    "Quality (Vorgabe) bringt Schatten, Tonemapping und besseren Lack und kostet mehr Rechenzeit; Performance ist für schwache Handys.": "Quality (default) adds shadows, tone mapping and better paint and costs more computing time; Performance is for weak phones.",
     "Rollen umkehren": "Invert roll",
     "Rechter Stick nach links kippt den Hubschrauber nach rechts statt nach links.": "Right stick to the left tilts the helicopter to the right instead of the left.",
     "Nicken umkehren": "Invert pitch",
@@ -17777,7 +17787,12 @@
     "Gyro-Stabilisierung": "Gyro stabilisation",
     "An (Vorgabe): ohne Eingang richtet sich der Hubschrauber von selbst wieder auf. Aus: die Schräglage bleibt stehen.": "On (default): without input the helicopter levels itself again. Off: the bank angle stays.",
     "Der RC Stunt Copter in der virtuellen Fahrt: Modell „RcHeli“ (TREX 700) von Belzar Sirus (Sketchfab), Creative Commons Namensnennung 4.0 (CC BY 4.0). Umgewandelt mit tools/blend_to_vf.py (Koordinaten gedreht, Materialfarben als Eckenfarben, Massstab 1:50).": "The RC stunt copter in virtual driving: model “RcHeli” (TREX 700) by Belzar Sirus (Sketchfab), Creative Commons Attribution 4.0 (CC BY 4.0). Converted with tools/blend_to_vf.py (coordinates rotated, material colours as vertex colours, scale 1:50).",
+    "Virtuelle Garage": "Virtual garage",
+    "Virtuelle Garage (WIP) als eigene Seite, auch fürs Handy gebaut: quer links das große Vorschaubild mit Name, Losfahren und Anleitung, rechts alle Optionen der virtuellen Fahrt; hochkant steht die Vorschau oben. Sie öffnet sich über FAHREN im Modus Virtuell (Garage oder Autos-Kachel) und nach jeder virtuellen Fahrt. Die echte Garage zeigt keine virtuellen Optionen mehr, ihr Knopf „Virtuell fahren“ führt in die virtuelle Garage. Die Steuer-Optionen des RC Stunt Copters (Gyro, Rollen und Nicken umkehren) stehen jetzt dort statt unter Optionen.": "Virtual garage (WIP) as its own page, built for phones too: in landscape the large preview with name, start and guide on the left and all virtual driving options on the right; in portrait the preview sits on top. It opens from DRIVE in virtual mode (garage or cars tile) and after every virtual drive. The real garage no longer shows virtual options, its “Drive virtually” button leads to the virtual garage. The RC stunt copter control options (gyro, invert roll and pitch) are now there instead of under Options.",
     "Virtuelle Fahrt: Grafik und Steuerung des RC Stunt Copters.": "Virtual driving: graphics and controls of the RC stunt copter.",
+    "Audi RS5 DTM 2019 (Dave Love, WIP)": "Audi RS5 DTM 2019 (Dave Love, WIP)",
+    "Audi RS5 DTM 2019: Modell „2019 Audi RS5 DTM“ von Dave Love (Sketchfab), Creative Commons Namensnennung 4.0 (CC BY 4.0). Für OmegaSim umgewandelt und verkleinert, Fahrdaten geschätzt. Marken und Logos auf der Lackierung gehören ihren Inhabern.": "Audi RS5 DTM 2019: model “2019 Audi RS5 DTM” by Dave Love (Sketchfab), Creative Commons Attribution 4.0 (CC BY 4.0). Converted and reduced for OmegaSim, driving data estimated. Brands and logos on the livery belong to their owners.",
+    "Neues virtuelles Auto: Audi RS5 DTM 2019 (WIP), Modell von Dave Love (Sketchfab, CC BY 4.0) mit seiner Lackierung; Fahrdaten geschätzt.": "New virtual car: Audi RS5 DTM 2019 (WIP), model by Dave Love (Sketchfab, CC BY 4.0) with its livery; driving data estimated.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20655,8 +20670,10 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Virtuelle Garage": "Garaje virtual",
+    "Audi RS5 DTM 2019 (Dave Love, WIP)": "Audi RS5 DTM 2019 (Dave Love, WIP)",
+    "Audi RS5 DTM 2019: Modell „2019 Audi RS5 DTM“ von Dave Love (Sketchfab), Creative Commons Namensnennung 4.0 (CC BY 4.0). Für OmegaSim umgewandelt und verkleinert, Fahrdaten geschätzt. Marken und Logos auf der Lackierung gehören ihren Inhabern.": "Audi RS5 DTM 2019: modelo “2019 Audi RS5 DTM” de Dave Love (Sketchfab), Creative Commons Reconocimiento 4.0 (CC BY 4.0). Convertido y reducido para OmegaSim, datos de conducción estimados. Las marcas y logotipos de la decoración pertenecen a sus propietarios.",
     "Virtuelle Fahrt": "Conducción virtual",
-    "Quality (Vorgabe) bringt Schatten, Tonemapping und besseren Lack und kostet mehr Rechenzeit; Performance ist für schwache Handys.": "Quality (predeterminado) añade sombras, tone mapping y mejor pintura y cuesta más cálculo; Performance es para móviles débiles.",
     "Rollen umkehren": "Invertir alabeo",
     "Rechter Stick nach links kippt den Hubschrauber nach rechts statt nach links.": "El stick derecho a la izquierda inclina el helicóptero a la derecha en vez de a la izquierda.",
     "Nicken umkehren": "Invertir cabeceo",
@@ -20664,7 +20681,6 @@
     "Gyro-Stabilisierung": "Estabilización giroscópica",
     "An (Vorgabe): ohne Eingang richtet sich der Hubschrauber von selbst wieder auf. Aus: die Schräglage bleibt stehen.": "Activado (predeterminado): sin entrada el helicóptero se endereza solo. Desactivado: la inclinación se mantiene.",
     "Der RC Stunt Copter in der virtuellen Fahrt: Modell „RcHeli“ (TREX 700) von Belzar Sirus (Sketchfab), Creative Commons Namensnennung 4.0 (CC BY 4.0). Umgewandelt mit tools/blend_to_vf.py (Koordinaten gedreht, Materialfarben als Eckenfarben, Massstab 1:50).": "El helicóptero RC acrobático de la conducción virtual: modelo “RcHeli” (TREX 700) de Belzar Sirus (Sketchfab), Creative Commons Reconocimiento 4.0 (CC BY 4.0). Convertido con tools/blend_to_vf.py (coordenadas giradas, colores de material como colores de vértice, escala 1:50).",
-    "Virtuelle Fahrt: Grafik und Steuerung des RC Stunt Copters.": "Conducción virtual: gráficos y control del helicóptero RC acrobático.",
     "RC Stunt Copter": "Helicóptero RC acrobático",
     "nur Training": "solo entrenamiento",
     "Höhe": "Altura",
@@ -33350,12 +33366,13 @@
   function fahrModusSetzen(m) {
     const v = m === 'virtuell';
     try { localStorage.setItem(FAHR_MODUS_STORE, v ? 'virtuell' : 'echt'); } catch (e) { /* egal */ }
-    try { garVirtuellAuf = v; if (v) garKameraAuf = false; } catch (e) { /* Garage noch nicht geladen */ }
     konsoleFahrenZeichnen();
   }
   // Garage im passenden Modus oeffnen: virtuell mit den Optionen der virtuellen Fahrt rechts.
+  // v1.6.32: im Modus Virtuell die eigenstaendige virtuelle Garage (#tab-vgarage, 60d-virtuell.js).
   function konsoleGarageOeffnen() {
-    try { if (fahrModusVirtuell()) { garVirtuellAuf = true; garKameraAuf = false; } else garVirtuellAuf = false; } catch (e) { /* egal */ }
+    if (fahrModusVirtuell() && typeof vfGarageZeigen === 'function') { vfGarageZeigen(); window.scrollTo(0, 0); return; }
+    try { garVirtuellAuf = false; } catch (e) { /* egal */ }
     konsoleZeige('garage');
   }
   function konsoleVirtuellStarten() {
@@ -34290,6 +34307,7 @@
     kn('fa-verbinden', () => { konsoleVerbinden(); });
     kn('fa-garage', () => konsoleGarageOeffnen());
     kn('fa-mp', () => konsoleZeige('mp'));
+    kn('vg-zurueck', () => konsoleZeige('fahren'));
     // v1.6.23: im Modus Virtuell startet die Startkachel die virtuelle Fahrt (die Kachel "Virtuell fahren" ist dem
     // Umschalter Echt | Virtuell gewichen). Ein Tipp auf eine Seite des Umschalters waehlt sie, sonst wechselt er.
     kn('fa-start', () => { if (fahrModusVirtuell() && !kRennenLaeuft()) konsoleVirtuellStarten(); else konsoleLosfahren(); });
@@ -44854,7 +44872,7 @@
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
-  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/' };
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/' };
   // v1.6.27 (Issue #15): der RC Stunt Copter in der Garage. Er ist KEIN Auto: er hat kein
   // auto.json/auto.bin (VF_MODELL_PFADE), sondern wird als eigener Hubschrauber gebaut und
   // mit zwei Sticks geflogen. Ueberall, wo ein Auto-Modell oder ein Fahrprofil gebraucht wird,
@@ -45001,7 +45019,10 @@
             { v: 'spider', name: t('Spider NG1 (Gnen54, WIP)') },
             // v1.5.150: Eigenbau von Gnen54 auf der Vehicle-World-Karosserie (schriftliche Freigabe),
             // siehe img/autos/caravelle/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
-            { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') }]);
+            { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') },
+            // v1.6.27: "2019 Audi RS5 DTM" von Dave Love (Sketchfab, CC BY 4.0), umgewandelt mit tools/glb_auto.py, siehe
+            // img/autos/audirs5/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
+            { v: 'audirs5', name: t('Audi RS5 DTM 2019 (Dave Love, WIP)') }]);
   }
   function vfAutoName(id) { const a = vfAutoListe().find((x) => x.v === id); return a ? a.name : id; }
   // Name der gewaehlten Strecke der virtuellen Fahrt (freie Strecke oder die gebaute Bahn).
@@ -45133,21 +45154,6 @@
   function vfHubInvertPitch() { try { return localStorage.getItem(VF_HUB_INVERT_PITCH_STORE) === 'an'; } catch (e) { return false; } }
   function vfHubGyro() { try { return localStorage.getItem(VF_HUB_GYRO_STORE) !== 'aus'; } catch (e) { return true; } }
   function vfHubSetzen(key, an) { try { localStorage.setItem(key, an ? 'an' : 'aus'); } catch (e) { /* egal */ } }
-  // Optionen > Virtuell (sub-opt-virtuell, 00-index.head.html): die Seite mit den gespeicherten
-  // Werten fuellen und bei Aenderung auf dieselben Schluessel schreiben, die vfGrafik/vfHubGyro
-  // beim Fahren lesen. Laeuft einmal beim Start (das Skript steht am Ende des Body).
-  function vfOptionenVirtuellInit() {
-    const g = $('setting-vf-grafik');
-    if (g) { g.value = vfGrafik(); g.addEventListener('change', () => vfGrafikSetzen(g.value)); }
-    const ir = $('setting-vf-hub-invert-roll');
-    if (ir) { ir.checked = vfHubInvertRoll(); ir.addEventListener('change', () => vfHubSetzen(VF_HUB_INVERT_ROLL_STORE, ir.checked)); }
-    const ip = $('setting-vf-hub-invert-pitch');
-    if (ip) { ip.checked = vfHubInvertPitch(); ip.addEventListener('change', () => vfHubSetzen(VF_HUB_INVERT_PITCH_STORE, ip.checked)); }
-    const gy = $('setting-vf-hub-gyro');
-    if (gy) { gy.checked = vfHubGyro(); gy.addEventListener('change', () => vfHubSetzen(VF_HUB_GYRO_STORE, gy.checked)); }
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', vfOptionenVirtuellInit);
-  else vfOptionenVirtuellInit();
   // v1.5 (WIP, Plan Paket 4 "Tageszeit"): Farbstimmung der virtuellen Fahrt. Himmel (Horizont, Zenit), Nebel
   // und die Farbe des Lichts auf allem Beleuchteten; selbstleuchtende Teile (Lichter) bleiben, wie sie sind.
   // Die Sonnenrichtung bleibt fest (die Schattenkarte haengt an ihr). Keine Nacht: es gibt keine Lichtkegel.
@@ -48942,6 +48948,41 @@
     if (sampleEngine.loading) return t('Aufnahmen werden geladen …');
     return t('Keine Aufnahmen gefunden – es spielt der Ersatzton.');
   }
+  // ---- VIRTUELLE GARAGE (v1.6.32, WIP) ----
+  // BESTELLT: "Zur virtuellen Garage: Diese sollte komplett eigenstaendig sein und mit der Vorschau fuer Handy optimiert."
+  // Eine eigene Seite (#tab-vgarage) statt der rechten Spalte der echten Garage: links (Hochformat: oben) das Vorschaubild
+  // des gewaehlten Autos mit Name, Losfahren und "?", rechts die Optionen der virtuellen Fahrt (vfGarageOptionen). Jede
+  // Aenderung zeichnet die Seite neu, auf der sie gemacht wurde (vfGarageNeu).
+  function vfGarageSeiteOffen() { const el = $('tab-vgarage'); return !!(el && el.classList.contains('active')); }
+  function vfGarageNeu() { if (vfGarageSeiteOffen()) vfGarageSeite(); else renderGarage(); }
+  const VF_HELI_BILD = '<svg class="vg-heli" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M6 12h36M24 12v5"/><path d="M14 24a10 7 0 0 1 10-7h4a8 8 0 0 1 8 8v2a3 3 0 0 1-3 3H19a5 5 0 0 1-5-6z"/><path d="M36 25h8M44 21v8"/><path d="M18 30l-2 6M30 30l2 6M12 36h24"/></svg>';
+  function vfGarageSeite() {
+    const host = $('vg-optionen'), vor = $('vg-vorschau');
+    if (!host || !vor) return;
+    const y = host.scrollTop;
+    host.innerHTML = '';
+    vfGarageOptionen(host);
+    vor.innerHTML = '';
+    const bild = host.querySelector('.vf-vorschau');
+    if (bild && vfHubschrauber()) bild.remove();   // der Heli hat kein Vorschaubild, statt dessen das Symbol
+    if (bild && !vfHubschrauber()) vor.appendChild(bild);
+    else if (vfHubschrauber()) { const d = document.createElement('div'); d.className = 'opt-row opt-breit vf-vorschau'; d.innerHTML = VF_HELI_BILD; vor.appendChild(d); }
+    const name = document.createElement('div');
+    name.className = 'vg-name';
+    name.setAttribute('data-i18n-skip', '');
+    name.textContent = vfAutoName(vfAutoWahl()) + ' · ' + vfStreckeName();
+    vor.appendChild(name);
+    const los = host.querySelector('.vf-los-zeile');
+    if (los) vor.appendChild(los);
+    host.scrollTop = y;
+    if (host.querySelector('.opt-label small:not(.opt-info-versteckt)') && typeof optInfoEinrichten === 'function') optInfoEinrichten();
+  }
+  function vfGarageZeigen() {
+    if (typeof fahrModusSetzen === 'function' && !fahrModusVirtuell()) fahrModusSetzen('virtuell');
+    if (typeof showTab === 'function') showTab('vgarage');
+    vfGarageSeite();
+  }
   function vfGarageOptionen(rechts) {
     vfTonVorbereiten();
     vfTexturenVorbereiten();   // v1.3.39: Bahn- und Bodentexturen im Leerlauf rechnen
@@ -48957,7 +48998,7 @@
     const wahl = (d) => {
       const n = werte[(j + d + werte.length) % werte.length].v;
       try { localStorage.setItem(VF_MOTOR_STORE, n || VF_MOTOR_GLOBAL); } catch (e) { /* egal */ }
-      renderGarage();
+      vfGarageNeu();
     };
     if (vfMotorFest()) {
       // Eigenbau von Gnen54: Motorklang fest zum Auto, die Pfeile sind gesperrt.
@@ -48971,15 +49012,30 @@
     const ja = Math.max(0, autos.findIndex((a) => a.v === vfAutoWahl()));
     const autoWahl = (dd) => {
       try { localStorage.setItem(VF_AUTO_STORE, autos[(ja + dd + autos.length) % autos.length].v); } catch (e) { /* egal */ }
-      renderGarage();
+      vfGarageNeu();
     };
     rechts.appendChild(garWertZeile(t('Auto'), autos[ja].name, () => autoWahl(-1), () => autoWahl(1)));
+    // v1.6.32: die Steuer-Optionen des RC Stunt Copters stehen in der virtuellen Garage (vorher Optionen > Virtuell).
+    if (vfHubschrauber()) {
+      const umsch = (lbl, an, key, info) => {
+        const w = () => { vfHubSetzen(key, !an); vfGarageNeu(); };
+        const z = garWertZeile(t(lbl), an ? t('An') : t('Aus'), w, w);
+        const l = z.querySelector('.gk-l');
+        l.classList.add('opt-label');
+        l.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t(info) + '</small>');
+        z.dataset.vfHub = key;
+        rechts.appendChild(z);
+      };
+      umsch('Gyro-Stabilisierung', vfHubGyro(), VF_HUB_GYRO_STORE, 'An (Vorgabe): ohne Eingang richtet sich der Hubschrauber von selbst wieder auf. Aus: die Schräglage bleibt stehen.');
+      umsch('Rollen umkehren', vfHubInvertRoll(), VF_HUB_INVERT_ROLL_STORE, 'Rechter Stick nach links kippt den Hubschrauber nach rechts statt nach links.');
+      umsch('Nicken umkehren', vfHubInvertPitch(), VF_HUB_INVERT_PITCH_STORE, 'Rechter Stick nach vorn kippt die Nase nach hinten statt nach vorn.');
+    }
     // v1.5.10 (WIP): Vorschau des gewaehlten Autos (Seitenansicht in der Originalfarbe) und die Lackfarbe.
     // Die Vorschau ist ein Bild je Auto (img/autos/<modell>/vorschau.jpg, tools/vorschau_bilder.py);
     // fehlt ein Bild, verschwindet die Zeile still.
     {
       const jl = Math.max(0, VF_LACK_FARBEN.findIndex((f) => f.v === vfLack()));
-      const lackWahl = (dd) => { vfLackSetzen(VF_LACK_FARBEN[(jl + dd + VF_LACK_FARBEN.length) % VF_LACK_FARBEN.length].v); renderGarage(); };
+      const lackWahl = (dd) => { vfLackSetzen(VF_LACK_FARBEN[(jl + dd + VF_LACK_FARBEN.length) % VF_LACK_FARBEN.length].v); vfGarageNeu(); };
       const zeile = garWertZeile(t('Lackfarbe'), t(VF_LACK_FARBEN[jl].n), () => lackWahl(-1), () => lackWahl(1));
       zeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
       const palette = document.createElement('span');
@@ -48990,7 +49046,7 @@
         b.className = 'vf-lack' + (i === jl ? ' aktiv' : '');
         b.style.background = f.v || 'linear-gradient(135deg,#c8102e 0%,#0057b8 50%,#e8e8e8 100%)';
         b.title = t(f.n); b.setAttribute('aria-label', t(f.n));
-        b.onclick = (e) => { e.stopPropagation(); vfLackSetzen(f.v); renderGarage(); };
+        b.onclick = (e) => { e.stopPropagation(); vfLackSetzen(f.v); vfGarageNeu(); };
         palette.appendChild(b);
       });
       zeile.querySelector('.gk-w').appendChild(palette);
@@ -49007,7 +49063,7 @@
     }
     // v1.3.39 (WIP): der Fussboden unter der Bahn, Dielen in echten Massen (siehe VF_BOEDEN).
     const jb = Math.max(0, VF_BOEDEN.findIndex((b) => b.id === vfBodenWahl()));
-    const bodenWahl = (dd) => { vfBodenSetzen(VF_BOEDEN[(jb + dd + VF_BOEDEN.length) % VF_BOEDEN.length].id); renderGarage(); };
+    const bodenWahl = (dd) => { vfBodenSetzen(VF_BOEDEN[(jb + dd + VF_BOEDEN.length) % VF_BOEDEN.length].id); vfGarageNeu(); };
     const bodenZeile = garWertZeile(t('Boden'), t(VF_BOEDEN[jb].name), () => bodenWahl(-1), () => bodenWahl(1));
     bodenZeile.dataset.vfBoden = '1';
     bodenZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
@@ -49019,7 +49075,7 @@
       const ni = (jf + dd + freiListe.length) % freiListe.length;
       try { localStorage.setItem(VF_STRECKE_STORE, freiListe[ni]); } catch (e) { /* egal */ }
       if (freiListe[ni]) vfFreiLaden(freiListe[ni]).catch(() => {});   // schon vorladen (aus PR 4 von gnen54)
-      renderGarage();
+      vfGarageNeu();
     };
     // Aus PR 4 von gnen54: beide Toernerschleifen (mit und ohne Bruecke) sind waehlbar.
     const freiZeile = garWertZeile(t('Strecke'), freiListe[jf] ? t(VF_FREIE[freiListe[jf]].name) + ' (' + t('nur virtuell') + ')' : t('Gebaute Bahn'), () => freiWahl(-1), () => freiWahl(1));
@@ -49029,7 +49085,7 @@
     // Fahrtrichtung (BESTELLT, WIP): die Strecke andersherum fahren, siehe vfGegenrichtung.
     {
       const gegen = vfGegenAn();
-      const rWahl = () => { try { localStorage.setItem(VF_RICHTUNG_STORE, gegen ? 'normal' : 'gegen'); } catch (e) { /* egal */ } renderGarage(); };
+      const rWahl = () => { try { localStorage.setItem(VF_RICHTUNG_STORE, gegen ? 'normal' : 'gegen'); } catch (e) { /* egal */ } vfGarageNeu(); };
       const rZeile = garWertZeile(t('Fahrtrichtung'), gegen ? t('Gegenrichtung') : t('Normal'), rWahl, rWahl);
       const rL = rZeile.querySelector('.gk-l');
       rL.classList.add('opt-label');
@@ -49041,7 +49097,7 @@
     const autoSch = vfSchaltungAuto();
     const schaltWahl = () => {
       try { localStorage.setItem(VF_SCHALTUNG_STORE, autoSch ? 'manuell' : 'auto'); } catch (e) { /* egal */ }
-      renderGarage();
+      vfGarageNeu();
     };
     rechts.appendChild(garWertZeile(t('Schaltung'), autoSch ? t('Automatik') : t('Manuell'), schaltWahl, schaltWahl));
     // Handling: GT3 (praezise wie in ACC) oder Schnell (mehr Grip, mehr Einschlag, hoeheres Tempo).
@@ -49049,26 +49105,26 @@
     const hWahl = (dd) => {
       const i = Math.max(0, VF_HANDLING_MODI.findIndex((m) => m.id === hId));
       vfHandlingSetzen(VF_HANDLING_MODI[(i + dd + VF_HANDLING_MODI.length) % VF_HANDLING_MODI.length].id);
-      renderGarage();
+      vfGarageNeu();
     };
     rechts.appendChild(garWertZeile(t('Handling'), vfHandlingName(hId), () => hWahl(-1), () => hWahl(1)));
     // Grafik: Performance (wie bisher, fuer schwache Handys) oder Quality (Schatten, Tonemapping,
     // besseres Licht, Vignette).
     const gId = vfGrafik();
-    const gWahl = () => { vfGrafikSetzen(gId === 'perf' ? 'qual' : 'perf'); renderGarage(); };
+    const gWahl = () => { vfGrafikSetzen(gId === 'perf' ? 'qual' : 'perf'); vfGarageNeu(); };
     const grafikZeile = garWertZeile(t('Grafik'), t(vfGrafik() === 'perf' ? 'Performance' : 'Quality'), gWahl, gWahl);
     grafikZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(grafikZeile);
     // v1.5 (WIP): Tageszeit (Farbstimmung), in Performance und Quality.
     const tzA = VF_TAGESZEITEN.indexOf(vfTageszeit());
-    const tzWahl = (d) => { vfTageszeitSetzen(VF_TAGESZEITEN[(tzA + d + VF_TAGESZEITEN.length) % VF_TAGESZEITEN.length].id); renderGarage(); };
+    const tzWahl = (d) => { vfTageszeitSetzen(VF_TAGESZEITEN[(tzA + d + VF_TAGESZEITEN.length) % VF_TAGESZEITEN.length].id); vfGarageNeu(); };
     const tzZeile = garWertZeile(t('Tageszeit'), t(VF_TAGESZEITEN[tzA].name), () => tzWahl(-1), () => tzWahl(1));
     tzZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     tzZeile.dataset.feld = 'tageszeit';
     rechts.appendChild(tzZeile);
     // v1.5.94 (G7) BESTELLT: abschaltbar. Erklaerung im (i).
     const sichtAn = vfSichtTempoAn();
-    const sichtWahl = () => { try { localStorage.setItem(VF_SICHT_STORE, sichtAn ? 'aus' : 'an'); } catch (e) { /* egal */ } renderGarage(); };
+    const sichtWahl = () => { try { localStorage.setItem(VF_SICHT_STORE, sichtAn ? 'aus' : 'an'); } catch (e) { /* egal */ } vfGarageNeu(); };
     const sichtZeile = garWertZeile(t('Sichtfeld mit Tempo'), sichtAn ? t('An') : t('Aus'), sichtWahl, sichtWahl);
     const sichtL = sichtZeile.querySelector('.gk-l');
     sichtL.classList.add('opt-label');
@@ -49079,13 +49135,13 @@
     const geistAn = vfGeistAn();
     const geistWahl = () => {
       try { localStorage.setItem(VF_GEIST_STORE, geistAn ? 'aus' : 'an'); } catch (e) { /* egal */ }
-      renderGarage();
+      vfGarageNeu();
     };
     rechts.appendChild(garWertZeile(t('Geist folgt meiner Linie'), geistAn ? t('An') : t('Aus'), geistWahl, geistWahl));
     // Rueckspiegel in der Motorhauben-Kamera (aus PR 4 von gnen54, Standard aus).
     {
       const spAn = vfSpiegelAn();
-      const spWahl = () => { try { localStorage.setItem(VF_SPIEGEL_STORE, spAn ? 'aus' : 'an'); } catch (e) { /* egal */ } renderGarage(); };
+      const spWahl = () => { try { localStorage.setItem(VF_SPIEGEL_STORE, spAn ? 'aus' : 'an'); } catch (e) { /* egal */ } vfGarageNeu(); };
       const spZeile = garWertZeile(t('Rückspiegel (Motorhaube)'), spAn ? t('An') : t('Aus'), spWahl, spWahl);
       const spL = spZeile.querySelector('.gk-l');
       spL.classList.add('opt-label');
@@ -49098,7 +49154,7 @@
     const abseitsBremse = vfAbseitsBremseAn();
     const abseitsWahl = () => {
       try { localStorage.setItem(VF_ABSEITS_BREMSE_STORE, abseitsBremse ? 'aus' : 'an'); } catch (e) { /* egal */ }
-      renderGarage();
+      vfGarageNeu();
     };
     const abseitsZeile = garWertZeile(t('Kein Tempoverlust neben der Bahn'), abseitsBremse ? t('Aus') : t('An'), abseitsWahl, abseitsWahl);
     abseitsZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
@@ -49107,13 +49163,13 @@
     const nNpc = vfNpcAnzahl();
     const npcWahl = (dd) => {
       try { localStorage.setItem(VF_NPC_STORE, String(Math.max(0, Math.min(3, nNpc + dd)))); } catch (e) { /* egal */ }
-      renderGarage();
+      vfGarageNeu();
     };
     rechts.appendChild(garWertZeile(t('NPCs'), nNpc === 0 ? t('Aus') : String(nNpc), () => npcWahl(-1), () => npcWahl(1)));
     // Pflicht-Boxendurchfahrt im Rennen (Runden, Langstrecke): Aus, 1, 2 oder 3 (aus PR 4 von gnen54).
     {
       const pfl = vfPflichtBox();
-      const pflWahl = (d) => { try { localStorage.setItem(VF_PFLICHTBOX_STORE, String((pfl + d + 4) % 4)); } catch (e) { /* egal */ } renderGarage(); };
+      const pflWahl = (d) => { try { localStorage.setItem(VF_PFLICHTBOX_STORE, String((pfl + d + 4) % 4)); } catch (e) { /* egal */ } vfGarageNeu(); };
       const pflZeile = garWertZeile(t('Pflicht-Boxendurchfahrt'), pfl ? String(pfl) : t('Aus'), () => pflWahl(-1), () => pflWahl(1));
       const pflL = pflZeile.querySelector('.gk-l');
       pflL.classList.add('opt-label');
@@ -49125,7 +49181,7 @@
       const jf = VF_FEDER_WERTE.indexOf(vfFederSicht());
       const federWahl = (dd) => {
         try { localStorage.setItem(VF_FEDER_STORE, String(VF_FEDER_WERTE[Math.max(0, Math.min(VF_FEDER_WERTE.length - 1, jf + dd))])); } catch (e) { /* egal */ }
-        renderGarage();
+        vfGarageNeu();
       };
       rechts.appendChild(garWertZeile(t('Neigung sichtbar'), VF_FEDER_WERTE[jf] + '×', () => federWahl(-1), () => federWahl(1)));
     }
@@ -49363,7 +49419,7 @@
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
     // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).
-    if (!VF.studie && typeof showTab === 'function') showTab('garage');
+    if (!VF.studie && typeof showTab === 'function') { showTab('vgarage'); vfGarageSeite(); }   // v1.6.32: zurueck in die virtuelle Garage
     VF.studie = false;
   }
   window.addEventListener('keydown', (e) => { if (VF.aktiv && e.key === 'Escape') { e.stopImmediatePropagation(); virtuellBeenden(); } }, true);
@@ -73059,7 +73115,8 @@
     virtKnopf.setAttribute('aria-pressed', garVirtuellAuf ? 'true' : 'false');
     if (garVirtuellAuf) virtKnopf.classList.add('primary');
     // v1.6.23: der Knopf schaltet auch den Fahrmodus auf FAHREN auf Virtuell (Issue #7).
-    virtKnopf.onclick = () => { garVirtuellAuf = true; garKameraAuf = false; if (typeof fahrModusSetzen === 'function') fahrModusSetzen('virtuell'); renderGarage(); };
+    // v1.6.32: die virtuelle Garage ist eine eigene Seite (vfGarageZeigen, 60d-virtuell.js).
+    virtKnopf.onclick = () => { if (typeof vfGarageZeigen === 'function') vfGarageZeigen(); };
     virt.appendChild(virtKnopf);
     knoepfe.appendChild(virt);
     // v1.5 (WIP) BESTELLT: die Onboard-Kamera "in der Garage verbinden". Wie "Virtuell fahren": links
@@ -107790,7 +107847,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Ebene 1 (oben neben dem Logo, von jeder Seite aus) und die Kacheln des Fahren-Schirms
     // (JS-Knoepfe, hier von Hand genannt). Der Titel fuehrt nach Fahren.
     // v1.3.5: der Mehrspieler ist kein Reiter mehr, sondern der Knopf #fa-mp in der Autos-Kachel.
-    const kanten = { home: ['fahren'], fahren: ['garage', 'control', 'track', 'race', 'mp'] };
+    // v1.6.32: die virtuelle Garage (vgarage) ueber Garage/Autos-Kachel im Modus Virtuell und aus der echten Garage.
+    const kanten = { home: ['fahren'], fahren: ['garage', 'vgarage', 'control', 'track', 'race', 'mp'] };
     K_EBENE1.forEach((x) => { kanten.fahren.push(x); });
     const tabs = [...document.querySelectorAll('.tabpage')].map((t) => t.id.replace(/^tab-/, ''));
     tabs.forEach((t) => {
@@ -110648,6 +110706,28 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } finally { Object.assign(VF, merkVF); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'nur im Training waehlbar; ' + mass + '; drueber fliegen zaehlt nicht; Runde erst nach allen Toren' };
   });
+  stAdd('Virtuell v1.6.27: Audi RS5 DTM (Dave Love, CC BY 4.0) waehlbar, Modell laedt mit Teilen, Raedern und Lichtern', async () => {
+    const f = [];
+    if (!vfAutoListe().some((a) => a.v === 'audirs5')) f.push('nicht in der Liste');
+    if (VF_MODELL_PFADE.audirs5 !== 'img/autos/audirs5/') f.push('Pfad fehlt');
+    let mass = '';
+    try {
+      const d = await vfModellDaten('img/autos/audirs5/');
+      const m = d.meta, P = m.physik;
+      const rollen = new Set(m.teile.map((t) => t.rolle));
+      ['karosserie', 'glas', 'scheinwerfer', 'ruecklicht', 'rad'].forEach((r) => { if (!rollen.has(r)) f.push('keine Rolle ' + r); });
+      const rad = m.teile.filter((t) => t.gruppe === 'rad');
+      if (!rad.some((t) => t.achse === 'vorn') || !rad.some((t) => t.achse === 'hinten')) f.push('Raeder je Achse fehlen');
+      if (m.teile.some((t) => t.ecken > 65535 || t.ecke0 + t.ecken > m.ecken || t.index0 + t.indizes > m.indizes)) f.push('Teilbereiche ausserhalb');
+      if (!(P.laenge > 4.5 && P.laenge < 5.3 && P.radstand > 2.5 && P.radstand < 3)) f.push('Masse ' + P.laenge + ' / ' + P.radstand);
+      if (!(P.reifen.vorn.radius > 0.3 && P.reifen.vorn.radius < 0.4 && P.reifen.vorn.breite > 0.25)) f.push('Rad ' + JSON.stringify(P.reifen.vorn));
+      if (!(m.lichter.front.length >= 2 && m.lichter.rueck.length >= 2)) f.push('Lichter fehlen');
+      const prof = vfPhysikAus(P);
+      if (!(prof.m > 900 && prof.Iz > 0 && prof.muV > 1)) f.push('Fahrprofil ' + JSON.stringify(prof).slice(0, 80));
+      mass = m.ecken + ' Ecken, ' + m.teile.length + ' Teile, ' + P.laenge + ' m lang, Radstand ' + P.radstand + ' m';
+    } catch (e) { f.push('laedt nicht: ' + e.message); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
+  });
   stAdd('Virtuell v1.6.25: Fahrgefuehl Drift - Pruefstand: Vollgas driftet stabil um 25 Grad ohne Dreher, halbes Gas greift, GT3 bleibt (Issue #10)', () => {
     const f = [];
     if (!VF_HANDLING_MODI.some((m) => m.id === 'drift')) f.push('Drift nicht waehlbar');
@@ -110731,6 +110811,57 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'quer +-20 Grad richtig, iOS gedreht, Totzone 2,5, voll 35 Grad, Knopf ' + folge.join(' -> ') };
   });
+  stAdd('Virtuell v1.6.32: eigenstaendige virtuelle Garage - Vorschau links/oben, Optionen scrollen, Heli-Optionen dort, echte Garage ohne virtuelle Spalte', () => {
+    const f = [], merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : '';
+    const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merk = { m: lies(FAHR_MODUS_STORE), a: lies(VF_AUTO_STORE), s: lies(VF_STRECKE_STORE) };
+    const rm = $('race-mode'), merkRm = rm ? rm.value : null;
+    let mass = '';
+    try {
+      vfGarageZeigen();
+      if (!vfGarageSeiteOffen()) f.push('Seite nicht offen');
+      if (!fahrModusVirtuell()) f.push('Modus nicht virtuell');
+      const vor = $('vg-vorschau'), opt = $('vg-optionen');
+      if (!vor.querySelector('.vf-los-zeile [data-vf="los"]')) f.push('Losfahren nicht bei der Vorschau');
+      if (!vor.querySelector('.vg-name') || vor.querySelector('.vg-name').textContent.indexOf(vfAutoName(vfAutoWahl())) < 0) f.push('Name fehlt');
+      if (!opt.querySelector('[data-vf-strecke]')) f.push('Optionen fehlen');
+      if (vor.getBoundingClientRect().width > 0 && opt.getBoundingClientRect().width > 0) {
+        const r1 = vor.getBoundingClientRect(), r2 = opt.getBoundingClientRect();
+        const quer = innerWidth > innerHeight;
+        if (quer && !(r1.right <= r2.left + 1)) f.push('quer: Vorschau nicht links');
+        if (!quer && !(r1.bottom <= r2.top + 1)) f.push('hoch: Vorschau nicht oben');
+        if (quer && getComputedStyle(vor).position !== 'sticky') f.push('quer: Vorschau bleibt beim Scrollen nicht stehen');
+        mass = (quer ? 'quer' : 'hoch') + ' ' + Math.round(r1.width) + '+' + Math.round(r2.width) + ' px';
+      }
+      // Eine Aenderung zeichnet die virtuelle Garage neu, nicht die echte.
+      const stZeile = opt.querySelector('[data-vf-strecke]');
+      const vorher = stZeile.textContent;
+      stZeile.querySelector('button').click();
+      if (!vfGarageSeiteOffen() || $('vg-optionen').querySelector('[data-vf-strecke]').textContent === vorher) f.push('Streckenwahl zeichnet nicht neu');
+      // Heli (Training): seine Optionen stehen hier.
+      if (rm && [...rm.options].some((o) => o.value === 'practice')) {
+        rm.value = 'practice';
+        try { localStorage.setItem(VF_AUTO_STORE, 'hubschrauber'); } catch (e) { /* egal */ }
+        vfGarageSeite();
+        if ($('vg-optionen').querySelectorAll('[data-vf-hub]').length !== 3) f.push('Heli-Optionen fehlen');
+        if (!$('vg-vorschau').querySelector('.vg-heli')) f.push('Heli ohne Bild');
+      }
+      if (document.getElementById(['sub-opt', 'virtuell'].join('-'))) f.push('alte Seite Optionen > Virtuell noch da');
+      // Echte Garage: der Knopf fuehrt in die virtuelle Garage.
+      showTab('garage'); renderGarage();
+      showTab('fahren');
+    } finally {
+      try {
+        if (merk.m === null) localStorage.removeItem(FAHR_MODUS_STORE); else localStorage.setItem(FAHR_MODUS_STORE, merk.m);
+        if (merk.a === null) localStorage.removeItem(VF_AUTO_STORE); else localStorage.setItem(VF_AUTO_STORE, merk.a);
+        if (merk.s === null) localStorage.removeItem(VF_STRECKE_STORE); else localStorage.setItem(VF_STRECKE_STORE, merk.s);
+      } catch (e) { /* egal */ }
+      if (rm && merkRm !== null) rm.value = merkRm;
+      konsoleFahrenZeichnen();
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eigene Seite, ' + mass + ', Heli-Optionen dort' };
+  });
   stAdd('Fahren v1.6.23: Umschalter Echt | Virtuell - Autos-Kachel, Garage und Start folgen dem Modus (Issue #7)', () => {
     const f = [], merk = (() => { try { return localStorage.getItem(FAHR_MODUS_STORE); } catch (e) { return null; } })();
     const merkTab = (typeof kAktiverTab === 'function' ? kAktiverTab() : ''), merkVA = garVirtuellAuf, merkKA = garKameraAuf;
@@ -110751,10 +110882,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if ($('fa-auto-bild').style.backgroundImage.indexOf('vorschau.jpg') < 0) f.push('kein Vorschaubild');
       if ($('fa-auto-info').textContent.indexOf(vfAutoName(vfAutoWahl())) < 0) f.push('Autoname fehlt: ' + $('fa-auto-info').textContent);
       if ($('fa-start-titel').textContent !== t('Virtuell fahren')) f.push('Start: ' + $('fa-start-titel').textContent);
-      // Garage oeffnet mit den Optionen der virtuellen Fahrt.
-      garVirtuellAuf = false;
+      // Garage oeffnet die eigenstaendige virtuelle Garage (v1.6.32).
       $('fa-garage').click();
-      if (!garVirtuellAuf) f.push('Garage ohne virtuelle Optionen');
+      if (!vfGarageSeiteOffen() || !$('vg-optionen').querySelector('[data-vf-strecke]')) f.push('Garage oeffnet nicht die virtuelle Garage');
       // Start startet die virtuelle Fahrt (abgefangen).
       virtuellStarten = () => { gestartet++; return false; };
       if (!kRennenLaeuft()) { $('fa-start').click(); if (gestartet !== 1) f.push('Start startet nicht virtuell'); }
