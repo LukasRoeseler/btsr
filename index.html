@@ -43301,6 +43301,8 @@
     if (an) gl.texParameterf(gl.TEXTURE_2D, an.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(aniso, gl.getParameter(an.MAX_TEXTURE_MAX_ANISOTROPY_EXT) || 1));
     return tx;
   }
+  // Aus PR 4 von gnen54: v < -0,5 heisst reines Weiss ohne Textur (Randstriche und Baender der freien Strecken;
+  // aus der Randstein-Textur gelesen wurden sie in der Ferne hellblau/rosa).
   // Programm fuer Boden, Fahrbahn und Randsteine: Textur mal Eckfarbe, plus Glanz (Fresnel mal Alpha der
   // Textur, Staerke je Flaeche und Bodenart), Nebel wie im Rest der Szene. Gerechnet in mediump (auf
   // Handys halbe Genauigkeit, schneller), nur die Texturkoordinate in highp, wo vorhanden: die Randsteine
@@ -43321,7 +43323,7 @@
       gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
         'precision mediump float;\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nvarying highp vec2 vuv;\n#else\nvarying vec2 vuv;\n#endif\n'
         + 'varying vec3 vc; varying float vd; varying float vg; varying float vsd; uniform sampler2D tx; uniform vec3 nebel; uniform vec3 dunst; uniform vec3 sonne;'
-        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 c = (t.rgb * vc + vec3(0.80, 0.86, 0.95) * (vg * t.a)) * sonne;'
+        + 'void main(){ vec4 t = vuv.y < -0.5 ? vec4(0.93, 0.93, 0.94, 1.0) : texture2D(tx, vuv); vec3 c = (t.rgb * vc + vec3(0.80, 0.86, 0.95) * (vg * t.a)) * sonne;'
         + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, mix(nebel, dunst, vsd * vsd), f), 1.0); }'));
     } else {
       // Quality. Blickvektor und Schattenkoordinaten entstehen im Vertexshader (dort immer highp) und
@@ -43341,10 +43343,10 @@
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
         + 'HP float schTiefe(HP vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
         + 'void main(){'
-        + ' vec4 t = texture2D(tx, vuv);'
+        + ' vec4 t = vuv.y < -0.5 ? vec4(0.93, 0.93, 0.94, 1.0) : texture2D(tx, vuv);'
         + ' vec3 c = pow(t.rgb, vec3(2.2)) * vc * (vec3(0.32, 0.32, 0.34) + 0.85 * 0.9022);'
         + ' float e = 1.0 - max(normalize(vv).y, 0.0); c += vec3(0.80, 0.86, 0.95) * (glanz * e * e * e * t.a);'
-        + ' if (bump > 0.01) { float dU = texture2D(tx, vuv + vec2(1.0/512.0, 0.0)).r - t.r; c += vec3(dU) * bump * 0.8; }'
+        + ' if (bump > 0.01 && vuv.y > -0.5) { float dU = texture2D(tx, vuv + vec2(1.0/512.0, 0.0)).r - t.r; c += vec3(dU) * bump * 0.8; }'
         // max(0): das Relief zieht an dunklen Fugen unter 0, und filmic(x < 0) kippt einzelne Kanaele
         // auf 0 oder 1 (lila Linien am Boden in 1.3.124-1.3.131).
         + ' c = pow(filmic(max(c, vec3(0.0)) * belichtung), vec3(1.0/2.2)) * sonne;'
@@ -43461,9 +43463,41 @@
     const rnd = vfZufall(4242 + tiles.length * 31 + Math.round(Math.abs(pts[n - 1].x) * 7));
     const off = (i, d) => [pts[i].x + nrm[i].x * d, pts[i].y + nrm[i].y * d];
     const lerp = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+    const zz = (i) => pts[i].z || 0;   // Hoehe (Bruecke der freien Strecke), sonst 0
     // v1.5.84: halbe Breite je Punkt und Seite (Boxenbucht auf VF_BOX_SEITE).
     const bucht = vfBoxBucht(pts, tiles).b;
-    const hw = (i, sg) => half + (sg === VF_BOX_SEITE ? bucht[i] : 0);
+    // Freie Strecken mit echter Boxengasse aus der DXF (aus PR 4 von gnen54): die Gasse ist eine eigene Flaeche
+    // (Dreiecke), die Fahrbahn weitet sich dort NICHT zur Bucht - sonst lief der Randstreifen entlang der ganzen
+    // Gasse ins Leere (GEMELDET: "Fehlender Randstreifen").
+    const gasse = (tiles.find((x) => x && x.gasse) || {}).gasse || null;
+    const hw = (i, sg) => half + (!gasse && sg === VF_BOX_SEITE ? bucht[i] : 0);
+    // Randkanten der freien Strecken (aus PR 4 von gnen54, "kleiner Haken mit Spitze"): wo eine Kurve innen enger
+    // ist als der Abstand der Kante zur Mittellinie, ueberschlaegt sich die versetzte Linie (Schwalbenschwanz). Je
+    // Seite und Abstand einmal die ganze Kante rechnen und Schlaufen herausschneiden: schneiden sich zwei nahe
+    // Abschnitte, ruecken die Punkte dazwischen auf den Schnittpunkt.
+    const kantenCache = {};
+    const kante = (sg, extra) => {
+      const key = sg + ':' + extra;
+      if (kantenCache[key]) return kantenCache[key];
+      const E = [];
+      for (let i = 0; i < n; i++) E.push(off(i, (hw(i, sg) + extra) * sg));
+      for (let j = 0; j + 1 < n; j++) {
+        const a = E[j], b = E[j + 1];
+        for (let k = j + 2; k + 1 < n && k < j + 60; k++) {
+          const c = E[k], d = E[k + 1];
+          const r = [b[0] - a[0], b[1] - a[1]], q = [d[0] - c[0], d[1] - c[1]];
+          const den = r[0] * q[1] - r[1] * q[0];
+          if (Math.abs(den) < 1e-9) continue;
+          const t = ((c[0] - a[0]) * q[1] - (c[1] - a[1]) * q[0]) / den, u = ((c[0] - a[0]) * r[1] - (c[1] - a[1]) * r[0]) / den;
+          if (t > 0 && t < 1 && u > 0 && u < 1) {
+            const x = [a[0] + r[0] * t, a[1] + r[1] * t];
+            for (let m = j + 1; m <= k; m++) E[m] = x;
+            j = k - 1; break;
+          }
+        }
+      }
+      return (kantenCache[key] = E);
+    };
     const teile = [];
     for (let i = 0; i < n - 1; i++) {
       const T = pts[i + 1].tile, l = teile[teile.length - 1];
@@ -43479,13 +43513,19 @@
       const L = acc[acc.length - 1] || 1;
       const uL = (sp * VF_BAHN_SPALTE + 0.5) / VF_BAHN_TEX, uR = ((sp + 1) * VF_BAHN_SPALTE - 0.5) / VF_BAHN_TEX;
       const ua = fu ? uR : uL, ub = fu ? uL : uR;
+      const freiT = !!(tiles[tl.T] && tiles[tl.T].frei);
       for (let i = tl.i0; i <= tl.i1; i++) {
         let v0 = acc[i - tl.i0] / L, v1 = acc[i - tl.i0 + 1] / L;
         if (fv) { v0 = 1 - v0; v1 = 1 - v1; }
+        // Freie Strecken sind EINE Fahrbahn ohne Steckverbindungen (aus PR 4 von gnen54): die dunkle Steckfuge am
+        // oberen und unteren Rand jeder Texturspalte nicht mitnehmen, sonst laeuft an jeder Pseudo-Kachel und an
+        // Start/Ziel eine dunkle Querfuge ueber die Bahn.
+        if (freiT) { v0 = 0.012 + v0 * 0.976; v1 = 0.012 + v1 * 0.976; }
         const a = off(i, half), b = off(i + 1, half), c = off(i + 1, -half), d = off(i, -half);
-        vfViereck(strasse, [a[0], 0, a[1], ua, v0], [b[0], 0, b[1], ua, v1], [c[0], 0, c[1], ub, v1], [d[0], 0, d[1], ub, v0], ct);
+        const z0 = zz(i), z1 = zz(i + 1);
+        vfViereck(strasse, [a[0], z0, a[1], ua, v0], [b[0], z1, b[1], ua, v1], [c[0], z1, c[1], ub, v1], [d[0], z0, d[1], ub, v0], ct);
         // Boxenbucht: ein Streifen neben der Fahrbahn, die Textur an der Kante gespiegelt (keine Naht).
-        if (bucht[i] > 0 || bucht[i + 1] > 0) {
+        if (!gasse && (bucht[i] > 0 || bucht[i + 1] > 0)) {
           const sd = VF_BOX_SEITE, kante = sd > 0 ? ua : ub, innen = sd > 0 ? ub : ua;
           const uq = (bb) => kante + (innen - kante) * Math.min(1, bb / (2 * half));
           const e0 = off(i, sd * half), e1 = off(i + 1, sd * half), f1 = off(i + 1, sd * hw(i + 1, sd)), f0 = off(i, sd * hw(i, sd));
@@ -43493,19 +43533,34 @@
         }
       }
       for (const sg of [1, -1]) {
-        if (tiles[tl.T] && tiles[tl.T].frei) {
-          // Freie Strecke (nur virtuell): statt Carrera-Randstein eine weisse Randlinie am Bahnrand
-          // (BESTELLT Gnen54 18.11.: "Fahrbahnraender nur weiss markiert"). Asphalt-Schulter bis zur
-          // Kante, dazu die weisse Linie; an der offenen Boxenbucht keine Linie (dort geht es hinein).
-          const uk = sg > 0 ? ua : ub, um = (sg > 0 ? 4 : 132) / VF_RAND_B, lw = kw * 0.1;
+        if (freiT) {
+          // Freie Strecke (nur virtuell): statt Carrera-Randstein Asphalt bis zur Kante (die Rumpelzone, so breit
+          // wie ein Carrera-Randstein) und ein SCHMALER weisser Strich direkt an der Fahrbahnkante (BESTELLT
+          // Gnen54: "Fahrbahnraender nur weiss markiert"). Aus PR 4 von gnen54: reines Weiss (v = -1, siehe
+          // Shader), Kanten ohne Schlaufen (kante), und offen nur dort, wo die Boxengasse den Streifen wirklich
+          // beruehrt (Ein- und Ausfahrt) - dort laeuft der Strich gestrichelt weiter, die Gerade bleibt sichtbar.
+          const lw = kw * 0.3, uk = sg > 0 ? ua : ub, um = (sg > 0 ? 4 : 132) / VF_RAND_B;
+          const E0 = kante(sg, 0), EK = kante(sg, kw), EL = kante(sg, lw);
           for (let i = tl.i0; i <= tl.i1; i++) {
-            const hi = hw(i, sg), hi1 = hw(i + 1, sg);
-            const iA = off(i, hi * sg), iB = off(i + 1, hi1 * sg);
-            const oA = off(i, (hi + kw) * sg), oB = off(i + 1, (hi1 + kw) * sg);
-            vfViereck(strasse, [iA[0], 0, iA[1], uk, 0.3], [iB[0], 0, iB[1], uk, 0.4], [oB[0], 0, oB[1], uk, 0.4], [oA[0], 0, oA[1], uk, 0.3], ct);
-            if (sg !== VF_BOX_SEITE || (bucht[i] < 1e-3 && bucht[i + 1] < 1e-3)) {
-              const lA = off(i, (hi + kw - lw) * sg), lB = off(i + 1, (hi1 + kw - lw) * sg);
-              vfViereck(rand, [lA[0], 0.012, lA[1], um, 0.1], [lB[0], 0.012, lB[1], um, 0.1], [oB[0], 0.012, oB[1], um, 0.2], [oA[0], 0.012, oA[1], um, 0.2], [1, 1, 1]);
+            const offen = !!gasse && [0.5, 1.0].some((f) => vfInGasse(gasse, off(i, (half + kw * f) * sg)) || vfInGasse(gasse, off(i + 1, (half + kw * f) * sg)));
+            const iA = E0[i], iB = E0[i + 1], oA = EK[i], oB = EK[i + 1], lA = EL[i], lB = EL[i + 1];
+            const zA = zz(i), zB = zz(i + 1);
+            vfViereck(strasse, [iA[0], zA, iA[1], uk, 0.3], [iB[0], zB, iB[1], uk, 0.4], [oB[0], zB, oB[1], uk, 0.4], [oA[0], zA, oA[1], uk, 0.3], ct);
+            if (!offen || i % 2 === 0) vfViereck(rand, [iA[0], zA + 0.012, iA[1], um, -1], [iB[0], zB + 0.012, iB[1], um, -1], [lB[0], zB + 0.012, lB[1], um, -1], [lA[0], zA + 0.012, lA[1], um, -1], [1, 1, 1]);
+            if (zA > 0 || zB > 0) {
+              // Bruecke (aus PR 4 von gnen54): Bordwand aussen (grau) bis 1,3 ueber die Fahrbahn, unten so tief wie
+              // die Platte - darunter bleibt die Durchfahrt offen; an den flachen Rampenenden reicht sie bis zum
+              // Boden. Dazu die Unterseite der Platte.
+              const wo = 1.3, dk = 1.0, wf = [0.58, 0.6, 0.63], wi = [0.5, 0.52, 0.55], uw2 = 4 / VF_RAND_B;
+              const bA = Math.max(0, zA - dk), bB = Math.max(0, zB - dk);
+              const aA = off(i, (half + kw + 0.25) * sg), aB = off(i + 1, (half + kw + 0.25) * sg);
+              vfViereck(rand, [oA[0], bA, oA[1], uw2, 0.1], [oB[0], bB, oB[1], uw2, 0.1], [oB[0], zB + wo, oB[1], uw2, 0.2], [oA[0], zA + wo, oA[1], uw2, 0.2], wi);
+              vfViereck(rand, [aA[0], bA, aA[1], uw2, 0.1], [aB[0], bB, aB[1], uw2, 0.1], [aB[0], zB + wo, aB[1], uw2, 0.2], [aA[0], zA + wo, aA[1], uw2, 0.2], wf);
+              vfViereck(rand, [oA[0], zA + wo, oA[1], uw2, 0.1], [oB[0], zB + wo, oB[1], uw2, 0.1], [aB[0], zB + wo, aB[1], uw2, 0.2], [aA[0], zA + wo, aA[1], uw2, 0.2], wf);
+              if (sg > 0) {
+                const uA = off(i, -(half + kw)), uB = off(i + 1, -(half + kw));
+                vfViereck(rand, [oA[0], bA, oA[1], uw2, 0.1], [oB[0], bB, oB[1], uw2, 0.1], [uB[0], bB, uB[1], uw2, 0.2], [uA[0], bA, uA[1], uw2, 0.2], [0.35, 0.36, 0.38]);
+              }
             }
           }
           continue;
@@ -43543,7 +43598,81 @@
         }
       }
     });
+    if (gasse) {
+      // Boxengasse aus der DXF (aus PR 4 von gnen54): Dreiecke als Asphalt (etwas heller) und die weissen Waende als
+      // geglaettete, durchgehende Baender (vorher ein Rechteck je Segment: in Boegen ein Saegezahn).
+      const t = gasse.tri, ur = (0.5 * VF_BAHN_SPALTE) / VF_BAHN_TEX, cb = [0.88, 0.88, 0.9], uk = 4 / VF_RAND_B;
+      for (let j = 0; j + 5 < t.length; j += 6) {
+        for (const k of [0, 2, 4]) strasse.push(t[j + k], 0, t[j + k + 1], ur, 0.5, cb[0], cb[1], cb[2]);
+      }
+      for (const L0 of (gasse.rand || [])) if (L0 && L0.length > 1) vfBand(rand, L0, kw * 0.15, 0.012, uk, [1, 1, 1]);
+      // Anfang und Ende des Tankbereichs: fein gestrichelte Querlinie (Gnen54: "sonst stehst du zu weit vorne,
+      // versuchst zu tanken und es funktioniert nicht"). Gleiche Schwelle wie vfBoxDurchfahrt (30 % der Tiefe).
+      let bMax = 0;
+      for (let i = 0; i < n; i++) bMax = Math.max(bMax, bucht[i] || 0);
+      const drin = (i) => (bucht[((i % n) + n) % n] || 0) > bMax * 0.3;
+      if (bMax > 0) for (let i = 0; i < n; i++) {
+        if (!drin(i) || (drin(i - 1) && drin(i + 1))) continue;
+        const sg = VF_BOX_SEITE, tief = half + bMax * 1.3, sl = kw * 0.5, lw = kw * 0.12;
+        const zi = zz(i), e = [nrm[i].x * sg, nrm[i].y * sg], q = [-e[1] * lw, e[0] * lw];
+        for (let d = half + kw; d + sl <= tief; d += sl * 2) {
+          const p0 = off(i, d * sg), p1 = off(i, (d + sl) * sg);
+          if (!vfInGasse(gasse, [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2])) continue;
+          vfViereck(rand, [p0[0] - q[0], zi + 0.014, p0[1] - q[1], uk, -1], [p1[0] - q[0], zi + 0.014, p1[1] - q[1], uk, -1],
+            [p1[0] + q[0], zi + 0.014, p1[1] + q[1], uk, -1], [p0[0] + q[0], zi + 0.014, p0[1] + q[1], uk, -1], [1, 1, 1]);
+        }
+      }
+    }
+    // Steg zwischen Bahn und Boxengasse (freie Strecken, aus der DXF): ein durchgehendes, geglaettetes helles Band
+    // (aus PR 4 von gnen54, "Unschoener Bogen": lose Rechtecke je Segment liefen an den Knicken zickzack).
+    const steg = (tiles.find((x) => x && x.steg) || {}).steg;
+    if (steg && steg.pts && steg.pts.length > 1) vfBand(rand, steg.pts, (steg.b || 2) / 2, 0.012, 4 / VF_RAND_B, [0.88, 0.88, 0.89]);
     return { strasse, rand, teile: teile.length };
+  }
+  // Liegt ein Kartenpunkt q in der Boxengasse (Dreiecke aus der DXF)? Aus PR 4 von gnen54: fuer Ein- und Ausfahrt,
+  // dort bleibt der weisse Randstrich offen ("Boxeneingang und -ausgang frei").
+  function vfInGasse(g, q) {
+    const t = g.tri;
+    for (let j = 0; j + 5 < t.length; j += 6) {
+      const ax = t[j], ay = t[j + 1], bx = t[j + 2], by = t[j + 3], cx = t[j + 4], cy = t[j + 5];
+      const d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy);
+      if (!d) continue;
+      const l1 = ((by - cy) * (q[0] - cx) + (cx - bx) * (q[1] - cy)) / d, l2 = ((cy - ay) * (q[0] - cx) + (ax - cx) * (q[1] - cy)) / d;
+      if (l1 >= 0 && l2 >= 0 && l1 + l2 <= 1) return true;
+    }
+    return false;
+  }
+  // Linienzug als durchgehendes flaches Band (aus PR 4 von gnen54): erst gleitend gemittelt (die Linien stammen aus
+  // dem Raster, Treppchen von ~0,2 Einheiten), dann geglaettet (Chaikin, Enden bleiben), Ecken gemeinsam (Gehrung),
+  // reines Weiss/Grau ohne Textur (v = -1, siehe Bahn-Shader).
+  function vfBand(ziel, L0, hb, y, u, farbe) {
+    let L = L0.map((p) => [p[0], p[1]]);
+    if (L.length > 4) {
+      const n = L.length;
+      L = L.map((p, j) => {
+        const r = Math.min(3, j, n - 1 - j); let x = 0, z = 0;
+        for (let k = -r; k <= r; k++) { x += L0[j + k][0]; z += L0[j + k][1]; }
+        return [x / (2 * r + 1), z / (2 * r + 1)];
+      });
+    }
+    for (let it = 0; it < 3 && L.length > 2; it++) {
+      const M = [L[0]];
+      for (let j = 0; j + 1 < L.length; j++) {
+        const a = L[j], b = L[j + 1];
+        M.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]);
+      }
+      M.push(L[L.length - 1]); L = M;
+    }
+    const Q = L.map((p, j) => {
+      const a = L[Math.max(0, j - 1)], b = L[Math.min(L.length - 1, j + 1)];
+      const l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      return [-(b[1] - a[1]) / l * hb, (b[0] - a[0]) / l * hb];
+    });
+    for (let j = 0; j + 1 < L.length; j++) {
+      const a = L[j], b = L[j + 1], qa = Q[j], qb = Q[j + 1];
+      vfViereck(ziel, [a[0] - qa[0], y, a[1] - qa[1], u, -1], [b[0] - qb[0], y, b[1] - qb[1], u, -1],
+        [b[0] + qb[0], y, b[1] + qb[1], u, -1], [a[0] + qa[0], y, a[1] + qa[1], u, -1], farbe);
+    }
   }
   // Ein Holzstueck als Viereck: Ursprung o, Laengsrichtung e (Laenge L), Querrichtung q (Breite B).
   // Atlas-Stueck, Spiegelung und Farbton zufaellig: kein Muster wiederholt sich sichtbar.
@@ -44003,10 +44132,59 @@
     }
     return o;
   }
-  // Weltlage des Autos: Drehung um y, sodass lokal +z in Fahrtrichtung (sin h, -cos h) zeigt.
+  // ---- HOEHE (aus PR 4 von gnen54: Toernerschleife 2.0 mit Bruecke) ----------------------------------
+  // Die Mittellinie traegt je Punkt eine Hoehe z (sonst 0). Gebraucht wird sie nur an erhoehten Stuecken; dort liegen
+  // Bruecke und Unterfuehrung am selben Kartenort. Unterschieden wird ueber die Fahrtrichtung: wer laengs der Bruecke
+  // faehrt (oder rueckwaerts), ist oben; die Strasse darunter kreuzt schraeg. Das eigene Auto nimmt seinen Bahnpunkt
+  // (VF.idx), das ist eindeutig.
+  function vfHoeheVorbereiten() {
+    const P = VF.pts, n = P ? P.length : 0, seg = [];
+    for (let i = 0; i + 1 < n; i++) {
+      if (!((P[i].z || 0) > 0 || (P[i + 1].z || 0) > 0)) continue;
+      const dx = P[i + 1].x - P[i].x, dy = P[i + 1].y - P[i].y, l = Math.hypot(dx, dy) || 1;
+      seg.push({ i, ax: P[i].x, ay: P[i].y, ex: dx / l, ey: dy / l, l, z0: P[i].z || 0, z1: P[i + 1].z || 0 });
+    }
+    VF.hoehe = seg.length ? seg : null;
+  }
+  const VF_HZ_NULL = { z: 0, p: 0 };
+  function vfHzSeg(sg, x, y, vor) {
+    const t = Math.max(0, Math.min(1, ((x - sg.ax) * sg.ex + (y - sg.ay) * sg.ey) / sg.l));
+    const p = Math.atan2(sg.z1 - sg.z0, sg.l);
+    return { z: sg.z0 + (sg.z1 - sg.z0) * t, p: vor ? p : -p };
+  }
+  function vfHz(x, y, h) {
+    if (!VF.hoehe) return VF_HZ_NULL;
+    const r = h * Math.PI / 180, fx = Math.sin(r), fy = -Math.cos(r);
+    let best = null, bq = TRACK_HALF_W + TRACK_KERB_W + VF_AUTO.B;
+    for (const sg of VF.hoehe) {
+      const t = ((x - sg.ax) * sg.ex + (y - sg.ay) * sg.ey) / sg.l;
+      if (t < -0.3 || t > 1.3) continue;
+      const q = Math.abs((x - sg.ax) * -sg.ey + (y - sg.ay) * sg.ex);
+      const c = fx * sg.ex + fy * sg.ey;
+      if (q < bq && Math.abs(c) > 0.6) { bq = q; best = { sg, vor: c > 0 }; }
+    }
+    return best ? vfHzSeg(best.sg, x, y, best.vor) : VF_HZ_NULL;
+  }
+  // Eigenes Auto: ueber den Bahnpunkt (auch quer stehend auf der Bruecke eindeutig).
+  function vfHzSpieler() {
+    if (!VF.hoehe || !VF.pts) return VF_HZ_NULL;
+    const i = VF.idx || 0, n = VF.pts.length;
+    let best = null, bd = Infinity;
+    for (const sg of VF.hoehe) {
+      const d = Math.min(Math.abs(sg.i - i), n - Math.abs(sg.i - i));
+      if (d < bd) { bd = d; best = sg; }
+    }
+    if (!best || bd > 2) return VF_HZ_NULL;
+    const r = VF.h * Math.PI / 180;
+    return vfHzSeg(best, VF.x, VF.y, Math.sin(r) * best.ex - Math.cos(r) * best.ey >= 0);
+  }
+  // Weltlage des Autos: Drehung um y, sodass lokal +z in Fahrtrichtung (sin h, -cos h) zeigt. Auf der Bruecke
+  // (VF.hoehe) dazu die Hoehe und die Neigung der Rampe.
   function vfLage(x, y, h) {
     const th = Math.PI - h * Math.PI / 180, c = Math.cos(th), s = Math.sin(th);
-    return [c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, x, 0, y, 1];
+    const H = VF.hoehe ? (x === VF.x && y === VF.y ? vfHzSpieler() : vfHz(x, y, h)) : VF_HZ_NULL;
+    const m = [c, 0, -s, 0, 0, 1, 0, 0, s, 0, c, 0, x, H.z, y, 1];
+    return H.p ? vfMal(m, vfRx(-H.p)) : m;
   }
   const VF_EINS = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
   const VF_OBEN = [0, 1, 0], VF_WEISS = [1, 1, 1], VF_GLAS_TINT = [0.18, 0.22, 0.27];
@@ -44104,15 +44282,21 @@
   // wie der Editor, Abstand ~2,86) und Pseudo-Kacheln (START / STRAIGHT / PIT), damit Runden, Randsteine,
   // Boxenbucht und NPCs unveraendert funktionieren. Erzeugt aus der DXF InDeQ-Ring-V1a von Gnen54.
   const VF_STRECKE_STORE = 'omegasim-vf-strecke';
-  const VF_FREIE = { indeq: { name: 'Törnerschleife 2.0', pfad: 'img/strecken/indeq-ring.json' } };
+  // Aus PR 4 von gnen54: dieselbe Strecke auch mit Bruecke (die Bahn kreuzt sich, Hoehe z je Punkt).
+  const VF_FREIE = { indeq: { name: 'Törnerschleife 2.0', pfad: 'img/strecken/indeq-ring.json' },
+    indeqBruecke: { name: 'Törnerschleife 2.0 mit Brücke', pfad: 'img/strecken/indeq-bruecke.json' } };
   function vfFreiWahl() { try { const v = localStorage.getItem(VF_STRECKE_STORE) || ''; return VF_FREIE[v] ? v : ''; } catch (e) { return ''; } }
   const vfFreiCache = {};
   function vfFreiLaden(k) {
     if (vfFreiCache[k]) return Promise.resolve(vfFreiCache[k]);
     return fetch(VF_FREIE[k].pfad).then((r) => { if (!r.ok) throw new Error(VF_FREIE[k].pfad + ' ' + r.status); return r.json(); }).then((d) => {
       // PIT-Kacheln bringen die Tiefe ihrer Bucht mit (halbe Bahnbreiten, echte Boxengasse).
+      // Aus PR 4 von gnen54: der Steg zwischen Bahn und Gasse (steg) und die echte Boxengasse der DXF als Dreiecke
+      // mit Waenden (boxDreiecke, boxRand) haengen an der PIT-Kachel (vfBahnGeometrie zeichnet sie).
       const tiles = d.kacheln.map((ty) => ({ type: TILE_TYPE[ty] !== undefined ? TILE_TYPE[ty] : TILE_TYPE.STRAIGHT, frei: true,
-        bucht: ty === 'PIT' ? d.boxBucht : undefined, seite: ty === 'PIT' ? (d.boxSeite || -1) : undefined }));
+        bucht: ty === 'PIT' ? d.boxBucht : undefined, seite: ty === 'PIT' ? (d.boxSeite || -1) : undefined,
+        steg: ty === 'PIT' && d.steg ? d.steg : undefined,
+        gasse: ty === 'PIT' && Array.isArray(d.boxDreiecke) ? { tri: d.boxDreiecke, rand: d.boxRand || [] } : undefined }));
       // buchtPkt: Tiefe der Boxengasse je Punkt (Karteneinheiten jenseits der halben Bahn) - die feste Tiefe
       // mit S-Rampe ueberschlug sich sonst in der Kurve vor der Gasse (GEMELDET Gnen54).
       const bp = Array.isArray(d.buchtPkt) ? d.buchtPkt : null;
@@ -45375,6 +45559,21 @@
     const ortMs = performance.now() - tOrt0;
     VF.idx = o.idx;
     if (VF.splits && VF.splits[VF.idx] === undefined) VF.splits[VF.idx] = rennZeitJetzt() - VF.rundeAb;
+    // Bruecke und Rampen (aus PR 4 von gnen54): seitlich begrenzt (Bordwand), herunterfallen gibt es nicht. Die
+    // Steigung bremst bergauf und beschleunigt bergab (g mal sin, verkleinert um REAL_SCALE wie die Physik).
+    const Hb = vfHzSpieler();
+    if (Hb.z > 0.3) {
+      const grenze = TRACK_HALF_W + TRACK_KERB_W - VF_AUTO.B * 0.5;
+      if (Math.abs(o.quer) > grenze) {
+        const zu = (Math.abs(o.quer) - grenze) * Math.sign(o.quer);
+        VF.x -= VF.nrm[o.idx].x * zu; VF.y -= VF.nrm[o.idx].y * zu; o.quer -= zu;
+        if (Math.abs(st.speedKmh) > 0.05 && (VF.wandSeit === undefined || rennZeitJetzt() - VF.wandSeit > 300)) {
+          VF.wandSeit = rennZeitJetzt(); padRumble(0.6, 0.4, 90, 'kerb', 1);
+        }
+        st.speedKmh *= Math.exp(-2.5 * dt);
+      }
+    }
+    if (Hb.p) st.speedKmh -= 9.81 * Math.sin(Hb.p) * 3.6 * dt / REAL_SCALE;
     // v1.5.84: in der Boxenbucht ist die Fahrbahn auf der Boxenseite breiter.
     const bucht = (VF.boxBucht && o.quer * VF_BOX_SEITE > 0) ? VF.boxBucht.b[o.idx] : 0;
     const ab = Math.abs(o.quer) > TRACK_HALF_W * 1.19 + bucht + VF_AUTO.B * 0.3;
@@ -45575,6 +45774,8 @@
     const vAbs = Math.abs(physEngine.state.speedKmh || 0);
     for (const npc of (VF.npcs || [])) {
       if (npc.koAus || npc.derbyAus) continue;
+      // Bruecke (aus PR 4 von gnen54): einer oben, einer unten durch - kein Kontakt, kein Windschatten.
+      if (VF.hoehe && Math.abs(vfHz(npc.x, npc.y, npc.h).z - vfHzSpieler().z) > 1.5) { npc.kontakt = false; continue; }
       const dx = npc.x - VF.x, dy = npc.y - VF.y;
       const long = dx * fwdX + dy * fwdY;
       const lat = dx * latX + dy * latY;
@@ -46283,8 +46484,16 @@
     // Rechter Stick / T-F-G-H: die Drehung laeuft nach der Zeit (in der Pause ist dt 0).
     const art = vfDrehArt(id), D = vfDreh(), ein = vfDrehEingabe();
     vfDrehSchritt(D, ein[0], ein[1], dt, vfDrehGrenzen(art));
-    const k = vfKameraBasis(id, fx, fz, dt, art, D);
-    return art === 'kreisen' ? k : vfDrehAnwenden(k, art, D, VF.x, 0, VF.y);
+    const k0 = vfKameraBasis(id, fx, fz, dt, art, D);
+    const k = art === 'kreisen' ? k0 : vfDrehAnwenden(k0, art, D, VF.x, 0, VF.y);
+    // Bruecke (aus PR 4 von gnen54): die Kamera faehrt mit hoch; im Auto (Haube, Fahrer) neigt sich der Blick mit
+    // der Rampe.
+    const H = vfHzSpieler();
+    if (!H.z && !H.p) return k;
+    const innen = id === 'haube' || id === 'fahrer';
+    const weit = Math.hypot(k.ziel[0] - k.auge[0], k.ziel[2] - k.auge[2]);
+    return Object.assign({}, k, { auge: [k.auge[0], k.auge[1] + H.z, k.auge[2]],
+      ziel: [k.ziel[0], k.ziel[1] + H.z + (innen ? Math.tan(H.p) * weit : 0), k.ziel[2]] });
   }
   function vfKameraBasis(id, fx, fz, dt, art, D) {
     if (id === 'fahrer' && VF.fahrer) { VF.kam = null; return vfFahrerKamera(VF.fahrer, VF.x, VF.y, dt); }
@@ -46820,9 +47029,13 @@
     // Gezeichnet wird die volle Mittellinie (sonst klafft an der Schliessstelle ein Loch in der Bahn),
     // gefahren, gezaehlt und von den NPCs befahren die an der Schliessstelle gekuerzte: die freie Strecke
     // schliesst die Schleife mit einem letzten Punkt gleich dem ersten (vfSchliessstelle nimmt ihn ab).
+    // Aus PR 4 von gnen54: die Schliessstelle auch bei gebauten Bahnen kuerzen ("Pendel der NPCs" an der
+    // Startlinie: schliessen die Teile nicht genau, lief die Spur ein Stueck ueber den Start hinaus und sprang
+    // zurueck, ein NPC fuhr dort hin und her).
     const ptsVoll = frei ? frei.pts : trackCenterline(tiles);
-    VF.pts = frei ? vfSchliessstelle(frei.pts) : ptsVoll;
+    VF.pts = vfSchliessstelle(ptsVoll);
     VF.nrm = trackNormals(VF.pts);
+    vfHoeheVorbereiten();   // Bruecke (freie Strecke): Hoehe je Abschnitt, sonst VF.hoehe = null
     // v1.3.39: Flaechen mit Texturen (die Pixel entstehen nur beim ersten Mal) und der feste Platz der
     // Kamera "Fahrer am Rand".
     try { VF.flaeche = vfFlaechenBauen(gl, ptsVoll, ptsVoll === VF.pts ? VF.nrm : trackNormals(ptsVoll), tiles, VF.grafik); } catch (e) { schicht.remove(); document.body.classList.remove('vf-an'); showHudToast('WebGL: ' + e.message); return false; }
@@ -46830,7 +47043,8 @@
     // v1.5.84: Boxenbucht je Punkt (Abseits, Randstein) und die Parkstriche.
     VF.boxBucht = vfBoxBucht(VF.pts, tiles); VF.boxStriche = null;
     try {
-      const S = vfBoxStriche(VF.pts, VF.nrm, tiles, VF.boxBucht);
+      // Freie Strecken haben statt der Carrera-Parkstriche ihre echte Boxengasse mit Steg (vfBahnGeometrie).
+      const S = frei ? [] : vfBoxStriche(VF.pts, VF.nrm, tiles, VF.boxBucht);
       if (S.length) { const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(S), gl.STATIC_DRAW); VF.boxStriche = { b, n: S.length / 6 }; }
     } catch (e) { VF.boxStriche = null; }
     VF.baeume = null; VF.weh = null;
@@ -47078,9 +47292,12 @@
     const freiWahl = (dd) => {
       const ni = (jf + dd + freiListe.length) % freiListe.length;
       try { localStorage.setItem(VF_STRECKE_STORE, freiListe[ni]); } catch (e) { /* egal */ }
+      if (freiListe[ni]) vfFreiLaden(freiListe[ni]).catch(() => {});   // schon vorladen (aus PR 4 von gnen54)
       renderGarage();
     };
-    const freiZeile = garWertZeile(t('Strecke'), freiListe[jf] ? VF_FREIE[freiListe[jf]].name : t('Gebaute Bahn'), () => freiWahl(-1), () => freiWahl(1));
+    // Aus PR 4 von gnen54: beide Toernerschleifen (mit und ohne Bruecke) sind waehlbar.
+    const freiZeile = garWertZeile(t('Strecke'), freiListe[jf] ? t(VF_FREIE[freiListe[jf]].name) + ' (' + t('nur virtuell') + ')' : t('Gebaute Bahn'), () => freiWahl(-1), () => freiWahl(1));
+    freiZeile.dataset.vfStrecke = '1';
     freiZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(freiZeile);
     // Schaltung: Automatik oder Manuell (schalten dann mit I/K).
@@ -47257,6 +47474,7 @@
   function virtuellBeenden() {
     VF.frei = undefined;
     VF_BOX_SEITE = -1;   // zurueck auf die Editor-Boxenseite (rechts)
+    VF.hoehe = null;
     rennPauseBeenden();
     if (!VF.aktiv) return;
     // Laeuft eine Challenge (z. B. die Studienfahrt) mit dem virtuellen Auto, endet sie mit: abgebrochen,
