@@ -4456,6 +4456,8 @@
     flag: '<path d="M5 21V4"/><path class="vf-ikon-fuell" d="M5 4h12l-2.5 4 2.5 4H5"/>',
     licht: '<path class="vf-ikon-fuell" d="M11 6a6 6 0 0 0 0 12z"/><path d="M15 8h6M15 12h6M15 16h6"/>',
     wetter: '<path d="M7 15a4 4 0 0 1 .4-8 5 5 0 0 1 9.6 1.4A3.4 3.4 0 0 1 17 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
+    // v1.6.20: Pad-Diagnose (aus gnen54s testversion): ein Gamepad.
+    paddiag: '<path d="M6 9h12a3 3 0 0 1 3 3l-1 5a2 2 0 0 1-3.4 1L15 16H9l-1.6 2A2 2 0 0 1 4 17l-1-5a3 3 0 0 1 3-3z"/><path d="M8 12v3M6.5 13.5h3"/><circle cx="16.5" cy="12.5" r="1"/>',
     kam: '<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8.5 7l1.5-3h4l1.5 3"/>',
     reset: '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/>',
     touch: '<path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11M12 10V8.5a1.5 1.5 0 0 1 3 0V11M15 10.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.5a6 6 0 0 1-5-2.7l-2.2-2.7a1.5 1.5 0 0 1 2.4-1.8L9 16"/>',
@@ -4464,13 +4466,32 @@
   };
   function vfIkon(id) { return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + VF_IKONEN[id] + '</svg>'; }
   function vfLeisteZu() { try { return localStorage.getItem(VF_LEISTE_STORE) === 'zu'; } catch (e) { return false; } }
+  // v1.6.20 (aus gnen54s testversion, 22.11.): F8 oder Knopf: Pad-Diagnose ueber der Fahrt (padDiagText, 90-ghosts.js).
+  var vfPadDiagIv = 0;
+  function vfPadDiagUmschalten() {
+    let el = document.getElementById('vf-pad-diag');
+    if (el) { el.remove(); clearInterval(vfPadDiagIv); return; }
+    el = document.createElement('pre');
+    el.id = 'vf-pad-diag';
+    el.setAttribute('data-i18n-skip', '');
+    el.style.cssText = 'position:fixed;left:8px;top:180px;z-index:99999;margin:0;padding:8px 10px;max-width:70vw;'
+      + 'white-space:pre-wrap;font:12px/1.4 monospace;color:#fff;background:rgba(0,0,0,.78);border:1px solid #29b6f6;pointer-events:none';
+    document.body.appendChild(el);
+    const zeichne = () => {
+      if (!el.isConnected || !VF.aktiv) { el.remove(); clearInterval(vfPadDiagIv); return; }
+      el.textContent = t('Pad-Diagnose (F8 oder Knopf schließt)') + '\n' + (typeof padDiagText === 'function' ? padDiagText() : '-');
+    };
+    zeichne();
+    vfPadDiagIv = setInterval(zeichne, 200);
+  }
+  window.addEventListener('keydown', (e) => { if (typeof VF !== 'undefined' && VF.aktiv && e.key === 'F8' && !e.repeat) { e.preventDefault(); vfPadDiagUmschalten(); } });
   function vfKnopfLeisteHtml() {
     const a = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const k = (id, titel, extra) => '<button type="button" class="vf-ikon" data-vf="' + id + '" title="' + a(titel) + '" aria-label="' + a(titel) + '"'
       + (extra || '') + '>' + vfIkon(id) + '</button>';
     const zu = vfLeisteZu();
     return '<div class="vf-knoepfe' + (zu ? ' vf-knoepfe-zu' : '') + '" role="toolbar" aria-label="' + a(t('Knöpfe der virtuellen Fahrt')) + '">'
-      + k('box', t('Box')) + k('flag', t('Gelbe Flagge')) + k('licht', t('Licht')) + k('wetter', t('Wetter')) + k('kam', t('Kamera'))
+      + k('box', t('Box')) + k('flag', t('Gelbe Flagge')) + k('licht', t('Licht')) + k('wetter', t('Wetter')) + k('kam', t('Kamera')) + k('paddiag', t('Pad-Diagnose'))
       + k('reset', t('Zurücksetzen')) + k('touch', t('Steuerung'), ' hidden') + k('zu', t('Beenden'))
       + k('leiste', t(zu ? 'Knöpfe einblenden' : 'Knöpfe ausblenden'), ' aria-pressed="' + (zu ? 'true' : 'false') + '"')
       + '</div>';
@@ -4856,6 +4877,7 @@
       else if (b.dataset.vf === 'leiste') vfLeisteUmschalten();
       else if (b.dataset.vf === 'reset') vfZuruecksetzen();
       else if (b.dataset.vf === 'kam') vfKameraWechseln();
+      else if (b.dataset.vf === 'paddiag') vfPadDiagUmschalten();
       else if (b.dataset.vf === 'touch') vfTouchUmschalten();
       else if (b.dataset.vf === 'box') {
         if (VF.modus === 'derby') showHudToast(t('Derby: kein Boxenstopp'));

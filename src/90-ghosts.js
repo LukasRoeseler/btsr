@@ -13302,6 +13302,35 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!window.OmegaPad) return null;
     return { an: padNativLage.an, geraete: w ? w[7] : 0, ereignisse: w ? w[8] : 0, zustellMs: w ? w[9] : null };
   }
+  // v1.6.20 (aus gnen54s testversion, 22.11.): PAD-DIAGNOSE. Merkt je Takt, wo pollGamepad aussteigt und was das Pad
+  // meldet; padDiagText() zeigt es (virtuell: F8 oder Knopf in der Leiste). Fuer Pads wie den EasySMX X05, deren
+  // Trigger in Ruhe 0,5 melden: zeigt bei Achsen die gelernte Ruhelage und Spanne.
+  let padDiag = { grund: 'noch kein Takt', t: 0 };
+  function padDiagSetzen(grund, pad, gas, bremse, lenk) {
+    padDiag = { grund, t: performance.now(), id: pad ? String(pad.id) : '', mapping: pad ? pad.mapping : '', gas, bremse, lenk,
+      knoepfe: pad ? [...(pad.buttons || [])].map((b, i) => (b && (b.pressed || b.value > 0) ? i + (b.value < 1 ? '(' + (+b.value).toFixed(2) + ')' : '') : -1)).filter((i) => i !== -1) : [],
+      achsen: pad ? [...(pad.axes || [])].map((v) => +v.toFixed(2)) : [] };
+  }
+  function padDiagText() {
+    const alle = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter(Boolean) : [];
+    const d = padDiag, alt = performance.now() - d.t;
+    const f2 = (v) => (typeof v === 'number' ? v.toFixed(2) : '?');
+    const b = (x) => (x && x.type !== 'none' ? x.type + ' ' + x.index + (x.unten ? ' (nach vorn)' : '')
+      + (x.type === 'axis' ? ' (Ruhe ' + f2(x.ruhe) + ', ' + f2(x.min) + '..' + f2(x.max) + (x.invert ? ', inv' : '') + ')' : '') : '-');
+    const z = (x) => (typeof x === 'number' ? x.toFixed(2) : '-');
+    return [
+      'Pads: ' + (alle.length ? alle.map((q) => q.index + ' ' + String(q.id).slice(0, 50) + ' [' + (q.mapping || 'roh') + ']').join(' | ') : 'keins'),
+      'Takt: ' + (alt > 500 ? 'seit ' + Math.round(alt) + ' ms kein Takt!' : 'laeuft'),
+      'Ausstieg: ' + d.grund,
+      'Pad: ' + (d.id ? d.id.slice(0, 60) + ' [' + (d.mapping || 'roh') + ']' : '-'),
+      'Gas: ' + b(bindings.throttle), 'Bremse: ' + b(bindings.brake), 'Lenkung: ' + b(bindings.steering),
+      'Werte: Gas ' + z(d.gas) + ', Bremse ' + z(d.bremse) + ', Lenkung ' + z(d.lenk),
+      'Knoepfe: ' + ((d.knoepfe || []).join(' ') || '-') + '   Achsen: ' + (d.achsen || []).join(' '),
+      'Pause: ' + (typeof rennPauseAktiv === 'function' && rennPauseAktiv() ? 'AN' : 'aus')
+        + ', Abgleich-Sperre: ' + (bindSitzung || bindSperreBisLos ? 'JA' : 'nein'),
+      'Ausgang: Lenkung ' + z(steerX) + ', Gas ' + z(throttleY),
+    ].join('\n');
+  }
   function pollGamepad() {
     const spieler = padsFuerSpieler();
     if (spieler.p1) spieler.p1 = padNativ(spieler.p1);
@@ -13330,17 +13359,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         prevLightFlash = false;
       }
       padConnected = false;
+      padDiagSetzen('kein Pad fuer Spieler 1', null);
       return;
     }
     padConnected = true;
     padLastPollTime = performance.now();
     // v1.1.45: Abgleich-Sitzung - das Pad erfasst nur, sonst nichts (siehe bindPadSitzung).
     if ((bindSitzung || bindSperreBisLos) && bindPadSitzung(pad, 1)) {
-      releaseInput(SRC.PAD);
+      releaseInput(SRC.PAD); padDiagSetzen('Abgleich-Sitzung / warte bis alle Tasten los', pad);
       return;
     }
     if (!(listeningFor && bindEditSpieler < 2) && rennPauseTaste(pad, bindings, 1)) {
-      releaseInput(SRC.PAD); return;
+      releaseInput(SRC.PAD); padDiagSetzen('Rennpause', pad); return;
     }
     // Startaufstellung offen: das Steuerkreuz waehlt den Knopf (X bestaetigt, flagTasteTick).
     if (typeof raceGridOffen === 'function' && raceGridOffen()) {
@@ -13350,21 +13380,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       gridPadVorher = !!r;
     } else gridPadVorher = false;
     // Meisterschaft offen: Steuerkreuz und Tasten gehoeren ihrem Schirm (73-meisterschaft.js).
-    if (typeof meisterPad === 'function' && meisterPad(pad)) return;
+    if (typeof meisterPad === 'function' && meisterPad(pad)) { padDiagSetzen('Meisterschaft-Schirm', pad); return; }
     // Reaktionstest der Studie: das Pad gehoert dem Test (er fragt es selbst ab).
-    if (typeof studieTestAktiv === 'function' && studieTestAktiv()) return;
+    if (typeof studieTestAktiv === 'function' && studieTestAktiv()) { padDiagSetzen('Studie-Reaktionstest', pad); return; }
     // TITELBILDSCHIRM (ACC-Menue): jede Taste fuehrt ins Hauptmenue, links/rechts wechselt die
     // Sprache. Solange danach noch eine Taste gehalten wird, tut dieser Takt nichts weiter -
     // sonst oeffnete dasselbe gehaltene Kreuz im Hauptmenue gleich die naechste Kachel.
-    if (typeof konsolePadTitel === 'function' && konsolePadTitel(pad)) return;
+    if (typeof konsolePadTitel === 'function' && konsolePadTitel(pad)) { padDiagSetzen('Titelbildschirm', pad); return; }
     // Steuerungs-Fuehrung offen: jede Taste wird dort angezeigt, gefahren wird nicht.
     if (typeof konsoleTourPad === 'function' && konsoleTourPad(pad)) {
-      releaseInput(SRC.PAD);
+      releaseInput(SRC.PAD); padDiagSetzen('Steuerungs-Fuehrung / Einfuehrung', pad);
       return;
     }
     // Raumdesigner offen (60b-raum.js): Stick, Kreuz und Tasten gehoeren ihm.
     if (typeof raumPad === 'function' && raumPad(pad)) {
-      releaseInput(SRC.PAD);
+      releaseInput(SRC.PAD); padDiagSetzen('Raumdesigner', pad);
       return;
     }
 
@@ -13372,13 +13402,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Spieler 2s Tabelle bearbeitet wird (bindEditSpieler === 2), soll Spieler 1
     // weiterfahren koennen, statt fuer eine fremde Zuordnung stillzustehen.
     if (listeningFor && bindEditSpieler < 2) {
-      releaseInput(SRC.PAD);
+      releaseInput(SRC.PAD); padDiagSetzen('Tastenzuweisung wartet (Optionen > Controller)', pad);
       tryCaptureBinding(pad);
     } else {
       let throttleRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.throttle)), TRIGGER_DEADZONE);
       let brakeRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.brake)), TRIGGER_DEADZONE);
       const steerRaw = applyDeadzone(readBindingValue(pad, bindings.steering));
       [throttleRaw, brakeRaw] = rennPauseFilterGas(1, throttleRaw, brakeRaw);
+      padDiagSetzen('keiner - Pad faehrt', pad, throttleRaw, brakeRaw, steerRaw);
 
       // v0.9.26 (Plan Schritt 2): die Live-Texte nur bei ANDERUNG schreiben - dieser Weg
       // laeuft jeden Frame und zusaetzlich im Sendetakt, und jedes textContent= ist Arbeit
