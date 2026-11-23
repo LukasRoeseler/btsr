@@ -14583,6 +14583,44 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gebaute Bahn → ' + namen.join(' → ') + ' → zurueck, Richtung per Knopf' };
   });
+  stAdd('Sektoren v1.6.27: Karte mit Farbsaum und Nummer je Sektor, Puls am Sektorende, Ansage nur bei Bestzeit (Issue #12)', () => {
+    const f = [];
+    // Strecke mit automatischen Sektoren suchen (geschlossen, genug Teile).
+    let tiles = null;
+    for (const c of [ST_SEK_OVAL]) {
+      try { const tl = codeToTrack(c).tiles; if (autoSektorPlanFuer(tl, trackSchluss(trackCenterline(tl)).closed, true)) { tiles = tl; break; } } catch (e) { /* weiter */ }
+    }
+    if (!tiles) return { ok: false, mass: 'keine Teststrecke mit Sektoren' };
+    const plan = autoSektorPlanFuer(tiles, true, true);
+    const html = renderTrackPreview(tiles, null, { detailed: true, echt: true, sektorenImmer: true }).html;
+    const saeume = (html.match(/data-sektor-saum="/g) || []).length, nr = (html.match(/data-sektor-nr="/g) || []).length;
+    if (saeume !== plan.n || nr !== plan.n) f.push('Saeume ' + saeume + ', Nummern ' + nr + ' statt ' + plan.n);
+    if (html.indexOf(SEKTOR_FARBEN[0]) < 0 || html.indexOf(SEKTOR_FARBEN[1]) < 0) f.push('Farben fehlen');
+    const aus = tiles.map((x, i) => (i ? Object.assign({}, x) : Object.assign({}, x, { sm: 'aus' })));
+    if (renderTrackPreview(aus, null, { detailed: true, echt: true, sektorenImmer: true }).html.indexOf('data-sektor-saum') >= 0) f.push('Sektoren aus, Saum trotzdem');
+    // Puls: Klasse an allen Saeumen dieser Nummer.
+    const box = document.createElement('div');
+    box.innerHTML = html; document.body.appendChild(box);
+    try {
+      sektorKartePuls(2);
+      const s2 = box.querySelector('[data-sektor-saum="2"]'), s1 = box.querySelector('[data-sektor-saum="1"]');
+      if (!s2 || !s2.classList.contains('sektor-puls')) f.push('Puls fehlt');
+      if (s1 && s1.classList.contains('sektor-puls')) f.push('falscher Sektor pulsiert');
+      if (s2 && parseFloat(getComputedStyle(s2).strokeWidth) < 4) f.push('Saum beim Puls nicht dicker: ' + getComputedStyle(s2).strokeWidth);
+    } finally { box.remove(); }
+    // Ansage nur, wenn schneller als jede fruehere Zeit dieses Sektors.
+    const merkH = sectorHistory, merkE = ansagenEinreihen, gesagt = [];
+    try {
+      ansagenEinreihen = (art, text) => { gesagt.push(art + ':' + text); return true; };
+      sectorHistory = [[5000, 6000], [4800, null]];
+      sektorEnde(1, 4900); sektorEnde(1, 4700); sektorEnde(2, 6100); sektorEnde(2, 5900);
+      sectorHistory = [];
+      sektorEnde(1, 1000);
+      if (gesagt.length !== 2 || gesagt[0].indexOf('sektor:') !== 0 || gesagt[0].indexOf('1') < 0 || gesagt[1].indexOf('2') < 0) f.push('Ansagen ' + JSON.stringify(gesagt));
+    } finally { sectorHistory = merkH; ansagenEinreihen = merkE; }
+    if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
+  });
   stAdd('Virtuell v1.6.25: Fahrgefuehl Drift - Pruefstand: Vollgas driftet stabil um 25 Grad ohne Dreher, halbes Gas greift, GT3 bleibt (Issue #10)', () => {
     const f = [];
     if (!VF_HANDLING_MODI.some((m) => m.id === 'drift')) f.push('Drift nicht waehlbar');

@@ -3765,6 +3765,7 @@
   function autoSekGrenze(a, zaehler, now) {
     const g = a.plan.grenzen, k = (zaehler - a.z) & 0xff;
     let erste = true;
+    const vor = a.i;
     while (a.i < g.length && k >= g[a.i]) {
       a.zeiten[a.i] = erste ? now - a.start : null;
       erste = false;
@@ -3772,6 +3773,38 @@
     }
     a.start = now;
     a.naechste = a.i < g.length ? g[a.i] : 999;
+    // v1.6.27 (Issue #12): Spieler 1 - der eben beendete Sektor pulsiert auf der Karte, eine Bestzeit wird angesagt.
+    if (a === autoSekSp && a.i > vor) sektorEnde(vor + 1, a.zeiten[vor]);
+  }
+  // ---- SEKTOR-ENDE: Karte und Ansage (v1.6.27, Issue #12, WIP) ----
+  // BESTELLT: "Sektoren automatisch fuer Rennen und Ansagen, echt und virtuell; bei einer Sektor-Ansage wird der Saum
+  // dicker und pulsiert." Jeder beendete Sektor laesst seinen Saum kurz pulsieren (1,6 s, in jeder offenen Karte);
+  // angesagt wird nur eine persoenliche Sektor-Bestzeit (sonst jede Runde mehrere Saetze), Schalter "Sektor-Bestzeiten
+  // ansagen" unter Optionen > Ansagen. Gilt fuer alles, was die Kachelmeldungen schickt - echte Autos wie die virtuelle Fahrt.
+  function sektorKartePuls(nr) {
+    document.querySelectorAll('[data-sektor-saum="' + nr + '"]').forEach((el) => {
+      el.classList.remove('sektor-puls');
+      el.getBoundingClientRect();   // die Animation neu beginnen
+      el.classList.add('sektor-puls');
+      clearTimeout(el._sekPuls);
+      el._sekPuls = setTimeout(() => el.classList.remove('sektor-puls'), 1600);
+    });
+  }
+  function sektorBestzeitVorher(i) {
+    let b = null;
+    for (const r of sectorHistory) { const v = r && r[i]; if (typeof v === 'number' && v > 0 && (b === null || v < b)) b = v; }
+    return b;
+  }
+  function sektorAnsageText(nr, ms) {
+    const z = (ms / 1000).toFixed(1);
+    return t('Sektor') + ' ' + nr + ', ' + t('Bestzeit') + ', ' + (lang === 'en' ? z : z.replace('.', ',')) + ' ' + t('Sekunden');
+  }
+  function sektorEnde(nr, ms) {
+    sektorKartePuls(nr);
+    if (typeof ms !== 'number' || !(ms > 0)) return false;
+    const b = sektorBestzeitVorher(nr - 1);
+    if (b === null || ms >= b) return false;
+    return typeof ansagenEinreihen === 'function' ? ansagenEinreihen('sektor', sektorAnsageText(nr, ms)) : false;
   }
   // An der Rundenlinie: die Sektorzeiten der vollendeten Runde, mit null fuer ungueltig.
   // null als Ganzes, wenn fuer diese Runde gar nicht gemessen wurde.
@@ -3791,7 +3824,10 @@
     const p = autoSektorPlanAktuell();
     autoSekSp.gepusht = false;
     if (p && sektorZiel() <= 1) {
-      sectorHistory.push(autoSekRunde(autoSekSp, dashLapZaehler, now) || new Array(p.n).fill(null));
+      const rz = autoSekRunde(autoSekSp, dashLapZaehler, now);
+      // v1.6.27: der letzte Sektor endet an der Linie (vor dem Eintrag, damit er gegen die fruehere Bestzeit zaehlt).
+      if (rz) sektorEnde(p.n, rz[p.n - 1]);
+      sectorHistory.push(rz || new Array(p.n).fill(null));
       autoSekSp.gepusht = true;
     }
     autoSekSync(autoSekSp, dashLapZaehler, now);

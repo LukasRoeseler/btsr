@@ -718,7 +718,7 @@
   // Akku: BESTELLT "Akku-Ansage < 25 %" - eine eigene Schwelle, nicht die 10 % oben.
   const AKKU_SCHWELLE = 0.25;
   const AKKU_HYSTERESE = 0.32;
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true };
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: true };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false };
   // JE Auto ein Latch fuer die Akku-Meldung: jedes Auto meldet unter 25 % einmal, erst nach
   // der Erholung wieder scharf. Ein gemeinsames Latch wuerde nur das ERSTE Auto melden.
@@ -1009,6 +1009,7 @@
                              'setting-announce-rain': 'rain', 'setting-announce-pit': 'pit',
                              'setting-announce-battery': 'battery',
                              'setting-announce-meister': 'meister',
+                             'setting-announce-sektor': 'sektor',
                              'setting-status-announce': 'status' };
   Object.keys(ANSAGE_KAESTCHEN).forEach((id) => {
     const el = $(id);

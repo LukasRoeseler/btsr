@@ -4271,6 +4271,10 @@
   }
   #track-preview-svg.track-baut { animation: trackBaut .5s ease-out; }
   /* LADEANIMATION (v0.9.42, 59-lade.js): drei Streckenteile leuchten nacheinander auf. */
+  /* v1.6.27 (Issue #12): Sektor-Saum auf der Karte; beim Ende eines Sektors dicker und pulsierend (sektorKartePuls). */
+  .tp-karte .sektor-saum.sektor-puls { stroke-width: 4.5; animation: sektorPuls .53s ease-in-out 3; }
+  @keyframes sektorPuls { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .3; } }
+  @media (prefers-reduced-motion: reduce) { .tp-karte .sektor-saum.sektor-puls { animation: none; } }
   .lade-traeger { position: relative; }
   .lade-ueber { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.78); }
@@ -12683,6 +12687,9 @@
         <label class="tgl"><input type="checkbox" id="setting-announce-rain" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Boxenstopp ansagen<small>Wenn der Stopp &uuml;ber den doppelten Start-Ausdruck ausgel&ouml;st wird: &bdquo;Boxenstopp eingeleitet&ldquo;. Nicht beim Knopf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-pit" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Sektor-Bestzeiten ansagen <span class="wip-tag">WIP</span>
+        <small>Wenn ein Sektor schneller war als jeder fr&uuml;here dieser Sitzung: &bdquo;Sektor 2, Bestzeit, 4,3 Sekunden&ldquo;. Der Sektor pulsiert dabei auf der Streckenkarte.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-sektor" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Akku ansagen<small>Einmal, wenn der Akku unter 25&nbsp;% f&auml;llt. Erst nach dem Laden wieder scharf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-battery"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Meisterschaft ansagen <span class="wip-tag">WIP</span>
