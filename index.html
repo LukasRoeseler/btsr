@@ -5924,10 +5924,13 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.4</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.8</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
+        <!-- v1.6.5 BESTELLT: "Fehler melden" mit Link zum Eroeffnen eines Issues (Vorlage bug.yml auf Luuke42/omegasim). -->
+        <a class="foot-code foot-fehler" href="https://github.com/Luuke42/omegasim/issues/new?template=bug.yml"
+           target="_blank" rel="noopener noreferrer">Fehler melden</a>
         <button id="home-install" hidden>Als App installieren</button>
       </div>
     </div>
@@ -7236,9 +7239,13 @@
     <div class="card subpage" id="sub-patchnotes">
       <button class="misc-back goto-tab" data-tab="options">&larr; Optionen</button>
       <h2>Patchnotes</h2>
+      <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
+      <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Vibration wie bei LibreCorsa: Ein Mischer bedient beide Rumble-Motoren gemeinsam (hoher Motor: Randstein-Pulse und schiebende Vorderr&#228;der, tiefer Motor: St&#246;&#223;e, ausbrechendes Heck, ABS, unebener Boden), statt vieler einzelner St&#246;&#223;e; die DualSense-Griffmotoren und Trigger-Widerst&#228;nde folgen denselben Werten. Die Schalter unter Optionen &gt; Vibration gelten jetzt auch beim virtuellen Fahren; &#8222;Reifenquietschen&#8220; und &#8222;Neben der Bahn&#8220; sind ab Werk aus (einmalig umgestellt). Nach dem virtuellen Fahren gibt die App Grafik, Texturen und Automodelle wieder frei (weniger Speicher beim echten Fahren), und bei sehr wenig freiem Speicher kommt ein Hinweis. Virtuell mehr Wolken bei Sonne. Auf der Startseite gibt es &#8222;Fehler melden&#8220; (&#246;ffnet ein Formular auf GitHub).</li>
+        <li>Korrekturen: Der Quality-Modus im virtuellen Fahren lief seit 1.5.154 gar nicht (ein Shaderfehler lie&#223; alle Autos still auf Performance zur&#252;ckfallen): jetzt wieder mit Eigenschatten und Lackspiegel, dadurch ist auch der zu helle Fleck unter dem Auto weg; der Schattenkern ist kleiner (am Handy schneller). Im virtuellen Fahren zeigt der erste Gang &#8222;1&#8220; statt &#8222;N&#8220;, und die R&#228;der zeigen im Drift das Gegenlenken. MAX-NPCs bremsen vor der Haarnadel fr&#252;her (drei Teile vorher). DualSense: die Griffmotoren schalten nach einem Rutscher wieder ab. Latenz-Diagnosen laufen nur noch auf Wunsch. Lizenzhinweise zur AGPL vervollst&#228;ndigt (mitgelieferte Modelle und Strecken haben eigene Lizenzen), Credits f&#252;r VW Caravelle und T&#246;rnerschleife erg&#228;nzt.</li>
+      </ul>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
-        <li>Korrekturen: Der Quality-Modus im virtuellen Fahren lief seit 1.5.154 gar nicht (ein Shaderfehler lie&#223; alle Autos still auf Performance zur&#252;ckfallen): jetzt wieder mit Eigenschatten und Lackspiegel, dadurch ist auch der zu helle Fleck unter dem Auto weg; der Schattenkern ist kleiner (am Handy schneller). Im virtuellen Fahren zeigt der erste Gang &#8222;1&#8220; statt &#8222;N&#8220;, und die R&#228;der zeigen im Drift das Gegenlenken. MAX-NPCs bremsen vor der Haarnadel fr&#252;her (drei Teile vorher). DualSense: die Griffmotoren schalten nach einem Rutscher wieder ab. Latenz-Diagnosen laufen nur noch auf Wunsch. Lizenzhinweise zur AGPL vervollst&#228;ndigt (mitgelieferte Modelle und Strecken haben eigene Lizenzen), Credits f&#252;r VW Caravelle und T&#246;rnerschleife erg&#228;nzt.</li>
         <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Die Kamera l&#228;sst sich jetzt in der Garage ausschalten. Der Knopf hei&#223;t jetzt &#8222;Koppeln&#8220; / &#8222;Entkoppeln&#8220; (Verbindung zur Kamera herstellen bzw. trennen); daneben gibt es &#8222;Ausschalten&#8220; (neuer Endpunkt /off auf der Kamera: Batterie-Hold LOW + Deep-Sleep, wie die Stock-Firmware). Au&#223;erdem geht die Kamera von selbst aus, wenn 2 Minuten lang niemand auf den Strom schaut &#8211; praktisch im Auto, um den Akku zu schonen. Wieder einschalten geht mit frischem Strom (USB/Kabel oder PWR-Knopf).</li>
         <li>Virtuelles Fahren, Quality-Modus: Die Schattenkarte ist kleiner (Touch 512, Desktop 1024 statt vorher 1024/2048) und wird weiterhin jedes Bild gerendert. Das senkt die GPU-Last sp&#252;rbar, ohne das Schatten-Flackern (das jede-2.-Bild-Rendern verursachte) wiederzubringen. Im Performance-Modus gibt es weiterhin keine Schatten.</li>
         <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Die Aufnahme flackert nicht mehr schwarz. Beim Anzeigen jedes Bildes setzt die App die Bild-URL neu; dabei war das Live-Bild kurz ohne Frame (naturalWidth 0) und die Aufnahme bekam schwarze Bilder. Jetzt h&#228;lt die App einen bereits dekodierten Bild-Frame f&#252;r die Aufnahme vor.</li>
@@ -12450,7 +12457,7 @@
           <small>Ein leichtes Brummen, solange die Reifen quietschen, mit der Lautst&auml;rke des Quietschens:
           du bist an der Haftgrenze, aber noch nicht dar&uuml;ber. Kommt vor dem Untersteuern und dem
           &Uuml;bersteuern &ndash; die Warnung davor.</small></div>
-        <label class="tgl"><input type="checkbox" id="vib-quietschen" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="vib-quietschen"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Randsteine (Virtuell fahren) <span class="wip-tag">WIP</span>
           <small>Ein kurzes R&auml;tteln und Brummen, wenn das Auto mit dem Rand &uuml;ber den
           erhabenen Stein f&auml;hrt &ndash; das Rattern der Curbs-Schwelle. Nur im virtuellen
@@ -17601,6 +17608,9 @@
     "VW Caravelle Oettinger (Gnen54, WIP)": "VW Caravelle Oettinger (Gnen54, WIP)",
     "Strecke konnte nicht geladen werden": "Track could not be loaded",
     "Korrekturen: Der Quality-Modus im virtuellen Fahren lief seit 1.5.154 gar nicht (ein Shaderfehler ließ alle Autos still auf Performance zurückfallen): jetzt wieder mit Eigenschatten und Lackspiegel, dadurch ist auch der zu helle Fleck unter dem Auto weg; der Schattenkern ist kleiner (am Handy schneller). Im virtuellen Fahren zeigt der erste Gang „1“ statt „N“, und die Räder zeigen im Drift das Gegenlenken. MAX-NPCs bremsen vor der Haarnadel früher (drei Teile vorher). DualSense: die Griffmotoren schalten nach einem Rutscher wieder ab. Latenz-Diagnosen laufen nur noch auf Wunsch. Lizenzhinweise zur AGPL vervollständigt (mitgelieferte Modelle und Strecken haben eigene Lizenzen), Credits für VW Caravelle und Törnerschleife ergänzt.": "Fixes: Quality mode in virtual driving had not worked since 1.5.154 (a shader error made every car fall back to Performance silently): it is back with self-shadows and paint reflections, which also removes the too bright patch under the car; the shadow kernel is smaller (faster on phones). In virtual driving first gear shows “1” instead of “N”, and in a drift the wheels show the countersteer. MAX NPCs brake earlier before a hairpin (three pieces ahead). DualSense: the grip motors switch off again after a slide. Latency diagnostics only run on request. AGPL license notes completed (bundled models and tracks have their own licenses), credits for the VW Caravelle and Törnerschleife added.",
+    "Wenig freier Speicher auf dem Gerät: das kann beim Fahren mit mehreren Autos zu Verzögerungen führen.": "Little free storage on this device: this can cause delays when driving with several cars.",
+    "Fehler melden": "Report a bug",
+    "Vibration wie bei LibreCorsa: Ein Mischer bedient beide Rumble-Motoren gemeinsam (hoher Motor: Randstein-Pulse und schiebende Vorderräder, tiefer Motor: Stöße, ausbrechendes Heck, ABS, unebener Boden), statt vieler einzelner Stöße; die DualSense-Griffmotoren und Trigger-Widerstände folgen denselben Werten. Die Schalter unter Optionen > Vibration gelten jetzt auch beim virtuellen Fahren; „Reifenquietschen“ und „Neben der Bahn“ sind ab Werk aus (einmalig umgestellt). Nach dem virtuellen Fahren gibt die App Grafik, Texturen und Automodelle wieder frei (weniger Speicher beim echten Fahren), und bei sehr wenig freiem Speicher kommt ein Hinweis. Virtuell mehr Wolken bei Sonne. Auf der Startseite gibt es „Fehler melden“ (öffnet ein Formular auf GitHub).": "Vibration like in LibreCorsa: one mixer drives both rumble motors together (high motor: kerb pulses and pushing front tyres, low motor: impacts, a sliding rear, ABS, rough ground) instead of many single jolts; the DualSense grip motors and trigger resistances follow the same values. The switches under Options > Vibration now also apply to virtual driving; “Tyre squeal” and “Off track” are off by default (switched once). After virtual driving the app frees graphics, textures and car models again (less memory while driving real cars), and with very little free storage a hint appears. More clouds in sunny virtual weather. The start page has “Report a bug” (opens a form on GitHub).",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20478,6 +20488,8 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Fehler melden": "Informar de un error",
+    "Wenig freier Speicher auf dem Gerät: das kann beim Fahren mit mehreren Autos zu Verzögerungen führen.": "Poco almacenamiento libre en el dispositivo: puede causar retrasos al conducir con varios coches.",
     "Ausgenommen sind mitgelieferte Inhalte mit eigener Lizenz: Automodelle, Strecken, Klänge und Wiki-Texte (siehe Credits). Einige Karosserien von Dritten dürfen nur nicht-kommerziell genutzt werden.": "Quedan excluidos los contenidos incluidos con licencia propia: modelos de coches, circuitos, sonidos y textos de la wiki (ver créditos). Algunas carrocerías de terceros solo pueden usarse de forma no comercial.",
     "VW Caravelle (Bulli): Aufbau von Gnen54 (OmegaSim CAD) auf einer Karosserie von Vehicle World (Designerin Revantika), mit schriftlicher Erlaubnis von Vehicle World zur Weitergabe an die Carrera-Hybrid-Community. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.": "VW Caravelle (Bulli): construido por Gnen54 (OmegaSim CAD) sobre una carrocería de Vehicle World (diseñadora Revantika), con permiso por escrito de Vehicle World para compartirla con la comunidad Carrera Hybrid. Piezas, colores y datos propios: Gnen54, CC BY 4.0.",
     "Strecke Törnerschleife 2.0: Streckenlayout von Driftstrecken.de (driftstrecken.de), schriftlich freigegeben am 18.11.2026 für OmegaSim unter Nennung der Urheberrechte; Umsetzung Gnen54.": "Circuito Törnerschleife 2.0: trazado de Driftstrecken.de (driftstrecken.de), autorizado por escrito el 18/11/2026 para OmegaSim citando a los titulares de los derechos; implementación Gnen54.",
@@ -27156,7 +27168,7 @@
   // v1.1.42: 'rutschen' ist nur noch das Uebersteuern; dazu 'untersteuern' und 'quietschen' (Kachel Vibration).
   const RUMBLE_ARTEN = { schalt: true, abs: true, crash: true,
                          abseits: false, box: true, meldung: false, rutschen: true,
-                         untersteuern: true, quietschen: true, kerb: true };
+                         untersteuern: true, quietschen: false, kerb: true };   // v1.6.5: Quietschen ab Werk aus
 
   // ---- Trigger-Vibration, und WELCHER Trigger zu welcher Art gehoert -----------------
   //
@@ -27205,6 +27217,16 @@
     // Etikett vergisst, bekommt ein Brummen und merkt es; ein stilles Verschlucken waere
     // ein Feature, das niemand vermisst, bis es fehlt.
     if (art && RUMBLE_ARTEN[art] === false) return false;
+    // v1.6.5: Faehrt der Mischer (41-rumble-mix.js, wie LibreCorsa), uebernimmt er das Dauer-Rumble des Fahrers: die
+    // Dauer-Arten gehen hier nicht mehr einzeln raus, ein Stoss geht in seine Huellkurve, Einzelereignisse werden
+    // beigemischt. Spieler 2/3 (wer > 1) bleiben beim bisherigen Weg.
+    if ((wer === undefined || wer === 1) && typeof rumbleMixAktiv === 'function' && rumbleMixAktiv()) {
+      if (art === 'kerb' || art === 'untersteuern' || art === 'rutschen' || art === 'abseits' || art === 'quietschen') return true;
+      // Einzelereignisse gehen weiter sofort raus UND in die Huellkurve des Mischers (sonst schnitte sein naechster
+      // Takt sie ab).
+      if (art === 'crash' || art === 'kill' || art === 'ko') rmStoss(Math.max(strong || 0, weak || 0));
+      else rmImpuls(strong, weak, ms);
+    }
     const ziel = rumblePad(wer);
     ruettle({
       duration: ms, startDelay: 0,
@@ -27349,6 +27371,103 @@
     });
     return { hauptschalter: rumbleOn, pads: zeilen };
   }
+  // ============================== RUMBLE-MISCHUNG WIE LIBRECORSA (v1.6.5) ==============================
+  //
+  // BESTELLT: "Mache, dass die Vibrationen der normalen Rumble Motoren und der haptic triggers so wie bei LibreCorsa.org
+  // sind. Wir haben jetzt auch AGPL, koennen also auch Code von LibreCorsa uebernehmen." Die Mischung folgt
+  // KhazP/librecorsa (AGPL-3.0), src/lib/sim/gamepad-haptics.ts (hapticMagnitudes, layerRumble) und
+  // src/lib/sim/dualsense-feedback.ts, uebertragen auf die Zustaende von OmegaSim:
+  //   schwacher Motor (hoch): Randstein-Pulse (bis 15 Hz), Schieben der Vorderraeder ueber der Haftgrenze;
+  //   starker Motor (tief):   Stoss (Huellkurve, klingt in 0,1 s ab), ausbrechendes Heck bzw. durchdrehende Raeder,
+  //                            ABS, rauer Boden neben der Bahn, dazu 60 % des Randstein-Pulses.
+  // Die Cues werden "in den Rest" geschichtet (acc + e * (1 - acc)): nichts uebersteuert, nichts uebertoent. Gesendet
+  // wird hoechstens alle RM.takt ms ein Effekt von RM.dauer ms (wie LibreCorsa: 60/90 ms), nur bei Aenderung.
+  // Jeder Cue haengt an seiner Art in Optionen > Vibration (RUMBLE_ARTEN), auch im virtuellen Fahren:
+  //   Randstein 'kerb', Schieben 'untersteuern', Heck/Durchdrehen 'rutschen', ABS 'abs', Boden 'abseits', Stoss 'crash'.
+  // Einzelereignisse (Schalten, Box, Meldung) gehen weiter ueber padRumble; im Takt des Mischers werden sie als kurze
+  // Huellkurve beigemischt (rmImpuls), damit der naechste Mischtakt sie nicht abschneidet.
+  const RM = { takt: 60, dauer: 90, eps: 0.03, kerbHz: 12, kerbMaxHz: 15, stossAbklingS: 0.1 };
+  const rmZ = { kerbPhase: 0, stoss: 0, stossW: 0, impulsBis: 0, impulsS: 0, impulsW: 0, letztS: 0, letztW: 0,
+                gesendetAt: 0, letztTick: 0, laeuft: false };
+  function rmSmooth(e0, e1, x) { const t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); }
+  function rmSchicht(acc, e) { e = Number.isFinite(e) ? Math.max(0, Math.min(1, e)) : 0; return acc + e * (1 - acc); }
+  function rmArt(art) { return !(typeof RUMBLE_ARTEN !== 'undefined' && RUMBLE_ARTEN[art] === false); }
+  // Der Mischer uebernimmt das Dauer-Rumble, sobald gefahren wird: virtuell, oder im Cockpit mit Physik.
+  function rumbleMixAktiv() {
+    if (typeof rumbleOn !== 'undefined' && !rumbleOn) return false;
+    if (typeof VF !== 'undefined' && VF.aktiv) return true;
+    return !!(typeof physicsEnabled !== 'undefined' && physicsEnabled && document.querySelector('#tab-race.active'));
+  }
+  // Ein Einzelereignis als kurze Huellkurve (padRumble ruft das, solange der Mischer laeuft).
+  function rmImpuls(stark, schwach, ms) {
+    const jetzt = performance.now();
+    rmZ.impulsBis = Math.max(rmZ.impulsBis, jetzt + Math.max(30, ms || 60));
+    rmZ.impulsS = Math.max(rmZ.impulsBis > jetzt ? rmZ.impulsS : 0, stark || 0);
+    rmZ.impulsW = Math.max(rmZ.impulsBis > jetzt ? rmZ.impulsW : 0, schwach || 0);
+  }
+  // Ein Stoss (Aufprall, Beruehrung): setzt die Huellkurve, die in RM.stossAbklingS abklingt.
+  function rmStoss(staerke) { rmZ.stoss = Math.max(rmZ.stoss, Math.max(0, Math.min(1, staerke))); }
+  // Die Cues aus dem laufenden Zustand. Rein bis auf rmZ (Phase, Huellkurven), dt in s.
+  function rmCues(dt) {
+    const c = { kerb: 0, schieben: 0, heck: 0, abs: 0, boden: 0 };
+    if (typeof VF !== 'undefined' && VF.aktiv) {
+      const P = VF.P || (typeof VF_GT3 !== 'undefined' ? VF_GT3 : null), z = VF.dyn || {};
+      const kmh = Math.abs((physEngine.state.speedKmh || 0) * TACHO_SCALE * (VF.tempoFaktor || 1));
+      if (VF.kerbJetzt && kmh > 3) c.kerb = (0.55 + 0.35 * Math.min(1, kmh / 300));
+      if (P && P.C && P.BV) {
+        const spV = Math.tan(Math.PI / (2 * P.C)) / P.BV, spH = Math.tan(Math.PI / (2 * P.C)) / P.BH;
+        c.schieben = 0.4 * rmSmooth(0.95, 1.3, Math.abs(z.aV || 0) / spV);
+        c.heck = 0.45 * rmSmooth(1.0, 1.6, Math.abs(z.aH || 0) / spH);
+      }
+      if (VF.abseits) c.boden = 0.4 * 0.6 * rmSmooth(10, 90, kmh);
+    } else {
+      const st = physEngine && physEngine.state;
+      if (st) {
+        c.schieben = 0.4 * rmSmooth(1.0, 1.35, st.pacNutzV || 0);
+        const um = (physEngine.config && physEngine.config.pacejkaUeberMax) || 0.35;
+        c.heck = 0.45 * Math.min(1, (st.pacUeber || 0) / um);
+        if (st.pacLeistung) c.heck = Math.max(c.heck, 0.6 * Math.min(1, (st.pacUeber || 0) / um));
+        if (st.absActive) c.abs = 0.5;
+      }
+    }
+    // Randstein-Puls: die Phase laeuft mit ihrer Rate weiter (kein Sprung bei Tempowechsel).
+    rmZ.kerbPhase = (rmZ.kerbPhase + Math.min(RM.kerbMaxHz, RM.kerbHz) * dt) % 1;
+    rmZ.stoss *= dt > 0 ? Math.exp(-dt / RM.stossAbklingS) : 1;
+    return c;
+  }
+  // Mischt die Cues zu den zwei Motorstaerken (stark = tiefer/linker, schwach = hoher/rechter Motor).
+  function rmMischen(c) {
+    const kerbAn = rmArt('kerb') && c.kerb > 0 && rmZ.kerbPhase < 0.5 ? c.kerb : 0;
+    let schwach = rmSchicht(0, kerbAn);
+    schwach = rmSchicht(schwach, rmArt('untersteuern') ? c.schieben : 0);
+    let stark = rmSchicht(0, rmArt('crash') ? rmZ.stoss : 0);
+    stark = rmSchicht(stark, rmArt('abs') ? c.abs : 0);
+    stark = rmSchicht(stark, rmArt('rutschen') ? c.heck : 0);
+    stark = rmSchicht(stark, rmArt('abseits') ? c.boden : 0);
+    stark = rmSchicht(stark, 0.6 * kerbAn);
+    if (performance.now() < rmZ.impulsBis) { stark = rmSchicht(stark, rmZ.impulsS); schwach = rmSchicht(schwach, rmZ.impulsW); }
+    return { stark, schwach };
+  }
+  function rmTick() {
+    const jetzt = performance.now();
+    const dt = rmZ.letztTick ? Math.min(0.25, (jetzt - rmZ.letztTick) / 1000) : RM.takt / 1000;
+    rmZ.letztTick = jetzt;
+    if (!rumbleMixAktiv()) {
+      if (rmZ.letztS || rmZ.letztW) { rmZ.letztS = 0; rmZ.letztW = 0; }
+      rmZ.laeuft = false;
+      return;
+    }
+    rmZ.laeuft = true;
+    const m = rmMischen(rmCues(dt));
+    rmZ.letztS = m.stark; rmZ.letztW = m.schwach;
+    // Nur der Gamepad-API-Weg; der DualSense (80b) liest rmZ.letztS/letztW fuer seine Griffmotoren selbst.
+    if (m.stark < 0.02 && m.schwach < 0.02 && jetzt - rmZ.gesendetAt > RM.dauer) return;
+    try {
+      ruettle({ duration: RM.dauer, startDelay: 0, strongMagnitude: m.stark, weakMagnitude: m.schwach }, rumblePad(1));
+      rmZ.gesendetAt = jetzt;
+    } catch (e) { /* ohne Pad */ }
+  }
+  setInterval(rmTick, RM.takt);
 
   // ============================== SPIELERPLAETZE (v0.9.17) ==============================
   //
@@ -28471,6 +28590,18 @@
     RUMBLE_ARTEN[art] = el.checked;
     el.addEventListener('change', (e) => { RUMBLE_ARTEN[art] = e.target.checked; });
   });
+  // v1.6.5 BESTELLT: "Der Default sollte sein, dass es nicht neben der Strecke vibriert und nicht, wenn der Reifen
+  // quietscht." Einmalig umstellen (nach dem Laden der gespeicherten Einstellungen); danach gilt die eigene Wahl.
+  setTimeout(() => {
+    try {
+      if (localStorage.getItem('omegasim-vib-165')) return;
+      localStorage.setItem('omegasim-vib-165', '1');
+      ['vib-quietschen', 'vib-abseits'].forEach((id) => {
+        const el = $(id);
+        if (el && el.checked) { el.checked = false; el.dispatchEvent(new Event('change', { bubbles: true })); }
+      });
+    } catch (e) { /* privat */ }
+  }, 2500);
 
   // Die Trigger-Vibration, dieselbe Bauform: AUS DEM MARKUP lesen, dann auf 'change'.
   if ($('vib-trigger')) {
@@ -29538,6 +29669,23 @@
   // One place decides what the gear reads, so the racing screen and the driving tab can
   // never disagree. No "M" suffix: the mode is visible in the options, and a letter glued
   // to the gear number was noise on a display meant to be read at a glance.
+  // v1.5.159 GEMELDET: hohe Latenz mit NPCs oder 2 Spielern lag an zu wenig freiem Speicher auf dem Handy. Beim Start
+  // einmal nachsehen: die Speicherquote des Browsers richtet sich nach dem freien Platz (Chrome/WebView: ein Teil davon).
+  // Liegt sie unter SPEICHER_WARN_MB, ein Hinweis (einmal je Sitzung) und eine Zeile im Live-Log.
+  const SPEICHER_WARN_MB = 800;
+  function speicherPruefen() {
+    try {
+      if (!navigator.storage || !navigator.storage.estimate) return;
+      navigator.storage.estimate().then((e) => {
+        const frei = ((e && e.quota) || 0) - ((e && e.usage) || 0);
+        if (!(frei > 0)) return;
+        const mb = Math.round(frei / 1048576);
+        log('Speicher: etwa ' + mb + ' MB fuer die App verfuegbar (Quote des Browsers).', 'info');
+        if (mb < SPEICHER_WARN_MB) showHudToast(t('Wenig freier Speicher auf dem Gerät: das kann beim Fahren mit mehreren Autos zu Verzögerungen führen.'));
+      }).catch(() => {});
+    } catch (e) { /* egal */ }
+  }
+  setTimeout(speicherPruefen, 4000);
   function gearLabel(st) {
     if (st.driveMode === 'reverse') return 'R';
     if (st.driveMode === 'neutral') return 'N';
@@ -43840,7 +43988,7 @@
     gl.vertexAttribPointer(H.ap, 3, gl.FLOAT, false, 12, 0);
     gl.uniform3f(H.horizont, z.horizont[0], z.horizont[1], z.horizont[2]); gl.uniform3f(H.zenit, z.zenit[0], z.zenit[1], z.zenit[2]);
     gl.uniform3f(H.dunst, d[0], d[1], d[2]); gl.uniform3f(H.unten, un[0], un[1], un[2]); gl.uniform1f(H.umwelt, 1);
-    gl.uniform1f(H.wolken, 0.5); gl.uniform1f(H.zeit, (performance.now() / 1000) % 10000); gl.uniform1f(H.regen, vfRegenStaerke());
+    gl.uniform1f(H.wolken, VF_WOLKEN); gl.uniform1f(H.zeit, (performance.now() / 1000) % 10000); gl.uniform1f(H.regen, vfRegenStaerke());
     gl.uniform2f(H.halb, 1, 1);
     for (let i = 0; i < 6; i++) {
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, U.tex, 0);
@@ -44714,6 +44862,9 @@
   // 1.3.92, Quality der von v1.3.124 (linear, Himmelslicht, sonnenausgerichteter Glanz, Klarlack,
   // Scheibenspiegelung, Schattenkarte) - mit Blickvektor und Schattenkoordinaten aus dem Vertexshader.
   // Radius des PCF-Kerns im Quality-Autoshader: 2 (5x5) am Rechner, 1 (3x3) auf Touch-Geraeten.
+  // v1.6.5 BESTELLT: "Himmel ist langweilig - etwas mehr Wolken beim sonnigen Modus, aber nicht Performance schlechter
+  // machen." Nur die Dichte (gleiche fbm-Kosten): 0,5 -> 0,72.
+  const VF_WOLKEN = 0.72;
   const VF_PCF_R = (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) ? 1 : 2;
   function vfProgrammTex(gl, qual) {
     const p = gl.createProgram();
@@ -45739,7 +45890,7 @@
       gl.uniform3f(VF.himmelProg.fwd, fx, fy, fz);
       gl.uniform2f(VF.himmelProg.halb, th * w / Math.max(1, h), th);
       // v1.5: Wolken (Bewoelkung mittel, im Regen dichter und grauer), Zeit fuer das Ziehen.
-      gl.uniform1f(VF.himmelProg.wolken, 0.5);
+      gl.uniform1f(VF.himmelProg.wolken, VF_WOLKEN);
       gl.uniform1f(VF.himmelProg.zeit, (performance.now() / 1000) % 10000);
       gl.uniform1f(VF.himmelProg.regen, vfRegenStaerke());
       { const d = VF.dunstF || vfTz().horizont; gl.uniform3f(VF.himmelProg.dunst, d[0], d[1], d[2]); }
@@ -46724,7 +46875,17 @@
   // ---- Starten und Beenden ------------------------------------------------------------------
   // opts.tiles: diese Strecke statt der des Editors (die Studie faehrt Homington), opts.studie: die
   // Fahrt gehoert der Studie (beim Beenden nicht in die Garage). true = gestartet.
+  const VF_FREIGABE_MS = 60000;
+  var vfFreigabeTimer = 0;   // var: virtuellBeenden kann vor dieser Zeile laufen (Selbsttest beim Laden)
+  function vfSpeicherFreigeben() {
+    if (VF.aktiv) return;
+    vfTexDaten.bahn = null; vfTexDaten.rand = null; vfTexDaten.boden = null; vfTexDaten.bodenId = null;
+    vfTexLauf.bahn = null; vfTexLauf.boden = null; vfTexLauf.bodenId = null;
+    vfModellLaden = {}; vfRadModell = null;
+    log('Virtuell: Texturen und Automodelle aus dem Speicher freigegeben.', 'info');
+  }
   function virtuellStarten(opts) {
+    clearTimeout(vfFreigabeTimer);
     opts = opts || {};
     if (VF.aktiv) return false;
     vfHandlingCache = null;   // einmal frisch lesen (z. B. in einem anderen Tab geaendert)
@@ -47326,6 +47487,13 @@
     // Tempo (und der Gang) der virtuellen Fahrt, bis das echte Auto sich bewegte.
     if (typeof physEngine !== 'undefined' && physEngine && typeof physEngine.reset === 'function') physEngine.reset();
     if (VF.schicht) VF.schicht.remove();
+    // v1.5.159 (Latenz/Speicher): den Grafikkontext sofort abgeben (GPU-Puffer und Texturen frei) und die Texturdaten
+    // und Automodelle im JS-Speicher nach VF_FREIGABE_MS freigeben, wenn keine neue Fahrt beginnt. Bis 1.5.158 blieben
+    // sie fuer schnelle Neustarts liegen (Bahn 16 MB, Rasenatlas 8 MB, Randstreifen 4 MB, je Automodell bis 45 MB) und
+    // belegten beim echten Fahren Speicher - mit wenig freiem Speicher stockte dann der Sendetakt.
+    try { const ext = VF.gl && VF.gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (e) { /* egal */ }
+    clearTimeout(vfFreigabeTimer);
+    vfFreigabeTimer = setTimeout(vfSpeicherFreigeben, VF_FREIGABE_MS);
     VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.weh = null; VF.umw = null; VF.boxStriche = null; VF.boxBucht = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.wetterKnopf = null; VF.stick = null; VF.tasten = {};
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
@@ -66885,8 +67053,10 @@
   }
   function dsEffekt(art, links) {
     switch (art) {
-      case 'pedal': return dsWiderstand(1, 2, 7);           // Bremse: wird nach unten fester
-      case 'gas': return dsWiderstand(1, 2, 3);             // Gas: leicht
+      // v1.6.5: Staerken wie LibreCorsa (dualsense-feedback.ts, slopeZones bei voller Trigger-Staerke):
+      // Bremse ab Zone 1 von 3 auf 8, Gas erst ab 30 % des Wegs (Zone 3) von 1 auf 3.
+      case 'pedal': return dsWiderstand(1, 3, 8);           // Bremse: wird nach unten fester
+      case 'gas': return dsWiderstand(3, 1, 3);             // Gas: leicht, erst ab 30 % des Wegs
       case 'abs': return dsVibration(2, 6, DS_HZ.abs);
       case 'block': return dsVibration(2, 7, DS_HZ.block);
       case 'tc': return dsVibration(1, 5, DS_HZ.tc);
@@ -67028,6 +67198,9 @@
   // auf EINE Seite statt auf beide Motoren, und wie bei LibreCorsa haelt sie, solange der Rutsch da ist.
   function dsGripCue() {
     const g = { links: 0, rechts: 0 };
+    // v1.6.5: mit dem Mischer (41-rumble-mix.js, wie LibreCorsa) bekommen die Griffmotoren dessen Staerken:
+    // links der tiefe (stark), rechts der hohe (schwach) Motor - genau wie bei LibreCorsa (low/high).
+    if (typeof rumbleMixAktiv === 'function' && rumbleMixAktiv()) { g.links = rmZ.letztS; g.rechts = rmZ.letztW; return g; }
     const st = physEngine && physEngine.state;
     if (!rumbleOn || !physicsEnabled || !st || !st.pacZustand) return g;
     let dir = 0, mag = 0;
@@ -121178,6 +121351,43 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     return { ok: !f.length, mass: f.length ? f.join('; ') : mass };
   });
   // v1.5.101 BESTELLT: H1 (Lenkhilfe, nur LibreCorsa), H2 (Bremstemperatur: kalt schwaecher), H5 (dreckige Luft).
+  // v1.6.5 BESTELLT: Rumble wie LibreCorsa, Vibrationsoptionen auch virtuell, Quietschen/Neben der Bahn ab Werk aus;
+  // Speicher nach der virtuellen Fahrt freigeben (Latenz bei wenig Speicher).
+  stAdd('Vibration v1.6.5: Mischer wie LibreCorsa (Schichten, Arten, Impulse), Speicher nach virtueller Fahrt frei', () => {
+    const f = [];
+    if (Math.abs(rmSchicht(0.5, 0.5) - 0.75) > 1e-9 || rmSchicht(0.9, 1) !== 1) f.push('Schichtung');
+    if ($('vib-quietschen') && $('vib-quietschen').defaultChecked) f.push('Quietschen ab Werk an');
+    if ($('vib-abseits') && $('vib-abseits').defaultChecked) f.push('Neben der Bahn ab Werk an');
+    const merk = Object.assign({}, RUMBLE_ARTEN), merkZ = Object.assign({}, rmZ), merkAktiv = rumbleMixAktiv;
+    try {
+      rmZ.kerbPhase = 0.2; rmZ.stoss = 0; rmZ.impulsBis = 0;
+      const c = { kerb: 0.8, schieben: 0.3, heck: 0.4, abs: 0, boden: 0.2 };
+      RUMBLE_ARTEN.abseits = false; RUMBLE_ARTEN.kerb = true; RUMBLE_ARTEN.rutschen = true; RUMBLE_ARTEN.untersteuern = true;
+      const a = rmMischen(c);
+      if (!(a.schwach > 0.8 && a.stark > 0.5)) f.push('Mischung ' + a.schwach.toFixed(2) + '/' + a.stark.toFixed(2));
+      RUMBLE_ARTEN.kerb = false; RUMBLE_ARTEN.rutschen = false; RUMBLE_ARTEN.untersteuern = false;
+      const b = rmMischen(c);
+      if (b.schwach !== 0 || b.stark !== 0) f.push('abgeschaltete Arten brummen: ' + b.schwach + '/' + b.stark);
+      rumbleMixAktiv = () => true;
+      rmZ.stoss = 0; RUMBLE_ARTEN.crash = true;
+      const merkOn = rumbleOn; rumbleOn = true;
+      padRumble(0.7, 0.7, 40, 'crash', 1);
+      if (!(rmZ.stoss >= 0.69)) f.push('Stoss nicht in der Huellkurve');
+      padRumble(0.3, 0.3, 100, 'schalt', 1);
+      if (!(rmZ.impulsBis > performance.now())) f.push('Einzelereignis nicht beigemischt');
+      rumbleOn = merkOn;
+    } finally {
+      Object.assign(RUMBLE_ARTEN, merk); Object.assign(rmZ, merkZ); rumbleMixAktiv = merkAktiv;
+    }
+    if (!VF.aktiv) {
+      const merkT = Object.assign({}, vfTexDaten), merkM = vfModellLaden;
+      vfTexDaten.bahn = { d: new Uint8Array(4) }; vfModellLaden = { x: 1 };
+      vfSpeicherFreigeben();
+      if (vfTexDaten.bahn !== null || Object.keys(vfModellLaden).length) f.push('Speicher nicht freigegeben');
+      Object.assign(vfTexDaten, merkT); vfModellLaden = merkM;
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Schichten, Arten, Stoss/Impuls im Mischer, Freigabe' };
+  });
   stAdd('Fahrgefuehl v1.5.101: Lenkhilfe LibreCorsa (S-Kurve, Scheitel, Ausrichten), kalte Bremse, dreckige Luft virtuell', () => {
     const f = [];
     // H2: kalte Scheiben bremsen schwaecher, warme nicht, Schalter aus = nichts.
