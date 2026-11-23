@@ -14671,6 +14671,28 @@
     } finally { Object.assign(VF, merkVF); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'nur im Training waehlbar; ' + mass + '; drueber fliegen zaehlt nicht; Runde erst nach allen Toren' };
   });
+  stAdd('Virtuell v1.6.27: Audi RS5 DTM (Dave Love, CC BY 4.0) waehlbar, Modell laedt mit Teilen, Raedern und Lichtern', async () => {
+    const f = [];
+    if (!vfAutoListe().some((a) => a.v === 'audirs5')) f.push('nicht in der Liste');
+    if (VF_MODELL_PFADE.audirs5 !== 'img/autos/audirs5/') f.push('Pfad fehlt');
+    let mass = '';
+    try {
+      const d = await vfModellDaten('img/autos/audirs5/');
+      const m = d.meta, P = m.physik;
+      const rollen = new Set(m.teile.map((t) => t.rolle));
+      ['karosserie', 'glas', 'scheinwerfer', 'ruecklicht', 'rad'].forEach((r) => { if (!rollen.has(r)) f.push('keine Rolle ' + r); });
+      const rad = m.teile.filter((t) => t.gruppe === 'rad');
+      if (!rad.some((t) => t.achse === 'vorn') || !rad.some((t) => t.achse === 'hinten')) f.push('Raeder je Achse fehlen');
+      if (m.teile.some((t) => t.ecken > 65535 || t.ecke0 + t.ecken > m.ecken || t.index0 + t.indizes > m.indizes)) f.push('Teilbereiche ausserhalb');
+      if (!(P.laenge > 4.5 && P.laenge < 5.3 && P.radstand > 2.5 && P.radstand < 3)) f.push('Masse ' + P.laenge + ' / ' + P.radstand);
+      if (!(P.reifen.vorn.radius > 0.3 && P.reifen.vorn.radius < 0.4 && P.reifen.vorn.breite > 0.25)) f.push('Rad ' + JSON.stringify(P.reifen.vorn));
+      if (!(m.lichter.front.length >= 2 && m.lichter.rueck.length >= 2)) f.push('Lichter fehlen');
+      const prof = vfPhysikAus(P);
+      if (!(prof.m > 900 && prof.Iz > 0 && prof.muV > 1)) f.push('Fahrprofil ' + JSON.stringify(prof).slice(0, 80));
+      mass = m.ecken + ' Ecken, ' + m.teile.length + ' Teile, ' + P.laenge + ' m lang, Radstand ' + P.radstand + ' m';
+    } catch (e) { f.push('laedt nicht: ' + e.message); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
+  });
   stAdd('Virtuell v1.6.25: Fahrgefuehl Drift - Pruefstand: Vollgas driftet stabil um 25 Grad ohne Dreher, halbes Gas greift, GT3 bleibt (Issue #10)', () => {
     const f = [];
     if (!VF_HANDLING_MODI.some((m) => m.id === 'drift')) f.push('Drift nicht waehlbar');
