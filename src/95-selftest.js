@@ -14583,6 +14583,67 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gebaute Bahn → ' + namen.join(' → ') + ' → zurueck, Richtung per Knopf' };
   });
+  stAdd('Virtuell v1.6.25: Fahrgefuehl Drift - Pruefstand: Vollgas driftet stabil um 25 Grad ohne Dreher, halbes Gas greift, GT3 bleibt (Issue #10)', () => {
+    const f = [];
+    if (!VF_HANDLING_MODI.some((m) => m.id === 'drift')) f.push('Drift nicht waehlbar');
+    const merk = vfHandling();
+    let P;
+    try { vfHandlingSetzen('drift'); P = vfHandlingProfil(Object.assign({}, VF_GT3)); } finally { vfHandlingSetzen(merk); }
+    const lauf = (Q, vx, lenk, gas) => {
+      const z = { vy: 0, r: 0 }, b = [];
+      for (let t = 0; t < 6; t += 1 / 60) { vfDynamik(z, vx, gas > 0 ? 1 : 0, gas, lenk, 1 / 60, 1, Q); b.push(Math.atan2(z.vy, vx) * 180 / Math.PI); }
+      const l = b.slice(-120), m = l.reduce((a, c) => a + c, 0) / l.length;
+      return { beta: Math.abs(m), sd: Math.sqrt(l.reduce((a, c) => a + (c - m) * (c - m), 0) / l.length), r: Math.abs(z.r) };
+    };
+    const mass = [];
+    for (const v of [15, 25, 40]) {
+      const d = lauf(P, v, 0.5, 1);
+      mass.push(v + ' m/s ' + d.beta.toFixed(0) + ' Grad');
+      if (!(d.beta >= 15 && d.beta <= 35)) f.push('Vollgas ' + v + ' m/s: ' + d.beta.toFixed(1) + ' Grad');
+      if (!(d.sd < 2.5)) f.push('unruhig ' + v + ' m/s: ' + d.sd.toFixed(2));
+      if (!(d.r < 4.5)) f.push('dreht ein ' + v + ' m/s');
+      const h = lauf(P, v, 0.5, 0.5);
+      if (!(h.beta < 12)) f.push('halbes Gas ' + v + ' m/s: ' + h.beta.toFixed(1) + ' Grad');
+    }
+    const g = lauf(Object.assign({}, VF_GT3), 25, 0.5, 1);
+    if (!(g.beta < 8)) f.push('GT3 driftet: ' + g.beta.toFixed(1));
+    if (VF_GT3.gyro || VF_GT3.driftGrenze) f.push('GT3 hat Gyro');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vollgas: ' + mass.join(', ') + '; halbes Gas greift; GT3 ' + g.beta.toFixed(1) + ' Grad' };
+  });
+  stAdd('Virtuell v1.6.23: Steuerung Neigen - Winkel aus der Schwerkraft je Bildschirmlage, Lenkwert, Knopf schaltet reihum (Issue #11)', () => {
+    const f = [], nah = (a, b, e) => a !== null && Math.abs(a - b) <= (e || 0.5);
+    const g = 9.81, r = (d) => d * Math.PI / 180;
+    // aufrecht hochkant (0) und quer (90): 0 Grad; quer 20 Grad im Uhrzeigersinn gedreht: +20, gegen: -20.
+    if (!nah(vfNeigungWinkel(0, g, 0, false), 0)) f.push('hochkant aufrecht ' + vfNeigungWinkel(0, g, 0, false));
+    if (!nah(vfNeigungWinkel(g, 0, 90, false), 0)) f.push('quer aufrecht ' + vfNeigungWinkel(g, 0, 90, false));
+    if (!nah(vfNeigungWinkel(g * Math.cos(r(20)), g * Math.sin(r(20)), 90, false), 20)) f.push('quer rechts ' + vfNeigungWinkel(g * Math.cos(r(20)), g * Math.sin(r(20)), 90, false));
+    if (!nah(vfNeigungWinkel(g * Math.cos(r(20)), -g * Math.sin(r(20)), 90, false), -20)) f.push('quer links');
+    if (!nah(vfNeigungWinkel(-g * Math.cos(r(20)), g * Math.sin(r(20)), 270, false), -20)) f.push('quer andersrum (270) ' + vfNeigungWinkel(-g * Math.cos(r(20)), g * Math.sin(r(20)), 270, false));
+    if (!nah(vfNeigungWinkel(-g, 0, 90, true), 0)) f.push('iOS-Vorzeichen');
+    if (vfNeigungWinkel(0.3, 0.4, 90, false) !== null) f.push('flach gibt einen Wert');
+    // Lenkwert: Totzone, linear, voll bei 35 Grad, ueber die 180-Grad-Grenze gerechnet.
+    if (vfNeigungLenkwert(2, 0) !== 0) f.push('Totzone');
+    if (!nah(vfNeigungLenkwert(20, 0), (20 - 2.5) / 32.5, 0.001)) f.push('20 Grad ' + vfNeigungLenkwert(20, 0));
+    if (vfNeigungLenkwert(50, 0) !== 1 || vfNeigungLenkwert(-50, 0) !== -1) f.push('voller Einschlag');
+    if (!nah(vfNeigungLenkwert(-175, 175), vfNeigungLenkwert(10, 0), 0.001)) f.push('ueber 180 Grad');
+    if (!nah(vfNeigungLenkwert(30, 10), vfNeigungLenkwert(20, 0), 0.001)) f.push('Mitte geeicht');
+    // Knopf: Touch -> Neigen -> Aus -> Touch (Geraet als Touch vorgetaeuscht).
+    const merkG = vfTouchGeraet, merkS = (() => { try { return localStorage.getItem(VF_TOUCH_STORE); } catch (e) { return null; } })();
+    const folge = [];
+    try {
+      vfTouchGeraet = () => true;
+      try { localStorage.setItem(VF_TOUCH_STORE, 'an'); } catch (e) { /* egal */ }
+      folge.push(vfTouchModus());
+      for (let i = 0; i < 3; i++) { vfTouchUmschalten(); folge.push(vfTouchModus()); }
+      if (folge.join(',') !== 'touch,neigen,aus,touch') f.push('Folge ' + folge.join(','));
+      vfTouchGeraet = () => false;
+      if (vfTouchModus() !== 'aus') f.push('ohne Touch nicht aus');
+    } finally {
+      vfTouchGeraet = merkG;
+      try { if (merkS === null) localStorage.removeItem(VF_TOUCH_STORE); else localStorage.setItem(VF_TOUCH_STORE, merkS); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'quer +-20 Grad richtig, iOS gedreht, Totzone 2,5, voll 35 Grad, Knopf ' + folge.join(' -> ') };
+  });
   stAdd('Fahren v1.6.23: Umschalter Echt | Virtuell - Autos-Kachel, Garage und Start folgen dem Modus (Issue #7)', () => {
     const f = [], merk = (() => { try { return localStorage.getItem(FAHR_MODUS_STORE); } catch (e) { return null; } })();
     const merkTab = (typeof kAktiverTab === 'function' ? kAktiverTab() : ''), merkVA = garVirtuellAuf, merkKA = garKameraAuf;
@@ -18046,6 +18107,9 @@
       if (!(schnell.lenkGrad > VF_GT3.lenkGrad)) f.push('Schnell: kein Einschlag-Gewinn');
       const zGT3 = lauf(VF_GT3, 30, 0.5, 2), zSchnell = lauf(schnell, 30, 0.5, 2);
       if (!(Math.abs(zSchnell.r) > Math.abs(zGT3.r))) f.push('Schnell dreht nicht enger: ' + zSchnell.r + ' / ' + zGT3.r);
+      // v1.6.25 (Issue #9): heisst Pacejka, Reifenkurve mit dem Formfaktor des echten Fahrens.
+      if (vfHandlingName('schnell') !== t('Pacejka (WIP)')) f.push('Name ' + vfHandlingName('schnell'));
+      if (physEngine && physEngine.config && Math.abs(schnell.C - physEngine.config.pacejkaC) > 1e-9) f.push('C ' + schnell.C + ' statt ' + physEngine.config.pacejkaC);
       // Ungueltiger Wert faellt auf GT3 zurueck.
       vfHandlingSetzen('gibtsnicht');
       if (vfHandling() !== 'gt3') f.push('ungueltiger Modus faellt nicht auf GT3 zurueck');

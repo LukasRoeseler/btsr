@@ -1554,18 +1554,26 @@
     const brems = ax < 0 ? P.m * -ax : 0;
     // ABS und Traktionskontrolle wie im GT3: beide lassen dem Reifen einen Rest Seitenkraft.
     const fxV = Math.min(P.abs * maxV, P.bremsVorn * brems);
-    const fxH = Math.min((ax < 0 ? P.abs : P.tc) * maxH,
+    // v1.6.25 Drift: Driftwinkel-Grenze - ab P.driftGrenze Grad Schwimmwinkel (letzter Takt) nimmt die Traktionsgrenze
+    // ab (bis 30 %), die Hinterachse bekommt wieder Seitenfuehrung. So dreht sich das Auto unter Vollgas nicht ein.
+    let tcE = P.tc;
+    if (P.driftGrenze) { const be = Math.abs(Math.atan2(z.vy, vx)) * 180 / Math.PI; tcE = P.tc * Math.max(0.3, Math.min(1, 1 - (be - P.driftGrenze) / 15)); }
+    const fxH = Math.min((ax < 0 ? P.abs : tcE) * maxH,
       ax < 0 ? (1 - P.bremsVorn) * brems : Math.max(0, antrieb) * P.m * P.antriebMax);
     const dV = Math.sqrt(maxV * maxV - fxV * fxV), dH = Math.sqrt(maxH * maxH - fxH * fxH);
     const schritte = Math.max(1, Math.ceil(dt / 0.002));
     const h = dt / schritte;
+    const lmax = P.lenkGrad * Math.PI / 180;
     for (let i = 0; i < schritte; i++) {
-      const aV = Math.atan2(z.vy + P.a * z.r, vx) - delta;
+      // v1.6.25 Drift: RC-Gyro im Ratenmodus - lenkt gegen die Gierrate, Verstaerkung waechst ab P.gyroV m/s mit dem Tempo.
+      const dl = P.gyro ? Math.max(-lmax, Math.min(lmax, delta - P.gyro * Math.max(1, vx / (P.gyroV || 10)) * z.r)) : delta;
+      const aV = Math.atan2(z.vy + P.a * z.r, vx) - dl;
       const aH = Math.atan2(z.vy - P.b * z.r, vx);
       const fyV = -dV * Math.sin(P.C * Math.atan(P.BV * aV));
       const fyH = -dH * Math.sin(P.C * Math.atan(P.BH * aH));
-      z.vy += h * ((fyV * Math.cos(delta) + fyH) / P.m - vx * z.r);
-      z.r += h * ((P.a * fyV * Math.cos(delta) - P.b * fyH) / P.Iz - (P.yawDamp || 0) * z.r);
+      z.vy += h * ((fyV * Math.cos(dl) + fyH) / P.m - vx * z.r);
+      z.r += h * ((P.a * fyV * Math.cos(dl) - P.b * fyH) / P.Iz - (P.yawDamp || 0) * z.r);
+      z.lenkGyro = dl;
       z.aV = aV; z.aH = aH;
     }
     z.vy = Math.max(-vx, Math.min(vx, z.vy));
@@ -1784,8 +1792,9 @@
   const VF_HANDLING_STORE = 'omegasim-vf-handling';
   // v1.3.5: 'gran' heisst Gran Hybrismo (wie Gran Turismo Sport), neu 'acc' Assetto Carrera (wie
   // ACC). Die Kennung 'gran' bleibt, damit eine gespeicherte Wahl weiter gilt.
-  const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Schnell' },
-                            { id: 'librecorsa', name: 'LibreCorsa GT3 (WIP)' }];
+  // v1.6.25 (Issue #9) BESTELLT: "Schnell" heisst "Pacejka" - die Kennung 'schnell' bleibt (gespeicherte Wahl).
+  const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Pacejka (WIP)' },
+                            { id: 'librecorsa', name: 'LibreCorsa GT3 (WIP)' }, { id: 'drift', name: 'Drift (WIP)' }];
   // v1.5.25: Gran Hybrismo und Assetto Carrera sind entfernt; eine gespeicherte Wahl faehrt als LibreCorsa GT3.
   const VF_HANDLING_ENTFERNT = { gran: 'librecorsa', acc: 'librecorsa' };
   // Abtrieb fuer Profile ohne eigene Werte (VF_GT3 hat kein kV/kH): N je (m/s)^2 je Achse, etwa
@@ -1811,7 +1820,11 @@
     vfHandlingCache = null;
   }
   function vfHandlingName(id) { const m = VF_HANDLING_MODI.find((x) => x.id === id); return m ? t(m.name) : t('GT3'); }
-  function vfTempoFaktor() { return vfHandling() === 'schnell' ? 1.15 : 1.0; }
+  // v1.6.25 (Issue #9): Pacejka soll Rundenzeiten wie mit dem echten Auto ergeben. Der Tempofaktor ist die eine
+  // Abgleichzahl dafuer (bis 1.6.24 fest 1,15 fuer "Schnell"); abgeglichen wird sie mit Rundenzeiten je Strecke, echt
+  // und virtuell, sobald der Nutzer sie liefert (offen in Issue #9).
+  const VF_PACEJKA_TEMPO = 1.15;
+  function vfTempoFaktor() { return vfHandling() === 'schnell' ? VF_PACEJKA_TEMPO : 1.0; }
   // Grafik der virtuellen Fahrt: Performance (wie bisher, fuer schwache Handys) oder Quality (besseres
   // Licht, Tonemapping, Schatten, Vignette). v1.5.90 BESTELLT: "Virtuelles Fahren Standardeinstellungen ändern: Licht
   // aus, qualität (nicht performance)". Ohne eigene Wahl gilt Quality; die Bildraten-Wache (vfWacheMessen) schaltet auf
@@ -2136,12 +2149,27 @@
   // wie bei allen Modi aus dem Fahrgefuehl des echten Autos; der Modus fuer echte Autos folgt (Paket 5).
   // Unabhaengig vom gewaehlten Modell: Geometrie und Masse des GT3 (VF_GT3), nur die abgestimmten Werte darueber.
   const VF_LC_GT3 = { muV: 1.81, muH: 2.32, BV: 8.55, BH: 11.0, kV: 0.5, kH: 0.625 };
+  // ---- DRIFT (v1.6.25, Issue #10, WIP) --------------------------------------------------------------------------------
+  // BESTELLT: "Fuehlt sich an wie ein 1/18-RC-Driftauto mit Gyro und rutschigen Reifen: niedriges mu hinten, flache
+  // Reifenkurve, Gyro-Gierregelung, die gegenlenkt." Rutschige Hartplastik-Reifen (Griff vorn x0,55, hinten x0,6 - hinten
+  // also kaum noch mehr als vorn), flacher Scheitel (C 1,15, B vorn x0,7, hinten x0,5), kein Abtrieb, kaum
+  // Lastempfindlichkeit, 35 Grad Einschlag, wenig Gierdaempfung. Die Traktion darf 90 % des Hinterachsgriffs nehmen, dann
+  // bricht das Heck unter Gas aus; der Gyro (P.gyro, Ratenmodus) lenkt gegen, die Driftwinkel-Grenze (P.driftGrenze)
+  // haelt den Winkel bei etwa 25 Grad. Abgestimmt am Pruefstand (Node-Nachbau von vfDynamik, je 6 s Kreisfahrt):
+  //   Vollgas ab 10 m/s: Schwimmwinkel 24-27 Grad, stabil (Streuung < 1,3 Grad bei halbem Einschlag), kein Dreher bis 45 m/s;
+  //   halbes Gas: 0,4-10 Grad (Griff), Rollen: < 7 Grad. Ohne Grenze und Gyro drehte sich das Auto bei Vollgas ein.
+  const VF_DRIFT_PROFIL = (P) => ({ muV: P.muV * 0.55, muH: P.muH * 0.6, BV: (P.BV || 9) * 0.7, BH: (P.BH || 11) * 0.5, C: 1.15,
+    lenkGrad: 35, yawDamp: 0.6, tc: 0.9, kV: 0, kH: 0, lastEmpf: 0.05, gyro: 0.2, gyroV: 10, driftGrenze: 25 });
   function vfHandlingProfil(P) {
     if (!P) return P;
     const h = vfHandling();
     if (h === 'librecorsa') return Object.assign({}, VF_GT3, VF_LC_GT3);
+    if (h === 'drift') return Object.assign({}, P, VF_DRIFT_PROFIL(P));
     if (h === 'schnell') {
+      // v1.6.25 Pacejka: der Formfaktor der Reifenkurve wie beim echten Fahren (physEngine.config.pacejkaC).
+      const pc = typeof physEngine !== 'undefined' && physEngine && physEngine.config ? +physEngine.config.pacejkaC : NaN;
       return Object.assign({}, P, {
+        C: pc > 1 && pc < 2 ? pc : (P.C || 1.35),
         muV: P.muV * 1.35,
         muH: P.muH * 1.35,
         lenkGrad: Math.min(45, P.lenkGrad * 1.5),
@@ -4390,20 +4418,63 @@
   }
   // Soll die Beruehrungs-Steuerung sichtbar sein? Automatisch auf Touch-Geraeten ohne Gamepad; ein
   // manueller Schalter (Knopf "Steuerung") kann das ueberschreiben.
-  function vfTouchSollAn() {
-    if (!vfTouchGeraet()) return false;
+  // v1.6.23 (Issue #11): drei Stellungen - 'touch' (Stick links, Pedal rechts), 'neigen' (Lenken durch Drehen des
+  // Handys, rechts das Pedal) und 'aus'. Gespeichert unter VF_TOUCH_STORE als 'an' / 'neigen' / 'aus'.
+  function vfTouchModus() {
+    if (!vfTouchGeraet()) return 'aus';
     let manuell = null;
     try { manuell = localStorage.getItem(VF_TOUCH_STORE); } catch (e) { /* privat */ }
-    if (manuell === 'an') return true;
-    if (manuell === 'aus') return false;
-    return !vfTouchPadAn();
+    if (manuell === 'neigen') return 'neigen';
+    if (manuell === 'an') return 'touch';
+    if (manuell === 'aus') return 'aus';
+    return vfTouchPadAn() ? 'aus' : 'touch';
   }
+  function vfTouchSollAn() { return vfTouchModus() !== 'aus'; }
+
+  // ---- NEIGEN (v1.6.23, Issue #11, WIP) ----
+  // BESTELLT: "Lenken durch Neigen des Handys (DeviceOrientation/Gyro, wie die Showroom-Neigung), waehlbar ueber den
+  // Knopf Steuerung im virtuellen Fahren. iOS: Bewegungs-Erlaubnis einholen."
+  // Das Handy wird quer gehalten und wie ein Lenkrad gedreht. Gerechnet aus der Schwerkraft (devicemotion,
+  // accelerationIncludingGravity), gedreht in Bildschirmkoordinaten (screen.orientation.angle): Winkel = atan2(-sx, sy),
+  // 0 = aufrecht, positiv = im Uhrzeigersinn (rechts). Die Mitte wird beim Einschalten und beim Start der Fahrt mit der
+  // ersten Messung geeicht. Voller Einschlag bei VF_NEIGEN_VOLL Grad, darunter VF_NEIGEN_TOT Grad Totzone. Flach
+  // gehalten (Schwerkraft fast nur senkrecht zum Bild) gibt es keinen Wert. iOS meldet die Beschleunigung mit
+  // umgekehrtem Vorzeichen.
+  const VF_NEIGEN_VOLL = 35, VF_NEIGEN_TOT = 2.5;
+  function vfNeigungWinkel(x, y, winkelGrad, ios) {
+    const a = (winkelGrad || 0) * Math.PI / 180, s = ios ? -1 : 1;
+    const sx = s * (x * Math.cos(a) - y * Math.sin(a)), sy = s * (x * Math.sin(a) + y * Math.cos(a));
+    if (!(Math.hypot(sx, sy) >= 2)) return null;
+    return Math.atan2(-sx, sy) * 180 / Math.PI;
+  }
+  function vfNeigungLenkwert(grad, mitte) {
+    const d = ((grad - (mitte || 0) + 540) % 360) - 180, b = Math.abs(d);
+    if (b < VF_NEIGEN_TOT) return 0;
+    return Math.sign(d) * Math.min(1, (b - VF_NEIGEN_TOT) / (VF_NEIGEN_VOLL - VF_NEIGEN_TOT));
+  }
+  let vfNeigMitte = null;
+  const vfIstIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  function vfNeigenEreignis(e) {
+    if (!VF.aktiv || VF.laedt || vfTouchModus() !== 'neigen') return;
+    const g = e.accelerationIncludingGravity;
+    if (!g || typeof g.x !== 'number' || typeof g.y !== 'number') return;
+    const ang = screen.orientation && typeof screen.orientation.angle === 'number' ? screen.orientation.angle : (+window.orientation || 0);
+    const w = vfNeigungWinkel(g.x, g.y, ang, vfIstIos);
+    if (w === null) return;
+    if (vfNeigMitte === null) vfNeigMitte = w;
+    applySteerInput(SRC.TOUCH, vfNeigungLenkwert(w, vfNeigMitte));
+  }
+  window.addEventListener('devicemotion', vfNeigenEreignis);
   function vfTouchElement() { return VF.schicht ? VF.schicht.querySelector('.vf-touch') : null; }
   function vfTouchAnzeigen(an) {
-    const el = vfTouchElement();
-    if (el) el.hidden = !an;
+    const el = vfTouchElement(), m = vfTouchModus();
+    if (el) { el.hidden = !an; el.classList.toggle('vf-touch-neigen', m === 'neigen'); }
     const kn = VF.schicht ? VF.schicht.querySelector('[data-vf="touch"]') : null;
-    if (kn) kn.classList.toggle('vf-an', an);
+    if (kn) {
+      kn.classList.toggle('vf-an', an);
+      const ti = t('Steuerung') + ': ' + (m === 'neigen' ? t('Neigen') + ' (WIP)' : m === 'touch' ? t('Touch') : t('Aus'));
+      kn.title = ti; kn.setAttribute('aria-label', ti);
+    }
   }
   function vfTouchAktualisieren() {
     const kn = VF.schicht ? VF.schicht.querySelector('[data-vf="touch"]') : null;
@@ -4411,12 +4482,21 @@
     vfTouchAnzeigen(vfTouchSollAn());
   }
   function vfTouchUmschalten() {
-    const an = vfTouchSollAn();
-    try { localStorage.setItem(VF_TOUCH_STORE, an ? 'aus' : 'an'); } catch (e) { /* privat */ }
+    // v1.6.23: reihum Touch -> Neigen -> Aus -> Touch.
+    const m = vfTouchModus(), neu = m === 'touch' ? 'neigen' : m === 'neigen' ? 'aus' : 'an';
+    try { localStorage.setItem(VF_TOUCH_STORE, neu); } catch (e) { /* privat */ }
+    try { releaseSteerInput(SRC.TOUCH); } catch (e) { /* egal */ }
+    vfNeigMitte = null;
+    if (neu === 'neigen') {
+      // iOS 13+: Bewegungsdaten nur nach Erlaubnis, und die Frage nur aus einem Tipp heraus (das ist dieser).
+      try { if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') DeviceMotionEvent.requestPermission().catch(() => {}); } catch (e) { /* egal */ }
+      showHudToast(t('Steuerung') + ': ' + t('Neigen') + ' (WIP) - ' + t('Handy quer halten und wie ein Lenkrad drehen'));
+    }
     vfTouchAktualisieren();
   }
   // Zeigerzustand je Steuerelement (je ein Zeiger, damit zwei Finger sich nicht stoeren).
   function vfTouchBauen() {
+    vfNeigMitte = null;   // Neigen: die Mitte mit der ersten Messung dieser Fahrt eichen
     const el = vfTouchElement();
     if (!el) return;
     const lenk = el.querySelector('.vf-touch-lenk');
