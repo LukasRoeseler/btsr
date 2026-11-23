@@ -4104,18 +4104,21 @@
   .vf-ikon[data-vf="flag"] .vf-ikon-fuell { fill: #f5c400; fill-opacity: 1; stroke: #f5c400; }
   .vf-knoepfe.vf-knoepfe-zu > button:not([data-vf="leiste"]) { display: none; }
   .vf-knoepfe.vf-knoepfe-zu > [data-vf="leiste"] { opacity: .75; }
-  /* Ladebild der virtuellen Fahrt: deckt das Bild ab, kein HUD (alles ausser Leinwand und Ladebild unsichtbar),
-     Fortschrittsbalken in der Mitte, kleine Animation unten links. */
+  /* Ladebild der virtuellen Fahrt: deckt das Bild ab, kein HUD (alles ausser Leinwand und Ladebild unsichtbar).
+     v1.6.20: die Strecke von oben fuellt das Bild, in der Mitte das drehende Teil, Titel und Fortschrittsbalken. */
   .vf-schicht.vf-laedt > :not(.vf-bild):not(.vf-laden) { visibility: hidden !important; }
   .vf-laden { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; color: #e8ecf2;
     background: radial-gradient(ellipse at 50% 40%, #1b2433 0%, #0b0f16 72%); }
-  .vf-laden-mitte { display: grid; gap: .8em; width: min(70vw, 460px); text-align: center; }
+  .vf-laden-karte { position: absolute; inset: 0; display: grid; place-items: center;
+    padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+  .vf-laden-karte .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; background: none; border: 0; }
+  .vf-laden-mitte { position: relative; display: grid; gap: .7em; width: min(64vw, 420px); text-align: center;
+    padding: .9em 1.3em 1em; background: rgba(8,11,17,.6); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; }
+  .vf-laden-mitte .lade-dreh { width: calc(var(--vf-s) * 4.6); height: calc(var(--vf-s) * 4.6); margin: 0 auto; }
   .vf-laden-titel { font-size: calc(var(--vf-s) * 1.05); font-weight: 700; text-transform: uppercase; letter-spacing: .14em; }
   .vf-laden-was { color: var(--vf-dim); font-size: calc(var(--vf-s) * .78); min-height: 1.3em; }
   .vf-laden-balken { position: relative; display: block; height: 8px; background: rgba(255,255,255,.12); overflow: hidden; }
   .vf-laden-balken > i { position: absolute; inset: 0; transform-origin: 0 50%; transform: scaleX(0); background: var(--vf-linie); transition: transform .2s linear; }
-  .vf-laden-anim { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom));
-    width: min(34vw, 240px); height: min(24vw, 160px); }
   .vf-laden-zu { position: absolute; right: max(8px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top));
     width: 40px; height: 40px; min-height: 0; padding: 0; display: grid; place-items: center; background: rgba(8,10,14,.6); color: #f3f4f6;
     border: 0; border-radius: 50%; cursor: pointer; }
@@ -7281,6 +7284,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren: Das Ladebild zeigt jetzt die aktuelle Strecke von oben &#252;ber das ganze Bild (wie im Editor, bei der T&#246;rnerschleife ihr Umriss mit Br&#252;cke), in der Mitte dreht sich das Streckenteil &#252;ber Titel und Fortschrittsbalken. Aus Gnen54s Testversion &#252;bernommen: Pad-Diagnose w&#228;hrend der Fahrt (Knopf in der Leiste oder F8) mit Pad-Namen, Belegung, gelernter Ruhelage der Trigger, Rohwerten und der Stelle, an der die Abfrage aussteigt, und in der Anleitung der Abschnitt &#8222;Gamepad einrichten&#8220; mit Hinweisen zum EasySMX X05 (Gas und Bremse auf dem rechten Stick).</li>
         <li>Virtuell fahren, aus dem Pull Request von Gnen54 &#252;bernommen und auf den aktuellen Stand gebracht: T&#246;rnerschleife 2.0 mit und ohne Br&#252;cke (mit Randlinien, Boxengasse und Steigung), R&#252;ckw&#228;rtsgang, keine Runde beim R&#252;ckw&#228;rtsfahren oder Pendeln &#252;ber die Linie, Android-Trigger, die in Ruhe auf halbem Weg stehen, Gamepad-Tasten f&#252;r Licht, Box und Gelbe Flagge, Lichthupe, Pflicht-Boxendurchfahrt (WIP), Boxenservice nur in der Boxengasse, Innenspiegel als schmaler Streifen oben (WIP), fester Motorklang f&#252;r K&#228;fer, Spider und Caravelle, Hilfeseite mit &#8222;?&#8220; in der Garage. Neu: Ladebild ohne Anzeige mit Fortschrittsbalken und einer Strecke, die sich unten links Teil f&#252;r Teil zusammenbaut; Knopfleiste als Piktogramme mit einem Knopf zum Aus- und Einblenden; Fahrtrichtung &#8222;Gegenrichtung&#8220; (WIP).</li>
         <li>Vibration wie bei LibreCorsa: Ein Mischer bedient beide Rumble-Motoren gemeinsam (hoher Motor: Randstein-Pulse und schiebende Vorderr&#228;der, tiefer Motor: St&#246;&#223;e, ausbrechendes Heck, ABS, unebener Boden), statt vieler einzelner St&#246;&#223;e; die DualSense-Griffmotoren und Trigger-Widerst&#228;nde folgen denselben Werten. Die Schalter unter Optionen &gt; Vibration gelten jetzt auch beim virtuellen Fahren; &#8222;Reifenquietschen&#8220; und &#8222;Neben der Bahn&#8220; sind ab Werk aus (einmalig umgestellt). Nach dem virtuellen Fahren gibt die App Grafik, Texturen und Automodelle wieder frei (weniger Speicher beim echten Fahren), und bei sehr wenig freiem Speicher kommt ein Hinweis. Virtuell mehr Wolken bei Sonne. Auf der Startseite gibt es &#8222;Fehler melden&#8220; (&#246;ffnet ein Formular auf GitHub).</li>
         <li>Korrekturen: Der Quality-Modus im virtuellen Fahren lief seit 1.5.154 gar nicht (ein Shaderfehler lie&#223; alle Autos still auf Performance zur&#252;ckfallen): jetzt wieder mit Eigenschatten und Lackspiegel, dadurch ist auch der zu helle Fleck unter dem Auto weg; der Schattenkern ist kleiner (am Handy schneller). Im virtuellen Fahren zeigt der erste Gang &#8222;1&#8220; statt &#8222;N&#8220;, und die R&#228;der zeigen im Drift das Gegenlenken. MAX-NPCs bremsen vor der Haarnadel fr&#252;her (drei Teile vorher). DualSense: die Griffmotoren schalten nach einem Rutscher wieder ab. Latenz-Diagnosen laufen nur noch auf Wunsch. Lizenzhinweise zur AGPL vervollst&#228;ndigt (mitgelieferte Modelle und Strecken haben eigene Lizenzen), Credits f&#252;r VW Caravelle und T&#246;rnerschleife erg&#228;nzt.</li>

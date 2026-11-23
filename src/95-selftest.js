@@ -27281,8 +27281,8 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
   });
-  // Ladebild: kein HUD, Fortschrittsbalken, Teile legen sich (100 ms je Teil, Runde mindestens 1 s), endet nach dem Laden.
-  stAdd('Virtuell v1.5.160: Ladebild ohne HUD mit Fortschrittsbalken, Strecke baut sich auf, endet wenn alles geladen', async () => {
+  // Ladebild: kein HUD, Fortschrittsbalken, Strecke von oben ueber das ganze Bild, drehendes Teil, endet nach dem Laden.
+  stAdd('Virtuell v1.6.20: Ladebild ohne HUD, Strecke von oben ueber das ganze Bild, drehendes Teil, Fortschrittsbalken, endet wenn alles geladen', async () => {
     if (typeof virtuellStarten !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
     if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
     const f = [], merkTab = kAktiverTab();
@@ -27295,17 +27295,25 @@
       if (vis('.vf-laden') !== 'visible') f.push('Ladebild ' + vis('.vf-laden'));
       const bal = sch.querySelector('.vf-laden [role="progressbar"]');
       if (!bal || bal.getAttribute('aria-valuemax') !== '100') f.push('kein Fortschrittsbalken');
-      if (!sch.querySelector('.vf-laden canvas.vf-laden-anim')) f.push('keine Animation');
-      const A = VF.ladeAnim;
-      if (!A || A.art !== 'teile' || A.n !== 11) f.push('Animation: ' + (A ? A.art + ' ' + A.n : 'fehlt'));
+      const dreh = sch.querySelector('.vf-laden-mitte .lade-dreh .lade-a');
+      if (!dreh || getComputedStyle(dreh).animationName !== 'ladeDreh') f.push('kein drehendes Teil');
+      let flaeche = 0;
+      const karte = sch.querySelector('.vf-laden-karte svg');
+      if (!karte) f.push('kein Streckenbild');
       else {
-        if (A.proTeilMs !== Math.max(100, 1000 / A.n)) f.push('je Teil ' + A.proTeilMs + ' ms');
-        if (!(A.n * A.proTeilMs >= 1000)) f.push('Runde kuerzer als 1 s');
-        if (vfLadeAnimTeile(A, 0) !== 1 || vfLadeAnimTeile(A, A.proTeilMs * 3 + 1) !== 4 || vfLadeAnimTeile(A, A.proTeilMs * (A.n + 1)) !== A.n
-            || vfLadeAnimTeile(A, A.rundeMs + 1) !== 1) f.push('Teile legen sich nicht der Reihe nach');
-        const k = vfLadeAnimVorbereiten([{ x: 0, y: 0, tile: -1 }, { x: 1, y: 0, tile: 0 }, { x: 2, y: 0, tile: 1 }], false);
-        if (k.proTeilMs !== 500) f.push('kurze Bahn: ' + k.proTeilMs + ' ms je Teil statt 500 (mindestens 1 s)');
+        const r = karte.getBoundingClientRect(), b = sch.getBoundingClientRect();
+        flaeche = (r.width * r.height) / Math.max(1, b.width * b.height);
+        if (!(r.width >= b.width * 0.8 || r.height >= b.height * 0.8)) f.push('Strecke fuellt das Bild nicht: ' + Math.round(r.width) + 'x' + Math.round(r.height) + ' von ' + Math.round(b.width) + 'x' + Math.round(b.height));
+        if (!karte.querySelector('path')) f.push('Streckenbild leer');
       }
+      if (sch.querySelector('.vf-laden-anim')) f.push('alte Aufbau-Animation noch da');
+      // freie Strecke (eigene Punkte): Band mit Bruecke obenauf und Start/Ziel-Strich.
+      const fr = vfLadeKarteSvg(null, [{ x: 0, y: 0, z: 0 }, { x: 100, y: 0, z: 2 }, { x: 100, y: 100, z: 2 }, { x: 0, y: 100, z: 0 }]);
+      if (!/^<svg/.test(fr) || (fr.match(/<path/g) || []).length < 5) f.push('freie Strecke: ' + fr.slice(0, 60));
+      // hochkant auf Querformat: gedreht, viewBox getauscht; quer auf Querformat: bleibt.
+      const hoch = '<svg class="x" viewBox="0 0 100 300"><path d="M0 0"/></svg>', dr = vfLadeKarteDrehen(hoch, 800, 370);
+      if (!/data-gedreht="1" viewBox="0 0 300 100"><g transform="translate\(300 0\) rotate\(90\)"><path/.test(dr) || !/<\/g><\/svg>$/.test(dr)) f.push('Drehen: ' + dr);
+      if (vfLadeKarteDrehen('<svg viewBox="0 0 300 100"></svg>', 800, 370).indexOf('gedreht') >= 0) f.push('quer wird gedreht');
       const t0 = performance.now();
       while (VF.laedt && performance.now() - t0 < 30000) await new Promise((r) => setTimeout(r, 100));
       if (VF.laedt) f.push('Ladebild nach 30 s noch da: ' + vfLadeStand(performance.now()).text);
@@ -27315,7 +27323,7 @@
         if (VF.tprog && !(VF.modell || VF.modellFehl)) f.push('fertig ohne Automodell');
         if ((VF.texOffen || 0) > 0) f.push('fertig mit ' + VF.texOffen + ' offenen Texturen');
       }
-      mass = 'HUD verborgen, Balken da, 11 Teile je ' + (A ? A.proTeilMs : '?') + ' ms, fertig nach ' + Math.round(performance.now() - t0) + ' ms';
+      mass = 'HUD verborgen, Balken und drehendes Teil da, Strecke ' + Math.round(flaeche * 100) + ' % der Flaeche, fertig nach ' + Math.round(performance.now() - t0) + ' ms';
     } finally {
       if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
       if (merkTab) showTab(merkTab);

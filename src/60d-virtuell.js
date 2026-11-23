@@ -4507,14 +4507,18 @@
     try { localStorage.setItem(VF_LEISTE_STORE, zu ? 'zu' : 'auf'); } catch (e) { /* egal */ }
   }
 
-  // ---- LADEBILD (BESTELLT: "Ladebildschirm, solange Klaenge, Texturen und Automodelle laden; kein HUD, unten links eine
-  // kleine Animation und ein Fortschrittsbalken; bei einer Carrera-Bahn baut sich die Strecke Teil fuer Teil auf") ----
+  // ---- LADEBILD (BESTELLT: "Ladebildschirm, solange Klaenge, Texturen und Automodelle laden; kein HUD, ... und ein
+  // Fortschrittsbalken"). v1.6.20 BESTELLT: "schoener, wenn die Strecke das ganze Bild einnimmt und nicht unten links ist.
+  // Auch, wenn es ein Bild der aktuellen Strecke (wie aus dem Editor von oben) ist. Die Lade-Animation kann dann einfach
+  // das sich drehende Teil sein." ----
+  // Also: die Strecke von oben fuellt das Bild (Carrera-Bahn: derselbe Zeichner wie der Editor, renderTrackPreview mit
+  // Gitter; freie Strecke: ihr Umriss mit weissen Randlinien, die Bruecke obenauf), darueber in der Mitte das drehende
+  // Streckenteil (ladeAnimationHtml aus 59-lade.js, reines CSS, kostet den Hauptfaden nichts), Titel, Balken und was noch
+  // fehlt. Das Bild entsteht EINMAL beim Start, je Takt werden nur Balken und Text gesetzt.
   // Die Bahn-, Rand- und Bodentexturen entstehen schon beim Start (synchron), das Ladebild wartet auf das, was danach
   // kommt: Rad-Modell, eigenes Auto, jeder NPC (je ein Promise, Fehler zaehlen als fertig), die Bilder der Modelle
-  // (VF.texOffen, vfTextur) und den Motorklang (hoechstens VF_LADE_TON_MAX_MS). Spaetestens nach VF_LADE_MAX_MS geht es
-  // los. Die Animation: Carrera-Bahn = die Teile legen sich der Reihe nach, je Teil 100 ms, eine Runde mindestens 1 s,
-  // dann von vorn; freie Strecke = ein Punkt faehrt den Umriss ab. Gerechnet in einer kleinen 2D-Leinwand.
-  const VF_LADE_MAX_MS = 60000, VF_LADE_TON_MAX_MS = 20000, VF_LADE_TEIL_MS = 100, VF_LADE_RUNDE_MS = 1000;
+  // (VF.texOffen, vfTextur) und den Motorklang (hoechstens VF_LADE_TON_MAX_MS). Spaetestens nach VF_LADE_MAX_MS geht es los.
+  const VF_LADE_MAX_MS = 60000, VF_LADE_TON_MAX_MS = 20000;
   function vfLadeTonFertig(jetzt) {
     try {
       if (!soundEnabled || location.protocol === 'file:') return true;
@@ -4543,70 +4547,53 @@
     if (!tonDa) fehlt.push(t('Motorklang'));
     return { anteil: Math.max(0, Math.min(1, summe / gesamt)), fertig: modelle && texDa && tonDa, text: fehlt.join(' · ') };
   }
-  // Animation vorbereiten: je Teil (Kachel) eine Linie in Fahrtreihenfolge, oder der Umriss der freien Strecke.
-  function vfLadeAnimVorbereiten(pts, frei) {
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const p of pts) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
-    const rahmen = { x0, y0, w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) };
-    if (frei) return { art: 'umriss', rahmen, pts: pts.map((p) => [p.x, p.y]), rundeMs: 2400 };
-    const teile = [];
-    let akt = null;
-    for (let i = 0; i < pts.length; i++) {
-      const T = pts[i].tile;
-      if (T < 0) continue;
-      if (!akt || akt.T !== T) {
-        const vor = i > 0 ? pts[i - 1] : pts[pts.length - 1];
-        akt = { T, p: [[vor.x, vor.y]] };
-        teile.push(akt);
-      }
-      akt.p.push([pts[i].x, pts[i].y]);
+  // Die Strecke von oben als SVG. Carrera-Bahn wie im Editor; freie Strecke (eigene Punkte, keine Carrera-Teile) als Band.
+  function vfLadeKarteSvg(tiles, freiPts) {
+    if (!freiPts) {
+      try {
+        const html = renderTrackPreview(tiles, null, { detailed: true, echt: true, ohneLinie: true, ohneLinieRechnen: true, grid: true }).html;
+        if (/^<svg/.test(html)) return html.replace('class="tp-karte"', 'class="tp-karte vf-laden-svg"');
+      } catch (e) { /* unten: als Band */ }
     }
-    const n = teile.length, proTeilMs = Math.max(VF_LADE_TEIL_MS, VF_LADE_RUNDE_MS / Math.max(1, n));
-    return { art: 'teile', rahmen, teile, n, proTeilMs, rundeMs: (n + 4) * proTeilMs };
-  }
-  // Wie viele Teile liegen nach ms Laufzeit (rein, fuer den Selbsttest): 1..n, danach 4 Takte die ganze Bahn, dann von vorn.
-  function vfLadeAnimTeile(A, ms) {
-    const k = Math.floor((Math.max(0, ms) % A.rundeMs) / A.proTeilMs) + 1;
-    return Math.min(A.n, k);
-  }
-  function vfLadeAnimMalen(jetzt) {
-    const A = VF.ladeAnim, cv = VF.schicht ? VF.schicht.querySelector('.vf-laden-anim') : null;
-    if (!A || !cv) return;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const W = Math.max(1, Math.round(cv.clientWidth * dpr)), H = Math.max(1, Math.round(cv.clientHeight * dpr));
-    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-    const g = cv.getContext('2d');
-    if (!g) return;
-    g.clearRect(0, 0, W, H);
-    const R = A.rahmen, rand = 10 * dpr, sk = Math.min((W - 2 * rand) / R.w, (H - 2 * rand) / R.h);
-    const ox = (W - R.w * sk) / 2, oy = (H - R.h * sk) / 2;
-    const P = (q) => [ox + (q[0] - R.x0) * sk, oy + (q[1] - R.y0) * sk];
-    const linie = (pl) => { g.beginPath(); pl.forEach((q, i) => { const p = P(q); if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }); };
-    const breit = Math.max(3 * dpr, TRACK_HALF_W * 2 * sk);
-    g.lineJoin = 'round';
-    const ms = jetzt - (VF.ladeAb || jetzt);
-    if (A.art === 'teile') {
-      const liegt = vfLadeAnimTeile(A, ms);
-      g.lineCap = 'butt';
-      A.teile.forEach((tl) => { linie(tl.p); g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = breit; g.stroke(); });
-      for (let i = 0; i < liegt; i++) {
-        linie(A.teile[i].p);
-        g.strokeStyle = i === liegt - 1 && liegt < A.n ? '#00a3e0' : '#8c96a6'; g.lineWidth = breit * 0.92; g.stroke();
-        g.strokeStyle = 'rgba(10,14,22,.9)'; g.lineWidth = Math.max(1, dpr); g.stroke();
-      }
-      A.liegt = liegt;
-    } else {
-      linie(A.pts); g.closePath(); g.strokeStyle = '#8c96a6'; g.lineWidth = breit; g.stroke();
-      const i = Math.floor((ms % A.rundeMs) / A.rundeMs * A.pts.length) % A.pts.length, p = P(A.pts[i]);
-      g.fillStyle = '#00a3e0'; g.beginPath(); g.arc(p[0], p[1], Math.max(4 * dpr, breit * 0.8), 0, Math.PI * 2); g.fill();
+    const pts = freiPts || trackCenterline(tiles);
+    if (!pts || pts.length < 2) return '';
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, zMax = 0;
+    for (const q of pts) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); zMax = Math.max(zMax, q.z || 0); }
+    const half = TRACK_HALF_W, rand = half + 14, w = x1 - x0 + 2 * rand, h = y1 - y0 + 2 * rand;
+    const P = (q) => (q.x - x0 + rand).toFixed(1) + ' ' + (q.y - y0 + rand).toFixed(1);
+    const band = (d) => '<path d="' + d + '" fill="none" stroke="#e8ecf2" stroke-width="' + (half * 2).toFixed(1) + '" stroke-linejoin="round"/>'
+      + '<path d="' + d + '" fill="none" stroke="#0d0f13" stroke-width="' + (half * 2 - 3.2).toFixed(1) + '" stroke-linejoin="round"/>';
+    let body = band('M ' + pts.map(P).join(' L ') + ' Z');
+    // Bruecke: was hoch liegt, noch einmal obenauf (sonst verschwindet sie unter der Strasse darunter).
+    if (zMax > 0) {
+      let stueck = [];
+      const fertig = () => { if (stueck.length > 1) body += band('M ' + stueck.map(P).join(' L ')).replace(/stroke-linejoin/g, 'stroke-linecap="butt" stroke-linejoin'); stueck = []; };
+      for (const q of pts) { if ((q.z || 0) > zMax * 0.5) stueck.push(q); else fertig(); }
+      fertig();
     }
+    // Start/Ziel: weisser Strich quer zur Fahrtrichtung bei Punkt 0.
+    const p0 = pts[0], p1 = pts[1], l = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 1, nx = -(p1.y - p0.y) / l, ny = (p1.x - p0.x) / l;
+    body += '<path d="M ' + P({ x: p0.x + nx * half, y: p0.y + ny * half }) + ' L ' + P({ x: p0.x - nx * half, y: p0.y - ny * half })
+      + '" stroke="#ffffff" stroke-width="4"/>';
+    return '<svg class="tp-karte vf-laden-svg" viewBox="0 0 ' + w.toFixed(0) + ' ' + h.toFixed(0) + '">' + body + '</svg>';
   }
-  function vfLadebildHtml() {
+  // Hochkant-Strecke auf Querformat (oder umgekehrt): um 90 Grad im Uhrzeigersinn drehen, wenn sie dadurch mindestens
+  // 15 % groesser wird ("die Strecke nimmt das ganze Bild ein"). Punkt (x, y) wird zu (H - y, x).
+  function vfLadeKarteDrehen(svg, bw, bh) {
+    const m = /^<svg([^>]*) viewBox="0 0 ([\d.]+) ([\d.]+)">/.exec(svg || '');
+    if (!m || !(bw > 0 && bh > 0)) return svg;
+    const W = +m[2], H = +m[3];
+    if (!(Math.min(bw / H, bh / W) > 1.15 * Math.min(bw / W, bh / H))) return svg;
+    return '<svg' + m[1] + ' data-gedreht="1" viewBox="0 0 ' + m[3] + ' ' + m[2] + '"><g transform="translate(' + m[3] + ' 0) rotate(90)">'
+      + svg.slice(m[0].length).replace(/<\/svg>\s*$/, '') + '</g></svg>';
+  }
+  function vfLadebildHtml(karte) {
     return '<div class="vf-laden" role="status" aria-live="polite">'
-      + '<div class="vf-laden-mitte"><div class="vf-laden-titel">' + t('Virtuelle Fahrt wird geladen') + '</div>'
+      + '<div class="vf-laden-karte" aria-hidden="true">' + (karte || '') + '</div>'
+      + '<div class="vf-laden-mitte">' + (typeof ladeAnimationHtml === 'function' ? ladeAnimationHtml('') : '')
+      + '<div class="vf-laden-titel">' + t('Virtuelle Fahrt wird geladen') + '</div>'
       + '<div class="vf-laden-balken" role="progressbar" aria-label="' + t('Ladefortschritt') + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>'
       + '<div class="vf-laden-was"></div></div>'
-      + '<canvas class="vf-laden-anim" aria-hidden="true"></canvas>'
       + '<button type="button" class="vf-laden-zu" data-vf="laden-zu" title="' + t('Laden abbrechen') + '" aria-label="' + t('Laden abbrechen') + '">' + vfIkon('zu') + '</button>'
       + '</div>';
   }
@@ -4622,7 +4609,6 @@
       const was = el.querySelector('.vf-laden-was');
       if (was && was.textContent !== S.text) was.textContent = S.text;
     }
-    vfLadeAnimMalen(jetzt);
     return true;
   }
   function vfLadenEnde() {
@@ -4720,7 +4706,7 @@
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>'
       + '<div class="vf-touch" hidden><div class="vf-touch-lenk"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Lenken') + '</span></div>'
       + '<div class="vf-touch-gas"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis vf-touch-gas-oben">' + t('Gas') + '</span><span class="vf-touch-hinweis vf-touch-gas-unten">' + t('Bremse') + '</span></div></div>'
-      + vfLadebildHtml();
+      + vfLadebildHtml((() => { try { return vfLadeKarteDrehen(vfLadeKarteSvg(tiles, frei ? frei.pts : null), window.innerWidth, window.innerHeight); } catch (e) { return ''; } })());
     schicht.classList.add('vf-laedt');
     document.body.appendChild(schicht);
     const cv = schicht.querySelector('canvas');
@@ -4867,9 +4853,8 @@
                         startX: VF.pts[start].x, startY: VF.pts[start].y, startH: VF.pts[start].heading });
     vfNpcStarten(gl, start);
     physEngine.state.speedKmh = 0;
-    // Ladebild (siehe vfLadeSchritt): ab hier zaehlt die Ladezeit; die Animation kennt die Strecke in Fahrtrichtung.
+    // Ladebild (siehe vfLadeSchritt): ab hier zaehlt die Ladezeit.
     VF.laedt = true; VF.ladeAb = performance.now();
-    try { VF.ladeAnim = vfLadeAnimVorbereiten(VF.pts, !!frei); } catch (e) { VF.ladeAnim = null; }
     schicht.addEventListener('click', (e) => {
       const b = e.target.closest('[data-vf]');
       if (!b) return;
@@ -5340,7 +5325,7 @@
       VF.abbruch = false;
     }
     VF.aktiv = false;
-    VF.laedt = false; VF.ladeAnim = null;
+    VF.laedt = false;
     VF.npcs = null; VF.npcBogen = null; VF.npcRunde = 0;
     VF.schatte = null; VF.schatteProg = null; VF.grafik = false; VF.regen = null; VF.schleier = null;
     // Was die virtuelle Fahrt am echten Fahren veraendert hat, zuruecknehmen: Schaden wie beim Start,

@@ -7,6 +7,8 @@ Diese Datei fasst die Wiki-Seite „Anleitung für KIs“ (https://omegasim.mira
 
 ## Issues: wo, und vor der Arbeit zuweisen
 - Fehler und Wünsche stehen als **Issues auf https://github.com/Luuke42/omegasim/issues**.
+- **Issues, Kommentare und Pull-Request-Beschreibungen auf Englisch** (dort arbeiten Leute aus mehreren Ländern mit).
+  Code-Kommentare, Patchnotes und App-Texte bleiben deutsch (mit EN/ES-Übersetzung).
 - **Vor der Bearbeitung prüfen, ob ein Issue schon jemandem zugewiesen ist.** Ist es frei: sich selbst zuweisen
   (bzw. das Konto, unter dem du arbeitest) und einen kurzen Kommentar „in Arbeit“ schreiben. Ist es vergeben: nicht
   parallel daran arbeiten, sondern im Issue nachfragen.
