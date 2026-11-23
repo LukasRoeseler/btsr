@@ -1449,10 +1449,17 @@
     url(img/meisterschaft.jpg) center 40% / cover no-repeat; }
   .k-fahren-unten #fa-profil .k-kk { font-size: clamp(11px, 2vh, 15px); }
   /* v1.5: wie die Startkachel (abgedunkeltes Bild, grosser Titel), schmaler: ohne Zielflaggen, Titel kleiner. */
-  #fa-virtuell.k-virtuell { background: linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)), url(img/virtuell-fahren.jpg) center 55% / cover no-repeat; }
-  #fa-virtuell.k-virtuell::before, #fa-virtuell.k-virtuell::after { display: none; }
-  #fa-virtuell .k-start-innen b { font-size: clamp(15px, 2vw, 30px); }
-  #fa-virtuell .k-start-innen .wip-tag { margin-top: 4px; font-size: 9px; text-shadow: none; }
+  /* v1.6.23: Umschalter Echt | Virtuell an der Stelle der frueheren Kachel "Virtuell fahren". */
+  #fa-modus.k-modus { background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/garage.jpg) center / cover no-repeat; }
+  body.fm-virtuell #fa-modus.k-modus { background: linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)), url(img/virtuell-fahren.jpg) center 55% / cover no-repeat; }
+  #fa-modus.k-modus::before, #fa-modus.k-modus::after { display: none; }
+  .k-modus-wahl { display: flex; width: 100%; margin-top: 6px; border: 1px solid rgba(255,255,255,.55); border-radius: 6px; overflow: hidden; }
+  #fa-modus .k-start-innen { width: 88%; max-width: 340px; }
+  #fa-modus .k-modus-wahl b { flex: 1 1 0; padding: .35em .5em; font-size: clamp(12px, 1.6vw, 19px); font-weight: 800; letter-spacing: .06em; color: rgba(255,255,255,.72); cursor: pointer; text-align: center; white-space: nowrap; text-shadow: none; }
+  #fa-modus .k-modus-wahl b.an { background: #00a3e0; color: #fff; }
+  .k-modus-wahl .wip-tag { margin-left: 3px; font-size: 8px; vertical-align: super; text-shadow: none; }
+  body.fm-virtuell #fa-start { background-image: linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url(img/virtuell-fahren.jpg); background-size: cover; background-position: center 55%; }
+  body.fm-virtuell #fa-auto-bild { background-size: contain, cover; background-repeat: no-repeat; background-position: center, center; }
   /* v1.5: kleine Symbole auf der Garagenkachel (zweiter Laptop, Onboard-Kamera). */
   .k-geraete { position: absolute; top: 6px; right: 8px; display: flex; gap: 6px; z-index: 2; pointer-events: none; }
   .k-geraete[hidden] { display: none; }
@@ -5967,7 +5974,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.22</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.24</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -6037,6 +6044,8 @@
           <button type="button" class="k-knopf" id="fa-druck" hidden>Druckvorlagen</button>
           <button type="button" class="k-knopf" id="fa-foto" hidden title="Optimal: quer, z. B. 4:3 oder 16:9">Foto</button>
           <button type="button" class="k-knopf" id="fa-foto-weg" hidden>Foto löschen</button>
+          <!-- v1.6.23: Fahrtrichtung der virtuellen Fahrt (nur im Modus Virtuell, Text setzt konsoleFahrenZeichnen). -->
+          <button type="button" class="k-knopf" id="fa-richtung" hidden data-i18n-skip>Normal</button>
         </span>
       </div>
       <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-quad="renntyp">
@@ -6058,8 +6067,10 @@
            Groesse) Button einfuegen 'Drive Virtually' (so wie button in der garage, Rennen soll dann direkt losgehen)". -->
       <!-- v1.5 BESTELLT: "Mach das Virtual Bild vom Design so aehnlich wie das Start Practice": Bild ueber die ganze
            Kachel, grosser Titel in der Mitte, darunter Renntyp, ohne die weissen Kopfleisten. -->
-      <div class="k-kachel k-start k-virtuell" id="fa-virtuell" role="button" tabindex="0">
-        <span class="k-start-innen"><b>Virtuell fahren</b><small id="fa-virtuell-unter" data-i18n-skip></small><span class="wip-tag">WIP</span></span>
+      <!-- v1.6.23 (Issue #7) BESTELLT: "Umschalter zwischen echtem und virtuellem Fahren statt der Kachel 'Virtuell fahren'"
+           (51-konsole.js, fahrModusSetzen). Quadrat am Pad schaltet um wie bei den anderen Kacheln. -->
+      <div class="k-kachel k-start k-modus" id="fa-modus" role="button" tabindex="0" data-quad="fahrmodus">
+        <span class="k-start-innen"><small>Fahren</small><span class="k-modus-wahl"><b data-fm="echt" aria-pressed="true">Echt</b><b data-fm="virtuell" aria-pressed="false">Virtuell <span class="wip-tag">WIP</span></b></span></span>
       </div>
         <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
           <span class="k-start-innen"><b id="fa-start-titel">Rennen starten</b><small id="fa-start-unter"></small></span>
@@ -7284,6 +7295,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>FAHREN: Umschalter Echt | Virtuell (WIP) statt der Kachel &#8222;Virtuell fahren&#8220;. Im Modus Virtuell zeigt die Autos-Kachel das virtuelle Auto, Garage &#246;ffnet die Optionen der virtuellen Fahrt, die Startkachel startet sie, und die Strecken-Kachel bl&#228;ttert durch die gebaute Bahn und die Rollrennstrecken T&#246;rnerschleife 2.0, T&#246;rnerschleife 2.0 mit Br&#252;cke und neu Heckenhoim (von Gnen54 und Thorsten), mit Vorschau von oben und einem Knopf f&#252;r die Fahrtrichtung.</li>
         <li>Virtuell fahren: Das Ladebild zeigt jetzt die aktuelle Strecke von oben &#252;ber das ganze Bild (wie im Editor, bei der T&#246;rnerschleife ihr Umriss mit Br&#252;cke), in der Mitte dreht sich das Streckenteil &#252;ber Titel und Fortschrittsbalken. Aus Gnen54s Testversion &#252;bernommen: Pad-Diagnose w&#228;hrend der Fahrt (Knopf in der Leiste oder F8) mit Pad-Namen, Belegung, gelernter Ruhelage der Trigger, Rohwerten und der Stelle, an der die Abfrage aussteigt, und in der Anleitung der Abschnitt &#8222;Gamepad einrichten&#8220; mit Hinweisen zum EasySMX X05 (Gas und Bremse auf dem rechten Stick).</li>
         <li>Virtuell fahren, aus dem Pull Request von Gnen54 &#252;bernommen und auf den aktuellen Stand gebracht: T&#246;rnerschleife 2.0 mit und ohne Br&#252;cke (mit Randlinien, Boxengasse und Steigung), R&#252;ckw&#228;rtsgang, keine Runde beim R&#252;ckw&#228;rtsfahren oder Pendeln &#252;ber die Linie, Android-Trigger, die in Ruhe auf halbem Weg stehen, Gamepad-Tasten f&#252;r Licht, Box und Gelbe Flagge, Lichthupe, Pflicht-Boxendurchfahrt (WIP), Boxenservice nur in der Boxengasse, Innenspiegel als schmaler Streifen oben (WIP), fester Motorklang f&#252;r K&#228;fer, Spider und Caravelle, Hilfeseite mit &#8222;?&#8220; in der Garage. Neu: Ladebild ohne Anzeige mit Fortschrittsbalken und einer Strecke, die sich unten links Teil f&#252;r Teil zusammenbaut; Knopfleiste als Piktogramme mit einem Knopf zum Aus- und Einblenden; Fahrtrichtung &#8222;Gegenrichtung&#8220; (WIP).</li>
         <li>Vibration wie bei LibreCorsa: Ein Mischer bedient beide Rumble-Motoren gemeinsam (hoher Motor: Randstein-Pulse und schiebende Vorderr&#228;der, tiefer Motor: St&#246;&#223;e, ausbrechendes Heck, ABS, unebener Boden), statt vieler einzelner St&#246;&#223;e; die DualSense-Griffmotoren und Trigger-Widerst&#228;nde folgen denselben Werten. Die Schalter unter Optionen &gt; Vibration gelten jetzt auch beim virtuellen Fahren; &#8222;Reifenquietschen&#8220; und &#8222;Neben der Bahn&#8220; sind ab Werk aus (einmalig umgestellt). Nach dem virtuellen Fahren gibt die App Grafik, Texturen und Automodelle wieder frei (weniger Speicher beim echten Fahren), und bei sehr wenig freiem Speicher kommt ein Hinweis. Virtuell mehr Wolken bei Sonne. Auf der Startseite gibt es &#8222;Fehler melden&#8220; (&#246;ffnet ein Formular auf GitHub).</li>
@@ -17686,6 +17698,8 @@
     "Pad-Diagnose": "Pad diagnostics",
     "Pad-Diagnose (F8 oder Knopf schließt)": "Pad diagnostics (F8 or button closes)",
     "Virtuell fahren: Das Ladebild zeigt jetzt die aktuelle Strecke von oben über das ganze Bild (wie im Editor, bei der Törnerschleife ihr Umriss mit Brücke), in der Mitte dreht sich das Streckenteil über Titel und Fortschrittsbalken. Aus Gnen54s Testversion übernommen: Pad-Diagnose während der Fahrt (Knopf in der Leiste oder F8) mit Pad-Namen, Belegung, gelernter Ruhelage der Trigger, Rohwerten und der Stelle, an der die Abfrage aussteigt, und in der Anleitung der Abschnitt „Gamepad einrichten“ mit Hinweisen zum EasySMX X05 (Gas und Bremse auf dem rechten Stick).": "Virtual driving: the loading screen now shows the current track from above across the whole screen (as in the editor; for the Törnerschleife its outline with the bridge), with the spinning track piece above the title and progress bar in the middle. Taken over from Gnen54's test version: pad diagnostics while driving (button in the bar or F8) with pad name, mapping, the learned rest position of the triggers, raw values and the point where polling stops, and the guide section “Setting up a gamepad” with notes on the EasySMX X05 (throttle and brake on the right stick).",
+    "Echt": "Real",
+    "FAHREN: Umschalter Echt | Virtuell (WIP) statt der Kachel „Virtuell fahren“. Im Modus Virtuell zeigt die Autos-Kachel das virtuelle Auto, Garage öffnet die Optionen der virtuellen Fahrt, die Startkachel startet sie, und die Strecken-Kachel blättert durch die gebaute Bahn und die Rollrennstrecken Törnerschleife 2.0, Törnerschleife 2.0 mit Brücke und neu Heckenhoim (von Gnen54 und Thorsten), mit Vorschau von oben und einem Knopf für die Fahrtrichtung.": "DRIVE: a Real | Virtual switch (WIP) instead of the “Drive virtually” tile. In Virtual mode the cars tile shows the virtual car, Garage opens the virtual driving options, the start tile starts it, and the track tile cycles through the built track and the roll racing tracks Törnerschleife 2.0, Törnerschleife 2.0 with bridge and the new Heckenhoim (by Gnen54 and Thorsten), with a top view and a button for the driving direction.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20563,6 +20577,7 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Echt": "Real",
     "Pad-Diagnose": "Diagnóstico del mando",
     "Pad-Diagnose (F8 oder Knopf schließt)": "Diagnóstico del mando (F8 o botón cierra)",
     "Fehler melden": "Informar de un error",
@@ -33222,8 +33237,33 @@
   })();
 
   // ---- Quadrat: schneller Wechsel auf Kacheln mit data-quad --------------------------
+  // ---- FAHRMODUS ECHT | VIRTUELL (v1.6.23, Issue #7, WIP) ----
+  // BESTELLT: "Auf der FAHREN-Seite ein Umschalter zwischen echtem und virtuellem Fahren statt der Kachel 'Virtuell
+  // fahren'. Im Modus Virtuell zeigt die Garage das gewaehlte virtuelle Auto und die Optionen der virtuellen Fahrt;
+  // im Modus Echt wie bisher. Spaeter dritter Modus Augmented Reality." Gemerkt unter FAHR_MODUS_STORE. Im Modus
+  // Virtuell zeigt die Autos-Kachel das virtuelle Auto (Vorschaubild, Name, Strecke), Verbinden und Mehrspieler sind
+  // ausgeblendet, "Garage" oeffnet die Optionen der virtuellen Fahrt und die Startkachel startet sie.
+  var FAHR_MODUS_STORE = 'omegasim-fahrmodus';
+  function fahrModusVirtuell() { try { return localStorage.getItem(FAHR_MODUS_STORE) === 'virtuell'; } catch (e) { return false; } }
+  function fahrModusSetzen(m) {
+    const v = m === 'virtuell';
+    try { localStorage.setItem(FAHR_MODUS_STORE, v ? 'virtuell' : 'echt'); } catch (e) { /* egal */ }
+    try { garVirtuellAuf = v; if (v) garKameraAuf = false; } catch (e) { /* Garage noch nicht geladen */ }
+    konsoleFahrenZeichnen();
+  }
+  // Garage im passenden Modus oeffnen: virtuell mit den Optionen der virtuellen Fahrt rechts.
+  function konsoleGarageOeffnen() {
+    try { if (fahrModusVirtuell()) { garVirtuellAuf = true; garKameraAuf = false; } else garVirtuellAuf = false; } catch (e) { /* egal */ }
+    konsoleZeige('garage');
+  }
+  function konsoleVirtuellStarten() {
+    if (kRennenLaeuft()) { showHudToast(t('Erst das laufende Rennen beenden')); return; }
+    if (typeof virtuellStarten === 'function') virtuellStarten();
+  }
   function konsoleQuadWechsel(q, dir) {
-    if (q === 'renntyp') {
+    if (q === 'fahrmodus') {
+      fahrModusSetzen(fahrModusVirtuell() ? 'echt' : 'virtuell');
+    } else if (q === 'renntyp') {
       const s = $('race-mode');
       // v1.2.4: nur erlaubte Renntypen (renntypenFiltern sperrt die anderen je Sensormodus).
       const n = s.options.length;
@@ -33234,6 +33274,8 @@
       }
       s.selectedIndex = i;
       s.dispatchEvent(new Event('change', { bubbles: true }));
+    } else if (q === 'bahn' && fahrModusVirtuell() && typeof vfStreckeWechseln === 'function') {
+      vfStreckeWechseln(dir);   // v1.6.23: virtuell blaettert die Kachel durch gebaute Bahn und Rollrennstrecken
     } else if (q === 'bahn') {
       const cb = $('setting-ontrack');
       cb.checked = !cb.checked;
@@ -33268,6 +33310,10 @@
   // Bedienelementen, die konsoleQuadWechsel() weiterdreht - damit Zahl und Punkt nicht
   // auseinanderlaufen koennen.
   function kQuadPunkte(quad) {
+    if (quad === 'bahn' && fahrModusVirtuell() && typeof vfStreckenListe === 'function') {
+      const l = vfStreckenListe();
+      return { anzahl: l.length, index: l.indexOf(vfFreiWahl()) };
+    }
     if (quad === 'bahn') {
       const cb = $('setting-ontrack');
       return { anzahl: 2, index: cb && cb.checked ? 1 : 0 };
@@ -33748,14 +33794,23 @@
     if (!$('fa-auto')) return;
     konsoleFahrenGeraete();
     const autos = kAutos();
-    $('fa-auto-titel').textContent = autos.length ? autos.length + ' ' + t('verbunden') : t('Autos verbinden');
+    // v1.6.23 (Issue #7): Modus Virtuell - die Autos-Kachel zeigt das virtuelle Auto.
+    const vfM = fahrModusVirtuell(), vfId = vfM && typeof vfAutoWahl === 'function' ? vfAutoWahl() : '';
+    document.body.classList.toggle('fm-virtuell', vfM);
+    document.querySelectorAll('#fa-modus [data-fm]').forEach((b) => {
+      const an = (b.dataset.fm === 'virtuell') === vfM;
+      b.classList.toggle('an', an); b.setAttribute('aria-pressed', an ? 'true' : 'false');
+    });
+    if ($('fa-verbinden')) $('fa-verbinden').hidden = vfM;
+    if ($('fa-mp')) $('fa-mp').hidden = vfM;
+    $('fa-auto-titel').textContent = vfM ? t('Virtuelles Auto') : autos.length ? autos.length + ' ' + t('verbunden') : t('Autos verbinden');
     // BESTELLT v0.8.126: mehrere verbundene Autos mit Fotos gemeinsam zeigen (die Garage auf dem
     // Fahren-Schirm). Erst ab zwei Fotos, sonst bleibt es beim einen Bild des Fahrer-Autos.
     // v0.9.31, GEMELDET: "mit 2 Autos 'Steuern' und 'Spieler 2' wurde nur eins angezeigt" -
     // die Galerie kam erst ab ZWEI FOTOS. Jetzt ab zwei verbundenen Autos; eines ohne Foto
     // steht als Farbflaeche mit seinem Zeichen darin.
     const mitFotos = autos.filter((c) => c.role !== 'none').slice(0, 4);
-    const galerieAn = mitFotos.length >= 2;
+    const galerieAn = !vfM && mitFotos.length >= 2;
     const faAuto = $('fa-auto');
     if (faAuto) faAuto.classList.toggle('k-auto-mehr', galerieAn);
     // Das eigene Foto des Fahrer-Autos (Garage) statt des Beispielbilds.
@@ -33768,6 +33823,7 @@
     } else {
       abNeu = afoto ? 'foto:' + afoto.length : 'auto';
     }
+    if (vfM) abNeu = 'vf:' + vfId;
     if (ab && ab.dataset.bild !== abNeu) {
       if (galerieAn) {
         ab.style.backgroundImage = 'none';
@@ -33794,6 +33850,10 @@
           gal.appendChild(zelle);
         });
         ab.appendChild(gal);
+      } else if (vfM) {
+        // Vorschaubild des virtuellen Autos (Seitenansicht), dahinter das Bild der virtuellen Fahrt.
+        ab.style.backgroundImage = 'url("' + vfModellPfad(vfId) + 'vorschau.jpg"), url(img/virtuell-fahren.jpg)';
+        ab.innerHTML = '';
       } else {
         ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/garage.jpg)';   // v1.0.15: Garagenfoto (BESTELLT)
         ab.innerHTML = '';
@@ -33802,7 +33862,7 @@
     }
     konsoleMpStatus();
     konsoleVerbLage();
-    kZeilen($('fa-auto-info'), autos.length
+    kZeilen($('fa-auto-info'), vfM ? [[t('Auto'), vfAutoName(vfId)], [t('Strecke'), vfStreckeName()]] : autos.length
       ? autos.map((c) => [kPunkt(carColor(c).hex, garageLabel(c)), t(K_ROLLE[c.role] || c.role)])
       : [[t('Status'), t('nicht verbunden')]]);
     const rm = $('race-mode');
@@ -33831,15 +33891,19 @@
     ]);
     const bahn = ($('setting-ontrack') || {}).checked;
     const foto = konsoleFoto();
-    $('fa-strecke-titel').textContent = bahn ? t('Auf der Bahn') : t('Frei');
+    // v1.6.23: im Modus Virtuell die gewaehlte Strecke der virtuellen Fahrt (gebaute Bahn oder Rollrennstrecke).
+    const vfK = vfM && typeof vfFreiWahl === 'function' ? vfFreiWahl() : '';
+    const vfFreiKarte = vfK && typeof vfFreiCache !== 'undefined' ? vfFreiCache[vfK] || null : null;
+    if (vfK && !vfFreiKarte && typeof vfFreiLaden === 'function') vfFreiLaden(vfK).then(() => konsoleFahrenZeichnen(), () => {});
+    $('fa-strecke-titel').textContent = vfM ? vfStreckeName() : bahn ? t('Auf der Bahn') : t('Frei');
     const bild = $('fa-strecke-bild');
     // BESTELLT v0.8.126: ist eine Strecke eingegeben und der Modus steht auf "auf der Bahn",
     // zeigt das Band die Streckenvorschau aus dem Editor statt des Beispielbilds.
     let teileAn = 0;
     try { teileAn = currentTrackTiles.length; } catch (e) { teileAn = 0; }
-    const vorschauAn = bahn && teileAn >= 3 && typeof renderTrackPreview === 'function';
+    const vorschauAn = (vfM ? !vfK : bahn) && teileAn >= 3 && typeof renderTrackPreview === 'function';
     const faStrecke = $('fa-strecke');
-    if (faStrecke) faStrecke.classList.toggle('k-vorschau', vorschauAn);
+    if (faStrecke) faStrecke.classList.toggle('k-vorschau', vorschauAn || !!vfFreiKarte);
     // Im Ausdruck-Modus zeigt das Band das eigene Streckenfoto, sobald es eines gibt. Nur neu
     // setzen, wenn es sich geaendert hat: die Daten-URL ist einige hundert KB lang.
     let bildNeu;
@@ -33849,6 +33913,7 @@
     } else {
       bildNeu = !bahn && foto ? 'foto:' + foto.length : (bahn ? 'strecke-bahn' : 'strecke-frei');
     }
+    if (vfK) bildNeu = 'vffrei:' + vfK + (vfFreiKarte ? ':da' : '');
     if (bild && bild.dataset.bild !== bildNeu) {
       let gezeichnet = false;
       if (vorschauAn) {
@@ -33859,13 +33924,20 @@
           gezeichnet = true;
         } catch (e) { /* Fall: Foto */ }
       }
+      // v1.6.23: Rollrennstrecke von oben (derselbe Zeichner wie das Ladebild der virtuellen Fahrt).
+      if (!gezeichnet && vfFreiKarte && typeof vfLadeKarteSvg === 'function') {
+        try { bild.style.backgroundImage = 'none'; bild.innerHTML = vfLadeKarteSvg(null, vfFreiKarte.pts); gezeichnet = true; } catch (e) { /* Fall: Bild */ }
+      }
       if (!gezeichnet) {
         bild.style.backgroundImage = !bahn && foto ? 'url("' + foto + '")' : 'url(img/' + (bahn ? 'strecke-bahn' : 'strecke-frei') + '.jpg)';
         bild.innerHTML = '';
       }
       bild.dataset.bild = bildNeu;
     }
-    kZeilen($('fa-strecke-info'), bahn
+    kZeilen($('fa-strecke-info'), vfM
+      ? [[t('Fahrtrichtung'), typeof vfGegenAn === 'function' && vfGegenAn() ? t('Gegenrichtung') : t('Normal')],
+         vfK ? [t('Strecke'), t('nur virtuell')] : [t('Teile'), String(kTeile())]]
+      : bahn
       ? [[t('Teile'), String(kTeile())], ['Code', kCode() || '–']]
       : [[t('Modus'), t('Ausdruck, ohne Bahn')], [t('Streckenfoto'), foto ? t('hochgeladen') : t('keins')]]);
     // v0.9.45 BESTELLT: "zeige im FAHREN-Menue in der Streckenkachel (wenn sie auf Bahn
@@ -33883,11 +33955,23 @@
     if ($('fa-reinig-stre')) $('fa-reinig-stre').hidden = !reinigAn;
     // (fa-profil ist seit v0.10.5 die Meisterschaft-Kachel, ohne Abstimmungsanzeige.)
 
+    // v1.6.23: virtuell zaehlen nur Editor und Laden (gebaute Bahn) und die Fahrtrichtung.
+    if (vfM) {
+      ['fa-scan', 'fa-raum', 'fa-druck', 'fa-foto', 'fa-foto-weg', 'fa-reinig-stre'].forEach((id) => { if ($(id)) $(id).hidden = true; });
+      ['fa-editor', 'fa-laden'].forEach((id) => { if ($(id)) $(id).hidden = !!vfK; });
+    }
+    const faR = $('fa-richtung');
+    if (faR) {
+      faR.hidden = !vfM;
+      const gg = typeof vfGegenAn === 'function' && vfGegenAn();
+      faR.textContent = '⇄ ' + (gg ? t('Gegenrichtung') : t('Normal'));
+      faR.setAttribute('aria-pressed', gg ? 'true' : 'false');
+      faR.title = t('Fahrtrichtung');
+    }
     const training = rm.value === 'practice';
     $('fa-start-titel').textContent = kRennenLaeuft() ? t('Zurück ins Rennen')
-      : (training ? t('Training starten') : t('Rennen starten'));
-    $('fa-start-unter').textContent = modus + ' · ' + (bahn ? t('auf der Bahn') : t('frei'));
-    if ($('fa-virtuell-unter')) $('fa-virtuell-unter').textContent = modus + ' · ' + t('virtuell');
+      : vfM ? t('Virtuell fahren') : (training ? t('Training starten') : t('Rennen starten'));
+    $('fa-start-unter').textContent = modus + ' · ' + (vfM ? t('virtuell') : bahn ? t('auf der Bahn') : t('frei'));
     // Punkte rechts neben dem Wert (in derselben .k-kopf-Zeile): so viele, wie es
     // Schaltstellungen gibt, die gewaehlte gefuellt. Bei zu vielen (z. B. Motorsound mit
     // 27 Motoren) wuerden die Punkte nicht mehr passen - dort stehen Pfeile im Markup.
@@ -34096,18 +34180,20 @@
     const kn = (id, fn) => { const el = $(id); if (el) el.addEventListener('click', fn); };
     kn('fa-auto', (e) => {
       if (e.target.closest('.k-knopf')) return;
+      if (fahrModusVirtuell()) { konsoleGarageOeffnen(); return; }
       // v1.5: ein Tipp auf die Fehlerzeile oeffnet den Dialog dazu statt der Kachel.
       if (e.target.closest('#fa-verb-lage') && konsoleVerbFrage()) return;
       konsoleAuto();
     });
     kn('fa-verbinden', () => { konsoleVerbinden(); });
-    kn('fa-garage', () => konsoleZeige('garage'));
+    kn('fa-garage', () => konsoleGarageOeffnen());
     kn('fa-mp', () => konsoleZeige('mp'));
-    kn('fa-start', () => { konsoleLosfahren(); });
-    // v1.5: "Drive Virtually" - wie "Virtuell fahren" in der Garage, das Rennen (Renneinstellungen) beginnt sofort.
-    kn('fa-virtuell', () => {
-      if (kRennenLaeuft()) { showHudToast(t('Erst das laufende Rennen beenden')); return; }
-      if (typeof virtuellStarten === 'function') virtuellStarten();
+    // v1.6.23: im Modus Virtuell startet die Startkachel die virtuelle Fahrt (die Kachel "Virtuell fahren" ist dem
+    // Umschalter Echt | Virtuell gewichen). Ein Tipp auf eine Seite des Umschalters waehlt sie, sonst wechselt er.
+    kn('fa-start', () => { if (fahrModusVirtuell() && !kRennenLaeuft()) konsoleVirtuellStarten(); else konsoleLosfahren(); });
+    kn('fa-modus', (e) => {
+      const s = e.target.closest('[data-fm]');
+      fahrModusSetzen(s ? s.dataset.fm : (fahrModusVirtuell() ? 'echt' : 'virtuell'));
     });
     // v1.1.3 BESTELLT: "Tippe ich bei der Kachel STRECKE auf STRECKE oder AUF DER BAHN, soll
     // umgeschaltet werden; tippe ich auf das Bild, oeffnet sich das Menue dazu." Vorher schaltete nur
@@ -34124,7 +34210,9 @@
       oeffnen();
     };
     kn('fa-renn', kachelKlick('renntyp', () => konsoleZeige('control')));
-    kn('fa-strecke', kachelKlick('bahn', () => konsoleZeige('track')));
+    // v1.6.23: im Modus Virtuell oeffnet das Bild die Optionen der virtuellen Fahrt (dort auch Strecke und Richtung).
+    kn('fa-strecke', kachelKlick('bahn', () => { if (fahrModusVirtuell()) konsoleGarageOeffnen(); else konsoleZeige('track'); }));
+    kn('fa-richtung', () => { if (typeof vfRichtungWechseln === 'function') vfRichtungWechseln(); menuNavTonVerstellen(); konsoleFahrenZeichnen(); });
     kn('fa-scan', () => konsoleZeige('track', 'scan'));
     kn('fa-editor', () => konsoleZeige('track', 'edit'));
     kn('fa-laden', () => konsoleZeige('track', 'laden'));
@@ -44543,7 +44631,20 @@
   const VF_STRECKE_STORE = 'omegasim-vf-strecke';
   // Aus PR 4 von gnen54: dieselbe Strecke auch mit Bruecke (die Bahn kreuzt sich, Hoehe z je Punkt).
   const VF_FREIE = { indeq: { name: 'Törnerschleife 2.0', pfad: 'img/strecken/indeq-ring.json' },
-    indeqBruecke: { name: 'Törnerschleife 2.0 mit Brücke', pfad: 'img/strecken/indeq-bruecke.json' } };
+    indeqBruecke: { name: 'Törnerschleife 2.0 mit Brücke', pfad: 'img/strecken/indeq-bruecke.json' },
+    // v1.6.23: Renn-Rollstrecke Heckenhoim (3 x 2 m) aus gnen54s Fork, siehe img/strecken/LIZENZ.txt.
+    heckenhoim: { name: 'Heckenhoim', pfad: 'img/strecken/heckenhoim.json' } };
+  // v1.6.23 BESTELLT: "Wenn ich auf virtuell geschaltet habe, moechte ich bei der Streckenwahl auch die Rollrennstrecken
+  // auswaehlen koennen (Toernerring, Toernerring mit Bruecke, Heckenhoim; jeweils mit Fahrtrichtungsoption)."
+  // Die Strecken-Kachel auf FAHREN blaettert im Modus Virtuell durch: gebaute Bahn, dann die freien Strecken.
+  function vfStreckenListe() { return ['', ...Object.keys(VF_FREIE)]; }
+  function vfStreckeWechseln(dir) {
+    const l = vfStreckenListe(), j = Math.max(0, l.indexOf(vfFreiWahl()));
+    const n = l[(j + (dir || 1) + l.length) % l.length];
+    try { localStorage.setItem(VF_STRECKE_STORE, n); } catch (e) { /* egal */ }
+    if (n) vfFreiLaden(n).catch(() => {});
+    return n;
+  }
   function vfFreiWahl() { try { const v = localStorage.getItem(VF_STRECKE_STORE) || ''; return VF_FREIE[v] ? v : ''; } catch (e) { return ''; } }
   const vfFreiCache = {};
   function vfFreiLaden(k) {
@@ -44642,6 +44743,22 @@
   function vfLackTint(hex) { return hex ? vfHex(hex) : VF_WEISS; }
   // Eine gespeicherte Wahl, die es nicht mehr gibt (z. B. 'porsche', 1.3.94-1.3.131, entfernt), faellt
   // still auf den Vulture V5.R zurueck - kein 404 beim Laden und kein Absturz.
+  // v1.6.23: die Liste der virtuellen Autos (Garage und Autos-Kachel auf FAHREN im Modus Virtuell).
+  function vfAutoListe() {
+    return [{ v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
+            { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
+            // Eigenbau von Gnen54 (CC BY 4.0), WIP: Fahrdaten geschaetzt, siehe img/autos/kaefer/LIZENZ.txt
+            { v: 'kaefer', name: t('VW Käfer 1303 RS mit Boxster-Motor (Gnen54, WIP)') },
+            // v1.5.104: Eigenbau von Gnen54 auf der Modiplay-MP1-Karosserie (Freigabe Sturmkind, nicht kommerziell),
+            // PR 3 auf Luuke42/omegasim. WIP: Fahrdaten geschaetzt (Lister Storm LMP), siehe img/autos/spider/LIZENZ.txt
+            { v: 'spider', name: t('Spider NG1 (Gnen54, WIP)') },
+            // v1.5.150: Eigenbau von Gnen54 auf der Vehicle-World-Karosserie (schriftliche Freigabe),
+            // siehe img/autos/caravelle/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
+            { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') }];
+  }
+  function vfAutoName(id) { const a = vfAutoListe().find((x) => x.v === id); return a ? a.name : id; }
+  // Name der gewaehlten Strecke der virtuellen Fahrt (freie Strecke oder die gebaute Bahn).
+  function vfStreckeName() { const k = vfFreiWahl(); return k ? t(VF_FREIE[k].name) : t('Gebaute Bahn'); }
   function vfAutoWahl() {
     try { const v = localStorage.getItem(VF_AUTO_STORE); return (v && Object.prototype.hasOwnProperty.call(VF_MODELL_PFADE, v)) ? v : 'v5r'; } catch (e) { return 'v5r'; }
   }
@@ -47584,6 +47701,7 @@
   // und die Boxenseite in Fahrtrichtung ist die andere (VF.boxSeite).
   const VF_RICHTUNG_STORE = 'omegasim-vf-richtung';
   function vfGegenAn() { try { return localStorage.getItem(VF_RICHTUNG_STORE) === 'gegen'; } catch (e) { return false; } }
+  function vfRichtungWechseln() { const g = !vfGegenAn(); try { localStorage.setItem(VF_RICHTUNG_STORE, g ? 'gegen' : 'normal'); } catch (e) { /* egal */ } return g; }
   function vfGegenrichtung(pts, B) {
     const n = pts.length, idx = (i) => ((n - i) % n + n) % n;
     const R = [];
@@ -47949,16 +48067,7 @@
       rechts.appendChild(fest);
     } else rechts.appendChild(garWertZeile(t('Motorsound'), werte[j].name, () => wahl(-1), () => wahl(1)));
     // v1.1.9: welches Auto, und wie deutlich die Federung sichtbar neigt.
-    const autos = [{ v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
-                   { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
-                   // Eigenbau von Gnen54 (CC BY 4.0), WIP: Fahrdaten geschaetzt, siehe img/autos/kaefer/LIZENZ.txt
-                   { v: 'kaefer', name: t('VW Käfer 1303 RS mit Boxster-Motor (Gnen54, WIP)') },
-                   // v1.5.104: Eigenbau von Gnen54 auf der Modiplay-MP1-Karosserie (Freigabe Sturmkind, nicht kommerziell),
-                   // PR 3 auf Luuke42/omegasim. WIP: Fahrdaten geschaetzt (Lister Storm LMP), siehe img/autos/spider/LIZENZ.txt
-                   { v: 'spider', name: t('Spider NG1 (Gnen54, WIP)') },
-                   // v1.5.150: Eigenbau von Gnen54 auf der Vehicle-World-Karosserie (schriftliche Freigabe),
-                   // siehe img/autos/caravelle/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
-                   { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') }];
+    const autos = vfAutoListe();
     const ja = Math.max(0, autos.findIndex((a) => a.v === vfAutoWahl()));
     const autoWahl = (dd) => {
       try { localStorage.setItem(VF_AUTO_STORE, autos[(ja + dd + autos.length) % autos.length].v); } catch (e) { /* egal */ }
@@ -48004,7 +48113,7 @@
     bodenZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(bodenZeile);
     // v1.5.150: freie Strecke (Törnerschleife, nur virtuell) oder die gebaute Bahn des Editors.
-    const freiListe = ['', ...Object.keys(VF_FREIE)];
+    const freiListe = vfStreckenListe();
     const jf = Math.max(0, freiListe.indexOf(vfFreiWahl()));
     const freiWahl = (dd) => {
       const ni = (jf + dd + freiListe.length) % freiListe.length;
@@ -72002,7 +72111,8 @@
     virtKnopf.innerHTML = t('Virtuell fahren') + ' <span class="wip-tag">WIP</span>';
     virtKnopf.setAttribute('aria-pressed', garVirtuellAuf ? 'true' : 'false');
     if (garVirtuellAuf) virtKnopf.classList.add('primary');
-    virtKnopf.onclick = () => { garVirtuellAuf = true; garKameraAuf = false; renderGarage(); };
+    // v1.6.23: der Knopf schaltet auch den Fahrmodus auf FAHREN auf Virtuell (Issue #7).
+    virtKnopf.onclick = () => { garVirtuellAuf = true; garKameraAuf = false; if (typeof fahrModusSetzen === 'function') fahrModusSetzen('virtuell'); renderGarage(); };
     virt.appendChild(virtKnopf);
     knoepfe.appendChild(virt);
     // v1.5 (WIP) BESTELLT: die Onboard-Kamera "in der Garage verbinden". Wie "Virtuell fahren": links
@@ -109441,20 +109551,107 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   });
 
   // v1.5: dazu "Drive Virtually" zwischen Meisterschaft und Start (ein Drittel der alten Startbreite, Start zwei Drittel).
-  stAdd('Fahren: Motorsound nur noch in der Garage, Meisterschaft, Virtuell fahren und Start fuellen die Reihe', () => {
+  // v1.6.23: an seiner Stelle der Umschalter Echt | Virtuell (fa-modus).
+  stAdd('Fahren: Motorsound nur noch in der Garage, Meisterschaft, Umschalter Echt/Virtuell und Start fuellen die Reihe', () => {
     const f = [];
     if (document.getElementById(['fa', 'motor'].join('-'))) f.push('Motorsound-Kachel noch da');
-    if (!$('fa-profil') || !$('fa-start') || !$('fa-virtuell')) f.push('Meisterschaft, Virtuell oder Start fehlt');
+    if (!$('fa-profil') || !$('fa-start') || !$('fa-modus')) f.push('Meisterschaft, Umschalter oder Start fehlt');
+    if (document.getElementById(['fa', 'virtuell'].join('-'))) f.push('Kachel Virtuell fahren noch da');
     const unten = document.querySelector('.k-fahren-unten');
     const kinder = unten ? [...unten.children].map((x) => x.id) : [];
-    if (kinder.join(',') !== 'fa-profil,fa-virtuell,fa-start') f.push('Reihenfolge ' + kinder.join(','));
+    if (kinder.join(',') !== 'fa-profil,fa-modus,fa-start') f.push('Reihenfolge ' + kinder.join(','));
     if (unten && unten.offsetWidth > 300 && getComputedStyle(unten).gridTemplateColumns.split(' ').length === 3) {
-      const v = $('fa-virtuell').offsetWidth, st = $('fa-start').offsetWidth;
-      if (Math.abs(st / v - 2) > 0.2) f.push('Start/Virtuell ' + (st / v).toFixed(2) + ' statt 2');
+      const v = $('fa-modus').offsetWidth, st = $('fa-start').offsetWidth;
+      if (Math.abs(st / v - 2) > 0.2) f.push('Start/Umschalter ' + (st / v).toFixed(2) + ' statt 2');
     }
-    if (!$('fa-virtuell').querySelector('.wip-tag')) f.push('Virtuell ohne WIP');
-    if (!$('fa-virtuell').classList.contains('k-start') || $('fa-virtuell').querySelector('.k-kk, .k-kopf')) f.push('Virtuell nicht im Stil der Startkachel');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Meisterschaft | Virtuell (1/3 der alten Startbreite) | Start (2/3)' };
+    if (!$('fa-modus').querySelector('.wip-tag')) f.push('Virtuell ohne WIP');
+    if (!$('fa-modus').classList.contains('k-start') || $('fa-modus').querySelector('.k-kk, .k-kopf')) f.push('Umschalter nicht im Stil der Startkachel');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Meisterschaft | Echt/Virtuell (1/3 der alten Startbreite) | Start (2/3)' };
+  });
+  stAdd('Fahren v1.6.23: virtuell waehlt die Strecken-Kachel gebaute Bahn und Rollrennstrecken (Toernerschleife, Bruecke, Heckenhoim) mit Fahrtrichtung', async () => {
+    const f = [], lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merk = { m: lies(FAHR_MODUS_STORE), s: lies(VF_STRECKE_STORE), r: lies(VF_RICHTUNG_STORE) };
+    const merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : '';
+    const namen = [];
+    try {
+      showTab('fahren');
+      fahrModusSetzen('virtuell');
+      try { localStorage.setItem(VF_STRECKE_STORE, ''); localStorage.setItem(VF_RICHTUNG_STORE, 'normal'); } catch (e) { /* egal */ }
+      konsoleFahrenZeichnen();
+      const l = vfStreckenListe();
+      if (l.join(',') !== ',indeq,indeqBruecke,heckenhoim') f.push('Liste ' + l.join(','));
+      if (kQuadPunkte('bahn').anzahl !== 4) f.push('Punkte ' + kQuadPunkte('bahn').anzahl);
+      if ($('fa-strecke-titel').textContent !== t('Gebaute Bahn')) f.push('Titel ' + $('fa-strecke-titel').textContent);
+      if ($('fa-scan').hidden !== true || $('fa-richtung').hidden) f.push('Knoepfe: Scan ' + !$('fa-scan').hidden + ', Richtung ' + !$('fa-richtung').hidden);
+      for (let i = 0; i < 3; i++) {
+        konsoleQuadWechsel('bahn', 1);
+        const k = vfFreiWahl();
+        await vfFreiLaden(k);
+        konsoleFahrenZeichnen();
+        namen.push($('fa-strecke-titel').textContent);
+        if ($('fa-strecke-titel').textContent !== t(VF_FREIE[k].name)) f.push(k + ': Titel ' + $('fa-strecke-titel').textContent);
+        if (!$('fa-strecke-bild').querySelector('svg path')) f.push(k + ': keine Karte');
+        if (!$('fa-editor').hidden) f.push(k + ': Editor sichtbar');
+        if (kQuadPunkte('bahn').index !== i + 1) f.push(k + ': Punkt ' + kQuadPunkte('bahn').index);
+      }
+      const hh = vfFreiCache.heckenhoim;
+      if (!hh || hh.pts.length < 100 || hh.tiles.length < 10) f.push('Heckenhoim laedt nicht richtig');
+      // Fahrtrichtung per Knopf, sichtbar in der Info und auf dem Knopf.
+      $('fa-richtung').click();
+      if (!vfGegenAn() || $('fa-richtung').textContent.indexOf(t('Gegenrichtung')) < 0 || $('fa-strecke-info').textContent.indexOf(t('Gegenrichtung')) < 0) f.push('Richtung: Knopf wirkt nicht');
+      konsoleQuadWechsel('bahn', 1);
+      if (vfFreiWahl() !== '') f.push('nach Heckenhoim nicht zurueck zur gebauten Bahn');
+      // Echt: wie bisher (Auf der Bahn / Frei), Richtung versteckt.
+      fahrModusSetzen('echt');
+      if (!$('fa-richtung').hidden) f.push('echt: Richtung sichtbar');
+      if ([t('Auf der Bahn'), t('Frei')].indexOf($('fa-strecke-titel').textContent) < 0) f.push('echt: Titel ' + $('fa-strecke-titel').textContent);
+    } finally {
+      const setz = (k, v) => { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { /* egal */ } };
+      setz(FAHR_MODUS_STORE, merk.m); setz(VF_STRECKE_STORE, merk.s); setz(VF_RICHTUNG_STORE, merk.r);
+      konsoleFahrenZeichnen();
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gebaute Bahn → ' + namen.join(' → ') + ' → zurueck, Richtung per Knopf' };
+  });
+  stAdd('Fahren v1.6.23: Umschalter Echt | Virtuell - Autos-Kachel, Garage und Start folgen dem Modus (Issue #7)', () => {
+    const f = [], merk = (() => { try { return localStorage.getItem(FAHR_MODUS_STORE); } catch (e) { return null; } })();
+    const merkTab = (typeof kAktiverTab === 'function' ? kAktiverTab() : ''), merkVA = garVirtuellAuf, merkKA = garKameraAuf;
+    const merkStart = virtuellStarten;
+    let gestartet = 0;
+    try {
+      fahrModusSetzen('echt');
+      const an = (m) => { const b = document.querySelector('#fa-modus [data-fm="' + m + '"]'); return b && b.classList.contains('an'); };
+      if (!an('echt') || an('virtuell')) f.push('echt nicht markiert');
+      if ($('fa-verbinden').hidden) f.push('echt: Verbinden versteckt');
+      if ($('fa-start-titel').textContent === t('Virtuell fahren')) f.push('echt: Start sagt virtuell');
+      // Ein Tipp auf "Virtuell" schaltet um.
+      document.querySelector('#fa-modus [data-fm="virtuell"]').click();
+      if (!fahrModusVirtuell() || !an('virtuell')) f.push('Tipp auf Virtuell schaltet nicht');
+      if (!document.body.classList.contains('fm-virtuell')) f.push('Klasse fm-virtuell fehlt');
+      if (!$('fa-verbinden').hidden || !$('fa-mp').hidden) f.push('virtuell: Verbinden/Mehrspieler sichtbar');
+      if ($('fa-auto-titel').textContent !== t('Virtuelles Auto')) f.push('Titel ' + $('fa-auto-titel').textContent);
+      if ($('fa-auto-bild').style.backgroundImage.indexOf('vorschau.jpg') < 0) f.push('kein Vorschaubild');
+      if ($('fa-auto-info').textContent.indexOf(vfAutoName(vfAutoWahl())) < 0) f.push('Autoname fehlt: ' + $('fa-auto-info').textContent);
+      if ($('fa-start-titel').textContent !== t('Virtuell fahren')) f.push('Start: ' + $('fa-start-titel').textContent);
+      // Garage oeffnet mit den Optionen der virtuellen Fahrt.
+      garVirtuellAuf = false;
+      $('fa-garage').click();
+      if (!garVirtuellAuf) f.push('Garage ohne virtuelle Optionen');
+      // Start startet die virtuelle Fahrt (abgefangen).
+      virtuellStarten = () => { gestartet++; return false; };
+      if (!kRennenLaeuft()) { $('fa-start').click(); if (gestartet !== 1) f.push('Start startet nicht virtuell'); }
+      // Quadrat am Pad schaltet zurueck.
+      konsoleQuadWechsel('fahrmodus', 1);
+      if (fahrModusVirtuell() || !an('echt')) f.push('Quadrat schaltet nicht zurueck');
+      if ($('fa-verbinden').hidden) f.push('zurueck: Verbinden versteckt');
+    } finally {
+      virtuellStarten = merkStart;
+      try { if (merk === null) localStorage.removeItem(FAHR_MODUS_STORE); else localStorage.setItem(FAHR_MODUS_STORE, merk); } catch (e) { /* egal */ }
+      garVirtuellAuf = merkVA; garKameraAuf = merkKA;
+      konsoleFahrenZeichnen();
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'echt/virtuell umschaltbar (Tipp, Quadrat), Kachel, Garage und Start folgen' };
   });
 
   stAdd('Fahren v1.5: Symbole fuer zweiten Laptop und Onboard-Kamera auf der Garagenkachel', () => {
