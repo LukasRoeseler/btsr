@@ -2080,7 +2080,7 @@
         if (!VF.aktiv || VF.gl !== gl) return;
         npc.modell = vfModellBauen(gl, daten, VF_MODELL_PFADE[auto]);
         npc.P = vfHandlingProfil(vfPhysikAus(daten.meta.physik));
-      }).catch(() => { /* NPC ohne Modell bleibt unsichtbar */ });
+      }).catch(() => { npc.modellFehl = true; /* NPC ohne Modell bleibt unsichtbar */ });
     }
   }
   // Fahrprofil fuer vfDynamik aus den Daten der .xml. Die Reibwerte von Speed Dreams sind ohne den dortigen
@@ -2523,7 +2523,13 @@
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(rgba || [150, 150, 155, 255]));
     if (!url) return tx;
     const bild = new Image();
+    // Fuer das Ladebild: wie viele Bilder dieser Fahrt noch laden (VF.texOffen, VF.texGesamt).
+    let offen = false;
+    if (VF.gl === gl) { offen = true; VF.texOffen = (VF.texOffen || 0) + 1; VF.texGesamt = (VF.texGesamt || 0) + 1; }
+    const fertig = () => { if (offen && VF.gl === gl) VF.texOffen = Math.max(0, (VF.texOffen || 0) - 1); offen = false; };
+    bild.onerror = fertig;
     bild.onload = () => {
+      fertig();
       if (VF.gl !== gl) return;
       gl.bindTexture(gl.TEXTURE_2D, tx);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bild);
@@ -2829,6 +2835,12 @@
   function vfBild(now) {
     if (!VF.aktiv) return;
     VF.raf = requestAnimationFrame(vfBild);
+    // Ladebild: bis Klaenge, Texturen und Autos da sind, steht alles (kein HUD, keine Physik, keine Uhren).
+    if (VF.laedt && vfLadeSchritt(now)) {
+      VF.letzt = now; VF.letztRoh = now; VF.dtBild = 0;
+      if (physEngine && physEngine.state) physEngine.state.speedKmh = 0;
+      return;
+    }
     vfWacheMessen(VF.letztRoh ? now - VF.letztRoh : 0, now);
     VF.letztRoh = now;
     if (rennPauseAktiv()) {
@@ -2933,8 +2945,9 @@
       }
     }
     if (Hb.p) st.speedKmh -= 9.81 * Math.sin(Hb.p) * 3.6 * dt / REAL_SCALE;
-    // v1.5.84: in der Boxenbucht ist die Fahrbahn auf der Boxenseite breiter.
-    const bucht = (VF.boxBucht && o.quer * VF_BOX_SEITE > 0) ? VF.boxBucht.b[o.idx] : 0;
+    // v1.5.84: in der Boxenbucht ist die Fahrbahn auf der Boxenseite breiter. VF.boxSeite ist die Boxenseite in
+    // Fahrtrichtung (in der Gegenrichtung die andere Seite der Mittellinie).
+    const bucht = (VF.boxBucht && o.quer * (VF.boxSeite || VF_BOX_SEITE) > 0) ? VF.boxBucht.b[o.idx] : 0;
     vfBoxDurchfahrt(o, bucht);
     const ab = Math.abs(o.quer) > TRACK_HALF_W * 1.19 + bucht + VF_AUTO.B * 0.3;
     if (ab && !VF.abseits) VF.abseitsSeit = rennZeitJetzt();
@@ -4429,6 +4442,200 @@
   window.addEventListener('gamepadconnected', vfTouchAktualisieren);
   window.addEventListener('gamepaddisconnected', vfTouchAktualisieren);
 
+  // ---- KNOPFLEISTE ALS PIKTOGRAMME (BESTELLT: "kompakte Piktogramm-Knoepfe statt der Textleiste, dazu ein Knopf,
+  // der alle aus- und einblendet") ----
+  // Box, Gelbe Flagge, Licht, Wetter, Kamera, Zurücksetzen, Steuerung (nur Touch) und Beenden als kleine Symbole
+  // (Inline-SVG, Name als title und aria-label). Ganz rechts der Knopf "leiste": blendet alle anderen aus und ein, die
+  // Wahl bleibt fuer die naechste Fahrt (localStorage). Die Knoepfe behalten ihr data-vf (Klick, Pad, Selbsttest).
+  const VF_LEISTE_STORE = 'omegasim-vf-leiste';
+  const VF_IKONEN = {
+    box: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+    flag: '<path d="M5 21V4"/><path class="vf-ikon-fuell" d="M5 4h12l-2.5 4 2.5 4H5"/>',
+    licht: '<path class="vf-ikon-fuell" d="M11 6a6 6 0 0 0 0 12z"/><path d="M15 8h6M15 12h6M15 16h6"/>',
+    wetter: '<path d="M7 15a4 4 0 0 1 .4-8 5 5 0 0 1 9.6 1.4A3.4 3.4 0 0 1 17 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
+    kam: '<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8.5 7l1.5-3h4l1.5 3"/>',
+    reset: '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/>',
+    touch: '<path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11M12 10V8.5a1.5 1.5 0 0 1 3 0V11M15 10.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.5a6 6 0 0 1-5-2.7l-2.2-2.7a1.5 1.5 0 0 1 2.4-1.8L9 16"/>',
+    zu: '<path d="M6 6l12 12M18 6L6 18"/>',
+    leiste: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  };
+  function vfIkon(id) { return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + VF_IKONEN[id] + '</svg>'; }
+  function vfLeisteZu() { try { return localStorage.getItem(VF_LEISTE_STORE) === 'zu'; } catch (e) { return false; } }
+  function vfKnopfLeisteHtml() {
+    const a = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const k = (id, titel, extra) => '<button type="button" class="vf-ikon" data-vf="' + id + '" title="' + a(titel) + '" aria-label="' + a(titel) + '"'
+      + (extra || '') + '>' + vfIkon(id) + '</button>';
+    const zu = vfLeisteZu();
+    return '<div class="vf-knoepfe' + (zu ? ' vf-knoepfe-zu' : '') + '" role="toolbar" aria-label="' + a(t('Knöpfe der virtuellen Fahrt')) + '">'
+      + k('box', t('Box')) + k('flag', t('Gelbe Flagge')) + k('licht', t('Licht')) + k('wetter', t('Wetter')) + k('kam', t('Kamera'))
+      + k('reset', t('Zurücksetzen')) + k('touch', t('Steuerung'), ' hidden') + k('zu', t('Beenden'))
+      + k('leiste', t(zu ? 'Knöpfe einblenden' : 'Knöpfe ausblenden'), ' aria-pressed="' + (zu ? 'true' : 'false') + '"')
+      + '</div>';
+  }
+  // zu: true = ausblenden, false = einblenden, undefined = umschalten.
+  function vfLeisteUmschalten(zu) {
+    const L = VF.schicht ? VF.schicht.querySelector('.vf-knoepfe') : null;
+    if (!L) return;
+    if (zu === undefined) zu = !L.classList.contains('vf-knoepfe-zu');
+    L.classList.toggle('vf-knoepfe-zu', zu);
+    const b = L.querySelector('[data-vf="leiste"]');
+    if (b) { const ti = t(zu ? 'Knöpfe einblenden' : 'Knöpfe ausblenden'); b.title = ti; b.setAttribute('aria-label', ti); b.setAttribute('aria-pressed', zu ? 'true' : 'false'); }
+    try { localStorage.setItem(VF_LEISTE_STORE, zu ? 'zu' : 'auf'); } catch (e) { /* egal */ }
+  }
+
+  // ---- LADEBILD (BESTELLT: "Ladebildschirm, solange Klaenge, Texturen und Automodelle laden; kein HUD, unten links eine
+  // kleine Animation und ein Fortschrittsbalken; bei einer Carrera-Bahn baut sich die Strecke Teil fuer Teil auf") ----
+  // Die Bahn-, Rand- und Bodentexturen entstehen schon beim Start (synchron), das Ladebild wartet auf das, was danach
+  // kommt: Rad-Modell, eigenes Auto, jeder NPC (je ein Promise, Fehler zaehlen als fertig), die Bilder der Modelle
+  // (VF.texOffen, vfTextur) und den Motorklang (hoechstens VF_LADE_TON_MAX_MS). Spaetestens nach VF_LADE_MAX_MS geht es
+  // los. Die Animation: Carrera-Bahn = die Teile legen sich der Reihe nach, je Teil 100 ms, eine Runde mindestens 1 s,
+  // dann von vorn; freie Strecke = ein Punkt faehrt den Umriss ab. Gerechnet in einer kleinen 2D-Leinwand.
+  const VF_LADE_MAX_MS = 60000, VF_LADE_TON_MAX_MS = 20000, VF_LADE_TEIL_MS = 100, VF_LADE_RUNDE_MS = 1000;
+  function vfLadeTonFertig(jetzt) {
+    try {
+      if (!soundEnabled || location.protocol === 'file:') return true;
+      if (jetzt - (VF.ladeAb || 0) > VF_LADE_TON_MAX_MS) return true;
+      if (vfTonGeladen(vfMotorZiel())) return true;
+      return !sampleEngine.loading;
+    } catch (e) { return true; }
+  }
+  // Stand des Ladens: anteil 0..1, fertig, und was noch fehlt (Text).
+  function vfLadeStand(jetzt) {
+    const tp = !!VF.tprog, npcs = VF.npcs || [];
+    const autoDa = !tp || !!VF.modell || !!VF.modellFehl, radDa = !tp || !!VF.radModell || !!VF.radFehl;
+    const npcDa = npcs.filter((n) => n.modell || n.modellFehl).length;
+    const autos = 1 + npcs.length, autosDa = (autoDa ? 1 : 0) + npcDa;
+    const modelle = autoDa && radDa && npcDa === npcs.length;
+    const texG = VF.texGesamt || 0, texO = VF.texOffen || 0;
+    const texDa = modelle && texO <= 0;
+    const tonDa = vfLadeTonFertig(jetzt);
+    // Gewichte: Strecke 1 (fertig), Rad 1, Autos je 2, Texturen 2, Klang 1.
+    const texAnteil = texG > 0 ? (texG - texO) / texG : (modelle ? 1 : 0);
+    const summe = 1 + (radDa ? 1 : 0) + 2 * autosDa + 2 * (modelle ? texAnteil : texAnteil * 0.5) + (tonDa ? 1 : 0);
+    const gesamt = 1 + 1 + 2 * autos + 2 + 1;
+    const fehlt = [];
+    if (autosDa < autos || !radDa) fehlt.push(t('Fahrzeuge') + ' ' + autosDa + '/' + autos);
+    if (!texDa) fehlt.push(t('Texturen') + (texG ? ' ' + (texG - texO) + '/' + texG : ''));
+    if (!tonDa) fehlt.push(t('Motorklang'));
+    return { anteil: Math.max(0, Math.min(1, summe / gesamt)), fertig: modelle && texDa && tonDa, text: fehlt.join(' · ') };
+  }
+  // Animation vorbereiten: je Teil (Kachel) eine Linie in Fahrtreihenfolge, oder der Umriss der freien Strecke.
+  function vfLadeAnimVorbereiten(pts, frei) {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const p of pts) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
+    const rahmen = { x0, y0, w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) };
+    if (frei) return { art: 'umriss', rahmen, pts: pts.map((p) => [p.x, p.y]), rundeMs: 2400 };
+    const teile = [];
+    let akt = null;
+    for (let i = 0; i < pts.length; i++) {
+      const T = pts[i].tile;
+      if (T < 0) continue;
+      if (!akt || akt.T !== T) {
+        const vor = i > 0 ? pts[i - 1] : pts[pts.length - 1];
+        akt = { T, p: [[vor.x, vor.y]] };
+        teile.push(akt);
+      }
+      akt.p.push([pts[i].x, pts[i].y]);
+    }
+    const n = teile.length, proTeilMs = Math.max(VF_LADE_TEIL_MS, VF_LADE_RUNDE_MS / Math.max(1, n));
+    return { art: 'teile', rahmen, teile, n, proTeilMs, rundeMs: (n + 4) * proTeilMs };
+  }
+  // Wie viele Teile liegen nach ms Laufzeit (rein, fuer den Selbsttest): 1..n, danach 4 Takte die ganze Bahn, dann von vorn.
+  function vfLadeAnimTeile(A, ms) {
+    const k = Math.floor((Math.max(0, ms) % A.rundeMs) / A.proTeilMs) + 1;
+    return Math.min(A.n, k);
+  }
+  function vfLadeAnimMalen(jetzt) {
+    const A = VF.ladeAnim, cv = VF.schicht ? VF.schicht.querySelector('.vf-laden-anim') : null;
+    if (!A || !cv) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const W = Math.max(1, Math.round(cv.clientWidth * dpr)), H = Math.max(1, Math.round(cv.clientHeight * dpr));
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    const g = cv.getContext('2d');
+    if (!g) return;
+    g.clearRect(0, 0, W, H);
+    const R = A.rahmen, rand = 10 * dpr, sk = Math.min((W - 2 * rand) / R.w, (H - 2 * rand) / R.h);
+    const ox = (W - R.w * sk) / 2, oy = (H - R.h * sk) / 2;
+    const P = (q) => [ox + (q[0] - R.x0) * sk, oy + (q[1] - R.y0) * sk];
+    const linie = (pl) => { g.beginPath(); pl.forEach((q, i) => { const p = P(q); if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }); };
+    const breit = Math.max(3 * dpr, TRACK_HALF_W * 2 * sk);
+    g.lineJoin = 'round';
+    const ms = jetzt - (VF.ladeAb || jetzt);
+    if (A.art === 'teile') {
+      const liegt = vfLadeAnimTeile(A, ms);
+      g.lineCap = 'butt';
+      A.teile.forEach((tl) => { linie(tl.p); g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = breit; g.stroke(); });
+      for (let i = 0; i < liegt; i++) {
+        linie(A.teile[i].p);
+        g.strokeStyle = i === liegt - 1 && liegt < A.n ? '#00a3e0' : '#8c96a6'; g.lineWidth = breit * 0.92; g.stroke();
+        g.strokeStyle = 'rgba(10,14,22,.9)'; g.lineWidth = Math.max(1, dpr); g.stroke();
+      }
+      A.liegt = liegt;
+    } else {
+      linie(A.pts); g.closePath(); g.strokeStyle = '#8c96a6'; g.lineWidth = breit; g.stroke();
+      const i = Math.floor((ms % A.rundeMs) / A.rundeMs * A.pts.length) % A.pts.length, p = P(A.pts[i]);
+      g.fillStyle = '#00a3e0'; g.beginPath(); g.arc(p[0], p[1], Math.max(4 * dpr, breit * 0.8), 0, Math.PI * 2); g.fill();
+    }
+  }
+  function vfLadebildHtml() {
+    return '<div class="vf-laden" role="status" aria-live="polite">'
+      + '<div class="vf-laden-mitte"><div class="vf-laden-titel">' + t('Virtuelle Fahrt wird geladen') + '</div>'
+      + '<div class="vf-laden-balken" role="progressbar" aria-label="' + t('Ladefortschritt') + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>'
+      + '<div class="vf-laden-was"></div></div>'
+      + '<canvas class="vf-laden-anim" aria-hidden="true"></canvas>'
+      + '<button type="button" class="vf-laden-zu" data-vf="laden-zu" title="' + t('Laden abbrechen') + '" aria-label="' + t('Laden abbrechen') + '">' + vfIkon('zu') + '</button>'
+      + '</div>';
+  }
+  // Je Bild waehrend des Ladens: true = laedt noch (vfBild tut sonst nichts), false = fertig, das HUD kommt.
+  function vfLadeSchritt(jetzt) {
+    if (!VF.laedt) return false;
+    const S = vfLadeStand(jetzt);
+    if (S.fertig || jetzt - (VF.ladeAb || jetzt) > VF_LADE_MAX_MS) { vfLadenEnde(); return false; }
+    const el = VF.schicht ? VF.schicht.querySelector('.vf-laden') : null;
+    if (el) {
+      const pz = Math.round(S.anteil * 100), bal = el.querySelector('.vf-laden-balken');
+      if (bal && bal.getAttribute('aria-valuenow') !== String(pz)) { bal.setAttribute('aria-valuenow', String(pz)); bal.firstChild.style.transform = 'scaleX(' + (pz / 100) + ')'; }
+      const was = el.querySelector('.vf-laden-was');
+      if (was && was.textContent !== S.text) was.textContent = S.text;
+    }
+    vfLadeAnimMalen(jetzt);
+    return true;
+  }
+  function vfLadenEnde() {
+    VF.laedt = false;
+    if (VF.schicht) {
+      VF.schicht.classList.remove('vf-laedt');
+      const el = VF.schicht.querySelector('.vf-laden');
+      if (el) el.remove();
+    }
+    VF.letzt = 0; VF.kam = null;
+    if (physEngine && physEngine.state) physEngine.state.speedKmh = 0;
+  }
+
+  // ---- GEGENRICHTUNG (BESTELLT: "die virtuelle Strecke in der Gegenrichtung fahren", WIP) ----
+  // Die gefahrene Mittellinie laeuft andersherum: Punkt j der neuen Linie ist Punkt (n - j) mod n der alten (Punkt 0
+  // bleibt), der Kurs dreht um 180 Grad, und weil Abschnitt i zum Teil pts[i+1].tile gehoert, ruecken die Teile um einen
+  // Punkt. Gezeichnet wird weiter die Bahn in der alten Richtung - Ziellinie, Sektoren und Boxengasse liegen also am
+  // selben Ort; die Ziellinie (VF.zielIdx) wird nur auf den neuen Index umgerechnet, die Boxenbucht je Punkt mitgedreht,
+  // und die Boxenseite in Fahrtrichtung ist die andere (VF.boxSeite).
+  const VF_RICHTUNG_STORE = 'omegasim-vf-richtung';
+  function vfGegenAn() { try { return localStorage.getItem(VF_RICHTUNG_STORE) === 'gegen'; } catch (e) { return false; } }
+  function vfGegenrichtung(pts, B) {
+    const n = pts.length, idx = (i) => ((n - i) % n + n) % n;
+    const R = [];
+    for (let j = 0; j < n; j++) {
+      const p = pts[idx(j)], vor = pts[(idx(j) + 1) % n];
+      R.push(Object.assign({}, p, { heading: (p.heading || 0) + 180, tile: vor.tile }));
+    }
+    let bucht = null;
+    if (B) {
+      const b = new Float32Array(n), u = new Float32Array(n).fill(-1);
+      for (let j = 0; j < n; j++) { const i = idx(j); b[j] = B.b[i]; u[j] = B.u[i] >= 0 ? 1 - B.u[i] : -1; }
+      bucht = { b, u };
+    }
+    return { pts: R, bucht, idx };
+  }
+
   // ---- Starten und Beenden ------------------------------------------------------------------
   // opts.tiles: diese Strecke statt der des Editors (die Studie faehrt Homington), opts.studie: die
   // Fahrt gehoert der Studie (beim Beenden nicht in die Garage). true = gestartet.
@@ -4474,12 +4681,13 @@
       + '<div class="vf-acc-werte"><div class="vf-acc-wert"><b class="vf-tempo"></b>' + lbl('km/h') + '</div>'
       + '<b class="vf-gang"></b><div class="vf-acc-wert"><b class="vf-rpm"></b>' + lbl('1/min') + '</div></div></div>'
       + '<div class="vf-kachel vf-acc-tank">' + lbl(t('Tank')) + '<b class="vf-tank"></b><i class="vf-tank-bar"><i></i></i></div></div>'
-      + '<div class="vf-knoepfe"><button type="button" data-vf="box">' + t('Box') + '</button><button type="button" data-vf="flag">' + t('Gelbe Flagge') + '</button><button type="button" data-vf="licht">' + t('Licht') + '</button><button type="button" data-vf="wetter">' + t('Wetter') + '</button><button type="button" data-vf="kam">' + t('Kamera') + '</button><button type="button" data-vf="reset">' + t('Zurücksetzen') + '</button><button type="button" data-vf="touch" hidden>' + t('Steuerung') + '</button>'
-      + '<button type="button" data-vf="zu" aria-label="' + t('Beenden') + '">&#10005;</button></div>'
+      + vfKnopfLeisteHtml()
       + '<span class="vf-kamfrei" hidden data-i18n-skip>' + t('Kamera frei') + ' · R3 / V: ' + t('Standard') + ' <span class="wip-tag">WIP</span></span>'
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>'
       + '<div class="vf-touch" hidden><div class="vf-touch-lenk"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Lenken') + '</span></div>'
-      + '<div class="vf-touch-gas"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis vf-touch-gas-oben">' + t('Gas') + '</span><span class="vf-touch-hinweis vf-touch-gas-unten">' + t('Bremse') + '</span></div></div>';
+      + '<div class="vf-touch-gas"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis vf-touch-gas-oben">' + t('Gas') + '</span><span class="vf-touch-hinweis vf-touch-gas-unten">' + t('Bremse') + '</span></div></div>'
+      + vfLadebildHtml();
+    schicht.classList.add('vf-laedt');
     document.body.appendChild(schicht);
     const cv = schicht.querySelector('canvas');
     const gl = cv.getContext('webgl', { antialias: true }) || cv.getContext('experimental-webgl');
@@ -4560,6 +4768,20 @@
         }
       } catch (e) { VF.baeume = VF.baeume || null; VF.weh = null; }
     }
+    // Ziellinie und Startplatz in der gezeichneten Richtung; in der Gegenrichtung danach umgerechnet.
+    const s = Math.max(0, VF.pts.findIndex((p) => p.tile >= 0 && tiles[p.tile] && tiles[p.tile].type === TILE_TYPE.START));
+    let start = ((s - Math.round(TRACK_SAMPLES_PER_TILE / 2)) % VF.pts.length + VF.pts.length) % VF.pts.length;
+    VF.zielIdx = vfZielIdx(VF.pts, tiles);
+    VF.gegen = opts.gegen !== undefined ? !!opts.gegen : (vfGegenAn() && !opts.studie);
+    if (VF.gegen) {
+      const n = VF.pts.length, G = vfGegenrichtung(VF.pts, VF.boxBucht);
+      const vorLinie = ((VF.zielIdx - start) % n + n) % n;   // so weit vor der Linie steht das Auto
+      VF.pts = G.pts; VF.nrm = trackNormals(VF.pts); VF.boxBucht = G.bucht;
+      VF.zielIdx = G.idx(VF.zielIdx);
+      start = ((VF.zielIdx - vorLinie) % n + n) % n;
+      vfHoeheVorbereiten();
+    }
+    VF.boxSeite = VF.gegen ? -VF_BOX_SEITE : VF_BOX_SEITE;
     VF.fahrer = { ort: vfFahrerOrt(VF.pts, VF.nrm, tiles), z: {}, k: null };
     try { VF.tv = { posten: vfTvPosten(VF.pts, VF.nrm, tiles), aktiv: -1, seit: 0, uhr: 0 }; } catch (e) { VF.tv = null; }
     // Das Auto: ein Garagenauto ohne Funk. Ein gesteuertes Auto gibt seine Rolle so lange ab.
@@ -4582,7 +4804,8 @@
     VF.auto = vfAutoBauen(gl, vfHex(carColor(car).hex));
     VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
     VF.geist = { an: vfGeistAn(), aufzeichnung: [], beste: null, aktiv: false, zeit: 0, t: 0, i: 0, x: 0, y: 0, h: 0 };
-    VF.modell = null; VF.P = vfHandlingProfil(VF_GT3); VF.feder = null; VF.raddreh = 0;
+    VF.modell = null; VF.modellFehl = false; VF.radModell = null; VF.radFehl = false; VF.P = vfHandlingProfil(VF_GT3); VF.feder = null; VF.raddreh = 0;
+    VF.texOffen = 0; VF.texGesamt = 0;   // Ladebild: Bilder der Modelle dieser Fahrt
     VF.tyreTemp = 0;   // v1.3.5: jede Fahrt beginnt mit kalten Reifen (vorher blieb die alte Temperatur stehen)
     VF.tempoFaktor = vfTempoFaktor();
     // Quality-Autoshader, sonst (oder wenn er nicht kompiliert) der von Performance; ohne beide bleibt der Kasten.
@@ -4590,17 +4813,15 @@
     if (VF.grafik) { try { VF.tprog = vfProgrammTex(gl, true); } catch (e) { VF.tprog = null; VF.qualFehler = String(e && e.message || e).slice(0, 300); log('Virtuell: Quality-Autoshader kompiliert nicht, Performance statt dessen: ' + VF.qualFehler, 'warn'); } }
     if (!VF.tprog) { try { VF.tprog = vfProgrammTex(gl, false); } catch (e) { VF.tprog = null; } }
     if (VF.tprog) {
-      vfRadModellBauen(gl).then((rad) => { if (VF.aktiv && VF.gl === gl) VF.radModell = rad; });
+      vfRadModellBauen(gl).then((rad) => { if (VF.aktiv && VF.gl === gl) VF.radModell = rad; }, () => { if (VF.gl === gl) VF.radFehl = true; });
       vfModellDaten().then((daten) => {
         if (!VF.aktiv || VF.gl !== gl) return;
         VF.modell = vfModellBauen(gl, daten);
         VF.P = vfHandlingProfil(vfPhysikAus(daten.meta.physik));
-      }).catch(() => showHudToast(t('Auto-Modell nicht ladbar – es fährt der Kasten')));
+      }).catch(() => { if (VF.gl === gl) VF.modellFehl = true; showHudToast(t('Auto-Modell nicht ladbar – es fährt der Kasten')); });
     }
-    // Start eine halbe Kachel vor Start/Ziel, in Fahrtrichtung.
-    const s = Math.max(0, VF.pts.findIndex((p) => p.tile >= 0 && tiles[p.tile] && tiles[p.tile].type === TILE_TYPE.START));
-    const start = ((s - Math.round(TRACK_SAMPLES_PER_TILE / 2)) % VF.pts.length + VF.pts.length) % VF.pts.length;
-    VF.zielIdx = vfZielIdx(VF.pts, tiles); VF.zielVor = null; VF.zielRueck = 0; VF.zielAt = 0;
+    // Start eine halbe Kachel vor Start/Ziel, in Fahrtrichtung (oben berechnet, auch fuer die Gegenrichtung).
+    VF.zielVor = null; VF.zielRueck = 0; VF.zielAt = 0;
     VF.fort = 0; VF.fortVor = null;
     // Pflicht-Boxendurchfahrt (aus PR 4 von gnen54): Tiefe und Laenge der Bucht, gezaehlte Durchfahrten.
     { const bb = VF.boxBucht ? VF.boxBucht.b : null; let bm = 0;
@@ -4612,10 +4833,14 @@
                         startX: VF.pts[start].x, startY: VF.pts[start].y, startH: VF.pts[start].heading });
     vfNpcStarten(gl, start);
     physEngine.state.speedKmh = 0;
+    // Ladebild (siehe vfLadeSchritt): ab hier zaehlt die Ladezeit; die Animation kennt die Strecke in Fahrtrichtung.
+    VF.laedt = true; VF.ladeAb = performance.now();
+    try { VF.ladeAnim = vfLadeAnimVorbereiten(VF.pts, !!frei); } catch (e) { VF.ladeAnim = null; }
     schicht.addEventListener('click', (e) => {
       const b = e.target.closest('[data-vf]');
       if (!b) return;
-      if (b.dataset.vf === 'zu') virtuellBeenden();
+      if (b.dataset.vf === 'zu' || b.dataset.vf === 'laden-zu') virtuellBeenden();
+      else if (b.dataset.vf === 'leiste') vfLeisteUmschalten();
       else if (b.dataset.vf === 'reset') vfZuruecksetzen();
       else if (b.dataset.vf === 'kam') vfKameraWechseln();
       else if (b.dataset.vf === 'touch') vfTouchUmschalten();
@@ -4818,6 +5043,17 @@
     freiZeile.dataset.vfStrecke = '1';
     freiZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(freiZeile);
+    // Fahrtrichtung (BESTELLT, WIP): die Strecke andersherum fahren, siehe vfGegenrichtung.
+    {
+      const gegen = vfGegenAn();
+      const rWahl = () => { try { localStorage.setItem(VF_RICHTUNG_STORE, gegen ? 'normal' : 'gegen'); } catch (e) { /* egal */ } renderGarage(); };
+      const rZeile = garWertZeile(t('Fahrtrichtung'), gegen ? t('Gegenrichtung') : t('Normal'), rWahl, rWahl);
+      const rL = rZeile.querySelector('.gk-l');
+      rL.classList.add('opt-label');
+      rL.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Die Strecke andersherum fahren. Ziellinie, Sektoren und Boxengasse bleiben an ihrem Platz.') + '</small>');
+      rZeile.dataset.feld = 'richtung';
+      rechts.appendChild(rZeile);
+    }
     // Schaltung: Automatik oder Manuell (schalten dann mit I/K).
     const autoSch = vfSchaltungAuto();
     const schaltWahl = () => {
@@ -4928,7 +5164,51 @@
     los.textContent = t('Losfahren');
     los.onclick = () => virtuellStarten();
     z.appendChild(los);
+    // Anleitung zum virtuellen Fahren (aus PR 4 von gnen54): Knopf "?" neben Losfahren, oeffnet
+    // hilfe/virtuelles-fahren.html als Fenster ueber der Garage.
+    const hilfe = document.createElement('button');
+    hilfe.type = 'button';
+    hilfe.className = 'vf-hilfe';
+    hilfe.dataset.vf = 'hilfe';
+    hilfe.textContent = '?';
+    hilfe.title = t('Anleitung virtuelles Fahren');
+    hilfe.setAttribute('aria-label', t('Anleitung virtuelles Fahren'));
+    hilfe.onclick = () => vfHilfeZeigen();
+    z.classList.add('vf-los-zeile');
+    z.appendChild(hilfe);
     rechts.appendChild(z);
+  }
+  // Anleitung als Fenster ueber der Garage (aus PR 4 von gnen54: "moechte ich gleich wieder an den Punkt zum virtuellen
+  // Fahren zurueckkommen") statt eines neuen Tabs: x oben rechts, Esc oder ein Klick daneben schliesst.
+  function vfHilfeZeigen() {
+    if (document.querySelector('.vf-hilfe-fenster')) return null;
+    const hg = document.createElement('div');
+    hg.className = 'vf-hilfe-fenster';
+    hg.setAttribute('role', 'dialog');
+    hg.setAttribute('aria-modal', 'true');
+    hg.setAttribute('aria-label', t('Anleitung virtuelles Fahren'));
+    const box = document.createElement('div');
+    box.className = 'vf-hilfe-box';
+    const fr = document.createElement('iframe');
+    fr.src = 'hilfe/virtuelles-fahren.html';
+    fr.title = t('Anleitung virtuelles Fahren');
+    const zu = document.createElement('button');
+    zu.type = 'button';
+    zu.className = 'vf-hilfe-zu';
+    zu.textContent = '✕';
+    zu.setAttribute('aria-label', t('Schließen'));
+    zu.title = t('Schließen');
+    const nachricht = (e) => { if (e.source === fr.contentWindow && e.data === 'vf-hilfe-zu') schliessen(); };
+    const taste = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); schliessen(); } };
+    const schliessen = () => { hg.remove(); document.removeEventListener('keydown', taste, true); window.removeEventListener('message', nachricht); };
+    window.addEventListener('message', nachricht);
+    document.addEventListener('keydown', taste, true);
+    zu.onclick = schliessen;
+    hg.addEventListener('click', (e) => { if (e.target === hg) schliessen(); });
+    box.appendChild(fr); box.appendChild(zu); hg.appendChild(box);
+    document.body.appendChild(hg);
+    zu.focus();
+    return hg;
   }
 
   // v1.3.39 BESTELLT: "Verbessere den Randstein-Sound. Aktuell ist es ein hohes Klicken ... Es soll
@@ -5025,6 +5305,7 @@
       VF.abbruch = false;
     }
     VF.aktiv = false;
+    VF.laedt = false; VF.ladeAnim = null;
     VF.npcs = null; VF.npcBogen = null; VF.npcRunde = 0;
     VF.schatte = null; VF.schatteProg = null; VF.grafik = false; VF.regen = null; VF.schleier = null;
     // Was die virtuelle Fahrt am echten Fahren veraendert hat, zuruecknehmen: Schaden wie beim Start,
