@@ -106,6 +106,9 @@
     // gleichzeitig einen Klick irgendwo in der Seite aus - eine Belegung darauf kaempft mit
     // dem Cursor. Frei zuweisbar bleibt es, nur eben nicht ab Werk.
     resetcar: { type: 'none', index: -1, label: 'nicht belegt' },
+    // Eigene Taste fuer die Kamera der virtuellen Fahrt (aus PR 4 von gnen54): R3 ist dort jetzt die
+    // Lichthupe wie am echten Auto. Ab Werk unbelegt.
+    vfkamera: { type: 'none', index: -1, label: 'nicht belegt' },
   };
   const BIND_ACTION_LABELS = {
     pause: 'Pause / Fortsetzen',
@@ -121,6 +124,7 @@
     trackview: 'Streckenansicht',
     fullscreenToggle: 'Vollbild umschalten',
     resetcar: 'Auto zurücksetzen',
+    vfkamera: 'Kamera wechseln (virtuell)',
     status: 'L3-Statusansage',
   };
 
@@ -166,7 +170,7 @@
     // type 'none' ist KEIN Eingang. Ohne diese Zeile kollidieren zwei unbelegte Aktionen
     // miteinander, und die zweite wuerde "aufgeloest" - eine Kollision, die es nicht gibt.
     if (!x || x.type === undefined || x.type === 'none') return null;
-    return x.type + ':' + x.index;
+    return x.type + ':' + x.index + (x.unten ? ':u' : '');
   }
 
   // KOLLISIONEN AUFLOESEN, allgemein statt Fall fuer Fall.
@@ -392,8 +396,18 @@
     renderBindTable();
   }
   // Alle Knoepfe losgelassen? (Achsen zaehlen nicht: eine RC-Fernbedienung ruht bei -1.)
+  // Android (aus PR 4 von gnen54, EasySMX X05 am Tablet als "Xbox Wireless Controller"): die Trigger
+  // (Knoepfe 6/7) melden in Ruhe pressed = true mit value 0 bzw. ruhen bei 0,5. "Alle Tasten los" wurde nie
+  // wahr: die Abgleich-Sperre blieb an (kein Gas, keine Lenkung). Bei analogen Knoepfen zaehlt deshalb der
+  // (auf die gelernte Ruhe bezogene) Wert, nicht pressed - wie in readBindingValue().
   function padAllesLos(pad) {
-    return !pad || Array.prototype.every.call(pad.buttons || [], (b) => !b.pressed && !((b.value || 0) > 0.3));
+    return !pad || Array.prototype.every.call(pad.buttons || [], (b, i) =>
+      (padKnopfAnalog(pad, i) ? padKnopfWert(pad, i) <= 0.3 && !padTriggerVorn(pad, i) : (!b.pressed && (b.value || 0) <= 0.3)));
+  }
+  // Trigger nach vorn gedrueckt (unter der gelernten Ruhe um 0,5)? Auch das ist "nicht los".
+  function padTriggerVorn(pad, i) {
+    const z = padTriggerRuhe[(pad.index | 0) + ':' + i];
+    return !!(z && z.r >= 0.3 && (+pad.buttons[i].value || 0) < z.r - 0.3);
   }
   // Der Takt eines Pads waehrend einer Sitzung: nur erfassen und auf "Options halten" achten. true = der Takt
   // gehoert der Sitzung (oder der Sperre danach), sonst nichts tun.
@@ -736,8 +750,11 @@
       const d = Math.abs(v - ruhe);
       // Ein Knopf schlaegt eine Achse bei gleichem Ausschlag: er ist eindeutiger, und ein
       // Knopfdruck bewegt an manchen Pads eine Hat-Achse mit.
-      if (d > BUTTON_CAPTURE_THRESHOLD && (!bester || d > bester.d + 0.001)) {
-        bester = { d, art: 'button', i };
+      // Aus PR 4 von gnen54: ein analoger Trigger, der in Ruhe 0,5 meldet (Android), laesst sich auch nach
+      // VORN druecken - der Wert faellt dann unter die Ruhe. Das wird als eigene Richtung erfasst ("unten").
+      const schwelle = padKnopfAnalog(pad, i) || (ruhe > 0.3 && ruhe < 0.7) ? 0.4 : BUTTON_CAPTURE_THRESHOLD;
+      if (d > schwelle && (!bester || d > bester.d + 0.001)) {
+        bester = { d, art: 'button', i, unten: v < ruhe - 0.3 };
       }
     }
     if (!bester) return;
@@ -761,7 +778,9 @@
           + `-> Achse ${bester.i} (Ruhe ${bester.ruhe.toFixed(2)}, `
           + `Ausschlag ${bester.d.toFixed(2)})`, 'info');
     } else {
-      ziel[action] = { type: 'button', index: bester.i, label: `Knopf ${bester.i}` };
+      ziel[action] = bester.unten
+        ? { type: 'button', index: bester.i, unten: true, label: `Knopf ${bester.i} (nach vorn)` }
+        : { type: 'button', index: bester.i, label: `Knopf ${bester.i}` };
       log(`Zuordnung gesetzt (Spieler ${bindEditSpieler}): ${BIND_ACTION_LABELS[action]} `
           + `-> Knopf ${bester.i}`, 'info');
     }
@@ -826,6 +845,16 @@
     }
     const btn = pad.buttons[binding.index];
     if (!btn) return 0;
+    // Nach vorn gedrueckter Trigger (aus PR 4 von gnen54): Weg von der gelernten Ruhe nach unten. Solange
+    // keine Ruhe um 0,5 gelernt ist (Chrome meldet vor dem ersten Beruehren 0), zaehlt das nicht - sonst
+    // Vollgas beim Start.
+    if (binding.unten) {
+      padKnopfWert(pad, binding.index);
+      const z = padTriggerRuhe[(pad.index | 0) + ':' + binding.index];
+      if (!z || z.r < 0.3) return 0;
+      const v = +btn.value || 0;
+      return Math.max(0, Math.min(1, (z.r - v - 0.03) / (z.r - 0.03)));
+    }
     // v1.3.129: manche Controller (v.a. Android-WebView) melden L3/R3 als gedrueckt,
     // aber mit value 0. `value ?? pressed` lasse dann 0 durch und der Druck ginge
     // verloren - die L3-Statusansage kam nie. Deshalb: gedrueckt zaehlt immer,
@@ -835,7 +864,7 @@
     // Vollbremsung, obwohl der Trigger in Ruhe ist - beim Trigger ist der Wert die Wahrheit.
     if (btn.value > 0) {
       if (btn.value < 1) padAnalogKnoepfe[(pad.index | 0) + ':' + binding.index] = true;
-      return btn.value;
+      return padKnopfWert(pad, binding.index);
     }
     return btn.pressed && !padKnopfAnalog(pad, binding.index) ? 1 : 0;
   }
@@ -844,6 +873,26 @@
   function padKnopfAnalog(pad, index) {
     return (pad.mapping === 'standard' && (index === 6 || index === 7))
       || !!padAnalogKnoepfe[(pad.index | 0) + ':' + index];
+  }
+  // Aus PR 4 von gnen54 (Pad-Diagnose "Knoepfe 6(0.50) 7(0.50)" ohne Beruehren): Android meldet die Trigger
+  // mancher Pads in Ruhe mit 0,5 (Achse ruht bei 0 statt -1, umgerechnet auf 0..1). Gas und Bremse standen
+  // dadurch beide halb. Je Trigger wird deshalb die Ruhe gelernt: was er eine Sekunde lang ruhig bei 0,45
+  // bis 0,55 meldet (Chrome meldet vor dem ersten Druck 0, danach 0,5; ein gehaltenes Teilgas wird keine
+  // Ruhe). Einmal bei 0,5 gelernt, bleibt die Ruhe dort (0 meldet so ein Trigger nur nach vorn gedrueckt).
+  // Der Wert wird dann von der Ruhe bis 1 auf 0..1 gestreckt.
+  const padTriggerRuhe = Object.create(null);
+  function padKnopfWert(pad, index) {
+    const b = pad && pad.buttons ? pad.buttons[index] : null;
+    if (!b) return 0;
+    const v = +b.value || 0;
+    if (!padKnopfAnalog(pad, index) && !(v > 0 && v < 1)) return v > 0 ? v : (b.pressed ? 1 : 0);
+    const k = (pad.index | 0) + ':' + index, jetzt = performance.now();
+    const z = padTriggerRuhe[k] || (padTriggerRuhe[k] = { r: 0, v, seit: jetzt });
+    if (Math.abs(v - z.v) > 0.02) { z.v = v; z.seit = jetzt; }
+    else if (jetzt - z.seit > 1000 && v >= 0.45 && v <= 0.55) z.r = v;
+    const r = z.r;
+    if (r <= 0.02) return v;
+    return Math.max(0, Math.min(1, (v - r - 0.03) / (1 - r - 0.03)));
   }
 
   // Gamepad sampling MUST run on requestAnimationFrame. Chrome refreshes the gamepad
@@ -919,7 +968,7 @@
   const DPAD = { up: 12, down: 13, left: 14, right: 15 };
   const prevDpad = { up: false, down: false, left: false, right: false };
   let prevLightFlash = false, prevPitstop = false, prevTrackReadMode = false;
-  let prevRaceStart = false, prevTrackView = false, prevResetCar = false;
+  let prevRaceStart = false, prevTrackView = false, prevResetCar = false, prevVfKamera = false;
   let prevStatus = false;
   let gridPadVorher = false;
 
@@ -8007,6 +8056,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   let yellowRestartGen = 0;
   function yellowRestart() {
     if (flagState !== 'yellow') return;
+    // Freies virtuelles Fahren (kein Rennen, aus PR 4 von gnen54): Gelb endet sofort mit Gruen, ohne
+    // Anfahrt-Ampel - die gehoert zum Rennen ("wenn ich die Gelbphase abbreche, kommt die Startampel").
+    if (typeof vfAktiv === 'function' && vfAktiv() && raceState === 'idle') { setFlag('green'); return; }
     flagState = 'restart';
     const gen = ++yellowRestartGen;
     updateFlagUi();
@@ -13364,13 +13416,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // drivers signal a pass. The handbrake that used to sit on this button is gone, and
       // with it the special case that had to exclude it from selecting reverse.
       const flashNow = readBindingValue(pad, bindings.lightflash) > BUTTON_CAPTURE_THRESHOLD;
-      // v1.1.11: in der virtuellen Fahrt schaltet R3 (die Lichthupen-Belegung) die Kamera weiter.
-      // Seit der rechte Stick die Kamera dreht (60d-virtuell.js): gedreht setzt dieselbe Taste
-      // erst auf die Standardansicht zurueck, ungedreht schaltet sie wie bisher weiter.
+      // v1.1.11 schaltete R3 (die Lichthupen-Belegung) in der virtuellen Fahrt die Kamera weiter. Seit PR 4
+      // von gnen54 ist R3 auch dort die Lichthupe (das virtuelle Auto blinkt mit, vfLichtMitHupe); die
+      // Kamera hat eine eigene Taste (bindings.vfkamera, unten), dazu Knopf und Taste C.
       const imVf = typeof vfAktiv === 'function' && vfAktiv();
-      if (flashNow && !prevLightFlash) {
-        if (imVf) vfKameraTaste(); else triggerHeadlightFlash();
-      }
+      if (flashNow && !prevLightFlash) triggerHeadlightFlash();
       prevLightFlash = flashNow;
       // Rechter Stick dreht in der virtuellen Fahrt die Kamera (nur unbelegte Achsen, siehe vfStickSetzen).
       if (imVf) vfStickSetzen(pad, bindings);
@@ -13390,6 +13440,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       // Navigationsschritt mehr (50b-menu-nav.js) - Dreieck oeffnet ihn jetzt direkt.
       if (headNow && !prevHeadlights && trackEditorPad('rotate')) {
         // consumed by the editor
+      } else if (headNow && !prevHeadlights && imVf) {
+        // Virtuelle Fahrt (aus PR 4 von gnen54): die Licht-Taste wirkt wie der Knopf "Licht" im HUD.
+        vfKnopf('licht');
       } else if (headNow && !prevHeadlights
                  && document.querySelector('.tabpage.active') === $('tab-race')) {
         headlightsOn = !headlightsOn;
@@ -13505,12 +13558,20 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // Fassung der Logik: flagHoldPress startet den Ladebalken, flagHoldRelease(true)
         // loest aus. Zu frueh losgelassen passiert nichts - ein halber Druck darf keine
         // halbe Wirkung haben.
-        flagTasteTick(yellowflagNow);
+        if (imVf) {
+          // Virtuelle Fahrt (aus PR 4 von gnen54): getippt = Knopf "Box", 1 s gehalten = Knopf
+          // "Gelbe Flagge" im HUD - dieselbe Belegung wie im Cockpit.
+          vfFlagTaste(yellowflagNow);
+          prevYellowFlag = yellowflagNow;
+        } else flagTasteTick(yellowflagNow);
       }
 
       const resetNow = readBindingValue(pad, bindings.resetcar) > BUTTON_CAPTURE_THRESHOLD;
       if (resetNow && !prevResetCar) resetCarState();
       prevResetCar = resetNow;
+      const vfKamNow = readBindingValue(pad, bindings.vfkamera) > BUTTON_CAPTURE_THRESHOLD;
+      if (vfKamNow && !prevVfKamera && imVf) vfKameraTaste();
+      prevVfKamera = vfKamNow;
 
       const downshiftNow = readBindingValue(pad, bindings.downshift) > BUTTON_CAPTURE_THRESHOLD;
       const upshiftNow = readBindingValue(pad, bindings.upshift) > BUTTON_CAPTURE_THRESHOLD;

@@ -1637,6 +1637,31 @@
     }
     return ende < n ? pts.slice(0, ende) : pts;
   }
+  // ---- PFLICHT-BOXENDURCHFAHRT (aus PR 4 von gnen54: "Zwang Boxengasse anfahren", "Pflicht-Boxendurchfahrt, kein
+  // Tanken etc.") ----
+  // Im Rennen (Runden, Langstrecke) muss so oft durch die Boxengasse gefahren werden; gezaehlt wird, wer mindestens
+  // 60 % der Bucht befahren hat. Fehlt eine, gibt es im Ergebnis die Zeitstrafe aus dem Renn-Setup (racePitPenaltyS).
+  const VF_PFLICHTBOX_STORE = 'omegasim-vf-pflichtbox';
+  function vfPflichtBox() { try { return Math.max(0, Math.min(3, parseInt(localStorage.getItem(VF_PFLICHTBOX_STORE), 10) || 0)); } catch (e) { return 0; } }
+  function vfPflichtGilt() { return !!(VF.boxN && (VF.modus === 'laps' || VF.modus === 'endurance') && vfPflichtBox() > 0); }
+  // Boxenservice (Tanken, Reparieren, Reifen) nur in der Boxengasse, wenn die Strecke eine hat (aus PR 4 von
+  // gnen54: "mitten auf der Strecke ... immer noch tanken und reparieren"). Gefragt von 70-race.js.
+  function vfBoxOrtOk() { try { return !VF.aktiv || !VF.boxN || !!VF.inBox; } catch (e) { return true; } }
+  // Je Bild: ist das Auto in der Bucht (tiefer als 30 % der Bucht und ueber die halbe Bucht hinaus)? Von-bis statt
+  // Einzelpunkte: bei hohem Tempo springt der Index mehrere Punkte je Bild.
+  function vfBoxDurchfahrt(o, zus) {
+    if (!VF.boxN) return;
+    const drin = zus > VF.boxMax * 0.3 && Math.abs(o.quer) > TRACK_HALF_W + zus * 0.5;
+    VF.inBox = drin;
+    if (drin) { if (!VF.boxBesucht) VF.boxBesucht = { von: o.idx, bis: o.idx }; else VF.boxBesucht.bis = o.idx; return; }
+    if (!VF.boxBesucht) return;
+    const n = VF.pts.length, strecke = ((VF.boxBesucht.bis - VF.boxBesucht.von) % n + n) % n + 1;
+    const genug = strecke >= VF.boxN * 0.6 && strecke < n / 2;
+    VF.boxBesucht = null;
+    if (!genug) return;
+    VF.boxDurch = (VF.boxDurch || 0) + 1;
+    if (vfPflichtGilt()) showHudToast(t('Boxendurchfahrt') + ' ' + Math.min(VF.boxDurch, vfPflichtBox()) + '/' + vfPflichtBox());
+  }
   const VF_FEDER_STORE = 'omegasim-vf-feder';
   const VF_FEDER_WERTE = [1, 2, 3, 5, 8];
   // v1.5.10 BESTELLT: "Vorschau vom Auto, Farbwahl". Lackfarbe der virtuellen Fahrt (WIP): eine eigene Wahl, unabhaengig
@@ -2579,11 +2604,23 @@
     const jetzt = rennZeitJetzt();
     if (VF.zielVor === undefined || VF.zielVor === null) VF.zielVor = VF.idx;
     const ueber = vfZielUeberquert(VF.zielVor, VF.idx, VF.zielIdx, VF.pts.length);
+    // Fortschritt entlang der Mittellinie (Punkte, vorwaerts positiv; aus PR 4 von gnen54, "Keine Rundenzaehlung
+    // bei Rueckwaertsfahrt"): eine Runde gilt erst nach gut drei Vierteln der Strecke seit der letzten Linie, die
+    // erste Ueberfahrt (Uhr startet) nur vorwaerts. Zusammen mit zielRueck zaehlt so weder Rueckwaertsfahren noch
+    // das Pendeln ueber die Linie.
+    {
+      const n = VF.pts.length;
+      let d = VF.idx - (VF.fortVor === undefined || VF.fortVor === null ? VF.idx : VF.fortVor);
+      if (d > n / 2) d -= n; else if (d < -n / 2) d += n;
+      VF.fort = (VF.fort || 0) + d; VF.fortVor = VF.idx;
+    }
     VF.zielVor = VF.idx;
+    const genugWeg = VF.rundeAb ? VF.fort > VF.pts.length * 0.75 : VF.fort >= 0;
     if (ueber < 0) VF.zielRueck = (VF.zielRueck || 0) + 1;          // rueckwaerts ueber die Linie: die naechste zaehlt nicht
     else if (ueber > 0 && VF.zielRueck) VF.zielRueck--;
-    else if (ueber > 0 && !VF.abseits) {
+    else if (ueber > 0 && !VF.abseits && genugWeg) {
       VF.zielAt = jetzt;
+      VF.fort = 0;
       vfRundeAnLinie(jetzt);
     }
     const b = new Uint8Array(19);
@@ -2805,6 +2842,19 @@
       VF.modusZeit += dt;
       if (VF.modusZeit >= VF.limit * 60) vfRennenEnde();
     }
+    // Rueckwaertsgang raus wie auf der echten Bahn (aus PR 4 von gnen54: "Sobald er dann wieder steht und ich Gas
+    // gebe, geht er aus dem Rueckwaertsgang raus"), nur Automatik: erst rueckwaerts gefahren, dann mit losgelassenem
+    // Gas zum Stehen gekommen - der naechste Gasstoss legt den Vorwaertsgang ein. Ausgewertet wird der ANSTIEG des
+    // Gases, damit es nicht an der Bildrate haengt, ob er umschaltet.
+    if (st.driveMode === 'reverse' && physEngine.config.autoShift) {
+      const ty = typeof throttleY === 'number' ? throttleY : 0, v = Math.abs(st.speedKmh || 0), gas = ty > 0.1;
+      if (gas && !VF.rueckGas && VF.rueckLief && VF.rueckHalt) {
+        physEngine.triggerShift(1); VF.rueckLief = false; VF.rueckHalt = false;
+      } else if (v > 0.04) { VF.rueckLief = true; if (!gas) VF.rueckHalt = false; }
+      if (v < 0.015 && ty <= 0.05) VF.rueckHalt = true;
+      if (gas && v > 0.04) VF.rueckHalt = false;
+      VF.rueckGas = gas;
+    } else { VF.rueckLief = false; VF.rueckHalt = false; VF.rueckGas = false; }
     const kmh = (st.speedKmh || 0) * (VF.tempoFaktor || 1);
     const hand = vfHandling();
     const reifenModus = hand === 'gran' || hand === 'acc' || hand === 'librecorsa';
@@ -2881,6 +2931,7 @@
     if (Hb.p) st.speedKmh -= 9.81 * Math.sin(Hb.p) * 3.6 * dt / REAL_SCALE;
     // v1.5.84: in der Boxenbucht ist die Fahrbahn auf der Boxenseite breiter.
     const bucht = (VF.boxBucht && o.quer * VF_BOX_SEITE > 0) ? VF.boxBucht.b[o.idx] : 0;
+    vfBoxDurchfahrt(o, bucht);
     const ab = Math.abs(o.quer) > TRACK_HALF_W * 1.19 + bucht + VF_AUTO.B * 0.3;
     if (ab && !VF.abseits) VF.abseitsSeit = rennZeitJetzt();
     VF.abseits = ab;
@@ -3185,7 +3236,10 @@
       : VF.modus === 'derby' ? VF.derbyKills + ' ' + t('Kills')
       : VF.modus === 'knockout' ? VF.koLeben + ' ' + t('Leben')
       : (VF.limit + ' min'));
-    showHudToast(ergebnis || (t('Rennen beendet') + ': ' + was));
+    // Pflicht-Boxendurchfahrt (aus PR 4 von gnen54): je fehlender Durchfahrt die Zeitstrafe aus dem Renn-Setup.
+    const fehlt = vfPflichtGilt() ? Math.max(0, vfPflichtBox() - (VF.boxDurch || 0)) : 0;
+    const strafe = fehlt ? ' · ' + t('Pflicht-Boxendurchfahrt fehlt') + ': +' + fehlt * (typeof racePitPenaltyS === 'number' ? racePitPenaltyS : 10) + ' s' : '';
+    showHudToast((ergebnis || (t('Rennen beendet') + ': ' + was)) + strafe);
     rennZeitTimeout(() => { if (VF.aktiv) virtuellBeenden(); }, 1600);
   }
   // DIAGNOSE (temporaer, Latenz): misst die Quality-Teilpaesse (Schattenkarte, Umgebungskarte,
@@ -3855,9 +3909,36 @@
       gl.colorMask(true, true, true, true); gl.depthFunc(gl.LESS); gl.depthMask(true); gl.disable(gl.BLEND);
     }
   }
+  // Lichthupe auch am virtuellen Auto (aus PR 4 von gnen54: "Lichthupe funktioniert nicht auf den virtuellen
+  // Bahnen"): dieselbe Taktung wie am echten Auto (resolveLights in 70-race.js), das Licht kippt im Takt.
+  function vfLichtMitHupe(an) {
+    try {
+      const jetzt = rennZeitJetzt();
+      if (jetzt >= lightFx.flashUntil) return an;
+      const el = FLASH_MS - (lightFx.flashUntil - jetzt);
+      return (el % FLASH_PERIOD_MS) < FLASH_ON_MS ? !an : an;
+    } catch (e) { return an; }
+  }
+  // Gamepad -> HUD-Knoepfe der virtuellen Fahrt (aus PR 4 von gnen54, gerufen aus pollGamepad in 90-ghosts.js):
+  // dieselbe Wirkung wie ein Klick, damit Pad und Maus nie auseinanderlaufen. Licht-Taste = Knopf "Licht",
+  // Gelb-Taste getippt = Knopf "Box", 1 s gehalten = Knopf "Gelbe Flagge" (wie im Cockpit).
+  function vfKnopf(id) {
+    const k = VF.schicht ? VF.schicht.querySelector('[data-vf="' + id + '"]') : null;
+    if (k && !k.disabled) k.click();
+  }
+  const vfFlagPad = { seit: null, gefeuert: false };
+  function vfFlagTaste(an) {
+    const jetzt = performance.now();
+    if (an && vfFlagPad.seit === null) { vfFlagPad.seit = jetzt; vfFlagPad.gefeuert = false; }
+    if (an && !vfFlagPad.gefeuert && jetzt - vfFlagPad.seit >= 1000) { vfFlagPad.gefeuert = true; vfKnopf('flag'); }
+    if (!an && vfFlagPad.seit !== null) {
+      if (!vfFlagPad.gefeuert) vfKnopf('box');
+      vfFlagPad.seit = null;
+    }
+  }
   function vfModellMalen(gl, pv, blick, auge) {
     vfModellZeichnen(gl, pv, blick, VF.modell, VF.tprog, VF.x, VF.y, VF.h, VF.feder, VF.lenkWinkel, VF.raddreh, VF.radModell,
-      (typeof headlightsOn === 'undefined' ? true : !!headlightsOn),
+      vfLichtMitHupe(typeof headlightsOn === 'undefined' ? true : !!headlightsOn),
       !!(physEngine.outputs && physEngine.outputs.lights && physEngine.outputs.lights.brake), vfFederSicht(), VF.pitch || 0, auge, vfLack());
   }
   // v1.5: wie weit der Reifen an einem Rad gequetscht ist (0 bis VF_REIFEN_Q.max), rein fuer den Selbsttest.
@@ -4103,6 +4184,7 @@
         else if (VF.modus === 'knockout') modusTxt += ' · ' + VF.koLeben + ' ' + t('Leben');
         else if (VF.modus === 'bestzeit') modusTxt += ' · ' + vfZeitAcc(VF.beste, 3);
         else modusTxt += ' · ' + vfZeit(Math.floor(VF.modusZeit * 1000 / 100) * 100);
+        if (vfPflichtGilt()) modusTxt += ' · ' + t('Box') + ' ' + Math.min(VF.boxDurch || 0, vfPflichtBox()) + '/' + vfPflichtBox();
       }
     }
     txt(u.modus, 'm', modusTxt);
@@ -4243,6 +4325,9 @@
     if (VF.aktiv) return false;
     vfHandlingCache = null;   // einmal frisch lesen (z. B. in einem anderen Tab geaendert)
     if (!physicsEnabled) { showHudToast(t('Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)')); return false; }
+    // Rundenuhr der vorigen Fahrt nicht mitnehmen (aus PR 4 von gnen54: "Zeitansage sofort beim Start nach
+    // Ueberfahren von Start/Ziel"): die erste Ueberfahrt startet die Uhr, angesagt wird erst die erste ganze Runde.
+    try { dashLapTimes = []; dashLapStart = null; } catch (e) { /* ohne */ }
     // Editor-Strecke und gemerkte Rollen gehoeren dem Fahrer: die Ersatzstrecke (Balkonia) und die Rolle
     // des virtuellen Autos werden beim Beenden wieder zurueckgenommen.
     VF.tilesVorher = currentTrackTiles;
@@ -4404,6 +4489,12 @@
     const s = Math.max(0, VF.pts.findIndex((p) => p.tile >= 0 && tiles[p.tile] && tiles[p.tile].type === TILE_TYPE.START));
     const start = ((s - Math.round(TRACK_SAMPLES_PER_TILE / 2)) % VF.pts.length + VF.pts.length) % VF.pts.length;
     VF.zielIdx = vfZielIdx(VF.pts, tiles); VF.zielVor = null; VF.zielRueck = 0; VF.zielAt = 0;
+    VF.fort = 0; VF.fortVor = null;
+    // Pflicht-Boxendurchfahrt (aus PR 4 von gnen54): Tiefe und Laenge der Bucht, gezaehlte Durchfahrten.
+    { const bb = VF.boxBucht ? VF.boxBucht.b : null; let bm = 0;
+      if (bb) for (let i = 0; i < bb.length; i++) bm = Math.max(bm, bb[i] || 0);
+      VF.boxMax = bm; VF.boxN = bm > 0 ? Array.prototype.filter.call(bb, (x) => (x || 0) > bm * 0.5).length : 0;
+      VF.boxDurch = 0; VF.boxBesucht = null; VF.inBox = false; }
     Object.assign(VF, { x: VF.pts[start].x, y: VF.pts[start].y, h: VF.pts[start].heading, idx: start, zaehler: 0, kachel: -2,
                         abseits: false, letzt: 0, kam: null, rundeAb: 0, letzte: null, beste: null, aktiv: true,
                         startX: VF.pts[start].x, startY: VF.pts[start].y, startH: VF.pts[start].heading });
@@ -4456,6 +4547,9 @@
     // heil, und virtuellBeenden stellt beides wieder her (bis 1.3.131 loeschte der Start den echten
     // Schaden, und virtuelle Zusammenstoesse blieben danach im Cockpit stehen).
     VF.schadenVorher = (typeof damage === 'number') ? damage : null;
+    // Akku (aus PR 4 von gnen54): das virtuelle Auto meldet ueber seine Pakete einen Rohwert, der danach in
+    // dashBattery stehen blieb - nach dem Beenden kam dann "Session abbrechen, Box anfahren!".
+    VF.akkuVorher = (typeof dashBattery === 'undefined') ? null : dashBattery;
     VF.flaggeVorher = (typeof flagState !== 'undefined') ? flagState : null;
     // v1.5.90 BESTELLT: virtuell faehrt man ab Werk ohne Licht ("Licht" oben schaltet es an). Der Schalter des echten
     // Fahrens kommt beim Beenden zurueck.
@@ -4667,6 +4761,17 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('NPCs'), nNpc === 0 ? t('Aus') : String(nNpc), () => npcWahl(-1), () => npcWahl(1)));
+    // Pflicht-Boxendurchfahrt im Rennen (Runden, Langstrecke): Aus, 1, 2 oder 3 (aus PR 4 von gnen54).
+    {
+      const pfl = vfPflichtBox();
+      const pflWahl = (d) => { try { localStorage.setItem(VF_PFLICHTBOX_STORE, String((pfl + d + 4) % 4)); } catch (e) { /* egal */ } renderGarage(); };
+      const pflZeile = garWertZeile(t('Pflicht-Boxendurchfahrt'), pfl ? String(pfl) : t('Aus'), () => pflWahl(-1), () => pflWahl(1));
+      const pflL = pflZeile.querySelector('.gk-l');
+      pflL.classList.add('opt-label');
+      pflL.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Im Rennen nach Runden oder auf Zeit muss so oft durch die Boxengasse gefahren werden. Jede fehlende Durchfahrt kostet die Strafzeit aus den Renneinstellungen.') + '</small>');
+      pflZeile.dataset.feld = 'pflicht-box';
+      rechts.appendChild(pflZeile);
+    }
     {
       const jf = VF_FEDER_WERTE.indexOf(vfFederSicht());
       const federWahl = (dd) => {
@@ -4800,6 +4905,8 @@
       if (typeof updateDamageFuelUI === 'function') { try { updateDamageFuelUI(); } catch (e) { /* egal */ } }
     }
     VF.schadenVorher = null;
+    if (typeof dashBattery !== 'undefined' && VF.akkuVorher !== undefined) dashBattery = VF.akkuVorher;
+    VF.akkuVorher = undefined;
     vfRennEinstellungenZurueck();
     if (VF.flaggeVorher === 'green' && typeof flagState !== 'undefined' && flagState !== 'green') {
       try {

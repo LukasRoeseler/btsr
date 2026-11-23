@@ -18067,17 +18067,23 @@
   // drehen ... Wenn ich den rechten Stick dann reindruecke, soll die Kamera wieder die Standardansicht
   // haben." Wie beim Bildlauf-Test ruft der Test pollGamepad() selbst mit einem gefaelschten Pad; die
   // virtuelle Fahrt laeuft dafuer nicht (nur VF.aktiv), die Drehung rechnet vfDrehSchritt wie vfKamera.
-  stAdd('Virtuell: rechter Stick dreht die Kamera, Blick bleibt, R3 setzt zurueck oder wechselt, bildratenunabhaengig (WIP)', () => {
+  // Seit PR 4 von gnen54 ist R3 (Lichthupen-Belegung) auch virtuell die Lichthupe; die Kamera hat eine eigene Taste
+  // (bindings.vfkamera, ab Werk unbelegt). Der Test belegt sie kurz mit Knopf 17 und prueft beides.
+  stAdd('Virtuell: rechter Stick dreht die Kamera, Blick bleibt, Kamerataste setzt zurueck oder wechselt, R3 ist Lichthupe, bildratenunabhaengig (WIP)', () => {
     const f = [], grad = 180 / Math.PI;
     const echt = navigator.getGamepads;
     const merk = { aktiv: VF.aktiv, kamera: VF.kamera, dreh: VF.dreh ? Object.assign({}, VF.dreh) : null, stick: VF.stick, kam: VF.kam, tasten: VF.tasten };
     let gespeichert = null;
     try { gespeichert = localStorage.getItem(VF_KAMERA_STORE); } catch (e) { /* privat */ }
     const pad = { id: 'Selbsttest (STANDARD GAMEPAD)', index: 0, connected: true, mapping: 'standard', timestamp: performance.now(),
-      axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })) };
-    const r3 = bindings.lightflash;
+      axes: [0, 0, 0, 0], buttons: Array.from({ length: 18 }, () => ({ pressed: false, touched: false, value: 0 })) };
+    const merkKamB = bindings.vfkamera;
+    bindings.vfkamera = { type: 'button', index: 17, label: 'Selbsttest' };
+    const r3 = bindings.vfkamera;
     const r3Knopf = r3 && r3.type === 'button' && pad.buttons[r3.index];
     const r3Setzen = (an) => { if (r3Knopf) pad.buttons[r3.index] = { pressed: an, touched: an, value: an ? 1 : 0 }; };
+    const lh = bindings.lightflash, lhKnopf = lh && lh.type === 'button' && lh.index < pad.buttons.length;
+    const lhSetzen = (an) => { if (lhKnopf) pad.buttons[lh.index] = { pressed: an, touched: an, value: an ? 1 : 0 }; };
     const stickFrei = ![2, 3].some((i) => Object.keys(bindings).some((k) => bindings[k] && bindings[k].type === 'axis' && bindings[k].index === i));
     const bild = (n, dt) => { for (let i = 0; i < n; i++) { pollGamepad(); const e = vfDrehEingabe(); vfDrehSchritt(vfDreh(), e[0], e[1], dt, vfDrehGrenzen(vfDrehArt(vfKameraId()))); } };
     let mass = '';
@@ -18118,8 +18124,19 @@
         // 3. R3 ungedreht: naechste Kamera wie bisher.
         r3Setzen(true); pollGamepad(); r3Setzen(false); pollGamepad();
         if (VF.kamera !== 'nah') f.push('R3 ungedreht wechselt nicht zur naechsten Kamera (' + VF.kamera + ')');
-        mass += ', R3 zurueck/wechselt';
-      } else mass += ', R3 nicht als Knopf belegt (uebersprungen)';
+        mass += ', Kamerataste zurueck/wechselt';
+      } else mass += ', Kamerataste nicht als Knopf belegt (uebersprungen)';
+      // 3b. R3 (Lichthupe) wechselt die Kamera nicht mehr, sondern laesst das Licht blinken.
+      if (lhKnopf) {
+        const kVor = VF.kamera, merkFlash = lightFx.flashUntil;
+        lightFx.flashUntil = 0;
+        lhSetzen(true); pollGamepad(); lhSetzen(false); pollGamepad();
+        if (VF.kamera !== kVor) f.push('R3 wechselt die Kamera (' + VF.kamera + ')');
+        if (!(lightFx.flashUntil > rennZeitJetzt())) f.push('R3 laesst das virtuelle Auto nicht blinken');
+        else if (!vfLichtMitHupe(false)) f.push('virtuelles Licht blinkt zu Beginn der Lichthupe nicht auf');
+        lightFx.flashUntil = merkFlash;
+        mass += ', R3 Lichthupe';
+      }
       // 4. Bildratenunabhaengig: 1 s halten und 0,5 s auslaufen, mit 60 und mit 25 Bildern/s.
       const lauf = (fps) => { const D = { g: 0, n: 0, vg: 0, vn: 0 }; for (let i = 0; i < fps; i++) vfDrehSchritt(D, 0.6, -0.4, 1 / fps, [-1, 1]);
         for (let i = 0; i < fps / 2; i++) vfDrehSchritt(D, 0, 0, 1 / fps, [-1, 1]); return D; };
@@ -18149,8 +18166,9 @@
       window.dispatchEvent(new KeyboardEvent('keyup', { key: 'v' }));
       if (vfKameraGedreht()) f.push('Taste V setzt nicht zurueck');
     } finally {
-      r3Setzen(false); pad.axes = [0, 0, 0, 0];
+      r3Setzen(false); lhSetzen(false); pad.axes = [0, 0, 0, 0];
       try { pollGamepad(); } catch (e) { /* weiter */ }
+      bindings.vfkamera = merkKamB;
       navigator.getGamepads = echt;
       VF.aktiv = merk.aktiv; VF.kamera = merk.kamera; VF.stick = merk.stick; VF.kam = merk.kam; VF.tasten = merk.tasten;
       if (merk.dreh) Object.assign(vfDreh(), merk.dreh); else vfDrehNull();
