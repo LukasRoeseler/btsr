@@ -4015,6 +4015,12 @@
   body.vf-an #hud-toast-wrap { position: fixed; z-index: 400; top: max(52px, env(safe-area-inset-top)); left: 50%; right: auto;
     transform: translateX(-50%); pointer-events: none; }
   .vf-bild { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  /* Rueckspiegel (aus PR 4 von gnen54): Rahmen ueber dem gespiegelten Bildausschnitt. Innenspiegel als schmaler
+     Streifen ganz oben am Bildrand, die Aussenspiegel des Spider unten links und rechts. */
+  .vf-spiegel { position: absolute; pointer-events: none; box-sizing: border-box; border: 2px solid #15181d;
+    box-shadow: 0 2px 6px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.18); }
+  .vf-spiegel-innen { border-top: 0; border-radius: 0 0 8px 8px; }
+  .vf-spiegel-links, .vf-spiegel-rechts { border-width: 4px; border-radius: 10px; }
   /* v1.3.113 Quality: leichte Vignette (dunkle Bildraender) fuer den kinematografischen Look. */
   .vf-vignette { position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.38) 100%); }

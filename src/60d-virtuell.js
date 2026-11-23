@@ -1697,6 +1697,10 @@
   // Geist: eine Kopie des Autos, die nach der ersten Runde die aufgezeichnete Linie abfaehrt.
   const VF_GEIST_STORE = 'omegasim-vf-geist';
   function vfGeistAn() { try { return localStorage.getItem(VF_GEIST_STORE) !== 'aus'; } catch (e) { return true; } }
+  // Fester Motorklang fuer die Eigenbauten von Gnen54 (aus PR 4 von gnen54: "der Motorsound soll fest dem Fahrzeug
+  // zugeordnet sein, die Anwahl gesperrt"). Die gespeicherte Wahl gilt dort nicht.
+  const VF_MOTOR_FEST = { kaefer: 'boxster986', spider: 'listerstorm', caravelle: 'boxster986' };
+  function vfMotorFest() { return VF_MOTOR_FEST[vfAutoWahl()] || ''; }
   // Die echte Neigung eines GT1 ist klein (0,5 Grad Rollen bei 1,5 g) und bei Modellgroesse unsichtbar.
   // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.
   function vfFederSicht() {
@@ -3384,6 +3388,114 @@
     if (vfBloomAn()) vfPassZeit('bloom', () => { try { vfBloomMalen(gl, w, h); } catch (e) { VF.bloomKaputt = true; VF.bloom = null; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h); log('Virtuell: Bloom aus (' + e.message + ').', 'info'); } });
     // v1.5.19: Regen zuletzt (durchsichtig, ohne Tiefe zu schreiben).
     vfPassZeit('regen', () => { try { vfRegenMalen(gl, pv, k.auge, VF.dtBild || 0.016); } catch (e) { VF.regen = null; } });
+    try { vfSpiegelMalen(gl, w, h); } catch (e) { vfSpiegelRahmen(null); gl.disable(gl.SCISSOR_TEST); gl.viewport(0, 0, w, h); }
+  }
+  // ---- RUECKSPIEGEL (aus PR 4 von gnen54, Idee von Luke) -----------------------------------------------
+  // Nur in der Kamera "Motorhaube" und nur, wenn in der Garage eingeschaltet (jeder Spiegel zeichnet die Szene ein
+  // weiteres Mal). Alle Autos ausser dem offenen Spider: ein Innenspiegel als SCHMALER Streifen ganz oben am
+  // Bildrand, mittig (BESTELLT: "nur ein schmaler Streifen ganz oben"). Der Spider behaelt seine zwei kleinen
+  // Aussenspiegel unten links und rechts. Je Spiegel ein Bildausschnitt (Viewport + Scissor), die Szene von der
+  // Spiegelstelle nach hinten, waagerecht gespiegelt (Projektion mit x mal -1). Der Rahmen ist HTML ueber dem Bild.
+  const VF_SPIEGEL_STORE = 'omegasim-vf-spiegel';
+  function vfSpiegelAn() { try { return localStorage.getItem(VF_SPIEGEL_STORE) === 'an'; } catch (e) { return false; } }
+  const VF_SPIEGEL_WINKEL = 12;     // Aussenspiegel: Grad nach aussen gedreht
+  const VF_SPIEGEL_FOV = 26;        // Aussenspiegel: senkrechter Bildwinkel
+  const VF_INNENSPIEGEL_FOVH = 46;  // Innenspiegel: waagerechter Bildwinkel (der senkrechte folgt aus dem Streifen)
+  // Lage der Spiegel in Bildpunkten der Leinwand (x, y von unten links, Breite, Hoehe), rein fuer den Selbsttest.
+  function vfSpiegelRechtecke(w, h, auto, dpr) {
+    if (auto !== 'spider') {
+      const sw = Math.round(Math.min(w * 0.36, h * 1.1));
+      const sh = Math.round(Math.max(16 * (dpr || 1), Math.min(h * 0.085, sw * 0.18)));
+      return [{ art: 'innen', q: [Math.round((w - sw) / 2), h - sh, sw, sh] }];
+    }
+    const sw = Math.round(Math.min(w * 0.17, h * 0.34) * 0.8), sh = Math.round(sw * 0.6);
+    const y0 = Math.round(h * 0.15), rand = Math.max(10, Math.round(w * 0.018));
+    return [{ art: 'links', q: [rand, y0, sw, sh], sg: 1 }, { art: 'rechts', q: [w - rand - sw, y0, sw, sh], sg: -1 }];
+  }
+  // Spiegel und Rahmen erst ab deutlichem Umsehen ausblenden (15 Grad): schon 2 Grad (ein Stick, der nicht ganz in
+  // die Mitte zurueckfaellt) liessen sie sonst verschwinden (aus PR 4 von gnen54).
+  function vfKameraWeitGedreht() { const D = vfDreh(), w = 15 * Math.PI / 180; return Math.abs(D.g) > w || Math.abs(D.n) > w; }
+  function vfSpiegelSichtbar() {
+    return vfSpiegelAn() && vfKameraId() === 'haube' && !!(VF.modell && VF.tprog) && !VF.laedt && !vfKameraWeitGedreht();
+  }
+  // Rahmen als HTML (je Spiegel ein div.vf-spiegel), null = alle weg.
+  function vfSpiegelRahmen(liste) {
+    const da = VF.spiegelRahmen && VF.spiegelRahmen.every((e) => e.isConnected) ? VF.spiegelRahmen : null;
+    if (!liste) { if (VF.spiegelRahmen) VF.spiegelRahmen.forEach((e) => e.remove()); VF.spiegelRahmen = null; return; }
+    let r = da && da.length === liste.length ? da : null;
+    if (!r) {
+      if (VF.spiegelRahmen) VF.spiegelRahmen.forEach((e) => e.remove());
+      r = VF.spiegelRahmen = liste.map((s) => {
+        const e = document.createElement('div');
+        e.className = 'vf-spiegel vf-spiegel-' + s.art;
+        e.setAttribute('aria-hidden', 'true');
+        (VF.cv.parentNode || document.body).insertBefore(e, VF.cv.nextSibling);
+        return e;
+      });
+    }
+    const dpr = VF.cv.width / Math.max(1, VF.cv.clientWidth);
+    liste.forEach((s, i) => {
+      const q = s.q, e = r[i];
+      const l = VF.cv.offsetLeft + q[0] / dpr, o = VF.cv.offsetTop + (VF.cv.height - q[1] - q[3]) / dpr;
+      const m = [l, o, q[2] / dpr, q[3] / dpr].map((x) => x.toFixed(1) + 'px').join(' ');
+      if (e.dataset.mass !== m) {
+        e.dataset.mass = m;
+        e.style.left = l.toFixed(1) + 'px'; e.style.top = o.toFixed(1) + 'px';
+        e.style.width = (q[2] / dpr).toFixed(1) + 'px'; e.style.height = (q[3] / dpr).toFixed(1) + 'px';
+      }
+    });
+  }
+  function vfSpiegelMalen(gl, w, h) {
+    if (!vfSpiegelSichtbar()) { if (VF.spiegelRahmen) vfSpiegelRahmen(null); return; }
+    const d = VF.modell.d, s = VF_AUTO.L / d.laenge, Hz = vfHzSpieler();
+    const r = VF.h * Math.PI / 180, fx = Math.sin(r), fz = -Math.cos(r), lx = fz, lz = -fx;
+    const dpr = VF.cv.width / Math.max(1, VF.cv.clientWidth);
+    const auto = vfAutoWahl(), liste = vfSpiegelRechtecke(w, h, auto, dpr);
+    const hb = VF.modell.meta && VF.modell.meta.haube, sp = VF.modell.meta && VF.modell.meta.spiegel;
+    const tzH = vfTz().horizont;
+    gl.enable(gl.SCISSOR_TEST);
+    try {
+      for (const S of liste) {
+        const q = S.q;
+        gl.viewport(q[0], q[1], q[2], q[3]); gl.scissor(q[0], q[1], q[2], q[3]);
+        gl.clearColor(tzH[0], tzH[1], tzH[2], 1);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        let auge, ziel, pr;
+        const asp = q[2] / Math.max(1, q[3]);
+        if (S.art === 'innen') {
+          // Blick vom Dach am Heck nach hinten; das eigene Auto wird nicht gemalt (saesse sonst als Dach im Bild).
+          const hinten = (d.laenge / 2 + 0.05) * s, hoch = ((hb ? hb.hoch : 1.0) + 0.05) * s;
+          auge = [VF.x - fx * hinten, hoch + Hz.z, VF.y - fz * hinten];
+          ziel = [auge[0] - fx * 30, hoch + Hz.z - 0.5 - Math.tan(Hz.p) * 30, auge[2] - fz * 30];
+          const fovy = 2 * Math.atan(Math.tan(VF_INNENSPIEGEL_FOVH * Math.PI / 360) / asp);
+          pr = vfPerspektive(fovy, asp, 0.3, 900);
+        } else {
+          // Aussenspiegel (Spider): an der Spiegelstelle des Modells (auto.json "spiegel"), sonst aus der Haube.
+          const vor = (sp && typeof sp.vor === 'number' ? sp.vor : (hb ? hb.vor : 0.75) - 0.25) * s;
+          const hoch = (sp && typeof sp.hoch === 'number' ? sp.hoch : (hb ? hb.hoch : 1.0) - 0.12) * s;
+          const seite = (sp && typeof sp.seite === 'number' ? sp.seite : d.breite / 2 + 0.06) * s;
+          const wi = VF_SPIEGEL_WINKEL * Math.PI / 180, sg = S.sg;
+          auge = [VF.x + fx * vor + lx * seite * sg, hoch + Hz.z, VF.y + fz * vor + lz * seite * sg];
+          const bx = -fx * Math.cos(wi) + lx * sg * Math.sin(wi), bz = -fz * Math.cos(wi) + lz * sg * Math.sin(wi);
+          ziel = [auge[0] + bx * 30, hoch + Hz.z - 0.6 - Math.tan(Hz.p) * 30, auge[2] + bz * 30];
+          pr = vfPerspektive(VF_SPIEGEL_FOV * Math.PI / 180, asp, 0.3, 900);
+        }
+        for (let k = 0; k < 4; k++) pr[k * 4] = -pr[k * 4];          // waagerecht spiegeln
+        const blick = vfBlick(auge, ziel, VF_OBEN);
+        const pv = vfMal(pr, blick);
+        vfFlaechenMalen(gl, pv, auge);
+        if (S.art !== 'innen') vfModellMalen(gl, pv, blick, auge);
+        for (const npc of (VF.npcs || [])) {
+          if (!npc.modell || npc.koAus || npc.derbyAus) continue;
+          vfModellZeichnen(gl, pv, blick, npc.modell, VF.tprog, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, true,
+            !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, auge);
+        }
+      }
+    } finally {
+      gl.disable(gl.SCISSOR_TEST);
+      gl.viewport(0, 0, w, h);
+    }
+    vfSpiegelRahmen(liste);
   }
   // ---- BLOOM (v1.5, Quality, Plan Paket 4) -------------------------------------------------------------------
   // Helles (Scheinwerfer, Glanzlichter, Ruecklichter) strahlt leicht ueber. Die Szene bleibt im Bildschirm-Puffer
@@ -4586,6 +4698,7 @@
   const VF_MOTOR_GLOBAL = '~global';
   // Standard ist der Vulture V5.R (wie das Auto); "Wie in Optionen" folgt dem globalen Ton (sentinel).
   function vfMotorGewaehlt() {
+    if (vfMotorFest()) return vfMotorFest();
     const def = ({ v5r: 'sd_v5r', lynx220: 'sd_lynx', fmcgt4: 'sd_fmc', boxer96: 'sd_boxer', kaefer: 'boxster986', spider: 'listerstorm', caravelle: 'boxster986' })[vfAutoWahl()] || 'sd_v5r';
     try { const v = localStorage.getItem(VF_MOTOR_STORE); return v === null ? def : v; } catch (e) { return def; }
   }
@@ -4629,7 +4742,13 @@
       try { localStorage.setItem(VF_MOTOR_STORE, n || VF_MOTOR_GLOBAL); } catch (e) { /* egal */ }
       renderGarage();
     };
-    rechts.appendChild(garWertZeile(t('Motorsound'), werte[j].name, () => wahl(-1), () => wahl(1)));
+    if (vfMotorFest()) {
+      // Eigenbau von Gnen54: Motorklang fest zum Auto, die Pfeile sind gesperrt.
+      const fest = garWertZeile(t('Motorsound'), werte[j].name + ' (' + t('fest zum Auto') + ')', () => {}, () => {});
+      fest.dataset.vfMotorFest = '1';
+      fest.querySelectorAll('button').forEach((k) => { k.disabled = true; k.style.visibility = 'hidden'; });
+      rechts.appendChild(fest);
+    } else rechts.appendChild(garWertZeile(t('Motorsound'), werte[j].name, () => wahl(-1), () => wahl(1)));
     // v1.1.9: welches Auto, und wie deutlich die Federung sichtbar neigt.
     const autos = [{ v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
                    { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
@@ -4744,6 +4863,17 @@
       renderGarage();
     };
     rechts.appendChild(garWertZeile(t('Geist folgt meiner Linie'), geistAn ? t('An') : t('Aus'), geistWahl, geistWahl));
+    // Rueckspiegel in der Motorhauben-Kamera (aus PR 4 von gnen54, Standard aus).
+    {
+      const spAn = vfSpiegelAn();
+      const spWahl = () => { try { localStorage.setItem(VF_SPIEGEL_STORE, spAn ? 'aus' : 'an'); } catch (e) { /* egal */ } renderGarage(); };
+      const spZeile = garWertZeile(t('Rückspiegel (Motorhaube)'), spAn ? t('An') : t('Aus'), spWahl, spWahl);
+      const spL = spZeile.querySelector('.gk-l');
+      spL.classList.add('opt-label');
+      spL.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('In der Kamera Motorhaube ein schmaler Rückspiegel ganz oben am Bildrand, beim offenen Spider zwei kleine Außenspiegel. Kostet etwas Bildrate.') + '</small>');
+      spZeile.dataset.feld = 'spiegel';
+      rechts.appendChild(spZeile);
+    }
     // Neben der Bahn: Vorgabe bremst der Teppich. Die Option schaltet den Tempoverlust ab, das Auto
     // faehrt daneben ungebremst weiter (Standard Aus = wie bisher).
     const abseitsBremse = vfAbseitsBremseAn();
@@ -4956,6 +5086,7 @@
     // Tempo (und der Gang) der virtuellen Fahrt, bis das echte Auto sich bewegte.
     if (typeof physEngine !== 'undefined' && physEngine && typeof physEngine.reset === 'function') physEngine.reset();
     if (VF.schicht) VF.schicht.remove();
+    vfSpiegelRahmen(null);
     VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.weh = null; VF.umw = null; VF.boxStriche = null; VF.boxBucht = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.wetterKnopf = null; VF.stick = null; VF.tasten = {};
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
