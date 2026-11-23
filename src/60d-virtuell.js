@@ -2069,11 +2069,9 @@
         // undefiniert) und auf hoechstens 2 Texel begrenzt (sonst greift der Kern weit in die Karte: falscher Eigenschatten).
         // Die Direktiven stehen auf eigenen Zeilen - bis 1.5.157 standen #ifdef/#endif mitten in einer Zeile, der Shader
         // kompilierte nicht, und alle Autos fielen still auf Performance zurueck (kein Eigenschatten, kein Lackspiegel).
-        + ' HP float k = biasPixel;
-#ifdef GL_OES_standard_derivatives
- k = clamp(max(fwidth(vsp.x), fwidth(vsp.y)), biasPixel, 2.0 * biasPixel);
-#endif
-'
+        // Die Zeilenumbrueche stehen als Escape im Text: echte Umbrueche in der Zeichenkette (1.5.158) waren ein
+        // SyntaxError, das ganze Skript lief nicht.
+        + ' HP float k = biasPixel;\n#ifdef GL_OES_standard_derivatives\n k = clamp(max(fwidth(vsp.x), fwidth(vsp.y)), biasPixel, 2.0 * biasPixel);\n#endif\n'
         // Schattenkarte: Bias waechst mit flachem Lichteinfall (Streifen auf schraegen Blechen).
         + ' if (schatt > 0.5 && vsp.x > 0.0 && vsp.x < 1.0 && vsp.y > 0.0 && vsp.y < 1.0 && vsp.z > 0.0 && vsp.z <= 1.0) {'
         + '   HP float b = vsp.z - bias * (1.0 + 3.0 * (1.0 - d)); float s = 0.0;'

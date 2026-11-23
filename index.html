@@ -7124,6 +7124,7 @@
       <div class="home-legal-h">Unabh&auml;ngig, offen, ohne Gew&auml;hr</div>
       <p>Dieses Projekt ist unabh&auml;ngig von Carrera und geh&ouml;rt zu keinem Hersteller. Der vollst&auml;ndige Quellcode steht unter der GNU AGPL (Affero General Public License, Version 3 oder neuer) auf GitHub.</p>
       <p>Jeder darf ihn nutzen, kopieren, ver&auml;ndern und weitergeben &ndash; auch in kommerzieller Software. Wer ihn ver&auml;ndert und weitergibt, muss den Quellcode unter derselben AGPL offenlegen, auch wenn die Software &uuml;ber ein Netzwerk angeboten wird. Der urspr&uuml;ngliche Urheberrechtsvermerk bleibt erhalten.</p>
+      <p>Ausgenommen sind mitgelieferte Inhalte mit eigener Lizenz: Automodelle, Strecken, Kl&auml;nge und Wiki-Texte (siehe Credits). Einige Karosserien von Dritten d&uuml;rfen nur nicht-kommerziell genutzt werden.</p>
       <p>Dieselbe Lizenz sagt aber auch: die Software kommt ohne Garantie und ohne Gew&auml;hrleistung. Du steuerst deine Autos auf eigene Gefahr. Es ist ein Freizeitprojekt, motiviert durch die Option, eine Pups-Hupe einzubauen &ndash; und m&ouml;glicherweise funktioniert es nach einem k&uuml;nftigen Firmware-Update nicht mehr.</p>
       <p>Diese Seite z&auml;hlt Aufrufe mit GoatCounter, damit ich wei&szlig;, ob das Projekt jemand benutzt. Ohne Cookies, ohne Werbung und ohne personenbezogene Daten; wer den Z&auml;hler blockiert, verliert keine Funktion. Alles andere &ndash; Abstimmungen, Rundenzeiten, Streckenpl&auml;ne &ndash; bleibt im Browser und wird nirgends hingeschickt.</p>
       <p>F&uuml;r konstruktives Feedback oder Feature-W&uuml;nsche schreib mir gern im Thema &bdquo;Omega Sim&ldquo; im Carrera Hybrid Players Discord, unter &bdquo;weitere Themen&ldquo;.</p>
@@ -7207,6 +7208,8 @@
       <p class="muted">Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 und Boxer 96. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder sp&auml;ter. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.</p>
       <p class="muted">Der VW K&auml;fer 1303 RS ist eine eigene Konstruktion von Gnen54 (OmegaSim CAD) und steht unter Creative Commons Namensnennung 4.0 (CC BY 4.0).</p>
       <p class="muted">Spider NG1: Aufbau von Gnen54 (OmegaSim CAD) auf der Karosserie MODIplay MP-1 Spider von Sturmkind, 3D-Daten f&uuml;r HYBRID von Thomas Strobel (FREAKPALACE Customs). Freigabe von Sturmkind am 16.11.2026: Verwendung erlaubt, solange die Karosserien nicht kommerziell verkauft werden. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.</p>
+      <p class="muted">VW Caravelle (Bulli): Aufbau von Gnen54 (OmegaSim CAD) auf einer Karosserie von Vehicle World (Designerin Revantika), mit schriftlicher Erlaubnis von Vehicle World zur Weitergabe an die Carrera-Hybrid-Community. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.</p>
+      <p class="muted">Strecke T&ouml;rnerschleife 2.0: Streckenlayout von Driftstrecken.de (driftstrecken.de), schriftlich freigegeben am 18.11.2026 f&uuml;r OmegaSim unter Nennung der Urheberrechte; Umsetzung Gnen54.</p>
       <p class="muted">Die Cockpit-Ansicht &bdquo;Mokamit&ldquo; (Digital Dash), die KI-Pers&ouml;nlichkeit der NPCs, der Showroom, die Karriere und der Modus mit zwei Laptops stammen aus Hybrid-Dash von Mo Kamit, MIT-Lizenz.</p>
       <p class="dank-quelle" data-i18n-skip><a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html" target="_blank" rel="noopener noreferrer">gnu.org/licenses/old-licenses/gpl-2.0</a> &middot; img/autos/*/LIZENZ.txt</p>
       <!-- BESTELLT: "in den Credits das GitHub von engine sim verlinken und ggf. die wiss.
@@ -7235,10 +7238,10 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.5</span></b></p>
       <ul class="muted" id="patchnotes-15" style="padding-left:20px; line-height:1.7">
-        <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Die Kamera l&#228;sst sich jetzt in der Garage ausschalten. Der Knopf hei&#223;t jetzt &#8222;Koppeln&#8220; / &#8222;Entkoppeln&#8220; (Verbindung zur Kamera herstellen bzw. trennen); daneben gibt es &#8222;Ausschalten&#8220; (neuer Endpunkt <code>/off</code> auf der Kamera: Batterie-Hold LOW + Deep-Sleep, wie die Stock-Firmware). Au&#223;erdem geht die Kamera von selbst aus, wenn 2 Minuten lang niemand auf den Strom schaut &#8211; praktisch im Auto, um den Akku zu schonen. Wieder einschalten geht mit frischem Strom (USB/Kabel oder PWR-Knopf).</li>
+        <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Die Kamera l&#228;sst sich jetzt in der Garage ausschalten. Der Knopf hei&#223;t jetzt &#8222;Koppeln&#8220; / &#8222;Entkoppeln&#8220; (Verbindung zur Kamera herstellen bzw. trennen); daneben gibt es &#8222;Ausschalten&#8220; (neuer Endpunkt /off auf der Kamera: Batterie-Hold LOW + Deep-Sleep, wie die Stock-Firmware). Au&#223;erdem geht die Kamera von selbst aus, wenn 2 Minuten lang niemand auf den Strom schaut &#8211; praktisch im Auto, um den Akku zu schonen. Wieder einschalten geht mit frischem Strom (USB/Kabel oder PWR-Knopf).</li>
         <li>Virtuelles Fahren, Quality-Modus: Die Schattenkarte ist kleiner (Touch 512, Desktop 1024 statt vorher 1024/2048) und wird weiterhin jedes Bild gerendert. Das senkt die GPU-Last sp&#252;rbar, ohne das Schatten-Flackern (das jede-2.-Bild-Rendern verursachte) wiederzubringen. Im Performance-Modus gibt es weiterhin keine Schatten.</li>
         <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Die Aufnahme flackert nicht mehr schwarz. Beim Anzeigen jedes Bildes setzt die App die Bild-URL neu; dabei war das Live-Bild kurz ohne Frame (naturalWidth 0) und die Aufnahme bekam schwarze Bilder. Jetzt h&#228;lt die App einen bereits dekodierten Bild-Frame f&#252;r die Aufnahme vor.</li>
-        <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Der Batteriestand der Kamera erscheint jetzt im Onboard-Bild (Fahrtbildschirm) als „Kamera-Akku“ in der rechten Leiste und in der Statuszeile. Die Kamera-Firmware liefert ihn über den neuen Endpunkt <code>/batt</code> (Spannung und Prozent); OmegaSim fragt ihn alle 5&#160;s ab, solange die Kamera läuft. Nützlich, um zu sehen, wann der Akku im Auto gewechselt werden muss.</li>
+        <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Der Batteriestand der Kamera erscheint jetzt im Onboard-Bild (Fahrtbildschirm) als „Kamera-Akku“ in der rechten Leiste und in der Statuszeile. Die Kamera-Firmware liefert ihn über den neuen Endpunkt /batt (Spannung und Prozent); OmegaSim fragt ihn alle 5 s ab, solange die Kamera läuft. Nützlich, um zu sehen, wann der Akku im Auto gewechselt werden muss.</li>
         <li>Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Das Bild erscheint jetzt auch in der Android-App. Vorher zeigte die WebView den MJPEG-Strom der Kamera nicht an (naturalWidth blieb 0). Jetzt liest die App den Strom selbst und zeigt die Bilder einzeln an, dadurch klappt auch die Aufnahme (die Kamera-Firmware setzt Access-Control-Allow-Origin).</li>
         <li>Onboard-Kamera (WIP): neue Anzeige im Stil von Gran Turismo. Das Bild l&#228;uft im Vollbild und so gro&#223; wie m&#246;glich. Auf den schwarzen R&#228;ndern stehen links Position, Runde, Zeit, Delta, letzte und beste Runde und das Streckenlayout, rechts Reifen, Reifenzustand, Boxenstopp-Einstellungen, Batterie und Tank. Unten auf dem Bild Tempo, Gang, Drehzahlbalken, Licht und Schaltanzeige. Oben rechts ein Knopf zum n&#228;chsten Cockpit-Schirm.</li>
         <li>Showroom: Die R&#252;ckseiten der Karten sind jetzt auch auf Android lesbar. Dort schien die gespiegelte Vorderseite durch den Text der R&#252;ckseite.</li>
@@ -17586,6 +17589,16 @@
     "Kamera-Akku": "Camera battery",
     "Nächster Schirm": "Next screen",
     "Onboard-Kamera (WIP): neue Anzeige im Stil von Gran Turismo. Das Bild läuft im Vollbild und so groß wie möglich. Auf den schwarzen Rändern stehen links Position, Runde, Zeit, Delta, letzte und beste Runde und das Streckenlayout, rechts Reifen, Reifenzustand, Boxenstopp-Einstellungen, Batterie und Tank. Unten auf dem Bild Tempo, Gang, Drehzahlbalken, Licht und Schaltanzeige. Oben rechts ein Knopf zum nächsten Cockpit-Schirm.": "Onboard camera (WIP): new display in the style of Gran Turismo. The picture runs full screen and as large as possible. The black borders show position, lap, time, delta, last and best lap and the track layout on the left, and tyres, tyre condition, pit stop settings, battery and fuel on the right. At the bottom of the picture: speed, gear, rev bar, lights and shift light. Top right a button for the next cockpit screen.",
+    "Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Die Kamera lässt sich jetzt in der Garage ausschalten. Der Knopf heißt jetzt „Koppeln“ / „Entkoppeln“ (Verbindung zur Kamera herstellen bzw. trennen); daneben gibt es „Ausschalten“ (neuer Endpunkt /off auf der Kamera: Batterie-Hold LOW + Deep-Sleep, wie die Stock-Firmware). Außerdem geht die Kamera von selbst aus, wenn 2 Minuten lang niemand auf den Strom schaut – praktisch im Auto, um den Akku zu schonen. Wieder einschalten geht mit frischem Strom (USB/Kabel oder PWR-Knopf).": "Onboard camera, source Wi-Fi (M5Stack Timer Camera): the camera can now be switched off in the garage. The button is now called “Pair” / “Unpair” (connect to or disconnect from the camera); next to it there is “Switch off” (new endpoint /off on the camera: battery hold LOW + deep sleep, like the stock firmware). The camera also switches itself off when nobody has watched the stream for 2 minutes, handy in the car to save the battery. It switches on again with fresh power (USB/cable or PWR button).",
+    "Virtuelles Fahren, Quality-Modus: Die Schattenkarte ist kleiner (Touch 512, Desktop 1024 statt vorher 1024/2048) und wird weiterhin jedes Bild gerendert. Das senkt die GPU-Last spürbar, ohne das Schatten-Flackern (das jede-2.-Bild-Rendern verursachte) wiederzubringen. Im Performance-Modus gibt es weiterhin keine Schatten.": "Virtual driving, Quality mode: the shadow map is smaller (touch 512, desktop 1024 instead of 1024/2048 before) and is still rendered every frame. This lowers the GPU load noticeably without bringing back the shadow flicker (caused by rendering every second frame). Performance mode still has no shadows.",
+    "Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Die Aufnahme flackert nicht mehr schwarz. Beim Anzeigen jedes Bildes setzt die App die Bild-URL neu; dabei war das Live-Bild kurz ohne Frame (naturalWidth 0) und die Aufnahme bekam schwarze Bilder. Jetzt hält die App einen bereits dekodierten Bild-Frame für die Aufnahme vor.": "Onboard camera, source Wi-Fi (M5Stack Timer Camera): the recording no longer flickers black. The app resets the image URL for each displayed frame; the live image was briefly without a frame (naturalWidth 0) and the recording got black frames. The app now keeps an already decoded frame ready for the recording.",
+    "Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Der Batteriestand der Kamera erscheint jetzt im Onboard-Bild (Fahrtbildschirm) als „Kamera-Akku“ in der rechten Leiste und in der Statuszeile. Die Kamera-Firmware liefert ihn über den neuen Endpunkt /batt (Spannung und Prozent); OmegaSim fragt ihn alle 5 s ab, solange die Kamera läuft. Nützlich, um zu sehen, wann der Akku im Auto gewechselt werden muss.": "Onboard camera, source Wi-Fi (M5Stack Timer Camera): the camera's battery level now appears in the onboard picture (driving screen) as “Camera battery” in the right bar and in the status line. The camera firmware provides it via the new endpoint /batt (voltage and percent); OmegaSim asks every 5 s while the camera is running. Useful to see when the battery in the car needs changing.",
+    "Onboard-Kamera, Quelle WLAN (M5Stack Timer Camera): Das Bild erscheint jetzt auch in der Android-App. Vorher zeigte die WebView den MJPEG-Strom der Kamera nicht an (naturalWidth blieb 0). Jetzt liest die App den Strom selbst und zeigt die Bilder einzeln an, dadurch klappt auch die Aufnahme (die Kamera-Firmware setzt Access-Control-Allow-Origin).": "Onboard camera, source Wi-Fi (M5Stack Timer Camera): the picture now also appears in the Android app. Before, the WebView did not show the camera's MJPEG stream (naturalWidth stayed 0). Now the app reads the stream itself and shows the frames one by one, which also makes recording work (the camera firmware sets Access-Control-Allow-Origin).",
+    "Ausgenommen sind mitgelieferte Inhalte mit eigener Lizenz: Automodelle, Strecken, Klänge und Wiki-Texte (siehe Credits). Einige Karosserien von Dritten dürfen nur nicht-kommerziell genutzt werden.": "Excluded are bundled contents with their own license: car models, tracks, sounds and wiki texts (see credits). Some bodies by third parties may only be used non-commercially.",
+    "VW Caravelle (Bulli): Aufbau von Gnen54 (OmegaSim CAD) auf einer Karosserie von Vehicle World (Designerin Revantika), mit schriftlicher Erlaubnis von Vehicle World zur Weitergabe an die Carrera-Hybrid-Community. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.": "VW Caravelle (Bulli): built by Gnen54 (OmegaSim CAD) on a body by Vehicle World (designer Revantika), with written permission from Vehicle World to share it with the Carrera Hybrid community. Own parts, colours and vehicle data: Gnen54, CC BY 4.0.",
+    "Strecke Törnerschleife 2.0: Streckenlayout von Driftstrecken.de (driftstrecken.de), schriftlich freigegeben am 18.11.2026 für OmegaSim unter Nennung der Urheberrechte; Umsetzung Gnen54.": "Track Törnerschleife 2.0: track layout by Driftstrecken.de (driftstrecken.de), released in writing on 18 Nov 2026 for OmegaSim with credit to the copyright holders; implementation Gnen54.",
+    "VW Caravelle Oettinger (Gnen54, WIP)": "VW Caravelle Oettinger (Gnen54, WIP)",
+    "Strecke konnte nicht geladen werden": "Track could not be loaded",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20463,6 +20476,11 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Ausgenommen sind mitgelieferte Inhalte mit eigener Lizenz: Automodelle, Strecken, Klänge und Wiki-Texte (siehe Credits). Einige Karosserien von Dritten dürfen nur nicht-kommerziell genutzt werden.": "Quedan excluidos los contenidos incluidos con licencia propia: modelos de coches, circuitos, sonidos y textos de la wiki (ver créditos). Algunas carrocerías de terceros solo pueden usarse de forma no comercial.",
+    "VW Caravelle (Bulli): Aufbau von Gnen54 (OmegaSim CAD) auf einer Karosserie von Vehicle World (Designerin Revantika), mit schriftlicher Erlaubnis von Vehicle World zur Weitergabe an die Carrera-Hybrid-Community. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.": "VW Caravelle (Bulli): construido por Gnen54 (OmegaSim CAD) sobre una carrocería de Vehicle World (diseñadora Revantika), con permiso por escrito de Vehicle World para compartirla con la comunidad Carrera Hybrid. Piezas, colores y datos propios: Gnen54, CC BY 4.0.",
+    "Strecke Törnerschleife 2.0: Streckenlayout von Driftstrecken.de (driftstrecken.de), schriftlich freigegeben am 18.11.2026 für OmegaSim unter Nennung der Urheberrechte; Umsetzung Gnen54.": "Circuito Törnerschleife 2.0: trazado de Driftstrecken.de (driftstrecken.de), autorizado por escrito el 18/11/2026 para OmegaSim citando a los titulares de los derechos; implementación Gnen54.",
+    "VW Caravelle Oettinger (Gnen54, WIP)": "VW Caravelle Oettinger (Gnen54, WIP)",
+    "Strecke konnte nicht geladen werden": "No se pudo cargar el circuito",
     "Reifenzustand": "Estado de neumáticos",
     "Batterie": "Batería",
     "Kamera-Akku": "Batería de la cámara",
@@ -23435,7 +23453,11 @@
   // DIAGNOSE (temporaer, Latenz): sammelt, was den Hauptthread zwischen zwei Herzschlaegen belegt -
   // die Verarbeitung der eingehenden Meldungen in onCarNotify (90-ghosts.js). Nur fuer einen
   // Diagnose-Build, wird nach der Messung wieder entfernt. Aendert den Sendeweg nicht.
-  window.MT_DIAG = { notifyN: 0, notifyMs: 0, padLog: 0 };
+  // v1.5.158 (Review): nur noch eingeschaltet (localStorage 'omegasim-diag' = 'an', Entwickler). Vorher lief sie immer,
+  // loggte im Hintergrund jede Sekunde und lag VOR dem verspaeteten Paket im heissen Pfad.
+  window.MT_DIAG = (() => { try { return localStorage.getItem('omegasim-diag') === 'an'; } catch (e) { return false; } })()
+    ? { notifyN: 0, notifyMs: 0, padLog: 0 } : null;
+  let herzDiagLogAt = 0;
   function herzStatistik() {
     const w = herzMess.werte.slice().sort((a, b) => a - b);
     if (!w.length) return null;
@@ -23451,10 +23473,13 @@
       herzMess.werte.push(abstand);
       if (herzMess.werte.length > 400) herzMess.werte.shift();
       // DIAGNOSE (temporaer, Latenz): bei einem Ausreisser melden, was den Hauptthread belegt hat.
-      if (abstand > 60) {
-        const m = window.MT_DIAG;
-        log('Herzschlag-Ausreisser: ' + Math.round(abstand) + ' ms (Soll 45) · Meldungen seit letztem Takt: '
-          + (m ? m.notifyN : '?') + ' (' + (m ? m.notifyMs.toFixed(1) : '?') + ' ms)', 'warn');
+      // Nur mit Diagnose, sichtbarer Seite, nicht nach einer Pause (> 2 s), hoechstens alle 2 s, und NACH dem Paket.
+      const m = window.MT_DIAG;
+      if (m && abstand > 60 && abstand < 2000 && !document.hidden && herzJetzt - herzDiagLogAt > 2000) {
+        herzDiagLogAt = herzJetzt;
+        const n = m.notifyN, ms = m.notifyMs;
+        setTimeout(() => log('Herzschlag-Ausreisser: ' + Math.round(abstand) + ' ms (Soll 45) · Meldungen seit letztem Takt: '
+          + n + ' (' + ms.toFixed(1) + ' ms)', 'warn'), 0);
       }
     }
     herzschlagAt = herzJetzt;
@@ -44686,6 +44711,8 @@
   // Wie bei den Flaechen zwei Programme (Review nach 1.3.131): Performance ist der Autoshader von
   // 1.3.92, Quality der von v1.3.124 (linear, Himmelslicht, sonnenausgerichteter Glanz, Klarlack,
   // Scheibenspiegelung, Schattenkarte) - mit Blickvektor und Schattenkoordinaten aus dem Vertexshader.
+  // Radius des PCF-Kerns im Quality-Autoshader: 2 (5x5) am Rechner, 1 (3x3) auf Touch-Geraeten.
+  const VF_PCF_R = (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) ? 1 : 2;
   function vfProgrammTex(gl, qual) {
     const p = gl.createProgram();
     if (!qual) {
@@ -44733,6 +44760,13 @@
         + ' c += env * klar * (0.05 + 0.6 * pow(1.0 - max(dot(N, V), 0.0), 5.0)) * 0.9;'
         + ' c += vec3(pow(1.0 - max(dot(N, V), 0.0), 5.0) * glas * 0.9);'
         + ' c = pow(filmic(c * 1.05), vec3(1.0/2.2));'
+        // v1.5.158 (Review): Die Kerngroesse k VOR der Verzweigung (fwidth ist in einer ungleichmaessigen Verzweigung
+        // undefiniert) und auf hoechstens 2 Texel begrenzt (sonst greift der Kern weit in die Karte: falscher Eigenschatten).
+        // Die Direktiven stehen auf eigenen Zeilen - bis 1.5.157 standen #ifdef/#endif mitten in einer Zeile, der Shader
+        // kompilierte nicht, und alle Autos fielen still auf Performance zurueck (kein Eigenschatten, kein Lackspiegel).
+        // Die Zeilenumbrueche stehen als Escape im Text: echte Umbrueche in der Zeichenkette (1.5.158) waren ein
+        // SyntaxError, das ganze Skript lief nicht.
+        + ' HP float k = biasPixel;\n#ifdef GL_OES_standard_derivatives\n k = clamp(max(fwidth(vsp.x), fwidth(vsp.y)), biasPixel, 2.0 * biasPixel);\n#endif\n'
         // Schattenkarte: Bias waechst mit flachem Lichteinfall (Streifen auf schraegen Blechen).
         + ' if (schatt > 0.5 && vsp.x > 0.0 && vsp.x < 1.0 && vsp.y > 0.0 && vsp.y < 1.0 && vsp.z > 0.0 && vsp.z <= 1.0) {'
         + '   HP float b = vsp.z - bias * (1.0 + 3.0 * (1.0 - d)); float s = 0.0;'
@@ -44742,13 +44776,10 @@
         // und passt sich bei entfernter Karte (TV, Stativ) an - dort verhindert der breitere Kern das Flimmern.
         // 7x7 (49 Abtastungen) statt 3x3/5x5: der Bodenschatten bleibt beim 3x3-Kern. Ohne die Erweiterung
         // (GL_OES_standard_derivatives) faellt der Kern auf den festen biasPixel zurueck.
-        + '   HP float k = biasPixel;'
-        + '   #ifdef GL_OES_standard_derivatives'
-        + '   k = max(max(fwidth(vsp.x), fwidth(vsp.y)), biasPixel);'
-        + '   #endif'
-        + '   for (int ox = -3; ox <= 3; ox++) for (int oy = -3; oy <= 3; oy++)'
+        // v1.5.158 (Review): Kern 5x5 am Rechner, 3x3 auf Touch-Geraeten (VF_PCF_R); 7x7 kostete 49 Abtastungen je Pixel.
+        + '   for (int ox = -' + VF_PCF_R + '; ox <= ' + VF_PCF_R + '; ox++) for (int oy = -' + VF_PCF_R + '; oy <= ' + VF_PCF_R + '; oy++)'
         + '     s += step(schTiefe(texture2D(sch, vsp.xy + vec2(float(ox), float(oy)) * k)), b);'
-        + '   c *= mix(1.0, 0.55, s / 49.0); }'
+        + '   c *= mix(1.0, 0.55, s / ' + ((2 * VF_PCF_R + 1) * (2 * VF_PCF_R + 1)) + '.0); }'
         + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, mix(nebel, dunst, vsd * vsd), f), mix(alpha, alpha * t.a, am)); }'));
     }
     gl.linkProgram(p);
@@ -45327,6 +45358,10 @@
       const L = Pw.a + Pw.b;
       VF.lenkWinkel = Math.max(-lenkGradW, Math.min(lenkGradW,
         Math.atan2(L * ((VF.dyn && VF.dyn.r) || 0), Math.max(0.1, vVoll))));
+      // v1.5.158 (Review): rutscht das Heck (Schraeglauf hinten ueber dem Scheitel), zeigen die Raeder den echten
+      // Lenkeinschlag - sonst waere das Gegenlenken im Drift unsichtbar (die Gierrate zeigt in die Drehung).
+      const spHw = Math.tan(Math.PI / (2 * (Pw.C || 1.5))) / (Pw.BH || 10);
+      if (VF.dyn && Math.abs(VF.dyn.aH || 0) > spHw) VF.lenkWinkel = Math.max(-1, Math.min(1, lenk)) * lenkGradW;
     }
     // v1.5.155: Reifenausnutzung fuer das Quietschen (siehe vfDynamik). In der virtuellen Fahrt
     // treibt der echte Schraeglauf das Quietschen ueber physEngine.state.vfNutzung; der
@@ -45650,10 +45685,11 @@
   // DIAGNOSE (temporaer, Latenz): misst die Quality-Teilpaesse (Schattenkarte, Umgebungskarte,
   // Bloom, Regen) einzeln, damit wir wissen, was auf dem Handy im Quality-Modus wirklich kostet.
   function vfPassZeit(key, fn) {
-    const P = (window.MT_DIAG && (window.MT_DIAG.vfP || (window.MT_DIAG.vfP = { sch: 0, bloom: 0, regen: 0, umw: 0 })));
+    if (!window.MT_DIAG) { fn(); return; }   // v1.5.158: ohne Diagnose keine Zeitmessung
+    const P = window.MT_DIAG.vfP || (window.MT_DIAG.vfP = { sch: 0, bloom: 0, regen: 0, umw: 0 });
     const t0 = performance.now();
     fn();
-    if (P) P[key] += performance.now() - t0;
+    P[key] += performance.now() - t0;
   }
   function vfMalen() {
     const gl = VF.gl, cv = VF.cv;
@@ -46562,8 +46598,9 @@
     // Tacho-Block: Tempo, Gang, Drehzahl, Reifen, Tank - dieselben Werte wie das Cockpit.
     txt(u.tempo, 'v', String(kmh));
     txt(u.rpm, 'r', String(Math.round(motorDrehzahl(st) / 10) * 10));
-    const g = st.currentGear;
-    txt(u.gang, 'g', g > 0 ? String(g) : (g < 0 ? 'R' : 'N'));
+    // v1.5.158 GEMELDET: "erster Gang wird als N angezeigt, sollte aber 1 sein". currentGear zaehlt ab 0 (wie im
+    // Cockpit, gearLabel in 50-drive.js); vorher stand im 1. Gang "N" und in jedem weiteren eine Zahl zu wenig.
+    txt(u.gang, 'g', gearLabel(st));
     const t4 = st.tyreTemp4 || [st.tyreTempC];
     for (let i = 0; i < 4; i++) {
       const T = Math.round(t4[i] !== undefined ? t4[i] : t4[0]);
@@ -46834,7 +46871,7 @@
     VF.tempoFaktor = vfTempoFaktor();
     // Quality-Autoshader, sonst (oder wenn er nicht kompiliert) der von Performance; ohne beide bleibt der Kasten.
     VF.tprog = null;
-    if (VF.grafik) { try { VF.tprog = vfProgrammTex(gl, true); } catch (e) { VF.tprog = null; } }
+    if (VF.grafik) { try { VF.tprog = vfProgrammTex(gl, true); } catch (e) { VF.tprog = null; VF.qualFehler = String(e && e.message || e).slice(0, 300); log('Virtuell: Quality-Autoshader kompiliert nicht, Performance statt dessen: ' + VF.qualFehler, 'warn'); } }
     if (!VF.tprog) { try { VF.tprog = vfProgrammTex(gl, false); } catch (e) { VF.tprog = null; } }
     if (VF.tprog) {
       vfRadModellBauen(gl).then((rad) => { if (VF.aktiv && VF.gl === gl) VF.radModell = rad; });
@@ -66875,12 +66912,17 @@
   // (Bit 2 von valid_flag2, COMPATIBLE_VIBRATION2, ab Firmware 2.21 / jeder DualSense Edge)
   // angeschaltet. Ohne Grippmotor bleibt Bit 0 (COMPATIBLE_VIBRATION, die alte Auslegung) frei,
   // damit ein reiner Trigger-Bericht nicht als Rumble gelesen wird.
+  let dsGripLetzt = false;
   function dsGemeinsam(links, rechts, gripL, gripR) {
     const c = new Uint8Array(47);
     let f0 = 0x0C;               // linker (0x08) + rechter (0x04) Trigger
     const gl = Math.max(0, Math.min(1, +gripL || 0));
     const gr = Math.max(0, Math.min(1, +gripR || 0));
-    if (gl > 0 || gr > 0) {
+    // v1.5.158 (Review): auch die NULL nach einem Rumble mit Flag senden - ohne HAPTICS_SELECT ignoriert der Controller
+    // die Bytes und behaelt den letzten Wert (Motor lief nach einem Rutsch weiter).
+    const anMitNull = dsGripLetzt;
+    dsGripLetzt = gl > 0 || gr > 0;
+    if (gl > 0 || gr > 0 || anMitNull) {
       f0 |= 0x02;                // HAPTICS_SELECT: die beiden Grippmotor-Bytes gelten
       c[38] |= 0x04;             // COMPATIBLE_VIBRATION2: ueberarbeitete Rumble-Auslegung
       c[3] = Math.round(gl * 255);   // linker Grippmotor (niedrig/schwer)
@@ -77133,6 +77175,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     an();
   }
   function ghostIstMax(car) { return !!car && car.ghostStufe === GHOST_STUFE_MAX; }
+  // Zuschlag auf haarnadelMax je Abstand (Teile) vor einer Haarnadel, fuer MAX-NPCs (ghostMaxTempo).
+  var MAX_HAARNADEL_RAMPE = { 2: 0.12, 3: 0.3 };   // var: ghostTick kann beim Laden vor dieser Zeile laufen
   function ghostMaxArt(typ) {
     if (typ === undefined || typ === null) return 'gerade';
     if (tileTightness(typ) >= 2) return 'haarnadel';
@@ -77157,6 +77201,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     let v = ghostMaxWert(ghostMaxArt(hierTyp));
     if (ghostCfg.maxBremspunkt !== 'teil' && ortOk) {
       v = Math.min(v, ghostMaxWert(ghostMaxArt(tiles[(g.tileIndex + 1) % n].type)));
+    }
+    // v1.5.158 GEMELDET: "MAX-NPC hat in der Haarnadel nicht ordentlich abgebremst". Von Vollgas (1,0) auf das
+    // Haarnadeltempo (0,35) in ein bis zwei Teilen schafft das echte Auto nicht. Jetzt eine Bremsrampe: drei Teile
+    // vor der Haarnadel hoechstens MAX_HAARNADEL_RAMPE[3], zwei Teile davor [2]; ab einem Teil davor gilt wie bisher
+    // die normale Haarnadel-Logik (Obergrenze haarnadelMax).
+    if (ortOk) {
+      const hm = ghostMaxWert('haarnadel');
+      for (let k = 2; k <= 3; k++) {
+        if (tileTightness(tiles[(g.tileIndex + k) % n].type) >= 2) { v = Math.min(v, hm + MAX_HAARNADEL_RAMPE[k]); break; }
+      }
     }
     return Math.max(0.05, Math.min(1, v));
   }
@@ -99966,6 +100020,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         if (w.join(',') !== '1,1,1,0.52,0.9,1') f.push('Profil (am Kurventeil) ' + w.join(','));
         if (ghostStufeFaktor(auto(1)) !== 1) f.push('ghostStufeFaktor nimmt das MAX-Profil nicht');
         if (ghostStufeFaktor({ role: 'ghost', ghostStufe: 2, tileCode: TILE_TYPE.STRAIGHT, ghost: {} }) === 1) f.push('Stufe schnell faehrt MAX');
+        // v1.5.158: Bremsrampe vor der Haarnadel (S G G G H G): 3 Teile davor <= 0,65, 2 Teile davor <= 0,47.
+        ghostCfg.maxBremspunkt = 'schiene';
+        currentTrackTiles = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.STRAIGHT, TILE_TYPE.STRAIGHT,
+                             TILE_TYPE.HAIRPIN, TILE_TYPE.STRAIGHT].map((type) => ({ type }));
+        const h = [0, 1, 2, 3].map((i) => +ghostMaxTempo(auto(i)).toFixed(2));
+        if (!(h[0] === 1 && h[1] <= 0.65 + 1e-9 && h[2] <= 0.47 + 1e-9 && h[3] <= 0.35 + 1e-9)) f.push('Bremsrampe vor der Haarnadel ' + h.join(','));
       } finally { ortStimmt = merkOrt; }
       // Haarnadel: weiter Abzug, Deckel und Boden; Gelb/Formation wie alle.
       const src = String(ghostTick);
@@ -108277,7 +108337,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       zl.offen = true; konsoleFahrenGeraete();
       if ($('fa-auto-geraete').hidden || $('fa-auto-geraete').querySelectorAll('i').length !== 1) f.push('Laptop-Symbol fehlt');
       // Kamera mit Bild: Attrappe des WLAN-Bilds.
-      onbZ = { m5: { url: 'x' } };
+      onbZ = { m5: { url: 'x', bild: true } };   // seit 1.5.141: aktiv ab dem ersten Bild (m5.bild)
       const img = $('onboard-bild');
       const merkW = Object.getOwnPropertyDescriptor(img, 'naturalWidth');
       Object.defineProperty(img, 'naturalWidth', { configurable: true, get: () => 640 });
@@ -121065,6 +121125,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       try { merkGr = localStorage.getItem(VF_GRAFIK_STORE); localStorage.setItem(VF_GRAFIK_STORE, 'qual'); } catch (e) { /* egal */ }
       try {
         if (virtuellStarten({ tiles: codeToTrack('SBRLGR3LGHLGLJR4G3R2@270').tiles, studie: true })) {
+          // v1.5.158 (Review): Quality gewaehlt und WebGL da -> der Quality-Autoshader MUSS kompilieren (bis 1.5.157 fiel
+          // er still auf Performance zurueck, weil #ifdef mitten in einer Zeile stand).
+          if (VF.grafik && VF.tprog && !VF.tprog.qual) f.push('Quality-Autoshader kompiliert nicht: ' + (VF.qualFehler || '?'));
           if (VF.tprog && VF.tprog.qual) {
             vfUmweltMalen(VF.gl, 10);
             if (!(VF.umw && VF.umw.fertig) && !VF.umwKaputt) f.push('Umgebungskarte nicht fertig');
