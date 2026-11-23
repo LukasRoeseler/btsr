@@ -1668,7 +1668,7 @@
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
-  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/' };
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/' };
   // v1.6.27 (Issue #15): der RC Stunt Copter in der Garage. Er ist KEIN Auto: er hat kein
   // auto.json/auto.bin (VF_MODELL_PFADE), sondern wird als eigener Hubschrauber gebaut und
   // mit zwei Sticks geflogen. Ueberall, wo ein Auto-Modell oder ein Fahrprofil gebraucht wird,
@@ -1815,7 +1815,10 @@
             { v: 'spider', name: t('Spider NG1 (Gnen54, WIP)') },
             // v1.5.150: Eigenbau von Gnen54 auf der Vehicle-World-Karosserie (schriftliche Freigabe),
             // siehe img/autos/caravelle/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
-            { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') }]);
+            { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') },
+            // v1.6.27: "2019 Audi RS5 DTM" von Dave Love (Sketchfab, CC BY 4.0), umgewandelt mit tools/glb_auto.py, siehe
+            // img/autos/audirs5/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
+            { v: 'audirs5', name: t('Audi RS5 DTM 2019 (Dave Love, WIP)') }]);
   }
   function vfAutoName(id) { const a = vfAutoListe().find((x) => x.v === id); return a ? a.name : id; }
   // Name der gewaehlten Strecke der virtuellen Fahrt (freie Strecke oder die gebaute Bahn).
