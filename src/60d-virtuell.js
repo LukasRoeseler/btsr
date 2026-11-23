@@ -4444,7 +4444,7 @@
 
   // ---- KNOPFLEISTE ALS PIKTOGRAMME (BESTELLT: "kompakte Piktogramm-Knoepfe statt der Textleiste, dazu ein Knopf,
   // der alle aus- und einblendet") ----
-  // Box, Gelbe Flagge, Licht, Wetter, Kamera, Zurücksetzen, Steuerung (nur Touch) und Beenden als kleine Symbole
+  // Box, Gelbe Flagge, Licht, Wetter, Kamera, Zuruecksetzen, Steuerung (nur Touch) und Beenden als kleine Symbole
   // (Inline-SVG, Name als title und aria-label). Ganz rechts der Knopf "leiste": blendet alle anderen aus und ein, die
   // Wahl bleibt fuer die naechste Fahrt (localStorage). Die Knoepfe behalten ihr data-vf (Klick, Pad, Selbsttest).
   const VF_LEISTE_STORE = 'omegasim-vf-leiste';
