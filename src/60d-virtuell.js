@@ -2016,6 +2016,8 @@
   // Wie bei den Flaechen zwei Programme (Review nach 1.3.131): Performance ist der Autoshader von
   // 1.3.92, Quality der von v1.3.124 (linear, Himmelslicht, sonnenausgerichteter Glanz, Klarlack,
   // Scheibenspiegelung, Schattenkarte) - mit Blickvektor und Schattenkoordinaten aus dem Vertexshader.
+  // Radius des PCF-Kerns im Quality-Autoshader: 2 (5x5) am Rechner, 1 (3x3) auf Touch-Geraeten.
+  const VF_PCF_R = (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) ? 1 : 2;
   function vfProgrammTex(gl, qual) {
     const p = gl.createProgram();
     if (!qual) {
@@ -2063,6 +2065,11 @@
         + ' c += env * klar * (0.05 + 0.6 * pow(1.0 - max(dot(N, V), 0.0), 5.0)) * 0.9;'
         + ' c += vec3(pow(1.0 - max(dot(N, V), 0.0), 5.0) * glas * 0.9);'
         + ' c = pow(filmic(c * 1.05), vec3(1.0/2.2));'
+        // v1.5.158 (Review): Die Kerngroesse k VOR der Verzweigung (fwidth ist in einer ungleichmaessigen Verzweigung
+        // undefiniert) und auf hoechstens 2 Texel begrenzt (sonst greift der Kern weit in die Karte: falscher Eigenschatten).
+        // Die Direktiven stehen auf eigenen Zeilen - bis 1.5.157 standen #ifdef/#endif mitten in einer Zeile, der Shader
+        // kompilierte nicht, und alle Autos fielen still auf Performance zurueck (kein Eigenschatten, kein Lackspiegel).
+        + ' HP float k = biasPixel;\n#ifdef GL_OES_standard_derivatives\n k = clamp(max(fwidth(vsp.x), fwidth(vsp.y)), biasPixel, 2.0 * biasPixel);\n#endif\n'
         // Schattenkarte: Bias waechst mit flachem Lichteinfall (Streifen auf schraegen Blechen).
         + ' if (schatt > 0.5 && vsp.x > 0.0 && vsp.x < 1.0 && vsp.y > 0.0 && vsp.y < 1.0 && vsp.z > 0.0 && vsp.z <= 1.0) {'
         + '   HP float b = vsp.z - bias * (1.0 + 3.0 * (1.0 - d)); float s = 0.0;'
@@ -2072,13 +2079,10 @@
         // und passt sich bei entfernter Karte (TV, Stativ) an - dort verhindert der breitere Kern das Flimmern.
         // 7x7 (49 Abtastungen) statt 3x3/5x5: der Bodenschatten bleibt beim 3x3-Kern. Ohne die Erweiterung
         // (GL_OES_standard_derivatives) faellt der Kern auf den festen biasPixel zurueck.
-        + '   HP float k = biasPixel;'
-        + '   #ifdef GL_OES_standard_derivatives'
-        + '   k = max(max(fwidth(vsp.x), fwidth(vsp.y)), biasPixel);'
-        + '   #endif'
-        + '   for (int ox = -3; ox <= 3; ox++) for (int oy = -3; oy <= 3; oy++)'
+        // v1.5.158 (Review): Kern 5x5 am Rechner, 3x3 auf Touch-Geraeten (VF_PCF_R); 7x7 kostete 49 Abtastungen je Pixel.
+        + '   for (int ox = -' + VF_PCF_R + '; ox <= ' + VF_PCF_R + '; ox++) for (int oy = -' + VF_PCF_R + '; oy <= ' + VF_PCF_R + '; oy++)'
         + '     s += step(schTiefe(texture2D(sch, vsp.xy + vec2(float(ox), float(oy)) * k)), b);'
-        + '   c *= mix(1.0, 0.55, s / 49.0); }'
+        + '   c *= mix(1.0, 0.55, s / ' + ((2 * VF_PCF_R + 1) * (2 * VF_PCF_R + 1)) + '.0); }'
         + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, mix(nebel, dunst, vsd * vsd), f), mix(alpha, alpha * t.a, am)); }'));
     }
     gl.linkProgram(p);
@@ -2657,6 +2661,10 @@
       const L = Pw.a + Pw.b;
       VF.lenkWinkel = Math.max(-lenkGradW, Math.min(lenkGradW,
         Math.atan2(L * ((VF.dyn && VF.dyn.r) || 0), Math.max(0.1, vVoll))));
+      // v1.5.158 (Review): rutscht das Heck (Schraeglauf hinten ueber dem Scheitel), zeigen die Raeder den echten
+      // Lenkeinschlag - sonst waere das Gegenlenken im Drift unsichtbar (die Gierrate zeigt in die Drehung).
+      const spHw = Math.tan(Math.PI / (2 * (Pw.C || 1.5))) / (Pw.BH || 10);
+      if (VF.dyn && Math.abs(VF.dyn.aH || 0) > spHw) VF.lenkWinkel = Math.max(-1, Math.min(1, lenk)) * lenkGradW;
     }
     // v1.5.155: Reifenausnutzung fuer das Quietschen (siehe vfDynamik). In der virtuellen Fahrt
     // treibt der echte Schraeglauf das Quietschen ueber physEngine.state.vfNutzung; der
@@ -2980,10 +2988,11 @@
   // DIAGNOSE (temporaer, Latenz): misst die Quality-Teilpaesse (Schattenkarte, Umgebungskarte,
   // Bloom, Regen) einzeln, damit wir wissen, was auf dem Handy im Quality-Modus wirklich kostet.
   function vfPassZeit(key, fn) {
-    const P = (window.MT_DIAG && (window.MT_DIAG.vfP || (window.MT_DIAG.vfP = { sch: 0, bloom: 0, regen: 0, umw: 0 })));
+    if (!window.MT_DIAG) { fn(); return; }   // v1.5.158: ohne Diagnose keine Zeitmessung
+    const P = window.MT_DIAG.vfP || (window.MT_DIAG.vfP = { sch: 0, bloom: 0, regen: 0, umw: 0 });
     const t0 = performance.now();
     fn();
-    if (P) P[key] += performance.now() - t0;
+    P[key] += performance.now() - t0;
   }
   function vfMalen() {
     const gl = VF.gl, cv = VF.cv;
@@ -4165,7 +4174,7 @@
     VF.tempoFaktor = vfTempoFaktor();
     // Quality-Autoshader, sonst (oder wenn er nicht kompiliert) der von Performance; ohne beide bleibt der Kasten.
     VF.tprog = null;
-    if (VF.grafik) { try { VF.tprog = vfProgrammTex(gl, true); } catch (e) { VF.tprog = null; } }
+    if (VF.grafik) { try { VF.tprog = vfProgrammTex(gl, true); } catch (e) { VF.tprog = null; VF.qualFehler = String(e && e.message || e).slice(0, 300); log('Virtuell: Quality-Autoshader kompiliert nicht, Performance statt dessen: ' + VF.qualFehler, 'warn'); } }
     if (!VF.tprog) { try { VF.tprog = vfProgrammTex(gl, false); } catch (e) { VF.tprog = null; } }
     if (VF.tprog) {
       vfRadModellBauen(gl).then((rad) => { if (VF.aktiv && VF.gl === gl) VF.radModell = rad; });

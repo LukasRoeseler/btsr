@@ -99,12 +99,17 @@
   // (Bit 2 von valid_flag2, COMPATIBLE_VIBRATION2, ab Firmware 2.21 / jeder DualSense Edge)
   // angeschaltet. Ohne Grippmotor bleibt Bit 0 (COMPATIBLE_VIBRATION, die alte Auslegung) frei,
   // damit ein reiner Trigger-Bericht nicht als Rumble gelesen wird.
+  let dsGripLetzt = false;
   function dsGemeinsam(links, rechts, gripL, gripR) {
     const c = new Uint8Array(47);
     let f0 = 0x0C;               // linker (0x08) + rechter (0x04) Trigger
     const gl = Math.max(0, Math.min(1, +gripL || 0));
     const gr = Math.max(0, Math.min(1, +gripR || 0));
-    if (gl > 0 || gr > 0) {
+    // v1.5.158 (Review): auch die NULL nach einem Rumble mit Flag senden - ohne HAPTICS_SELECT ignoriert der Controller
+    // die Bytes und behaelt den letzten Wert (Motor lief nach einem Rutsch weiter).
+    const anMitNull = dsGripLetzt;
+    dsGripLetzt = gl > 0 || gr > 0;
+    if (gl > 0 || gr > 0 || anMitNull) {
       f0 |= 0x02;                // HAPTICS_SELECT: die beiden Grippmotor-Bytes gelten
       c[38] |= 0x04;             // COMPATIBLE_VIBRATION2: ueberarbeitete Rumble-Auslegung
       c[3] = Math.round(gl * 255);   // linker Grippmotor (niedrig/schwer)
