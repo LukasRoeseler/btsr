@@ -1850,7 +1850,11 @@
   function vfGeistAn() { try { return localStorage.getItem(VF_GEIST_STORE) !== 'aus'; } catch (e) { return true; } }
   // Fester Motorklang fuer die Eigenbauten von Gnen54 (aus PR 4 von gnen54: "der Motorsound soll fest dem Fahrzeug
   // zugeordnet sein, die Anwahl gesperrt"). Die gespeicherte Wahl gilt dort nicht.
-  const VF_MOTOR_FEST = { kaefer: 'boxster986', spider: 'listerstorm', caravelle: 'boxster986' };
+  // v1.6.39 BESTELLT: "Bitte virtuelle Autos mit den Motorsounds fest verknuepfen mit passenden Sounds." Jetzt jedes Auto:
+  // Vulture V5.R = Corvette C5-R (das Vorbild), FMC GT4 = Ford GT40, Boxer 96 = Porsche 911 GT3 (Boxer-6), Lynx 220 =
+  // Jaguar XJ220 mit V6-Biturbo (naechster Klang: Ferrari 296 GT3, V6), Audi RS5 DTM = sein eigener Reihen-4-Turbo.
+  const VF_MOTOR_FEST = { kaefer: 'boxster986', spider: 'listerstorm', caravelle: 'boxster986',
+    v5r: 'c5r', fmcgt4: 'gt40', boxer96: 'p992gt3r', lynx220: 'f296gt3', audirs5: 'rs5dtm' };
   function vfMotorFest() { return VF_MOTOR_FEST[vfAutoWahl()] || ''; }
   // Die echte Neigung eines GT1 ist klein (0,5 Grad Rollen bei 1,5 g) und bei Modellgroesse unsichtbar.
   // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.
@@ -3196,7 +3200,10 @@
     const cP = Math.cos(VF.pitch || 0), sP = Math.sin(VF.pitch || 0);
     const cR = Math.cos(VF.roll || 0), sR = Math.sin(VF.roll || 0);
     const cH = Math.cos(H), sH = Math.sin(H);
-    const ux = cH * sR - sH * sP * cR;   // Welt X (VF.x)
+    // v1.6.39 GEMELDET: "Helikopter driftet aus irgendeinem Grund nach links". Das Vorzeichen der x-Komponente war
+    // falsch (bis 1.6.38: cH*sR - sH*sP*cR): Rollen rechts schob ihn bei Kurs 0 nach links, Neigen vorn flog je nach Kurs
+    // schraeg (bei 90 Grad rueckwaerts). Richtig ist Ry(H)*Rx(p)*Rz(r) angewandt auf (0,1,0), wie vfHubLage zeichnet.
+    const ux = -cH * sR + sH * sP * cR;   // Welt X (VF.x)
     const uy = cP * cR;                  // Welt Y = Hoehe (VF.z)
     const uz = sH * sR + cH * sP * cR;   // Welt Z (VF.y)
     const lift = (F.rpm || 0) * (F.collective || 0) * VF_HUB_THRUST;

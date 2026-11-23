@@ -14622,6 +14622,42 @@
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Virtuell v1.6.39: Heli fliegt in Richtung der Neigung (vorn = Nase, rechts = rechts) bei jedem Kurs, schwebt ohne Eingabe auf der Stelle; jedes Auto hat seinen festen Motorklang', () => {
+    const f = [];
+    const merk = { hubschrauber: VF.hubschrauber, x: VF.x, y: VF.y, z: VF.z, h: VF.h, flug: VF.flug, pitch: VF.pitch, roll: VF.roll, hubTasten: VF.hubTasten,
+      hubLuft: VF.hubLuft, touchHeli: VF.touchHeli, stick: VF.stick, stickL: VF.stickL, rotor: VF.rotor };
+    const merkG = vfHubGyro, schlecht = [];
+    try {
+      vfHubGyro = () => true;
+      const flieg = (h, tasten, sek) => {
+        Object.assign(VF, { hubschrauber: true, x: 0, y: 0, z: 80, h, pitch: 0, roll: 0, hubLuft: true, stick: null, stickL: null, touchHeli: null,
+          flug: { vz: 0, vx: 0, vy: 0, rpm: 0.9, collective: VF_HUB_HOVER, yawRate: 0 }, hubTasten: tasten });
+        for (let i = 0; i < sek * 60; i++) vfHubPhysik(1 / 60);
+        return [VF.x, VF.y];
+      };
+      for (const h of [0, 90, 200, 334]) {
+        const r = h * Math.PI / 180, vor = [Math.sin(r), -Math.cos(r)], rechts = [Math.cos(r), Math.sin(r)];
+        const cos = (a, b) => (a[0] * b[0] + a[1] * b[1]) / (Math.hypot(a[0], a[1]) * Math.hypot(b[0], b[1]) || 1);
+        const v = flieg(h, { pitchVorn: true }, 1), q = flieg(h, { rollRechts: true }, 1), n = flieg(h, {}, 2);
+        if (!(cos(v, vor) > 0.98)) schlecht.push('Kurs ' + h + ' vorn: ' + cos(v, vor).toFixed(2));
+        if (!(cos(q, rechts) > 0.98)) schlecht.push('Kurs ' + h + ' rechts: ' + cos(q, rechts).toFixed(2));
+        if (Math.hypot(n[0], n[1]) > 0.01) schlecht.push('Kurs ' + h + ' ohne Eingabe ' + Math.hypot(n[0], n[1]).toFixed(3));
+      }
+      if (schlecht.length) f.push(schlecht.join(', '));
+    } finally { vfHubGyro = merkG; Object.assign(VF, merk); }
+    const merkA = (() => { try { return localStorage.getItem(VF_AUTO_STORE); } catch (e) { return null; } })();
+    const opt = $('sound-profile') ? [...$('sound-profile').options].map((o) => o.value) : [];
+    try {
+      for (const id of Object.keys(VF_MODELL_PFADE)) {
+        try { localStorage.setItem(VF_AUTO_STORE, id); } catch (e) { /* egal */ }
+        const m = vfMotorFest();
+        if (!m) f.push(id + ' ohne festen Motor');
+        else if (opt.indexOf(m) < 0) f.push(id + ': Motor ' + m + ' gibt es nicht');
+        else if (vfMotorGewaehlt() !== m) f.push(id + ': Wahl ' + vfMotorGewaehlt());
+      }
+    } finally { try { if (merkA === null) localStorage.removeItem(VF_AUTO_STORE); else localStorage.setItem(VF_AUTO_STORE, merkA); } catch (e) { /* egal */ } }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Kurs 0/90/200/334: vorn und rechts in Fahrtrichtung, ohne Eingabe auf der Stelle; ' + Object.keys(VF_MODELL_PFADE).length + ' Autos mit festem Motor' };
+  });
   stAdd('Virtuell v1.6.37: Heli - Kippen wie im Vorbild (auf die Modellgroesse skaliert), zwei Touch-Sticks am Handy', () => {
     const f = [];
     const merk = { hubschrauber: VF.hubschrauber, x: VF.x, y: VF.y, z: VF.z, h: VF.h, flug: VF.flug, pitch: VF.pitch, roll: VF.roll, hubTasten: VF.hubTasten,
