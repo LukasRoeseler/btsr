@@ -18067,17 +18067,23 @@
   // drehen ... Wenn ich den rechten Stick dann reindruecke, soll die Kamera wieder die Standardansicht
   // haben." Wie beim Bildlauf-Test ruft der Test pollGamepad() selbst mit einem gefaelschten Pad; die
   // virtuelle Fahrt laeuft dafuer nicht (nur VF.aktiv), die Drehung rechnet vfDrehSchritt wie vfKamera.
-  stAdd('Virtuell: rechter Stick dreht die Kamera, Blick bleibt, R3 setzt zurueck oder wechselt, bildratenunabhaengig (WIP)', () => {
+  // Seit PR 4 von gnen54 ist R3 (Lichthupen-Belegung) auch virtuell die Lichthupe; die Kamera hat eine eigene Taste
+  // (bindings.vfkamera, ab Werk unbelegt). Der Test belegt sie kurz mit Knopf 17 und prueft beides.
+  stAdd('Virtuell: rechter Stick dreht die Kamera, Blick bleibt, Kamerataste setzt zurueck oder wechselt, R3 ist Lichthupe, bildratenunabhaengig (WIP)', () => {
     const f = [], grad = 180 / Math.PI;
     const echt = navigator.getGamepads;
     const merk = { aktiv: VF.aktiv, kamera: VF.kamera, dreh: VF.dreh ? Object.assign({}, VF.dreh) : null, stick: VF.stick, kam: VF.kam, tasten: VF.tasten };
     let gespeichert = null;
     try { gespeichert = localStorage.getItem(VF_KAMERA_STORE); } catch (e) { /* privat */ }
     const pad = { id: 'Selbsttest (STANDARD GAMEPAD)', index: 0, connected: true, mapping: 'standard', timestamp: performance.now(),
-      axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, touched: false, value: 0 })) };
-    const r3 = bindings.lightflash;
+      axes: [0, 0, 0, 0], buttons: Array.from({ length: 18 }, () => ({ pressed: false, touched: false, value: 0 })) };
+    const merkKamB = bindings.vfkamera;
+    bindings.vfkamera = { type: 'button', index: 17, label: 'Selbsttest' };
+    const r3 = bindings.vfkamera;
     const r3Knopf = r3 && r3.type === 'button' && pad.buttons[r3.index];
     const r3Setzen = (an) => { if (r3Knopf) pad.buttons[r3.index] = { pressed: an, touched: an, value: an ? 1 : 0 }; };
+    const lh = bindings.lightflash, lhKnopf = lh && lh.type === 'button' && lh.index < pad.buttons.length;
+    const lhSetzen = (an) => { if (lhKnopf) pad.buttons[lh.index] = { pressed: an, touched: an, value: an ? 1 : 0 }; };
     const stickFrei = ![2, 3].some((i) => Object.keys(bindings).some((k) => bindings[k] && bindings[k].type === 'axis' && bindings[k].index === i));
     const bild = (n, dt) => { for (let i = 0; i < n; i++) { pollGamepad(); const e = vfDrehEingabe(); vfDrehSchritt(vfDreh(), e[0], e[1], dt, vfDrehGrenzen(vfDrehArt(vfKameraId()))); } };
     let mass = '';
@@ -18118,8 +18124,19 @@
         // 3. R3 ungedreht: naechste Kamera wie bisher.
         r3Setzen(true); pollGamepad(); r3Setzen(false); pollGamepad();
         if (VF.kamera !== 'nah') f.push('R3 ungedreht wechselt nicht zur naechsten Kamera (' + VF.kamera + ')');
-        mass += ', R3 zurueck/wechselt';
-      } else mass += ', R3 nicht als Knopf belegt (uebersprungen)';
+        mass += ', Kamerataste zurueck/wechselt';
+      } else mass += ', Kamerataste nicht als Knopf belegt (uebersprungen)';
+      // 3b. R3 (Lichthupe) wechselt die Kamera nicht mehr, sondern laesst das Licht blinken.
+      if (lhKnopf) {
+        const kVor = VF.kamera, merkFlash = lightFx.flashUntil;
+        lightFx.flashUntil = 0;
+        lhSetzen(true); pollGamepad(); lhSetzen(false); pollGamepad();
+        if (VF.kamera !== kVor) f.push('R3 wechselt die Kamera (' + VF.kamera + ')');
+        if (!(lightFx.flashUntil > rennZeitJetzt())) f.push('R3 laesst das virtuelle Auto nicht blinken');
+        else if (!vfLichtMitHupe(false)) f.push('virtuelles Licht blinkt zu Beginn der Lichthupe nicht auf');
+        lightFx.flashUntil = merkFlash;
+        mass += ', R3 Lichthupe';
+      }
       // 4. Bildratenunabhaengig: 1 s halten und 0,5 s auslaufen, mit 60 und mit 25 Bildern/s.
       const lauf = (fps) => { const D = { g: 0, n: 0, vg: 0, vn: 0 }; for (let i = 0; i < fps; i++) vfDrehSchritt(D, 0.6, -0.4, 1 / fps, [-1, 1]);
         for (let i = 0; i < fps / 2; i++) vfDrehSchritt(D, 0, 0, 1 / fps, [-1, 1]); return D; };
@@ -18149,8 +18166,9 @@
       window.dispatchEvent(new KeyboardEvent('keyup', { key: 'v' }));
       if (vfKameraGedreht()) f.push('Taste V setzt nicht zurueck');
     } finally {
-      r3Setzen(false); pad.axes = [0, 0, 0, 0];
+      r3Setzen(false); lhSetzen(false); pad.axes = [0, 0, 0, 0];
       try { pollGamepad(); } catch (e) { /* weiter */ }
+      bindings.vfkamera = merkKamB;
       navigator.getGamepads = echt;
       VF.aktiv = merk.aktiv; VF.kamera = merk.kamera; VF.stick = merk.stick; VF.kam = merk.kam; VF.tasten = merk.tasten;
       if (merk.dreh) Object.assign(vfDreh(), merk.dreh); else vfDrehNull();
@@ -27163,6 +27181,241 @@
       if (merkTab && typeof showTab === 'function') showTab(merkTab);
     }
     return { ok: !f.length, mass: f.length ? f.join('; ') : mass };
+  });
+  // ---- v1.5.160: Port von PR 4 (gnen54) und die Wuensche dazu ----
+  // Beide Toernerschleifen (mit und ohne Bruecke) in der Garage waehlbar, laden, Randstreifen rein weiss, Bruecke hoch.
+  stAdd('Virtuell v1.5.160: beide freien Strecken waehlbar und ladbar, weisse Randstriche, Bruecke mit Hoehe', async () => {
+    if (typeof virtuellStarten !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    const f = [];
+    let roh = null;
+    try { roh = localStorage.getItem(VF_STRECKE_STORE); } catch (e) { roh = null; }
+    const merk = { auf: garAufAuto, virt: garVirtuellAuf, kam: garKameraAuf }, merkTab = kAktiverTab();
+    let mass = '';
+    try {
+      if (!VF_FREIE.indeq || !VF_FREIE.indeqBruecke) f.push('freie Strecken: ' + Object.keys(VF_FREIE).join(','));
+      // Garage: die Zeile "Strecke" blaettert durch gebaute Bahn und beide freien Strecken.
+      localStorage.removeItem(VF_STRECKE_STORE);
+      showTab('garage'); garVirtuellAuf = true; garKameraAuf = false; renderGarage();
+      const werte = [];
+      for (let i = 0; i < 3; i++) {
+        const z = $('gar-list').querySelector('.gar-a-rechts [data-vf-strecke]');
+        if (!z) { f.push('Zeile Strecke fehlt'); break; }
+        werte.push(z.querySelector('b').textContent);
+        z.querySelector('[data-d="1"]').click();
+      }
+      if (new Set(werte).size !== 3) f.push('Strecken in der Garage: ' + werte.join(' / '));
+      if (!werte.some((w) => w.indexOf(t('Törnerschleife 2.0 mit Brücke')) >= 0)) f.push('Bruecke nicht waehlbar: ' + werte.join(' / '));
+      // Laden und Geometrie: weisse Randstriche (v < -0,5), Bruecke hoch, Ring flach.
+      for (const k of ['indeq', 'indeqBruecke']) {
+        const d = await vfFreiLaden(k);
+        const g = vfBahnGeometrie(d.pts, trackNormals(d.pts), d.tiles, 1);
+        let weiss = 0, zMax = 0;
+        for (let i = 4; i < g.rand.length; i += 8) if (g.rand[i] < -0.5) weiss++;
+        for (let i = 1; i < g.strasse.length; i += 8) zMax = Math.max(zMax, g.strasse[i]);
+        if (weiss < 1000) f.push(k + ': nur ' + weiss + ' weisse Ecken');
+        if (k === 'indeq' && zMax > 0.01) f.push('Ring nicht flach: ' + zMax);
+        if (k === 'indeqBruecke' && !(zMax > 3)) f.push('Bruecke nicht hoch: ' + zMax);
+        if (!d.tiles.some((x) => x.gasse) || !d.tiles.some((x) => x.steg)) f.push(k + ': ohne Boxengasse/Steg');
+        mass += k + ' ' + weiss + ' weisse Ecken, z bis ' + zMax.toFixed(1) + '; ';
+      }
+      // Fahrt auf der Brueckenstrecke: Hoehe je Abschnitt, Auto auf der Bruecke oben.
+      localStorage.setItem(VF_STRECKE_STORE, 'indeqBruecke');
+      if (!virtuellStarten()) f.push('Brueckenstrecke startet nicht');
+      else {
+        if (!VF.frei || !VF.hoehe) f.push('Fahrt ohne Hoehe');
+        else {
+          const sg = VF.hoehe[Math.floor(VF.hoehe.length / 2)];
+          VF.idx = sg.i; VF.x = VF.pts[sg.i].x; VF.y = VF.pts[sg.i].y; VF.h = VF.pts[sg.i].heading;
+          if (!(vfHzSpieler().z > 3)) f.push('Auto auf der Bruecke nicht oben: ' + vfHzSpieler().z);
+          if (!(vfLage(VF.x, VF.y, VF.h)[13] > 3)) f.push('Lage ohne Hoehe');
+        }
+      }
+    } finally {
+      if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+      try { if (roh === null) localStorage.removeItem(VF_STRECKE_STORE); else localStorage.setItem(VF_STRECKE_STORE, roh); } catch (e) { /* privat */ }
+      garAufAuto = merk.auf; garVirtuellAuf = merk.virt; garKameraAuf = merk.kam; renderGarage();
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass + 'Garage blaettert durch 3 Strecken' };
+  });
+  // Gegenrichtung: Ziellinie am selben Ort, Runde zaehlt in der neuen Richtung, Pendeln ueber die Linie nicht.
+  stAdd('Virtuell v1.5.160: Gegenrichtung zaehlt Runden, Ziellinie am selben Ort, Pendeln zaehlt nicht', () => {
+    if (typeof virtuellStarten !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    const f = [], merkTab = kAktiverTab();
+    let mass = '';
+    try {
+      const tiles = codeToTrack(VF_ERSATZ_CODE).tiles;
+      if (!virtuellStarten({ tiles, studie: true })) return { skip: true, mass: 'virtuelle Fahrt startet hier nicht (kein WebGL?)' };
+      const n0 = VF.pts.length, ort0 = [VF.pts[VF.zielIdx].x, VF.pts[VF.zielIdx].y], seite0 = VF.boxSeite;
+      const h0 = VF.pts[VF.zielIdx].heading;
+      virtuellBeenden();
+      if (!virtuellStarten({ tiles, studie: true, gegen: true })) { f.push('Gegenrichtung startet nicht'); return { ok: false, mass: f.join(' | ') }; }
+      const n = VF.pts.length;
+      if (n !== n0) f.push('Punkte ' + n0 + ' -> ' + n);
+      const ort = [VF.pts[VF.zielIdx].x, VF.pts[VF.zielIdx].y];
+      if (Math.hypot(ort[0] - ort0[0], ort[1] - ort0[1]) > 1e-6) f.push('Ziellinie verschoben');
+      const dh = Math.abs(((VF.pts[VF.zielIdx].heading - h0) % 360 + 360) % 360 - 180);
+      if (dh > 1e-6) f.push('Kurs an der Linie nicht gedreht (' + dh.toFixed(2) + ')');
+      if (VF.boxSeite !== -seite0) f.push('Boxenseite in Fahrtrichtung ' + VF.boxSeite + ' statt ' + -seite0);
+      VF.modus = 'practice'; VF.limit = 0;
+      const geh = (bis) => { let s = 0; while (VF.idx !== bis && s++ < n + 2) { VF.idx = (VF.idx + 1) % n; const q = VF.pts[VF.idx]; VF.x = q.x; VF.y = q.y; VF.h = q.heading; vfPaket(); } };
+      VF.zielVor = null; vfPaket();
+      geh(VF.zielIdx);
+      if (!VF.rundeAb || VF.runden !== 0) f.push('erste Ueberfahrt startet die Uhr nicht');
+      VF.rundeAb -= 30000;
+      geh((VF.zielIdx + n - 1) % n); geh(VF.zielIdx);
+      if (VF.runden !== 1) f.push('nach einer Runde ' + VF.runden + ' Runden');
+      const r0 = VF.runden;
+      for (let k = 0; k < 6; k++) { VF.idx = (VF.idx - 1 + n) % n; vfPaket(); }
+      for (let k = 0; k < 6; k++) { VF.idx = (VF.idx + 1) % n; vfPaket(); }
+      if (VF.runden !== r0) f.push('Pendeln ueber die Linie zaehlt eine Runde');
+      // Rueckwaerts eine ganze Runde: keine Runde.
+      for (let k = 0; k < n + 5; k++) { VF.idx = (VF.idx - 1 + n) % n; vfPaket(); }
+      if (VF.runden !== r0) f.push('rueckwaerts gefahrene Runde zaehlt');
+      mass = n + ' Punkte, Linie am selben Ort, 1 Runde, Pendeln und Rueckwaerts ohne Runde';
+    } finally {
+      if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
+  });
+  // Ladebild: kein HUD, Fortschrittsbalken, Teile legen sich (100 ms je Teil, Runde mindestens 1 s), endet nach dem Laden.
+  stAdd('Virtuell v1.5.160: Ladebild ohne HUD mit Fortschrittsbalken, Strecke baut sich auf, endet wenn alles geladen', async () => {
+    if (typeof virtuellStarten !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    const f = [], merkTab = kAktiverTab();
+    let mass = '';
+    try {
+      if (!virtuellStarten({ tiles: codeToTrack('SG3R2G3R2').tiles, studie: true })) return { skip: true, mass: 'virtuelle Fahrt startet hier nicht (kein WebGL?)' };
+      const sch = VF.schicht, vis = (sel) => { const e = sch.querySelector(sel); return e ? getComputedStyle(e).visibility : 'fehlt'; };
+      if (!VF.laedt) f.push('kein Ladebild nach dem Start');
+      for (const sel of ['.vf-hud', '.vf-acc', '.vf-knoepfe', '.vf-wip']) if (vis(sel) !== 'hidden') f.push(sel + ' beim Laden ' + vis(sel));
+      if (vis('.vf-laden') !== 'visible') f.push('Ladebild ' + vis('.vf-laden'));
+      const bal = sch.querySelector('.vf-laden [role="progressbar"]');
+      if (!bal || bal.getAttribute('aria-valuemax') !== '100') f.push('kein Fortschrittsbalken');
+      if (!sch.querySelector('.vf-laden canvas.vf-laden-anim')) f.push('keine Animation');
+      const A = VF.ladeAnim;
+      if (!A || A.art !== 'teile' || A.n !== 11) f.push('Animation: ' + (A ? A.art + ' ' + A.n : 'fehlt'));
+      else {
+        if (A.proTeilMs !== Math.max(100, 1000 / A.n)) f.push('je Teil ' + A.proTeilMs + ' ms');
+        if (!(A.n * A.proTeilMs >= 1000)) f.push('Runde kuerzer als 1 s');
+        if (vfLadeAnimTeile(A, 0) !== 1 || vfLadeAnimTeile(A, A.proTeilMs * 3 + 1) !== 4 || vfLadeAnimTeile(A, A.proTeilMs * (A.n + 1)) !== A.n
+            || vfLadeAnimTeile(A, A.rundeMs + 1) !== 1) f.push('Teile legen sich nicht der Reihe nach');
+        const k = vfLadeAnimVorbereiten([{ x: 0, y: 0, tile: -1 }, { x: 1, y: 0, tile: 0 }, { x: 2, y: 0, tile: 1 }], false);
+        if (k.proTeilMs !== 500) f.push('kurze Bahn: ' + k.proTeilMs + ' ms je Teil statt 500 (mindestens 1 s)');
+      }
+      const t0 = performance.now();
+      while (VF.laedt && performance.now() - t0 < 30000) await new Promise((r) => setTimeout(r, 100));
+      if (VF.laedt) f.push('Ladebild nach 30 s noch da: ' + vfLadeStand(performance.now()).text);
+      else {
+        if (sch.querySelector('.vf-laden')) f.push('Ladebild bleibt im DOM');
+        if (vis('.vf-hud') !== 'visible' || vis('.vf-knoepfe') !== 'visible') f.push('HUD nach dem Laden unsichtbar');
+        if (VF.tprog && !(VF.modell || VF.modellFehl)) f.push('fertig ohne Automodell');
+        if ((VF.texOffen || 0) > 0) f.push('fertig mit ' + VF.texOffen + ' offenen Texturen');
+      }
+      mass = 'HUD verborgen, Balken da, 11 Teile je ' + (A ? A.proTeilMs : '?') + ' ms, fertig nach ' + Math.round(performance.now() - t0) + ' ms';
+    } finally {
+      if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
+  });
+  // Knopfleiste: Piktogramme mit Namen (title/aria-label), ein Knopf blendet alle anderen aus und wieder ein.
+  stAdd('Virtuell v1.5.160: Knopfleiste als Piktogramme, ein Knopf blendet alle aus und ein', () => {
+    if (typeof virtuellStarten !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    const f = [], merkTab = kAktiverTab();
+    let roh = null;
+    try { roh = localStorage.getItem(VF_LEISTE_STORE); } catch (e) { roh = null; }
+    try {
+      localStorage.removeItem(VF_LEISTE_STORE);
+      if (!virtuellStarten({ tiles: codeToTrack('SG3R2G3R2').tiles, studie: true })) return { skip: true, mass: 'virtuelle Fahrt startet hier nicht (kein WebGL?)' };
+      vfLadenEnde();
+      const L = VF.schicht.querySelector('.vf-knoepfe');
+      const ids = ['box', 'flag', 'licht', 'wetter', 'kam', 'reset', 'zu'];
+      for (const id of ids) {
+        const b = L.querySelector('[data-vf="' + id + '"]');
+        if (!b) { f.push(id + ' fehlt'); continue; }
+        if (!b.querySelector('svg')) f.push(id + ' ohne Piktogramm');
+        if (b.textContent.trim()) f.push(id + ' mit Text "' + b.textContent.trim() + '"');
+        if (!b.getAttribute('aria-label') || b.title !== b.getAttribute('aria-label')) f.push(id + ' ohne Namen');
+      }
+      const sichtbar = () => Array.from(L.querySelectorAll('button')).filter((b) => b.offsetParent).map((b) => b.dataset.vf);
+      const knopf = L.querySelector('[data-vf="leiste"]');
+      if (!knopf) f.push('kein Knopf zum Aus- und Einblenden');
+      else {
+        if (sichtbar().filter((x) => ids.includes(x)).length !== ids.length) f.push('am Anfang sichtbar: ' + sichtbar().join(','));
+        knopf.click();
+        const zu = sichtbar();
+        if (zu.length !== 1 || zu[0] !== 'leiste') f.push('ausgeblendet sichtbar: ' + zu.join(','));
+        if (knopf.getAttribute('aria-pressed') !== 'true' || knopf.title !== t('Knöpfe einblenden')) f.push('Knopf meldet den Zustand nicht');
+        if (localStorage.getItem(VF_LEISTE_STORE) !== 'zu') f.push('Zustand nicht gemerkt');
+        knopf.click();
+        if (sichtbar().filter((x) => ids.includes(x)).length !== ids.length) f.push('wieder eingeblendet: ' + sichtbar().join(','));
+        // Der Kamera-Knopf wirkt weiter wie vorher.
+        const k0 = vfKameraId();
+        L.querySelector('[data-vf="kam"]').click();
+        if (vfKameraId() === k0) f.push('Kamera-Knopf wechselt nicht');
+      }
+    } finally {
+      if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+      VF.kamera = null;
+      try { if (roh === null) localStorage.removeItem(VF_LEISTE_STORE); else localStorage.setItem(VF_LEISTE_STORE, roh); } catch (e) { /* privat */ }
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '7 Piktogramme mit Namen, Leiste blendet aus und ein, gemerkt' };
+  });
+  // Rueckspiegel: nur ein schmaler Streifen ganz oben am Bildrand (Spider: zwei kleine Aussenspiegel unten).
+  stAdd('Virtuell v1.5.160: Rueckspiegel nur als schmaler Streifen ganz oben, Spider mit zwei Aussenspiegeln', async () => {
+    if (typeof virtuellStarten !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
+    if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
+    const f = [], merkTab = kAktiverTab();
+    const W = 1280, H = 720;
+    const innen = vfSpiegelRechtecke(W, H, 'v5r', 1);
+    if (innen.length !== 1 || innen[0].art !== 'innen') f.push('kein einzelner Innenspiegel');
+    else {
+      const q = innen[0].q;
+      if (q[1] + q[3] !== H) f.push('Innenspiegel nicht am oberen Rand');
+      if (q[3] > H * 0.1) f.push('Innenspiegel ' + q[3] + ' px hoch (kein schmaler Streifen)');
+      if (Math.abs(q[0] + q[2] / 2 - W / 2) > 1) f.push('Innenspiegel nicht mittig');
+    }
+    const sp = vfSpiegelRechtecke(W, H, 'spider', 1);
+    if (sp.length !== 2 || !(sp[0].q[0] < W / 4) || !(sp[1].q[0] > W / 2) || sp.some((s) => s.q[1] + s.q[3] > H / 2)) f.push('Spider-Aussenspiegel: ' + JSON.stringify(sp.map((s) => s.q)));
+    let mass = 'Innenspiegel ' + (innen[0] ? innen[0].q[2] + 'x' + innen[0].q[3] : '?') + ' oben mittig, Spider 2 Aussenspiegel';
+    const roh = {};
+    for (const k of [VF_SPIEGEL_STORE, VF_KAMERA_STORE, VF_AUTO_STORE]) { try { roh[k] = localStorage.getItem(k); } catch (e) { roh[k] = null; } }
+    try {
+      localStorage.setItem(VF_SPIEGEL_STORE, 'an'); localStorage.setItem(VF_KAMERA_STORE, 'haube'); localStorage.setItem(VF_AUTO_STORE, 'v5r');
+      VF.kamera = null;
+      if (virtuellStarten({ tiles: codeToTrack('SG3R2G3R2').tiles, studie: true })) {
+        const t0 = performance.now();
+        while (!(VF.modell || VF.modellFehl) && performance.now() - t0 < 20000) await new Promise((r) => setTimeout(r, 100));
+        vfLadenEnde();
+        if (!VF.modell) mass += ', Live-Teil uebersprungen (kein Modell)';
+        else {
+          vfMalen();
+          const e = VF.schicht.querySelector('.vf-spiegel-innen');
+          if (!e) f.push('kein Innenspiegel in der Motorhauben-Kamera');
+          else {
+            const r = e.getBoundingClientRect(), c = VF.cv.getBoundingClientRect();
+            if (Math.abs(r.top - c.top) > 2) f.push('Spiegel ' + Math.round(r.top - c.top) + ' px unter dem Rand');
+            if (!(r.height < c.height * 0.12)) f.push('Spiegel ' + Math.round(r.height) + ' px hoch');
+            if (VF.schicht.querySelectorAll('.vf-spiegel').length !== 1) f.push('mehr als ein Spiegel');
+          }
+          VF.kamera = 'verfolger'; vfMalen();
+          if (VF.schicht.querySelector('.vf-spiegel')) f.push('Spiegel bleibt in der Verfolgerkamera');
+          mass += ', live oben am Rand';
+        }
+      }
+    } finally {
+      if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+      VF.kamera = null;
+      for (const k of Object.keys(roh)) { try { if (roh[k] === null) localStorage.removeItem(k); else localStorage.setItem(k, roh[k]); } catch (e) { /* privat */ } }
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
   });
   // v1.5.86 BESTELLT: "Bild vom Auto kleiner machen", "Garage Buttons unten näher zusammentun", "Oben Knopf für Wetter".
   stAdd('Garage v1.5.86: Knoepfe im Raster, kleines Vorschaubild, Wetter-Knopf im virtuellen Fahren', () => {

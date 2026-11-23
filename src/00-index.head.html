@@ -3472,6 +3472,16 @@
     padding: 12px 16px; letter-spacing: .04em; }
   .gar-a-rechts .gk-foto { font-size: clamp(12px, 1.5vw, 14px); padding: 9px 16px; }
   .gar-a-rechts .gk-foto-weg { font-size: 14px; padding: 8px 12px; }
+  /* Anleitung virtuelles Fahren (aus PR 4 von gnen54): runder Knopf "?" neben Losfahren, Fenster ueber der Garage. */
+  .gar-a-aktion.vf-los-zeile { display: flex; align-items: center; gap: 10px; }
+  .gar-a-aktion.vf-los-zeile > [data-vf="los"] { flex: 1 1 auto; width: auto; }
+  .gar-a-rechts .gar-a-aktion > .vf-hilfe { flex: 0 0 auto; width: 50px; min-width: 50px; height: 50px; min-height: 50px; border-radius: 50%;
+    padding: 0; font-weight: 700; font-size: 20px; text-align: center; letter-spacing: 0; }
+  .vf-hilfe-fenster { position: fixed; inset: 0; z-index: 100000; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
+  .vf-hilfe-box { position: relative; width: min(900px, 94vw); height: min(88vh, 1000px); background: #0e131b; border: 1px solid #26303f;
+    border-radius: 12px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+  .vf-hilfe-box iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .vf-hilfe-zu { position: absolute; top: 10px; right: 12px; width: 40px; height: 40px; min-height: 0; border-radius: 50%; padding: 0; font-size: 18px; z-index: 1; }
   .gar-a-aktion .gar-karte-neu { min-height: 0; font-size: 13px; letter-spacing: .06em; text-align: left; border-style: solid; }
   .gar-a-rechts .gk-aufzeile { display: flex; flex-direction: column; gap: 0; background: none; border: 0; padding: 0; }
   .gar-a-rechts .gk-foto, .gar-a-rechts .gk-foto-weg { position: static; }
@@ -4015,6 +4025,12 @@
   body.vf-an #hud-toast-wrap { position: fixed; z-index: 400; top: max(52px, env(safe-area-inset-top)); left: 50%; right: auto;
     transform: translateX(-50%); pointer-events: none; }
   .vf-bild { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  /* Rueckspiegel (aus PR 4 von gnen54): Rahmen ueber dem gespiegelten Bildausschnitt. Innenspiegel als schmaler
+     Streifen ganz oben am Bildrand, die Aussenspiegel des Spider unten links und rechts. */
+  .vf-spiegel { position: absolute; pointer-events: none; box-sizing: border-box; border: 2px solid #15181d;
+    box-shadow: 0 2px 6px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.18); }
+  .vf-spiegel-innen { border-top: 0; border-radius: 0 0 8px 8px; }
+  .vf-spiegel-links, .vf-spiegel-rechts { border-width: 4px; border-radius: 10px; }
   /* v1.3.113 Quality: leichte Vignette (dunkle Bildraender) fuer den kinematografischen Look. */
   .vf-vignette { position: absolute; inset: 0; pointer-events: none;
     background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.38) 100%); }
@@ -4079,6 +4095,30 @@
     font-family: var(--k-font); font-size: calc(var(--vf-s) * .72); font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
     padding: .55em 1em; min-height: 2.6em; min-width: 2.6em; cursor: pointer; }
   .vf-knoepfe button:hover, .vf-knoepfe button:focus-visible { background: var(--vf-linie); color: var(--k-blau-text, #04070c); outline: 0; }
+  /* Piktogramm-Knoepfe (statt der Textleiste): kleine Quadrate mit Inline-SVG; der letzte Knopf blendet die anderen aus und ein. */
+  .vf-knoepfe button.vf-ikon { font-size: var(--vf-s); padding: 0; width: max(2.3em, 36px); min-width: 0; height: max(2.3em, 36px); min-height: 0;
+    display: inline-grid; place-items: center; letter-spacing: 0; }
+  .vf-knoepfe button.vf-ikon[hidden] { display: none; }
+  .vf-ikon svg, .vf-laden-zu svg { width: 1.3em; height: 1.3em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .vf-ikon .vf-ikon-fuell { fill: currentColor; fill-opacity: .35; }
+  .vf-ikon[data-vf="flag"] .vf-ikon-fuell { fill: #f5c400; fill-opacity: 1; stroke: #f5c400; }
+  .vf-knoepfe.vf-knoepfe-zu > button:not([data-vf="leiste"]) { display: none; }
+  .vf-knoepfe.vf-knoepfe-zu > [data-vf="leiste"] { opacity: .75; }
+  /* Ladebild der virtuellen Fahrt: deckt das Bild ab, kein HUD (alles ausser Leinwand und Ladebild unsichtbar),
+     Fortschrittsbalken in der Mitte, kleine Animation unten links. */
+  .vf-schicht.vf-laedt > :not(.vf-bild):not(.vf-laden) { visibility: hidden !important; }
+  .vf-laden { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; color: #e8ecf2;
+    background: radial-gradient(ellipse at 50% 40%, #1b2433 0%, #0b0f16 72%); }
+  .vf-laden-mitte { display: grid; gap: .8em; width: min(70vw, 460px); text-align: center; }
+  .vf-laden-titel { font-size: calc(var(--vf-s) * 1.05); font-weight: 700; text-transform: uppercase; letter-spacing: .14em; }
+  .vf-laden-was { color: var(--vf-dim); font-size: calc(var(--vf-s) * .78); min-height: 1.3em; }
+  .vf-laden-balken { position: relative; display: block; height: 8px; background: rgba(255,255,255,.12); overflow: hidden; }
+  .vf-laden-balken > i { position: absolute; inset: 0; transform-origin: 0 50%; transform: scaleX(0); background: var(--vf-linie); transition: transform .2s linear; }
+  .vf-laden-anim { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom));
+    width: min(34vw, 240px); height: min(24vw, 160px); }
+  .vf-laden-zu { position: absolute; right: max(8px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top));
+    width: 40px; height: 40px; min-height: 0; padding: 0; display: grid; place-items: center; background: rgba(8,10,14,.6); color: #f3f4f6;
+    border: 0; border-radius: 50%; cursor: pointer; }
   .vf-kamfrei { position: absolute; right: max(8px, env(safe-area-inset-right)); top: calc(max(8px, env(safe-area-inset-top)) + var(--vf-s) * 2.3);
     background: var(--vf-bg); color: var(--vf-dim); border-left: 2px solid var(--vf-linie); font-size: calc(var(--vf-s) * .62);
     text-transform: uppercase; letter-spacing: .12em; padding: .35em .7em; white-space: nowrap; }

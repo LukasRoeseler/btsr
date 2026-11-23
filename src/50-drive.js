@@ -3726,14 +3726,20 @@
     const ap = autopilot(rawBrake);
     if (!ap && apVorher) apUebergabe();
     apVorher = !!ap;
-    if (ap) {
+    // VIRTUELLE FAHRT (aus PR 4 von gnen54, GEMELDET: "bei Gelb faehrt das Auto selbst los, stoppt und
+    // will zurueck auf die Bahn"): dort faehrt der Autopilot NICHT selbst, er DECKELT nur - Gas hoechstens
+    // so viel, wie er geben wuerde, Bremse mindestens so viel. Ohne Gas des Fahrers bleibt das Auto stehen,
+    // und die LENKUNG bleibt beim Fahrer. Beim echten Auto uebernimmt der Autopilot beides - die normale
+    // Gelb-Regel bleibt unangetastet.
+    const apVf = !!ap && typeof vfAktiv === 'function' && vfAktiv();
+    if (apVf) {
+      rawThrottle = Math.min(rawThrottle, ap.throttle);
+      rawBrake = Math.max(rawBrake, ap.brake);
+    } else if (ap) {
       rawThrottle = ap.throttle;
       rawBrake = ap.brake;
       // Die Lenkung nur, wenn er sie fuehren DARF - siehe `lenkt` in autopilot().
-      // VIRTUELLE FAHRT: dort deckelt die gelbe Flagge nur das Tempo (Gas und Bremse
-      // bleiben beim Autopiloten), die LENKUNG bleibt beim Fahrer. Beim echten Auto
-      // uebernimmt der Autopilot beides - die normale Gelb-Regel bleibt unangetastet.
-      if (ap.lenkt && !(typeof vfAktiv === 'function' && vfAktiv())) steer = ap.steer;
+      if (ap.lenkt) steer = ap.steer;
     }
     physApLenkt = !!(ap && ap.lenkt);
     // Abseits der Bahn gedeckelt, und zwar VOR der Physik. Genau das war der Fehler beim
