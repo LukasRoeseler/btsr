@@ -491,7 +491,11 @@
   // DIAGNOSE (temporaer, Latenz): sammelt, was den Hauptthread zwischen zwei Herzschlaegen belegt -
   // die Verarbeitung der eingehenden Meldungen in onCarNotify (90-ghosts.js). Nur fuer einen
   // Diagnose-Build, wird nach der Messung wieder entfernt. Aendert den Sendeweg nicht.
-  window.MT_DIAG = { notifyN: 0, notifyMs: 0, padLog: 0 };
+  // v1.5.158 (Review): nur noch eingeschaltet (localStorage 'omegasim-diag' = 'an', Entwickler). Vorher lief sie immer,
+  // loggte im Hintergrund jede Sekunde und lag VOR dem verspaeteten Paket im heissen Pfad.
+  window.MT_DIAG = (() => { try { return localStorage.getItem('omegasim-diag') === 'an'; } catch (e) { return false; } })()
+    ? { notifyN: 0, notifyMs: 0, padLog: 0 } : null;
+  let herzDiagLogAt = 0;
   function herzStatistik() {
     const w = herzMess.werte.slice().sort((a, b) => a - b);
     if (!w.length) return null;
@@ -507,10 +511,13 @@
       herzMess.werte.push(abstand);
       if (herzMess.werte.length > 400) herzMess.werte.shift();
       // DIAGNOSE (temporaer, Latenz): bei einem Ausreisser melden, was den Hauptthread belegt hat.
-      if (abstand > 60) {
-        const m = window.MT_DIAG;
-        log('Herzschlag-Ausreisser: ' + Math.round(abstand) + ' ms (Soll 45) · Meldungen seit letztem Takt: '
-          + (m ? m.notifyN : '?') + ' (' + (m ? m.notifyMs.toFixed(1) : '?') + ' ms)', 'warn');
+      // Nur mit Diagnose, sichtbarer Seite, nicht nach einer Pause (> 2 s), hoechstens alle 2 s, und NACH dem Paket.
+      const m = window.MT_DIAG;
+      if (m && abstand > 60 && abstand < 2000 && !document.hidden && herzJetzt - herzDiagLogAt > 2000) {
+        herzDiagLogAt = herzJetzt;
+        const n = m.notifyN, ms = m.notifyMs;
+        setTimeout(() => log('Herzschlag-Ausreisser: ' + Math.round(abstand) + ' ms (Soll 45) · Meldungen seit letztem Takt: '
+          + n + ' (' + ms.toFixed(1) + ' ms)', 'warn'), 0);
       }
     }
     herzschlagAt = herzJetzt;

@@ -659,9 +659,20 @@ For more information on this, and how to apply and follow the GNU AGPL, see
 
 Copyright (C) 2026 Luuke
 
-This code covers the application logic in this repository (index.html and the
-tools/ scripts). It does not extend to third-party assets bundled alongside
-it, which carry their own terms - see audio/CREDITS.md for the audio files
+OmegaSim is free software: you can redistribute it and/or modify it under the
+terms of the GNU Affero General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. This program is distributed WITHOUT ANY WARRANTY; see the license text
+above for details.
+
+This license covers the source code in this repository: src/, index.html, sw.js,
+tools/, the Android app (android-app/) and the build scripts. It does not extend
+to bundled assets that carry their own terms: the 3D car models and textures
+(img/autos/*/LIZENZ.txt: GPL-2.0-or-later from Speed Dreams, CC BY 4.0 by
+Gnen54, and bodies by third parties that may only be used NON-COMMERCIALLY, such
+as the MODIplay MP-1 Spider body by Sturmkind), the track layouts
+(img/strecken/LIZENZ.txt), the wiki texts (CC BY-SA) and the audio files. Those
+carry their own terms - see audio/CREDITS.md for the audio files
 (a mix of original synthesis and Pixabay Content License recordings) and the
 comments in startziel-a4.svg / boxengasse-a4.svg for the printed track
 patterns (derived from Carrera Hybrid's own track pieces, included here only

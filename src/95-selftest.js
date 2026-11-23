@@ -27334,6 +27334,9 @@
       try { merkGr = localStorage.getItem(VF_GRAFIK_STORE); localStorage.setItem(VF_GRAFIK_STORE, 'qual'); } catch (e) { /* egal */ }
       try {
         if (virtuellStarten({ tiles: codeToTrack('SBRLGR3LGHLGLJR4G3R2@270').tiles, studie: true })) {
+          // v1.5.158 (Review): Quality gewaehlt und WebGL da -> der Quality-Autoshader MUSS kompilieren (bis 1.5.157 fiel
+          // er still auf Performance zurueck, weil #ifdef mitten in einer Zeile stand).
+          if (VF.grafik && VF.tprog && !VF.tprog.qual) f.push('Quality-Autoshader kompiliert nicht: ' + (VF.qualFehler || '?'));
           if (VF.tprog && VF.tprog.qual) {
             vfUmweltMalen(VF.gl, 10);
             if (!(VF.umw && VF.umw.fertig) && !VF.umwKaputt) f.push('Umgebungskarte nicht fertig');
