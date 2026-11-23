@@ -4104,18 +4104,21 @@
   .vf-ikon[data-vf="flag"] .vf-ikon-fuell { fill: #f5c400; fill-opacity: 1; stroke: #f5c400; }
   .vf-knoepfe.vf-knoepfe-zu > button:not([data-vf="leiste"]) { display: none; }
   .vf-knoepfe.vf-knoepfe-zu > [data-vf="leiste"] { opacity: .75; }
-  /* Ladebild der virtuellen Fahrt: deckt das Bild ab, kein HUD (alles ausser Leinwand und Ladebild unsichtbar),
-     Fortschrittsbalken in der Mitte, kleine Animation unten links. */
+  /* Ladebild der virtuellen Fahrt: deckt das Bild ab, kein HUD (alles ausser Leinwand und Ladebild unsichtbar).
+     v1.6.20: die Strecke von oben fuellt das Bild, in der Mitte das drehende Teil, Titel und Fortschrittsbalken. */
   .vf-schicht.vf-laedt > :not(.vf-bild):not(.vf-laden) { visibility: hidden !important; }
   .vf-laden { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; color: #e8ecf2;
     background: radial-gradient(ellipse at 50% 40%, #1b2433 0%, #0b0f16 72%); }
-  .vf-laden-mitte { display: grid; gap: .8em; width: min(70vw, 460px); text-align: center; }
+  .vf-laden-karte { position: absolute; inset: 0; display: grid; place-items: center;
+    padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+  .vf-laden-karte .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; background: none; border: 0; }
+  .vf-laden-mitte { position: relative; display: grid; gap: .7em; width: min(64vw, 420px); text-align: center;
+    padding: .9em 1.3em 1em; background: rgba(8,11,17,.6); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; }
+  .vf-laden-mitte .lade-dreh { width: calc(var(--vf-s) * 4.6); height: calc(var(--vf-s) * 4.6); margin: 0 auto; }
   .vf-laden-titel { font-size: calc(var(--vf-s) * 1.05); font-weight: 700; text-transform: uppercase; letter-spacing: .14em; }
   .vf-laden-was { color: var(--vf-dim); font-size: calc(var(--vf-s) * .78); min-height: 1.3em; }
   .vf-laden-balken { position: relative; display: block; height: 8px; background: rgba(255,255,255,.12); overflow: hidden; }
   .vf-laden-balken > i { position: absolute; inset: 0; transform-origin: 0 50%; transform: scaleX(0); background: var(--vf-linie); transition: transform .2s linear; }
-  .vf-laden-anim { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom));
-    width: min(34vw, 240px); height: min(24vw, 160px); }
   .vf-laden-zu { position: absolute; right: max(8px, env(safe-area-inset-right)); top: max(8px, env(safe-area-inset-top));
     width: 40px; height: 40px; min-height: 0; padding: 0; display: grid; place-items: center; background: rgba(8,10,14,.6); color: #f3f4f6;
     border: 0; border-radius: 50%; cursor: pointer; }
@@ -5964,7 +5967,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.19</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.22</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7281,6 +7284,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren: Das Ladebild zeigt jetzt die aktuelle Strecke von oben &#252;ber das ganze Bild (wie im Editor, bei der T&#246;rnerschleife ihr Umriss mit Br&#252;cke), in der Mitte dreht sich das Streckenteil &#252;ber Titel und Fortschrittsbalken. Aus Gnen54s Testversion &#252;bernommen: Pad-Diagnose w&#228;hrend der Fahrt (Knopf in der Leiste oder F8) mit Pad-Namen, Belegung, gelernter Ruhelage der Trigger, Rohwerten und der Stelle, an der die Abfrage aussteigt, und in der Anleitung der Abschnitt &#8222;Gamepad einrichten&#8220; mit Hinweisen zum EasySMX X05 (Gas und Bremse auf dem rechten Stick).</li>
         <li>Virtuell fahren, aus dem Pull Request von Gnen54 &#252;bernommen und auf den aktuellen Stand gebracht: T&#246;rnerschleife 2.0 mit und ohne Br&#252;cke (mit Randlinien, Boxengasse und Steigung), R&#252;ckw&#228;rtsgang, keine Runde beim R&#252;ckw&#228;rtsfahren oder Pendeln &#252;ber die Linie, Android-Trigger, die in Ruhe auf halbem Weg stehen, Gamepad-Tasten f&#252;r Licht, Box und Gelbe Flagge, Lichthupe, Pflicht-Boxendurchfahrt (WIP), Boxenservice nur in der Boxengasse, Innenspiegel als schmaler Streifen oben (WIP), fester Motorklang f&#252;r K&#228;fer, Spider und Caravelle, Hilfeseite mit &#8222;?&#8220; in der Garage. Neu: Ladebild ohne Anzeige mit Fortschrittsbalken und einer Strecke, die sich unten links Teil f&#252;r Teil zusammenbaut; Knopfleiste als Piktogramme mit einem Knopf zum Aus- und Einblenden; Fahrtrichtung &#8222;Gegenrichtung&#8220; (WIP).</li>
         <li>Vibration wie bei LibreCorsa: Ein Mischer bedient beide Rumble-Motoren gemeinsam (hoher Motor: Randstein-Pulse und schiebende Vorderr&#228;der, tiefer Motor: St&#246;&#223;e, ausbrechendes Heck, ABS, unebener Boden), statt vieler einzelner St&#246;&#223;e; die DualSense-Griffmotoren und Trigger-Widerst&#228;nde folgen denselben Werten. Die Schalter unter Optionen &gt; Vibration gelten jetzt auch beim virtuellen Fahren; &#8222;Reifenquietschen&#8220; und &#8222;Neben der Bahn&#8220; sind ab Werk aus (einmalig umgestellt). Nach dem virtuellen Fahren gibt die App Grafik, Texturen und Automodelle wieder frei (weniger Speicher beim echten Fahren), und bei sehr wenig freiem Speicher kommt ein Hinweis. Virtuell mehr Wolken bei Sonne. Auf der Startseite gibt es &#8222;Fehler melden&#8220; (&#246;ffnet ein Formular auf GitHub).</li>
         <li>Korrekturen: Der Quality-Modus im virtuellen Fahren lief seit 1.5.154 gar nicht (ein Shaderfehler lie&#223; alle Autos still auf Performance zur&#252;ckfallen): jetzt wieder mit Eigenschatten und Lackspiegel, dadurch ist auch der zu helle Fleck unter dem Auto weg; der Schattenkern ist kleiner (am Handy schneller). Im virtuellen Fahren zeigt der erste Gang &#8222;1&#8220; statt &#8222;N&#8220;, und die R&#228;der zeigen im Drift das Gegenlenken. MAX-NPCs bremsen vor der Haarnadel fr&#252;her (drei Teile vorher). DualSense: die Griffmotoren schalten nach einem Rutscher wieder ab. Latenz-Diagnosen laufen nur noch auf Wunsch. Lizenzhinweise zur AGPL vervollst&#228;ndigt (mitgelieferte Modelle und Strecken haben eigene Lizenzen), Credits f&#252;r VW Caravelle und T&#246;rnerschleife erg&#228;nzt.</li>
@@ -17679,6 +17683,9 @@
     "Die Strecke andersherum fahren. Ziellinie, Sektoren und Boxengasse bleiben an ihrem Platz.": "Drive the track the other way round. Finish line, sectors and pit lane stay where they are.",
     "Fahrzeuge": "Vehicles",
     "Virtuell fahren, aus dem Pull Request von Gnen54 übernommen und auf den aktuellen Stand gebracht: Törnerschleife 2.0 mit und ohne Brücke (mit Randlinien, Boxengasse und Steigung), Rückwärtsgang, keine Runde beim Rückwärtsfahren oder Pendeln über die Linie, Android-Trigger, die in Ruhe auf halbem Weg stehen, Gamepad-Tasten für Licht, Box und Gelbe Flagge, Lichthupe, Pflicht-Boxendurchfahrt (WIP), Boxenservice nur in der Boxengasse, Innenspiegel als schmaler Streifen oben (WIP), fester Motorklang für Käfer, Spider und Caravelle, Hilfeseite mit „?“ in der Garage. Neu: Ladebild ohne Anzeige mit Fortschrittsbalken und einer Strecke, die sich unten links Teil für Teil zusammenbaut; Knopfleiste als Piktogramme mit einem Knopf zum Aus- und Einblenden; Fahrtrichtung „Gegenrichtung“ (WIP).": "Virtual driving, taken over from Gnen54's pull request and brought up to date: Törnerschleife 2.0 with and without bridge (with edge lines, pit lane and slope), reverse gear, no lap when driving backwards or rocking over the line, Android triggers that rest half way, gamepad buttons for lights, pit and yellow flag, headlight flash, mandatory pit drive-through (WIP), pit service only in the pit lane, interior mirror as a thin strip at the top (WIP), fixed engine sound for Beetle, Spider and Caravelle, help page with “?” in the garage. New: a loading screen without HUD with a progress bar and a track assembling itself piece by piece at the bottom left; the button bar as pictograms with one button to hide and show them; driving direction “reverse” (WIP).",
+    "Pad-Diagnose": "Pad diagnostics",
+    "Pad-Diagnose (F8 oder Knopf schließt)": "Pad diagnostics (F8 or button closes)",
+    "Virtuell fahren: Das Ladebild zeigt jetzt die aktuelle Strecke von oben über das ganze Bild (wie im Editor, bei der Törnerschleife ihr Umriss mit Brücke), in der Mitte dreht sich das Streckenteil über Titel und Fortschrittsbalken. Aus Gnen54s Testversion übernommen: Pad-Diagnose während der Fahrt (Knopf in der Leiste oder F8) mit Pad-Namen, Belegung, gelernter Ruhelage der Trigger, Rohwerten und der Stelle, an der die Abfrage aussteigt, und in der Anleitung der Abschnitt „Gamepad einrichten“ mit Hinweisen zum EasySMX X05 (Gas und Bremse auf dem rechten Stick).": "Virtual driving: the loading screen now shows the current track from above across the whole screen (as in the editor; for the Törnerschleife its outline with the bridge), with the spinning track piece above the title and progress bar in the middle. Taken over from Gnen54's test version: pad diagnostics while driving (button in the bar or F8) with pad name, mapping, the learned rest position of the triggers, raw values and the point where polling stops, and the guide section “Setting up a gamepad” with notes on the EasySMX X05 (throttle and brake on the right stick).",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20556,6 +20563,8 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Pad-Diagnose": "Diagnóstico del mando",
+    "Pad-Diagnose (F8 oder Knopf schließt)": "Diagnóstico del mando (F8 o botón cierra)",
     "Fehler melden": "Informar de un error",
     "Wenig freier Speicher auf dem Gerät: das kann beim Fahren mit mehreren Autos zu Verzögerungen führen.": "Poco almacenamiento libre en el dispositivo: puede causar retrasos al conducir con varios coches.",
     "Fahrzeuge": "Vehículos",
@@ -47401,6 +47410,8 @@
     flag: '<path d="M5 21V4"/><path class="vf-ikon-fuell" d="M5 4h12l-2.5 4 2.5 4H5"/>',
     licht: '<path class="vf-ikon-fuell" d="M11 6a6 6 0 0 0 0 12z"/><path d="M15 8h6M15 12h6M15 16h6"/>',
     wetter: '<path d="M7 15a4 4 0 0 1 .4-8 5 5 0 0 1 9.6 1.4A3.4 3.4 0 0 1 17 15z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/>',
+    // v1.6.20: Pad-Diagnose (aus gnen54s testversion): ein Gamepad.
+    paddiag: '<path d="M6 9h12a3 3 0 0 1 3 3l-1 5a2 2 0 0 1-3.4 1L15 16H9l-1.6 2A2 2 0 0 1 4 17l-1-5a3 3 0 0 1 3-3z"/><path d="M8 12v3M6.5 13.5h3"/><circle cx="16.5" cy="12.5" r="1"/>',
     kam: '<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8.5 7l1.5-3h4l1.5 3"/>',
     reset: '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/>',
     touch: '<path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11M12 10V8.5a1.5 1.5 0 0 1 3 0V11M15 10.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.5a6 6 0 0 1-5-2.7l-2.2-2.7a1.5 1.5 0 0 1 2.4-1.8L9 16"/>',
@@ -47409,13 +47420,32 @@
   };
   function vfIkon(id) { return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + VF_IKONEN[id] + '</svg>'; }
   function vfLeisteZu() { try { return localStorage.getItem(VF_LEISTE_STORE) === 'zu'; } catch (e) { return false; } }
+  // v1.6.20 (aus gnen54s testversion, 22.11.): F8 oder Knopf: Pad-Diagnose ueber der Fahrt (padDiagText, 90-ghosts.js).
+  var vfPadDiagIv = 0;
+  function vfPadDiagUmschalten() {
+    let el = document.getElementById('vf-pad-diag');
+    if (el) { el.remove(); clearInterval(vfPadDiagIv); return; }
+    el = document.createElement('pre');
+    el.id = 'vf-pad-diag';
+    el.setAttribute('data-i18n-skip', '');
+    el.style.cssText = 'position:fixed;left:8px;top:180px;z-index:99999;margin:0;padding:8px 10px;max-width:70vw;'
+      + 'white-space:pre-wrap;font:12px/1.4 monospace;color:#fff;background:rgba(0,0,0,.78);border:1px solid #29b6f6;pointer-events:none';
+    document.body.appendChild(el);
+    const zeichne = () => {
+      if (!el.isConnected || !VF.aktiv) { el.remove(); clearInterval(vfPadDiagIv); return; }
+      el.textContent = t('Pad-Diagnose (F8 oder Knopf schließt)') + '\n' + (typeof padDiagText === 'function' ? padDiagText() : '-');
+    };
+    zeichne();
+    vfPadDiagIv = setInterval(zeichne, 200);
+  }
+  window.addEventListener('keydown', (e) => { if (typeof VF !== 'undefined' && VF.aktiv && e.key === 'F8' && !e.repeat) { e.preventDefault(); vfPadDiagUmschalten(); } });
   function vfKnopfLeisteHtml() {
     const a = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     const k = (id, titel, extra) => '<button type="button" class="vf-ikon" data-vf="' + id + '" title="' + a(titel) + '" aria-label="' + a(titel) + '"'
       + (extra || '') + '>' + vfIkon(id) + '</button>';
     const zu = vfLeisteZu();
     return '<div class="vf-knoepfe' + (zu ? ' vf-knoepfe-zu' : '') + '" role="toolbar" aria-label="' + a(t('Knöpfe der virtuellen Fahrt')) + '">'
-      + k('box', t('Box')) + k('flag', t('Gelbe Flagge')) + k('licht', t('Licht')) + k('wetter', t('Wetter')) + k('kam', t('Kamera'))
+      + k('box', t('Box')) + k('flag', t('Gelbe Flagge')) + k('licht', t('Licht')) + k('wetter', t('Wetter')) + k('kam', t('Kamera')) + k('paddiag', t('Pad-Diagnose'))
       + k('reset', t('Zurücksetzen')) + k('touch', t('Steuerung'), ' hidden') + k('zu', t('Beenden'))
       + k('leiste', t(zu ? 'Knöpfe einblenden' : 'Knöpfe ausblenden'), ' aria-pressed="' + (zu ? 'true' : 'false') + '"')
       + '</div>';
@@ -47431,14 +47461,18 @@
     try { localStorage.setItem(VF_LEISTE_STORE, zu ? 'zu' : 'auf'); } catch (e) { /* egal */ }
   }
 
-  // ---- LADEBILD (BESTELLT: "Ladebildschirm, solange Klaenge, Texturen und Automodelle laden; kein HUD, unten links eine
-  // kleine Animation und ein Fortschrittsbalken; bei einer Carrera-Bahn baut sich die Strecke Teil fuer Teil auf") ----
+  // ---- LADEBILD (BESTELLT: "Ladebildschirm, solange Klaenge, Texturen und Automodelle laden; kein HUD, ... und ein
+  // Fortschrittsbalken"). v1.6.20 BESTELLT: "schoener, wenn die Strecke das ganze Bild einnimmt und nicht unten links ist.
+  // Auch, wenn es ein Bild der aktuellen Strecke (wie aus dem Editor von oben) ist. Die Lade-Animation kann dann einfach
+  // das sich drehende Teil sein." ----
+  // Also: die Strecke von oben fuellt das Bild (Carrera-Bahn: derselbe Zeichner wie der Editor, renderTrackPreview mit
+  // Gitter; freie Strecke: ihr Umriss mit weissen Randlinien, die Bruecke obenauf), darueber in der Mitte das drehende
+  // Streckenteil (ladeAnimationHtml aus 59-lade.js, reines CSS, kostet den Hauptfaden nichts), Titel, Balken und was noch
+  // fehlt. Das Bild entsteht EINMAL beim Start, je Takt werden nur Balken und Text gesetzt.
   // Die Bahn-, Rand- und Bodentexturen entstehen schon beim Start (synchron), das Ladebild wartet auf das, was danach
   // kommt: Rad-Modell, eigenes Auto, jeder NPC (je ein Promise, Fehler zaehlen als fertig), die Bilder der Modelle
-  // (VF.texOffen, vfTextur) und den Motorklang (hoechstens VF_LADE_TON_MAX_MS). Spaetestens nach VF_LADE_MAX_MS geht es
-  // los. Die Animation: Carrera-Bahn = die Teile legen sich der Reihe nach, je Teil 100 ms, eine Runde mindestens 1 s,
-  // dann von vorn; freie Strecke = ein Punkt faehrt den Umriss ab. Gerechnet in einer kleinen 2D-Leinwand.
-  const VF_LADE_MAX_MS = 60000, VF_LADE_TON_MAX_MS = 20000, VF_LADE_TEIL_MS = 100, VF_LADE_RUNDE_MS = 1000;
+  // (VF.texOffen, vfTextur) und den Motorklang (hoechstens VF_LADE_TON_MAX_MS). Spaetestens nach VF_LADE_MAX_MS geht es los.
+  const VF_LADE_MAX_MS = 60000, VF_LADE_TON_MAX_MS = 20000;
   function vfLadeTonFertig(jetzt) {
     try {
       if (!soundEnabled || location.protocol === 'file:') return true;
@@ -47467,70 +47501,53 @@
     if (!tonDa) fehlt.push(t('Motorklang'));
     return { anteil: Math.max(0, Math.min(1, summe / gesamt)), fertig: modelle && texDa && tonDa, text: fehlt.join(' · ') };
   }
-  // Animation vorbereiten: je Teil (Kachel) eine Linie in Fahrtreihenfolge, oder der Umriss der freien Strecke.
-  function vfLadeAnimVorbereiten(pts, frei) {
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const p of pts) { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); }
-    const rahmen = { x0, y0, w: Math.max(1, x1 - x0), h: Math.max(1, y1 - y0) };
-    if (frei) return { art: 'umriss', rahmen, pts: pts.map((p) => [p.x, p.y]), rundeMs: 2400 };
-    const teile = [];
-    let akt = null;
-    for (let i = 0; i < pts.length; i++) {
-      const T = pts[i].tile;
-      if (T < 0) continue;
-      if (!akt || akt.T !== T) {
-        const vor = i > 0 ? pts[i - 1] : pts[pts.length - 1];
-        akt = { T, p: [[vor.x, vor.y]] };
-        teile.push(akt);
-      }
-      akt.p.push([pts[i].x, pts[i].y]);
+  // Die Strecke von oben als SVG. Carrera-Bahn wie im Editor; freie Strecke (eigene Punkte, keine Carrera-Teile) als Band.
+  function vfLadeKarteSvg(tiles, freiPts) {
+    if (!freiPts) {
+      try {
+        const html = renderTrackPreview(tiles, null, { detailed: true, echt: true, ohneLinie: true, ohneLinieRechnen: true, grid: true }).html;
+        if (/^<svg/.test(html)) return html.replace('class="tp-karte"', 'class="tp-karte vf-laden-svg"');
+      } catch (e) { /* unten: als Band */ }
     }
-    const n = teile.length, proTeilMs = Math.max(VF_LADE_TEIL_MS, VF_LADE_RUNDE_MS / Math.max(1, n));
-    return { art: 'teile', rahmen, teile, n, proTeilMs, rundeMs: (n + 4) * proTeilMs };
-  }
-  // Wie viele Teile liegen nach ms Laufzeit (rein, fuer den Selbsttest): 1..n, danach 4 Takte die ganze Bahn, dann von vorn.
-  function vfLadeAnimTeile(A, ms) {
-    const k = Math.floor((Math.max(0, ms) % A.rundeMs) / A.proTeilMs) + 1;
-    return Math.min(A.n, k);
-  }
-  function vfLadeAnimMalen(jetzt) {
-    const A = VF.ladeAnim, cv = VF.schicht ? VF.schicht.querySelector('.vf-laden-anim') : null;
-    if (!A || !cv) return;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const W = Math.max(1, Math.round(cv.clientWidth * dpr)), H = Math.max(1, Math.round(cv.clientHeight * dpr));
-    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-    const g = cv.getContext('2d');
-    if (!g) return;
-    g.clearRect(0, 0, W, H);
-    const R = A.rahmen, rand = 10 * dpr, sk = Math.min((W - 2 * rand) / R.w, (H - 2 * rand) / R.h);
-    const ox = (W - R.w * sk) / 2, oy = (H - R.h * sk) / 2;
-    const P = (q) => [ox + (q[0] - R.x0) * sk, oy + (q[1] - R.y0) * sk];
-    const linie = (pl) => { g.beginPath(); pl.forEach((q, i) => { const p = P(q); if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }); };
-    const breit = Math.max(3 * dpr, TRACK_HALF_W * 2 * sk);
-    g.lineJoin = 'round';
-    const ms = jetzt - (VF.ladeAb || jetzt);
-    if (A.art === 'teile') {
-      const liegt = vfLadeAnimTeile(A, ms);
-      g.lineCap = 'butt';
-      A.teile.forEach((tl) => { linie(tl.p); g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = breit; g.stroke(); });
-      for (let i = 0; i < liegt; i++) {
-        linie(A.teile[i].p);
-        g.strokeStyle = i === liegt - 1 && liegt < A.n ? '#00a3e0' : '#8c96a6'; g.lineWidth = breit * 0.92; g.stroke();
-        g.strokeStyle = 'rgba(10,14,22,.9)'; g.lineWidth = Math.max(1, dpr); g.stroke();
-      }
-      A.liegt = liegt;
-    } else {
-      linie(A.pts); g.closePath(); g.strokeStyle = '#8c96a6'; g.lineWidth = breit; g.stroke();
-      const i = Math.floor((ms % A.rundeMs) / A.rundeMs * A.pts.length) % A.pts.length, p = P(A.pts[i]);
-      g.fillStyle = '#00a3e0'; g.beginPath(); g.arc(p[0], p[1], Math.max(4 * dpr, breit * 0.8), 0, Math.PI * 2); g.fill();
+    const pts = freiPts || trackCenterline(tiles);
+    if (!pts || pts.length < 2) return '';
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, zMax = 0;
+    for (const q of pts) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y); zMax = Math.max(zMax, q.z || 0); }
+    const half = TRACK_HALF_W, rand = half + 14, w = x1 - x0 + 2 * rand, h = y1 - y0 + 2 * rand;
+    const P = (q) => (q.x - x0 + rand).toFixed(1) + ' ' + (q.y - y0 + rand).toFixed(1);
+    const band = (d) => '<path d="' + d + '" fill="none" stroke="#e8ecf2" stroke-width="' + (half * 2).toFixed(1) + '" stroke-linejoin="round"/>'
+      + '<path d="' + d + '" fill="none" stroke="#0d0f13" stroke-width="' + (half * 2 - 3.2).toFixed(1) + '" stroke-linejoin="round"/>';
+    let body = band('M ' + pts.map(P).join(' L ') + ' Z');
+    // Bruecke: was hoch liegt, noch einmal obenauf (sonst verschwindet sie unter der Strasse darunter).
+    if (zMax > 0) {
+      let stueck = [];
+      const fertig = () => { if (stueck.length > 1) body += band('M ' + stueck.map(P).join(' L ')).replace(/stroke-linejoin/g, 'stroke-linecap="butt" stroke-linejoin'); stueck = []; };
+      for (const q of pts) { if ((q.z || 0) > zMax * 0.5) stueck.push(q); else fertig(); }
+      fertig();
     }
+    // Start/Ziel: weisser Strich quer zur Fahrtrichtung bei Punkt 0.
+    const p0 = pts[0], p1 = pts[1], l = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 1, nx = -(p1.y - p0.y) / l, ny = (p1.x - p0.x) / l;
+    body += '<path d="M ' + P({ x: p0.x + nx * half, y: p0.y + ny * half }) + ' L ' + P({ x: p0.x - nx * half, y: p0.y - ny * half })
+      + '" stroke="#ffffff" stroke-width="4"/>';
+    return '<svg class="tp-karte vf-laden-svg" viewBox="0 0 ' + w.toFixed(0) + ' ' + h.toFixed(0) + '">' + body + '</svg>';
   }
-  function vfLadebildHtml() {
+  // Hochkant-Strecke auf Querformat (oder umgekehrt): um 90 Grad im Uhrzeigersinn drehen, wenn sie dadurch mindestens
+  // 15 % groesser wird ("die Strecke nimmt das ganze Bild ein"). Punkt (x, y) wird zu (H - y, x).
+  function vfLadeKarteDrehen(svg, bw, bh) {
+    const m = /^<svg([^>]*) viewBox="0 0 ([\d.]+) ([\d.]+)">/.exec(svg || '');
+    if (!m || !(bw > 0 && bh > 0)) return svg;
+    const W = +m[2], H = +m[3];
+    if (!(Math.min(bw / H, bh / W) > 1.15 * Math.min(bw / W, bh / H))) return svg;
+    return '<svg' + m[1] + ' data-gedreht="1" viewBox="0 0 ' + m[3] + ' ' + m[2] + '"><g transform="translate(' + m[3] + ' 0) rotate(90)">'
+      + svg.slice(m[0].length).replace(/<\/svg>\s*$/, '') + '</g></svg>';
+  }
+  function vfLadebildHtml(karte) {
     return '<div class="vf-laden" role="status" aria-live="polite">'
-      + '<div class="vf-laden-mitte"><div class="vf-laden-titel">' + t('Virtuelle Fahrt wird geladen') + '</div>'
+      + '<div class="vf-laden-karte" aria-hidden="true">' + (karte || '') + '</div>'
+      + '<div class="vf-laden-mitte">' + (typeof ladeAnimationHtml === 'function' ? ladeAnimationHtml('') : '')
+      + '<div class="vf-laden-titel">' + t('Virtuelle Fahrt wird geladen') + '</div>'
       + '<div class="vf-laden-balken" role="progressbar" aria-label="' + t('Ladefortschritt') + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>'
       + '<div class="vf-laden-was"></div></div>'
-      + '<canvas class="vf-laden-anim" aria-hidden="true"></canvas>'
       + '<button type="button" class="vf-laden-zu" data-vf="laden-zu" title="' + t('Laden abbrechen') + '" aria-label="' + t('Laden abbrechen') + '">' + vfIkon('zu') + '</button>'
       + '</div>';
   }
@@ -47546,7 +47563,6 @@
       const was = el.querySelector('.vf-laden-was');
       if (was && was.textContent !== S.text) was.textContent = S.text;
     }
-    vfLadeAnimMalen(jetzt);
     return true;
   }
   function vfLadenEnde() {
@@ -47644,7 +47660,7 @@
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>'
       + '<div class="vf-touch" hidden><div class="vf-touch-lenk"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Lenken') + '</span></div>'
       + '<div class="vf-touch-gas"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis vf-touch-gas-oben">' + t('Gas') + '</span><span class="vf-touch-hinweis vf-touch-gas-unten">' + t('Bremse') + '</span></div></div>'
-      + vfLadebildHtml();
+      + vfLadebildHtml((() => { try { return vfLadeKarteDrehen(vfLadeKarteSvg(tiles, frei ? frei.pts : null), window.innerWidth, window.innerHeight); } catch (e) { return ''; } })());
     schicht.classList.add('vf-laedt');
     document.body.appendChild(schicht);
     const cv = schicht.querySelector('canvas');
@@ -47791,9 +47807,8 @@
                         startX: VF.pts[start].x, startY: VF.pts[start].y, startH: VF.pts[start].heading });
     vfNpcStarten(gl, start);
     physEngine.state.speedKmh = 0;
-    // Ladebild (siehe vfLadeSchritt): ab hier zaehlt die Ladezeit; die Animation kennt die Strecke in Fahrtrichtung.
+    // Ladebild (siehe vfLadeSchritt): ab hier zaehlt die Ladezeit.
     VF.laedt = true; VF.ladeAb = performance.now();
-    try { VF.ladeAnim = vfLadeAnimVorbereiten(VF.pts, !!frei); } catch (e) { VF.ladeAnim = null; }
     schicht.addEventListener('click', (e) => {
       const b = e.target.closest('[data-vf]');
       if (!b) return;
@@ -47801,6 +47816,7 @@
       else if (b.dataset.vf === 'leiste') vfLeisteUmschalten();
       else if (b.dataset.vf === 'reset') vfZuruecksetzen();
       else if (b.dataset.vf === 'kam') vfKameraWechseln();
+      else if (b.dataset.vf === 'paddiag') vfPadDiagUmschalten();
       else if (b.dataset.vf === 'touch') vfTouchUmschalten();
       else if (b.dataset.vf === 'box') {
         if (VF.modus === 'derby') showHudToast(t('Derby: kein Boxenstopp'));
@@ -48263,7 +48279,7 @@
       VF.abbruch = false;
     }
     VF.aktiv = false;
-    VF.laedt = false; VF.ladeAnim = null;
+    VF.laedt = false;
     VF.npcs = null; VF.npcBogen = null; VF.npcRunde = 0;
     VF.schatte = null; VF.schatteProg = null; VF.grafik = false; VF.regen = null; VF.schleier = null;
     // Was die virtuelle Fahrt am echten Fahren veraendert hat, zuruecknehmen: Schaden wie beim Start,
@@ -83034,6 +83050,35 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!window.OmegaPad) return null;
     return { an: padNativLage.an, geraete: w ? w[7] : 0, ereignisse: w ? w[8] : 0, zustellMs: w ? w[9] : null };
   }
+  // v1.6.20 (aus gnen54s testversion, 22.11.): PAD-DIAGNOSE. Merkt je Takt, wo pollGamepad aussteigt und was das Pad
+  // meldet; padDiagText() zeigt es (virtuell: F8 oder Knopf in der Leiste). Fuer Pads wie den EasySMX X05, deren
+  // Trigger in Ruhe 0,5 melden: zeigt bei Achsen die gelernte Ruhelage und Spanne.
+  let padDiag = { grund: 'noch kein Takt', t: 0 };
+  function padDiagSetzen(grund, pad, gas, bremse, lenk) {
+    padDiag = { grund, t: performance.now(), id: pad ? String(pad.id) : '', mapping: pad ? pad.mapping : '', gas, bremse, lenk,
+      knoepfe: pad ? [...(pad.buttons || [])].map((b, i) => (b && (b.pressed || b.value > 0) ? i + (b.value < 1 ? '(' + (+b.value).toFixed(2) + ')' : '') : -1)).filter((i) => i !== -1) : [],
+      achsen: pad ? [...(pad.axes || [])].map((v) => +v.toFixed(2)) : [] };
+  }
+  function padDiagText() {
+    const alle = navigator.getGamepads ? Array.from(navigator.getGamepads()).filter(Boolean) : [];
+    const d = padDiag, alt = performance.now() - d.t;
+    const f2 = (v) => (typeof v === 'number' ? v.toFixed(2) : '?');
+    const b = (x) => (x && x.type !== 'none' ? x.type + ' ' + x.index + (x.unten ? ' (nach vorn)' : '')
+      + (x.type === 'axis' ? ' (Ruhe ' + f2(x.ruhe) + ', ' + f2(x.min) + '..' + f2(x.max) + (x.invert ? ', inv' : '') + ')' : '') : '-');
+    const z = (x) => (typeof x === 'number' ? x.toFixed(2) : '-');
+    return [
+      'Pads: ' + (alle.length ? alle.map((q) => q.index + ' ' + String(q.id).slice(0, 50) + ' [' + (q.mapping || 'roh') + ']').join(' | ') : 'keins'),
+      'Takt: ' + (alt > 500 ? 'seit ' + Math.round(alt) + ' ms kein Takt!' : 'laeuft'),
+      'Ausstieg: ' + d.grund,
+      'Pad: ' + (d.id ? d.id.slice(0, 60) + ' [' + (d.mapping || 'roh') + ']' : '-'),
+      'Gas: ' + b(bindings.throttle), 'Bremse: ' + b(bindings.brake), 'Lenkung: ' + b(bindings.steering),
+      'Werte: Gas ' + z(d.gas) + ', Bremse ' + z(d.bremse) + ', Lenkung ' + z(d.lenk),
+      'Knoepfe: ' + ((d.knoepfe || []).join(' ') || '-') + '   Achsen: ' + (d.achsen || []).join(' '),
+      'Pause: ' + (typeof rennPauseAktiv === 'function' && rennPauseAktiv() ? 'AN' : 'aus')
+        + ', Abgleich-Sperre: ' + (bindSitzung || bindSperreBisLos ? 'JA' : 'nein'),
+      'Ausgang: Lenkung ' + z(steerX) + ', Gas ' + z(throttleY),
+    ].join('\n');
+  }
   function pollGamepad() {
     const spieler = padsFuerSpieler();
     if (spieler.p1) spieler.p1 = padNativ(spieler.p1);
@@ -83062,17 +83107,18 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         prevLightFlash = false;
       }
       padConnected = false;
+      padDiagSetzen('kein Pad fuer Spieler 1', null);
       return;
     }
     padConnected = true;
     padLastPollTime = performance.now();
     // v1.1.45: Abgleich-Sitzung - das Pad erfasst nur, sonst nichts (siehe bindPadSitzung).
     if ((bindSitzung || bindSperreBisLos) && bindPadSitzung(pad, 1)) {
-      releaseInput(SRC.PAD);
+      releaseInput(SRC.PAD); padDiagSetzen('Abgleich-Sitzung / warte bis alle Tasten los', pad);
       return;
     }
     if (!(listeningFor && bindEditSpieler < 2) && rennPauseTaste(pad, bindings, 1)) {
-      releaseInput(SRC.PAD); return;
+      releaseInput(SRC.PAD); padDiagSetzen('Rennpause', pad); return;
     }
     // Startaufstellung offen: das Steuerkreuz waehlt den Knopf (X bestaetigt, flagTasteTick).
     if (typeof raceGridOffen === 'function' && raceGridOffen()) {
@@ -83082,21 +83128,21 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       gridPadVorher = !!r;
     } else gridPadVorher = false;
     // Meisterschaft offen: Steuerkreuz und Tasten gehoeren ihrem Schirm (73-meisterschaft.js).
-    if (typeof meisterPad === 'function' && meisterPad(pad)) return;
+    if (typeof meisterPad === 'function' && meisterPad(pad)) { padDiagSetzen('Meisterschaft-Schirm', pad); return; }
     // Reaktionstest der Studie: das Pad gehoert dem Test (er fragt es selbst ab).
-    if (typeof studieTestAktiv === 'function' && studieTestAktiv()) return;
+    if (typeof studieTestAktiv === 'function' && studieTestAktiv()) { padDiagSetzen('Studie-Reaktionstest', pad); return; }
     // TITELBILDSCHIRM (ACC-Menue): jede Taste fuehrt ins Hauptmenue, links/rechts wechselt die
     // Sprache. Solange danach noch eine Taste gehalten wird, tut dieser Takt nichts weiter -
     // sonst oeffnete dasselbe gehaltene Kreuz im Hauptmenue gleich die naechste Kachel.
-    if (typeof konsolePadTitel === 'function' && konsolePadTitel(pad)) return;
+    if (typeof konsolePadTitel === 'function' && konsolePadTitel(pad)) { padDiagSetzen('Titelbildschirm', pad); return; }
     // Steuerungs-Fuehrung offen: jede Taste wird dort angezeigt, gefahren wird nicht.
     if (typeof konsoleTourPad === 'function' && konsoleTourPad(pad)) {
-      releaseInput(SRC.PAD);
+      releaseInput(SRC.PAD); padDiagSetzen('Steuerungs-Fuehrung / Einfuehrung', pad);
       return;
     }
     // Raumdesigner offen (60b-raum.js): Stick, Kreuz und Tasten gehoeren ihm.
     if (typeof raumPad === 'function' && raumPad(pad)) {
-      releaseInput(SRC.PAD);
+      releaseInput(SRC.PAD); padDiagSetzen('Raumdesigner', pad);
       return;
     }
 
@@ -83104,13 +83150,14 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Spieler 2s Tabelle bearbeitet wird (bindEditSpieler === 2), soll Spieler 1
     // weiterfahren koennen, statt fuer eine fremde Zuordnung stillzustehen.
     if (listeningFor && bindEditSpieler < 2) {
-      releaseInput(SRC.PAD);
+      releaseInput(SRC.PAD); padDiagSetzen('Tastenzuweisung wartet (Optionen > Controller)', pad);
       tryCaptureBinding(pad);
     } else {
       let throttleRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.throttle)), TRIGGER_DEADZONE);
       let brakeRaw = applyDeadzone(Math.max(0, readBindingValue(pad, bindings.brake)), TRIGGER_DEADZONE);
       const steerRaw = applyDeadzone(readBindingValue(pad, bindings.steering));
       [throttleRaw, brakeRaw] = rennPauseFilterGas(1, throttleRaw, brakeRaw);
+      padDiagSetzen('keiner - Pad faehrt', pad, throttleRaw, brakeRaw, steerRaw);
 
       // v0.9.26 (Plan Schritt 2): die Live-Texte nur bei ANDERUNG schreiben - dieser Weg
       // laeuft jeden Frame und zusaetzlich im Sendetakt, und jedes textContent= ist Arbeit
@@ -122154,8 +122201,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
   });
-  // Ladebild: kein HUD, Fortschrittsbalken, Teile legen sich (100 ms je Teil, Runde mindestens 1 s), endet nach dem Laden.
-  stAdd('Virtuell v1.5.160: Ladebild ohne HUD mit Fortschrittsbalken, Strecke baut sich auf, endet wenn alles geladen', async () => {
+  // Ladebild: kein HUD, Fortschrittsbalken, Strecke von oben ueber das ganze Bild, drehendes Teil, endet nach dem Laden.
+  stAdd('Virtuell v1.6.20: Ladebild ohne HUD, Strecke von oben ueber das ganze Bild, drehendes Teil, Fortschrittsbalken, endet wenn alles geladen', async () => {
     if (typeof virtuellStarten !== 'function' || typeof VF === 'undefined') return { skip: true, mass: 'kein virtuelles Fahren' };
     if (VF.aktiv) return { skip: true, mass: 'virtuelle Fahrt laeuft gerade' };
     const f = [], merkTab = kAktiverTab();
@@ -122168,17 +122215,25 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (vis('.vf-laden') !== 'visible') f.push('Ladebild ' + vis('.vf-laden'));
       const bal = sch.querySelector('.vf-laden [role="progressbar"]');
       if (!bal || bal.getAttribute('aria-valuemax') !== '100') f.push('kein Fortschrittsbalken');
-      if (!sch.querySelector('.vf-laden canvas.vf-laden-anim')) f.push('keine Animation');
-      const A = VF.ladeAnim;
-      if (!A || A.art !== 'teile' || A.n !== 11) f.push('Animation: ' + (A ? A.art + ' ' + A.n : 'fehlt'));
+      const dreh = sch.querySelector('.vf-laden-mitte .lade-dreh .lade-a');
+      if (!dreh || getComputedStyle(dreh).animationName !== 'ladeDreh') f.push('kein drehendes Teil');
+      let flaeche = 0;
+      const karte = sch.querySelector('.vf-laden-karte svg');
+      if (!karte) f.push('kein Streckenbild');
       else {
-        if (A.proTeilMs !== Math.max(100, 1000 / A.n)) f.push('je Teil ' + A.proTeilMs + ' ms');
-        if (!(A.n * A.proTeilMs >= 1000)) f.push('Runde kuerzer als 1 s');
-        if (vfLadeAnimTeile(A, 0) !== 1 || vfLadeAnimTeile(A, A.proTeilMs * 3 + 1) !== 4 || vfLadeAnimTeile(A, A.proTeilMs * (A.n + 1)) !== A.n
-            || vfLadeAnimTeile(A, A.rundeMs + 1) !== 1) f.push('Teile legen sich nicht der Reihe nach');
-        const k = vfLadeAnimVorbereiten([{ x: 0, y: 0, tile: -1 }, { x: 1, y: 0, tile: 0 }, { x: 2, y: 0, tile: 1 }], false);
-        if (k.proTeilMs !== 500) f.push('kurze Bahn: ' + k.proTeilMs + ' ms je Teil statt 500 (mindestens 1 s)');
+        const r = karte.getBoundingClientRect(), b = sch.getBoundingClientRect();
+        flaeche = (r.width * r.height) / Math.max(1, b.width * b.height);
+        if (!(r.width >= b.width * 0.8 || r.height >= b.height * 0.8)) f.push('Strecke fuellt das Bild nicht: ' + Math.round(r.width) + 'x' + Math.round(r.height) + ' von ' + Math.round(b.width) + 'x' + Math.round(b.height));
+        if (!karte.querySelector('path')) f.push('Streckenbild leer');
       }
+      if (sch.querySelector('.vf-laden-anim')) f.push('alte Aufbau-Animation noch da');
+      // freie Strecke (eigene Punkte): Band mit Bruecke obenauf und Start/Ziel-Strich.
+      const fr = vfLadeKarteSvg(null, [{ x: 0, y: 0, z: 0 }, { x: 100, y: 0, z: 2 }, { x: 100, y: 100, z: 2 }, { x: 0, y: 100, z: 0 }]);
+      if (!/^<svg/.test(fr) || (fr.match(/<path/g) || []).length < 5) f.push('freie Strecke: ' + fr.slice(0, 60));
+      // hochkant auf Querformat: gedreht, viewBox getauscht; quer auf Querformat: bleibt.
+      const hoch = '<svg class="x" viewBox="0 0 100 300"><path d="M0 0"/></svg>', dr = vfLadeKarteDrehen(hoch, 800, 370);
+      if (!/data-gedreht="1" viewBox="0 0 300 100"><g transform="translate\(300 0\) rotate\(90\)"><path/.test(dr) || !/<\/g><\/svg>$/.test(dr)) f.push('Drehen: ' + dr);
+      if (vfLadeKarteDrehen('<svg viewBox="0 0 300 100"></svg>', 800, 370).indexOf('gedreht') >= 0) f.push('quer wird gedreht');
       const t0 = performance.now();
       while (VF.laedt && performance.now() - t0 < 30000) await new Promise((r) => setTimeout(r, 100));
       if (VF.laedt) f.push('Ladebild nach 30 s noch da: ' + vfLadeStand(performance.now()).text);
@@ -122188,7 +122243,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         if (VF.tprog && !(VF.modell || VF.modellFehl)) f.push('fertig ohne Automodell');
         if ((VF.texOffen || 0) > 0) f.push('fertig mit ' + VF.texOffen + ' offenen Texturen');
       }
-      mass = 'HUD verborgen, Balken da, 11 Teile je ' + (A ? A.proTeilMs : '?') + ' ms, fertig nach ' + Math.round(performance.now() - t0) + ' ms';
+      mass = 'HUD verborgen, Balken und drehendes Teil da, Strecke ' + Math.round(flaeche * 100) + ' % der Flaeche, fertig nach ' + Math.round(performance.now() - t0) + ' ms';
     } finally {
       if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
       if (merkTab) showTab(merkTab);
