@@ -1450,16 +1450,22 @@
   .k-fahren-unten #fa-profil .k-kk { font-size: clamp(11px, 2vh, 15px); }
   /* v1.5: wie die Startkachel (abgedunkeltes Bild, grosser Titel), schmaler: ohne Zielflaggen, Titel kleiner. */
   /* v1.6.23: Umschalter Echt | Virtuell an der Stelle der frueheren Kachel "Virtuell fahren". */
-  #fa-modus.k-modus { background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/garage.jpg) center / cover no-repeat; }
-  body.fm-virtuell #fa-modus.k-modus { background: linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)), url(img/virtuell-fahren.jpg) center 55% / cover no-repeat; }
+  /* v1.6.37 BESTELLT: Hintergrund des Umschalters "an image (take from photos/ this: 4201b527...)", und der Umschalter ist
+     die ganze Kachel: links ECHT, rechts VIRTUELL, je die halbe Flaeche, ein Tipp irgendwo schaltet um. */
+  #fa-modus.k-modus { position: relative; overflow: hidden; background: url(img/fahrmodus-rad.jpg) center 45% / cover no-repeat; }
+  #fa-modus .k-start-innen { position: absolute; inset: 0; width: auto; max-width: none; z-index: 1; }
+  #fa-modus .k-start-innen > small { position: absolute; top: 6px; left: 0; right: 0; z-index: 2; pointer-events: none; }
   #fa-modus.k-modus::before, #fa-modus.k-modus::after { display: none; }
-  .k-modus-wahl { display: flex; width: 100%; margin-top: 6px; border: 1px solid rgba(255,255,255,.55); border-radius: 6px; overflow: hidden; }
-  #fa-modus .k-start-innen { width: 88%; max-width: 340px; }
-  #fa-modus .k-modus-wahl b { flex: 1 1 0; padding: .35em .5em; font-size: clamp(12px, 1.6vw, 19px); font-weight: 800; letter-spacing: .06em; color: rgba(255,255,255,.72); cursor: pointer; text-align: center; white-space: nowrap; text-shadow: none; }
-  #fa-modus .k-modus-wahl b.an { background: #00a3e0; color: #fff; }
+  .k-modus-wahl { position: absolute; inset: 0; display: flex; margin: 0; border: 0; border-radius: 0; overflow: hidden; }
+  #fa-modus .k-modus-wahl b { flex: 1 1 0; display: grid; place-items: center; padding: .3em; font-size: clamp(14px, 2.4vw, 30px); font-weight: 900;
+    letter-spacing: .08em; color: rgba(255,255,255,.6); cursor: pointer; text-align: center; white-space: nowrap; background: rgba(0,0,0,.62);
+    text-shadow: 0 2px 10px #000; transition: background .15s, color .15s; }
+  #fa-modus .k-modus-wahl b + b { border-left: 1px solid rgba(255,255,255,.25); }
+  #fa-modus .k-modus-wahl b.an { background: rgba(0,163,224,.42); color: #fff; box-shadow: inset 0 -4px 0 #00a3e0; }
   .k-modus-wahl .wip-tag { margin-left: 3px; font-size: 8px; vertical-align: super; text-shadow: none; }
-  body.fm-virtuell #fa-start { background-image: linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url(img/virtuell-fahren.jpg); background-size: cover; background-position: center 55%; }
-  body.fm-virtuell #fa-auto-bild { background-size: contain, cover; background-repeat: no-repeat; background-position: center, center; }
+  /* v1.6.37 BESTELLT: "background of the drive virtually box should be this image: drive_virtually". */
+  body.fm-virtuell #fa-start { background-image: linear-gradient(rgba(0,0,0,.3), rgba(0,0,0,.3)), url(img/virtuell-fahren-start.jpg); background-size: cover; background-position: center 50%; }
+  body.fm-virtuell #fa-auto-bild { background-size: 88% auto, cover; background-repeat: no-repeat; background-position: center 92%, center; }
   /* v1.5: kleine Symbole auf der Garagenkachel (zweiter Laptop, Onboard-Kamera). */
   .k-geraete { position: absolute; top: 6px; right: 8px; display: flex; gap: 6px; z-index: 2; pointer-events: none; }
   .k-geraete[hidden] { display: none; }
@@ -4150,6 +4156,15 @@
   .vf-touch[hidden] { display: none; }
   /* v1.6.23: Neigen - gelenkt wird mit dem Handy, der Stick links entfaellt, das Pedal rechts bleibt. */
   .vf-touch.vf-touch-neigen .vf-touch-lenk { display: none; }
+  /* v1.6.37: Hubschrauber - zwei Kreis-Sticks statt Lenkung und Pedal. */
+  .vf-touch-heli { display: none; position: absolute; bottom: max(14px, env(safe-area-inset-bottom)); width: min(36vw, 36vh, 200px); aspect-ratio: 1;
+    border-radius: 50%; background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.28); touch-action: none; pointer-events: auto; }
+  .vf-touch-heli-l { left: max(14px, env(safe-area-inset-left)); }
+  .vf-touch-heli-r { right: max(14px, env(safe-area-inset-right)); }
+  .vf-touch-heli .vf-touch-knauf { position: absolute; left: 30%; top: 30%; width: 40%; height: 40%; border-radius: 50%; background: rgba(255,255,255,.35); }
+  .vf-touch-heli .vf-touch-hinweis { position: absolute; left: 0; right: 0; top: -1.6em; text-align: center; }
+  .vf-touch.vf-touch-heli-an .vf-touch-lenk, .vf-touch.vf-touch-heli-an .vf-touch-gas { display: none; }
+  .vf-touch.vf-touch-heli-an .vf-touch-heli { display: block; }
   .vf-touch-lenk { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom));
     width: min(34vw, 38vh, 190px); height: min(34vw, 38vh, 190px); border-radius: 50%;
     background: rgba(8,10,14,.5); border: 2px solid var(--vf-linie); touch-action: none; pointer-events: auto;
@@ -4289,9 +4304,16 @@
   .vg-zurueck { min-height: 32px; padding: 4px 10px; }
   .vg-raster { display: grid; grid-template-columns: minmax(0, 40%) minmax(0, 1fr); gap: 12px; margin-top: 6px; align-items: start; }
   .vg-vorschau { position: sticky; top: 6px; display: flex; flex-direction: column; gap: 8px; }
-  .vg-vorschau .vf-vorschau { display: grid; place-items: center; padding: 0; border: 0; overflow: hidden; aspect-ratio: 16 / 9;
-    max-height: 58vh; background: radial-gradient(ellipse at 50% 60%, #263043 0%, #0f141c 75%); border-radius: 8px; }
-  .vg-vorschau .vf-vorschau-bild { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; }
+  .vg-vorschau .vf-vorschau { position: relative; display: grid; place-items: center; padding: 0; border: 0; overflow: hidden; aspect-ratio: 16 / 9;
+    max-height: 58vh; background: linear-gradient(#262c36 0%, #3a414c 52%, #1a1e24 53%); border-radius: 8px; }
+  .vg-vorschau .vf-vorschau.vg-draussen { background: linear-gradient(#4f86c6 0%, #b5d3ee 50%, #dfe9e0 52%, #6e8f5a 53%); }
+  /* v1.6.37: der gewaehlte Boden in Perspektive (vfGarageBodenSetzen), darauf das transparente Auto. */
+  .vg-vorschau .vg-boden { position: absolute; left: -40%; right: -40%; bottom: 0; height: 95%; background-size: 22% auto; background-repeat: repeat;
+    transform: perspective(420px) rotateX(62deg); transform-origin: 50% 100%; }
+  .vg-vorschau .vf-vorschau::after { content: ""; position: absolute; left: 0; right: 0; top: 40%; height: 22%; pointer-events: none;
+    background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.25) 45%, rgba(0,0,0,0)); }
+  .vg-vorschau .vf-vorschau-bild { position: relative; z-index: 1; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; object-position: center bottom; }
+  .vg-vorschau .vg-heli { position: relative; z-index: 1; }
   .vg-vorschau .vg-heli { width: 55%; height: 75%; color: #9fd8ff; }
   .vg-name { font-weight: 700; font-size: clamp(13px, 1.8vw, 18px); text-align: center; }
   .vg-vorschau .vf-los-zeile { display: flex; gap: 8px; justify-content: center; border: 0; padding: 0; }
@@ -5826,7 +5848,7 @@
   /* v1.5.10: Vorschau und Lackfarbe im Virtuell-Fenster der Garage (WIP) */
   .vf-vorschau { justify-content: center; padding: 6px 0; }
   /* v1.5.86 BESTELLT: "Bild vom Auto kleiner machen". Hoehe nach dem Fenster begrenzt, Seitenverhaeltnis bleibt. */
-  .vf-vorschau-bild { width: auto; max-width: min(100%, 300px); max-height: clamp(100px, 22vh, 170px); height: auto; border-radius: 6px; display: block; background: #3a3f46; }
+  .vf-vorschau-bild { width: auto; max-width: min(100%, 300px); max-height: clamp(100px, 22vh, 170px); height: auto; border-radius: 6px; display: block; }
   .vf-lack-palette { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
   .vf-lack { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); cursor: pointer; }
   .vf-lack.aktiv { border-color: #fff; box-shadow: 0 0 0 2px rgba(0,160,230,.9); }
@@ -6014,7 +6036,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.36</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.38</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7339,6 +7361,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren: Der RC Stunt Copter hat am Handy ohne Gamepad zwei eigene Touch-Sticks (links Steigen und Drehen, rechts Neigen und Rollen) und reagiert beim Neigen so kr&#228;ftig wie im Vorbild (Schub und Schwerkraft auf seine Gr&#246;&#223;e umgerechnet). Drift: nimmt man das Gas weg, gleitet das Heck weiter und f&#228;ngt sich erst nach und nach. Vorschaubilder neu (transparent, gegl&#228;ttet, mit Bodenschatten, auch die Caravelle ohne Flecken); in der virtuellen Garage steht das Auto auf dem gew&#228;hlten Boden (Rasen mit Himmel, Holz vor einer Wand). FAHREN: der Umschalter Echt | Virtuell ist die ganze Kachel (ein Tipp schaltet um) mit Radbild; im Modus Virtuell neue Bilder f&#252;r Garage und Start.</li>
         <li>Neues virtuelles Auto: Audi RS5 DTM 2019 (WIP), Modell von Dave Love (Sketchfab, CC BY 4.0) mit seiner Lackierung; Fahrdaten gesch&#228;tzt.</li>
         <li>Virtuelle Garage (WIP) als eigene Seite, auch f&#252;rs Handy gebaut: quer links das gro&#223;e Vorschaubild mit Name, Losfahren und Anleitung, rechts alle Optionen der virtuellen Fahrt; hochkant steht die Vorschau oben. Sie &#246;ffnet sich &#252;ber FAHREN im Modus Virtuell (Garage oder Autos-Kachel) und nach jeder virtuellen Fahrt. Die echte Garage zeigt keine virtuellen Optionen mehr, ihr Knopf &#8222;Virtuell fahren&#8220; f&#252;hrt in die virtuelle Garage. Die Steuer-Optionen des RC Stunt Copters (Gyro, Rollen und Nicken umkehren) stehen jetzt dort statt unter Optionen.</li>
         <li>Virtuell fahren: RC Stunt Copter (WIP, von DeepSeek gebaut, gepr&#252;ft) im freien Training: fliegt mit zwei Sticks (Mode 2, Tastatur W/S, A/D, Pfeile), Modell TREX 700 von Belzar Sirus (CC BY 4.0), Rotor-Ton, H&#246;he und Tempo im HUD, Steuer-Optionen in der virtuellen Garage. An den Sektoren und an Start/Ziel stehen leuchtende Tore aus zwei Lichtstangen; eine Runde z&#228;hlt nur, wenn alle Tore der Reihe nach und dann das Start/Ziel-Tor durchflogen wurden. Drift: mit Lenken und Vollgas kommt das Heck jetzt sofort, dazu Low-Poly-Rauch an den Hinterr&#228;dern, erst leicht und mit hei&#223;en Reifen immer dichter. Sektoren (WIP): auf der Streckenkarte je Sektor ein farbiger Saum und die Nummer im Kreis; am Ende eines Sektors pulsiert sein Saum, eine Sektor-Bestzeit wird angesagt (Schalter unter Optionen &gt; Ansagen).</li>
@@ -17793,6 +17816,9 @@
     "Audi RS5 DTM 2019 (Dave Love, WIP)": "Audi RS5 DTM 2019 (Dave Love, WIP)",
     "Audi RS5 DTM 2019: Modell „2019 Audi RS5 DTM“ von Dave Love (Sketchfab), Creative Commons Namensnennung 4.0 (CC BY 4.0). Für OmegaSim umgewandelt und verkleinert, Fahrdaten geschätzt. Marken und Logos auf der Lackierung gehören ihren Inhabern.": "Audi RS5 DTM 2019: model “2019 Audi RS5 DTM” by Dave Love (Sketchfab), Creative Commons Attribution 4.0 (CC BY 4.0). Converted and reduced for OmegaSim, driving data estimated. Brands and logos on the livery belong to their owners.",
     "Neues virtuelles Auto: Audi RS5 DTM 2019 (WIP), Modell von Dave Love (Sketchfab, CC BY 4.0) mit seiner Lackierung; Fahrdaten geschätzt.": "New virtual car: Audi RS5 DTM 2019 (WIP), model by Dave Love (Sketchfab, CC BY 4.0) with its livery; driving data estimated.",
+    "Steigen / Drehen": "Climb / turn",
+    "Neigen / Rollen": "Pitch / roll",
+    "Virtuell fahren: Der RC Stunt Copter hat am Handy ohne Gamepad zwei eigene Touch-Sticks (links Steigen und Drehen, rechts Neigen und Rollen) und reagiert beim Neigen so kräftig wie im Vorbild (Schub und Schwerkraft auf seine Größe umgerechnet). Drift: nimmt man das Gas weg, gleitet das Heck weiter und fängt sich erst nach und nach. Vorschaubilder neu (transparent, geglättet, mit Bodenschatten, auch die Caravelle ohne Flecken); in der virtuellen Garage steht das Auto auf dem gewählten Boden (Rasen mit Himmel, Holz vor einer Wand). FAHREN: der Umschalter Echt | Virtuell ist die ganze Kachel (ein Tipp schaltet um) mit Radbild; im Modus Virtuell neue Bilder für Garage und Start.": "Virtual driving: on phones without a gamepad the RC stunt copter has its own two touch sticks (left climb and turn, right pitch and roll) and reacts to tilting as strongly as in the original (thrust and gravity scaled to its size). Drift: lifting off the throttle lets the rear keep sliding and recover gradually. New preview images (transparent, smoothed, with a ground shadow, the Caravelle without blotches); in the virtual garage the car stands on the selected floor (grass with sky, wood in front of a wall). DRIVE: the Real | Virtual switch is the whole tile (one tap switches) with a wheel picture; in virtual mode new pictures for garage and start.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20670,6 +20696,8 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Steigen / Drehen": "Subir / girar",
+    "Neigen / Rollen": "Cabeceo / alabeo",
     "Virtuelle Garage": "Garaje virtual",
     "Audi RS5 DTM 2019 (Dave Love, WIP)": "Audi RS5 DTM 2019 (Dave Love, WIP)",
     "Audi RS5 DTM 2019: Modell „2019 Audi RS5 DTM“ von Dave Love (Sketchfab), Creative Commons Namensnennung 4.0 (CC BY 4.0). Für OmegaSim umgewandelt und verkleinert, Fahrdaten geschätzt. Marken und Logos auf der Lackierung gehören ihren Inhabern.": "Audi RS5 DTM 2019: modelo “2019 Audi RS5 DTM” de Dave Love (Sketchfab), Creative Commons Reconocimiento 4.0 (CC BY 4.0). Convertido y reducido para OmegaSim, datos de conducción estimados. Las marcas y logotipos de la decoración pertenecen a sus propietarios.",
@@ -33971,7 +33999,8 @@
         ab.appendChild(gal);
       } else if (vfM) {
         // Vorschaubild des virtuellen Autos (Seitenansicht), dahinter das Bild der virtuellen Fahrt.
-        ab.style.backgroundImage = 'url("' + vfModellPfad(vfId) + 'vorschau.jpg"), url(img/virtuell-fahren.jpg)';
+        // v1.6.37: transparentes Vorschaubild auf dem Garagenbild der virtuellen Fahrt (BESTELLT: garage_virtual).
+        ab.style.backgroundImage = 'url("' + vfModellPfad(vfId) + 'vorschau.png"), url(img/garage-virtuell.jpg)';
         ab.innerHTML = '';
       } else {
         ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/garage.jpg)';   // v1.0.15: Garagenfoto (BESTELLT)
@@ -34311,10 +34340,8 @@
     // v1.6.23: im Modus Virtuell startet die Startkachel die virtuelle Fahrt (die Kachel "Virtuell fahren" ist dem
     // Umschalter Echt | Virtuell gewichen). Ein Tipp auf eine Seite des Umschalters waehlt sie, sonst wechselt er.
     kn('fa-start', () => { if (fahrModusVirtuell() && !kRennenLaeuft()) konsoleVirtuellStarten(); else konsoleLosfahren(); });
-    kn('fa-modus', (e) => {
-      const s = e.target.closest('[data-fm]');
-      fahrModusSetzen(s ? s.dataset.fm : (fahrModusVirtuell() ? 'echt' : 'virtuell'));
-    });
+    // v1.6.37 BESTELLT: "the real/virtual button should be as big as the box ... I click the box and it switches".
+    kn('fa-modus', () => fahrModusSetzen(fahrModusVirtuell() ? 'echt' : 'virtuell'));
     // v1.1.3 BESTELLT: "Tippe ich bei der Kachel STRECKE auf STRECKE oder AUF DER BAHN, soll
     // umgeschaltet werden; tippe ich auf das Bild, oeffnet sich das Menue dazu." Vorher schaltete nur
     // der Text selbst um, ein Tipp daneben in der Kopfzeile oeffnete das Menue. Jetzt oeffnet nur das
@@ -43781,7 +43808,7 @@
         if (!vfTexDaten.bahn) { if (vfBahnLauf().next().done) vfTexLauf.bahn = null; }
         else if (!vfTexDaten.rand) vfRandTexturDaten();
         else if (!(vfTexDaten.boden && vfTexDaten.bodenId === P.id)) { if (vfBodenLauf(P).next().done) vfTexLauf.boden = null; }
-        else { vfVorbereiten = false; return; }
+        else { vfVorbereiten = false; if (typeof vfGarageSeiteOffen === 'function' && vfGarageSeiteOffen()) vfGarageBodenSetzen(); return; }
       } while (frist.timeRemaining() > 8);
       ric(schritt);
     };
@@ -44844,7 +44871,19 @@
     if (P.driftGrenze) { const be = Math.abs(Math.atan2(z.vy, vx)) * 180 / Math.PI; tcE = P.tc * Math.max(0.3, Math.min(1, 1 - (be - P.driftGrenze) / 15)); }
     const fxH = Math.min((ax < 0 ? P.abs : tcE) * maxH,
       ax < 0 ? (1 - P.bremsVorn) * brems : Math.max(0, antrieb) * P.m * P.antriebMax);
-    const dV = Math.sqrt(maxV * maxV - fxV * fxV), dH = Math.sqrt(maxH * maxH - fxH * fxH);
+    const dV = Math.sqrt(maxV * maxV - fxV * fxV);
+    let dH = Math.sqrt(maxH * maxH - fxH * fxH);
+    // v1.6.37 Drift GEMELDET: "it shouldn't automatically revert back if I don't accelerate". Ohne Gas bekam die
+    // Hinterachse sofort ihren vollen Seitengriff zurueck und schnappte gerade. Jetzt (P.griffTau): ist der Wagen quer
+    // (Schwimmwinkel > 8 Grad) und das Gas weg, bleibt der Hintergriff bei P.gleitOhneGas und kehrt nur mit der
+    // Zeitkonstante P.griffTau zurueck; weniger Griff (Gas, Grenze) gilt sofort.
+    if (P.griffTau) {
+      let soll = maxH > 0 ? dH / maxH : 1;
+      if (P.gleitOhneGas && antrieb <= 0.15 && Math.abs(Math.atan2(z.vy, vx)) > 0.14) soll *= P.gleitOhneGas;
+      const ist = z.griffH === undefined ? soll : z.griffH;
+      z.griffH = (soll < ist || antrieb > 0.15) ? soll : ist + (soll - ist) * Math.min(1, dt / P.griffTau);
+      dH = maxH * z.griffH;
+    }
     const schritte = Math.max(1, Math.ceil(dt / 0.002));
     const h = dt / schritte;
     const lmax = P.lenkGrad * Math.PI / 180;
@@ -45479,7 +45518,10 @@
   // Traegheitsmoment ist das eines leichten Autos (x0,25) und der Gyro etwas weicher (0,15). Pruefstand: Lenken + Vollgas
   // bringt das Heck in 0,25-0,43 s auf 15 Grad, der Drift steht dann bei 28-33 Grad; halbes Gas greift weiter (< 12 Grad).
   const VF_DRIFT_PROFIL = (P) => ({ muV: P.muV * 0.55, muH: P.muH * 0.6, BV: (P.BV || 9) * 0.7, BH: (P.BH || 11) * 0.5, C: 1.15,
-    lenkGrad: 35, yawDamp: 0.6, tc: 1.0, kV: 0, kH: 0, lastEmpf: 0.05, gyro: 0.15, gyroV: 10, driftGrenze: 25, Iz: (P.Iz || 2300) * 0.25 });
+    lenkGrad: 35, yawDamp: 0.5, tc: 1.0, kV: 0, kH: 0, lastEmpf: 0.05, gyro: 0.15, gyroV: 10, driftGrenze: 25, Iz: (P.Iz || 2300) * 0.25,
+    // v1.6.37: Gleiten ohne Gas (Pruefstand: Drift bei 12-30 m/s nach dem Gaswegnehmen 1 s spaeter noch 33-40 Grad, nach
+    // 2 s wieder gerade; Einsetzen und Vollgas-Drift unveraendert 0,25 s / 29 Grad).
+    griffTau: 1.5, gleitOhneGas: 0.74 });
   // ---- DRIFT-RAUCH (v1.6.27, WIP) ----
   // BESTELLT: "low-poly smoke einfuegen, der ganz am Anfang nur leicht ist und dann mehr wird, wenn die Reifen heisser
   // werden." Rutscht die Hinterachse (Schraeglauf hinten > 0,12 rad, ab 3 m/s), steigen an beiden Hinterraedern Wolken
@@ -46271,17 +46313,22 @@
   // Nicken/Rollen kippt den Schub aus der Senkrechten - so verliert er beim Vorwaertsfliegen an Hoehe
   // (der Schub hebt ihn nicht mehr voll), und der Luftwiderstand begrenzt das Tempo statt eines Deckels.
   // Ein Regler (Gyro, Vorgabe) haelt die Lage am Stick und richtet ihn ohne Eingang von selbst auf.
-  const VF_HUB_GRAV = 15.8;     // Einheiten/s^2 Schwerkraft (wie im Vorbild; 1 Einheit ~ 1 cm)
-  const VF_HUB_THRUST = 28.5;   // Einheiten/s^2 max. Schub (Verhaeltnis 1,8 wie im Vorbild)
+  // v1.6.37 GEMELDET: "the tilting of the rc helicopter has a too low effect. It should feel like in the gemini created
+  // html script". Die Werte stammen aus dem Vorbild, dort ist der Hubschrauber aber 1,75 Einheiten lang, hier 6,4 (Skala
+  // 3,64 in hub.json). Beschleunigungen und Tempi muessen mit der Groesse wachsen, sonst kippt er im Verhaeltnis 3,6-mal
+  // zu schwach und schwebt traege. Drehraten, Daempfung und das Schub/Gewicht-Verhaeltnis bleiben (dimensionslos).
+  const VF_HUB_SKALA = 3.64;
+  const VF_HUB_GRAV = 15.8 * VF_HUB_SKALA;     // Einheiten/s^2 Schwerkraft (Vorbild 15,8 je Vorbild-Einheit)
+  const VF_HUB_THRUST = 28.5 * VF_HUB_SKALA;   // Einheiten/s^2 max. Schub (Verhaeltnis 1,8 wie im Vorbild)
   const VF_HUB_DRAG = 0.58;     // 1/s Luftwiderstand (Endtempo = Schubanteil / Drag)
   const VF_HUB_BANK = 0.80;     // rad max. Schraeglage (~46 Grad), wie im Vorbild
   const VF_HUB_ANG_GAIN = 7.8;  // 1/s Gyro: die Lage folgt dem Stick (proportional, wie im Vorbild)
   const VF_HUB_ANG_RATE = 3.6;  // rad/s max. Drehgeschwindigkeit ohne Gyro (Stick = Drehrate, wie im Vorbild)
   const VF_HUB_YAW = 166;       // Grad/s max. Drehgeschwindigkeit (~2,9 rad/s, wie im Vorbild)
-  const VF_HUB_MAXH = 120;      // Einheiten Decke (Flughoehe)
-  const VF_HUB_CRASH_VZ = 7;    // Einheiten/s Abwaerts-Tempo beim Aufprall, das kracht (wie im Vorbild)
-  const VF_HUB_CRASH_VH = 11;   // Einheiten/s Horizontaltempo beim Aufprall, das kracht (wie im Vorbild)
-  const VF_HUB_MAXV = 60;       // Einheiten/s Spitzentempo (nur fuer die Ton-Normalisierung)
+  const VF_HUB_MAXH = 260;      // Einheiten Decke (Flughoehe, gut 2,5 m)
+  const VF_HUB_CRASH_VZ = 7 * VF_HUB_SKALA;    // Einheiten/s Abwaerts-Tempo beim Aufprall, das kracht
+  const VF_HUB_CRASH_VH = 11 * VF_HUB_SKALA;   // Einheiten/s Horizontaltempo beim Aufprall, das kracht
+  const VF_HUB_MAXV = 60 * VF_HUB_SKALA;       // Einheiten/s Spitzentempo (nur fuer die Ton-Normalisierung)
   const VF_HUB_ROTOR_DREH = 48; // rad/s Hauptrotor bei voller Drehzahl (Drehzahl F.rpm 0..1,15, wie im Vorbild)
   // Der collective-Wert in der Stick-Mitte, wie im Vorbild: GRAV/THRUST. (Nicht der exakte
   // Schwebe-Punkt, sondern die Mitte des Gaswegs: ohne Eingang sinkt er leicht, ein kleiner
@@ -46309,6 +46356,9 @@
     const frisch = (s) => s && performance.now() - s.t < VF_DREH_PAD_MS;
     if (frisch(sL)) { coll += -sL.y; yaw += sL.x; }        // linker Stick: hoch = steigen, rechts = rechts drehen
     if (frisch(sR)) { pitch += -sR.y; roll += sR.x; }      // rechter Stick: hoch = vorwaerts, rechts = rechts rollen
+    // v1.6.37: Touch-Sticks am Handy (vfTouchBauen): links Gas/Drehen, rechts Neigen/Rollen.
+    const tH = VF.touchHeli;
+    if (tH) { coll += -tH.l.y; yaw += tH.l.x; pitch += -tH.r.y; roll += tH.r.x; }
     const k = VF.hubTasten || {};
     if (k.collHoch) coll += 1; if (k.collTief) coll -= 1;
     if (k.yawLinks) yaw -= 1; if (k.yawRechts) yaw += 1;
@@ -48301,7 +48351,7 @@
   let vfNeigMitte = null;
   const vfIstIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   function vfNeigenEreignis(e) {
-    if (!VF.aktiv || VF.laedt || vfTouchModus() !== 'neigen') return;
+    if (!VF.aktiv || VF.laedt || VF.hubschrauber || vfTouchModus() !== 'neigen') return;
     const g = e.accelerationIncludingGravity;
     if (!g || typeof g.x !== 'number' || typeof g.y !== 'number') return;
     const ang = screen.orientation && typeof screen.orientation.angle === 'number' ? screen.orientation.angle : (+window.orientation || 0);
@@ -48313,8 +48363,10 @@
   window.addEventListener('devicemotion', vfNeigenEreignis);
   function vfTouchElement() { return VF.schicht ? VF.schicht.querySelector('.vf-touch') : null; }
   function vfTouchAnzeigen(an) {
-    const el = vfTouchElement(), m = vfTouchModus();
-    if (el) { el.hidden = !an; el.classList.toggle('vf-touch-neigen', m === 'neigen'); }
+    const el = vfTouchElement(), m = vfTouchModus(), heli = !!VF.hubschrauber;
+    // v1.6.37 BESTELLT: "The rc helicopter must get its own dual stick virtual control on mobile (if no gamepad is
+    // connected)". Im Hubschrauber zwei Sticks statt Lenkung und Pedal; Neigen gilt dort nicht (zaehlt als Touch).
+    if (el) { el.hidden = !an; el.classList.toggle('vf-touch-neigen', m === 'neigen' && !heli); el.classList.toggle('vf-touch-heli-an', heli); }
     const kn = VF.schicht ? VF.schicht.querySelector('[data-vf="touch"]') : null;
     if (kn) {
       kn.classList.toggle('vf-an', an);
@@ -48345,6 +48397,30 @@
     vfNeigMitte = null;   // Neigen: die Mitte mit der ersten Messung dieser Fahrt eichen
     const el = vfTouchElement();
     if (!el) return;
+    // v1.6.37: die zwei Hubschrauber-Sticks (je ein Zeiger, Kreis, Wert -1..1 je Achse, Loslassen = Mitte).
+    VF.touchHeli = { l: { x: 0, y: 0 }, r: { x: 0, y: 0 } };
+    el.querySelectorAll('.vf-touch-heli').forEach((st) => {
+      const seite = st.classList.contains('vf-touch-heli-l') ? 'l' : 'r';
+      let zeiger = null;
+      const kn = st.querySelector('.vf-touch-knauf');
+      const setzen = (x, y) => {
+        if (VF.touchHeli) VF.touchHeli[seite] = { x, y };
+        if (kn) kn.style.transform = 'translate(' + (x * 38) + '%,' + (y * 38) + '%)';
+      };
+      const bewegen = (e) => {
+        const r = st.getBoundingClientRect(), R = r.width / 2;
+        if (!(R > 0)) return;
+        let x = (e.clientX - r.left - R) / R, y = (e.clientY - r.top - R) / R;
+        const l = Math.hypot(x, y);
+        if (l > 1) { x /= l; y /= l; }
+        setzen(x, y);
+      };
+      const los = (e) => { if (zeiger === null || (e.pointerId !== undefined && e.pointerId !== zeiger)) return; zeiger = null; setzen(0, 0); };
+      st.addEventListener('pointerdown', (e) => { zeiger = e.pointerId; try { st.setPointerCapture(e.pointerId); } catch (err) { /* egal */ } bewegen(e); e.preventDefault(); });
+      st.addEventListener('pointermove', (e) => { if (zeiger !== null && e.pointerId === zeiger) bewegen(e); });
+      st.addEventListener('pointerup', los);
+      st.addEventListener('pointercancel', los);
+    });
     const lenk = el.querySelector('.vf-touch-lenk');
     const gas = el.querySelector('.vf-touch-gas');
     if (lenk) {
@@ -48667,7 +48743,9 @@
       + '<span class="vf-kamfrei" hidden data-i18n-skip>' + t('Kamera frei') + ' · R3 / V: ' + t('Standard') + ' <span class="wip-tag">WIP</span></span>'
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>'
       + '<div class="vf-touch" hidden><div class="vf-touch-lenk"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Lenken') + '</span></div>'
-      + '<div class="vf-touch-gas"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis vf-touch-gas-oben">' + t('Gas') + '</span><span class="vf-touch-hinweis vf-touch-gas-unten">' + t('Bremse') + '</span></div></div>'
+      + '<div class="vf-touch-gas"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis vf-touch-gas-oben">' + t('Gas') + '</span><span class="vf-touch-hinweis vf-touch-gas-unten">' + t('Bremse') + '</span></div>'
+      + '<div class="vf-touch-heli vf-touch-heli-l"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Steigen / Drehen') + '</span></div>'
+      + '<div class="vf-touch-heli vf-touch-heli-r"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Neigen / Rollen') + '</span></div></div>'
       + vfLadebildHtml((() => { try { return vfLadeKarteDrehen(vfLadeKarteSvg(tiles, frei ? frei.pts : null), window.innerWidth, window.innerHeight); } catch (e) { return ''; } })());
     schicht.classList.add('vf-laedt');
     document.body.appendChild(schicht);
@@ -48830,6 +48908,7 @@
     VF.hubTorPuffer = null;
     VF.hubTore = null;
     if (VF.hubschrauber) { try { VF.hubTore = vfHubToreBauen(); } catch (e) { VF.hubTore = null; } }
+    try { vfTouchAktualisieren(); } catch (e) { /* egal */ }   // v1.6.37: Heli-Sticks erst jetzt bekannt (VF.hubschrauber)
     physEngine.state.speedKmh = 0;
     // Ladebild (siehe vfLadeSchritt): ab hier zaehlt die Ladezeit.
     VF.laedt = true; VF.ladeAb = performance.now();
@@ -48968,6 +49047,7 @@
     if (bild && vfHubschrauber()) bild.remove();   // der Heli hat kein Vorschaubild, statt dessen das Symbol
     if (bild && !vfHubschrauber()) vor.appendChild(bild);
     else if (vfHubschrauber()) { const d = document.createElement('div'); d.className = 'opt-row opt-breit vf-vorschau'; d.innerHTML = VF_HELI_BILD; vor.appendChild(d); }
+    vfGarageBodenSetzen();
     const name = document.createElement('div');
     name.className = 'vg-name';
     name.setAttribute('data-i18n-skip', '');
@@ -48977,6 +49057,38 @@
     if (los) vor.appendChild(los);
     host.scrollTop = y;
     if (host.querySelector('.opt-label small:not(.opt-info-versteckt)') && typeof optInfoEinrichten === 'function') optInfoEinrichten();
+  }
+  // v1.6.37 BESTELLT: "the preview should show the background that is selected (eg grass) and on top the car preview
+  // picture but without the grey background". Hinter das transparente Vorschaubild kommt der gewaehlte Boden: ein Stueck
+  // seiner Textur (sobald vfTexturenVorbereiten sie gerechnet hat, einmal je Art als JPEG-Daten-URL gemerkt), in
+  // Perspektive als Boden, darueber Himmel (Rasen) oder eine dunkle Wand (Holz, Laminat). Bis dahin die Grundfarbe.
+  const vfBodenVorschauCache = {};
+  function vfBodenVorschauUrl(id) {
+    if (vfBodenVorschauCache[id]) return vfBodenVorschauCache[id];
+    const T = vfTexDaten.boden;
+    if (!T || vfTexDaten.bodenId !== id) return '';
+    try {
+      const gross = document.createElement('canvas');
+      gross.width = T.w; gross.height = T.h;
+      gross.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(T.d.buffer, T.d.byteOffset, T.w * T.h * 4), T.w, T.h), 0, 0);
+      const k = document.createElement('canvas');
+      k.width = 512; k.height = 256;
+      k.getContext('2d').drawImage(gross, 0, 0, T.w / 2, T.h / 2, 0, 0, 512, 256);
+      vfBodenVorschauCache[id] = k.toDataURL('image/jpeg', 0.8);
+    } catch (e) { return ''; }
+    return vfBodenVorschauCache[id];
+  }
+  function vfGarageBodenSetzen() {
+    const vor = document.querySelector('#vg-vorschau .vf-vorschau');
+    if (!vor) return;
+    const P = vfBodenArt(vfBodenWahl());
+    vor.classList.toggle('vg-draussen', P.id === 'rasen');
+    let b = vor.querySelector('.vg-boden');
+    if (!b) { b = document.createElement('div'); b.className = 'vg-boden'; vor.insertBefore(b, vor.firstChild); }
+    const url = vfBodenVorschauUrl(P.id), f = P.ton && P.ton[0] ? P.ton[0] : [90, 130, 60];
+    b.style.backgroundColor = 'rgb(' + f.join(',') + ')';
+    b.style.backgroundImage = url ? 'url("' + url + '")' : 'none';
+    b.dataset.boden = P.id + (url ? ':bild' : ':farbe');
   }
   function vfGarageZeigen() {
     if (typeof fahrModusSetzen === 'function' && !fahrModusVirtuell()) fahrModusSetzen('virtuell');
@@ -49055,7 +49167,7 @@
       const img = document.createElement('img');
       img.className = 'vf-vorschau-bild';
       img.alt = autos[ja].name;
-      img.src = vfModellPfad(autos[ja].v) + 'vorschau.jpg';
+      img.src = vfModellPfad(autos[ja].v) + 'vorschau.png';   // v1.6.37: transparent (tools/vorschau_bilder.py)
       img.onerror = () => { vor.remove(); };
       vor.appendChild(img);
       rechts.appendChild(vor);
@@ -110656,6 +110768,39 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Virtuell v1.6.37: Heli - Kippen wie im Vorbild (auf die Modellgroesse skaliert), zwei Touch-Sticks am Handy', () => {
+    const f = [];
+    const merk = { hubschrauber: VF.hubschrauber, x: VF.x, y: VF.y, z: VF.z, h: VF.h, flug: VF.flug, pitch: VF.pitch, roll: VF.roll, hubTasten: VF.hubTasten,
+      hubLuft: VF.hubLuft, touchHeli: VF.touchHeli, stick: VF.stick, stickL: VF.stickL, rotor: VF.rotor, aktiv: VF.aktiv };
+    const merkG = vfHubGyro;
+    let weg = 0;
+    try {
+      vfHubGyro = () => true;
+      // Schweben in 60 Einheiten Hoehe, dann 1,5 s Stick voll vorn: der Hubschrauber muss mindestens 3,5 eigene Laengen (22) fliegen (im Vorbild 4,3).
+      Object.assign(VF, { hubschrauber: true, x: 0, y: 0, z: 60, h: 0, pitch: 0, roll: 0, hubLuft: true, stick: null, stickL: null,
+        touchHeli: null, flug: { vz: 0, vx: 0, vy: 0, rpm: 0.9, collective: VF_HUB_HOVER, yawRate: 0 }, hubTasten: { pitchVorn: true } });
+      for (let i = 0; i < 90; i++) vfHubPhysik(1 / 60);
+      weg = Math.hypot(VF.x, VF.y);
+      if (!(weg > 22)) f.push('nach 1,5 s Neigen nur ' + weg.toFixed(1) + ' Einheiten');
+      if (!(VF_HUB_GRAV > 50 && VF_HUB_THRUST / VF_HUB_GRAV > 1.7 && VF_HUB_THRUST / VF_HUB_GRAV < 1.9)) f.push('Schub/Schwerkraft nicht skaliert');
+      // Touch-Sticks: links hoch = steigen, rechts vor = Nase vor.
+      VF.hubTasten = {}; VF.touchHeli = { l: { x: 0.5, y: -1 }, r: { x: -0.3, y: -0.8 } };
+      const e = vfHubEingabe();
+      if (!(e[0] > 0.9 && Math.abs(e[1] - 0.5) < 1e-9 && Math.abs(e[2] - 0.8) < 1e-9 && Math.abs(e[3] + 0.3) < 1e-9)) f.push('Touch-Eingabe ' + e.join(','));
+      // Anzeige: im Heli die zwei Sticks (Klasse), sonst Lenkung/Pedal.
+      const el = document.createElement('div');
+      el.className = 'vf-touch';
+      const merkTE = vfTouchElement;
+      vfTouchElement = () => el;
+      try {
+        vfTouchAnzeigen(true);
+        if (!el.classList.contains('vf-touch-heli-an')) f.push('Heli-Sticks nicht eingeschaltet');
+        VF.hubschrauber = false; vfTouchAnzeigen(true);
+        if (el.classList.contains('vf-touch-heli-an')) f.push('Heli-Sticks im Auto');
+      } finally { vfTouchElement = merkTE; }
+    } finally { vfHubGyro = merkG; Object.assign(VF, merk); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '1,5 s vorn geneigt: ' + weg.toFixed(0) + ' Einheiten (' + (weg / 6.4).toFixed(1) + ' Heli-Laengen); Touch-Sticks links/rechts' };
+  });
   stAdd('Virtuell v1.6.27: RC Stunt Copter nur im Training, Tore an den Sektoren, Runde nur nach allen Toren und Start/Ziel-Tor (Issue #15)', () => {
     const f = [];
     const rm = $('race-mode'), merkRm = rm ? rm.value : null;
@@ -110772,6 +110917,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       vfRauchSchritt(0.5, 20, false);
       if (VF.rauch.length) f.push('Rauch ohne Drift-Fahrgefuehl');
     } finally { Object.assign(VF, merkV); }
+    // v1.6.37: ohne Gas schnappt der Drift nicht zurueck - 0,5 s nach dem Gaswegnehmen noch >= 20 Grad, nach 3 s wieder gerade.
+    for (const v of [12, 20]) {
+      const z = { vy: 0, r: 0 }, w = {};
+      for (let t = 0; t < 5; t += 1 / 60) {
+        const gas = t < 1.5 ? 1 : 0;
+        vfDynamik(z, v, gas, gas, 0.5, 1 / 60, 1, P);
+        const be = Math.abs(Math.atan2(z.vy, v)) * 180 / Math.PI;
+        if (Math.abs(t - 2.0) < 1 / 120) w.a = be;
+        if (Math.abs(t - 4.5) < 1 / 120) w.b = be;
+      }
+      if (!(w.a >= 20)) f.push('ohne Gas bei ' + v + ' m/s nach 0,5 s nur ' + (w.a || 0).toFixed(0) + ' Grad');
+      if (!(w.b < 18)) f.push('faengt sich bei ' + v + ' m/s nicht: ' + (w.b || 0).toFixed(0) + ' Grad');
+    }
     const g = lauf(Object.assign({}, VF_GT3), 25, 0.5, 1);
     if (!(g.beta < 8)) f.push('GT3 driftet: ' + g.beta.toFixed(1));
     if (VF_GT3.gyro || VF_GT3.driftGrenze) f.push('GT3 hat Gyro');
@@ -110879,7 +111037,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!document.body.classList.contains('fm-virtuell')) f.push('Klasse fm-virtuell fehlt');
       if (!$('fa-verbinden').hidden || !$('fa-mp').hidden) f.push('virtuell: Verbinden/Mehrspieler sichtbar');
       if ($('fa-auto-titel').textContent !== t('Virtuelles Auto')) f.push('Titel ' + $('fa-auto-titel').textContent);
-      if ($('fa-auto-bild').style.backgroundImage.indexOf('vorschau.jpg') < 0) f.push('kein Vorschaubild');
+      if ($('fa-auto-bild').style.backgroundImage.indexOf('vorschau.png') < 0) f.push('kein Vorschaubild');
       if ($('fa-auto-info').textContent.indexOf(vfAutoName(vfAutoWahl())) < 0) f.push('Autoname fehlt: ' + $('fa-auto-info').textContent);
       if ($('fa-start-titel').textContent !== t('Virtuell fahren')) f.push('Start: ' + $('fa-start-titel').textContent);
       // Garage oeffnet die eigenstaendige virtuelle Garage (v1.6.32).
@@ -124126,11 +124284,11 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Der Shader kennt das Umfaerben (beide Varianten) - ohne den Wert fiele die Farbe stillschweigend weg.
     const quelle = Array.from(document.scripts).map((x) => x.text).join(' ');
     if ((quelle.match(/uniform float lack;/g) || []).length < 2) f.push('Shader ohne uniform lack in beiden Varianten');
-    // Vorschaubilder: ein Seitenbild je Auto (img/autos/<modell>/vorschau.jpg).
+    // Vorschaubilder: ein Seitenbild je Auto (img/autos/<modell>/vorschau.png, transparent seit v1.6.37).
     const fehlt = [];
     for (const m of Object.keys(VF_MODELL_PFADE)) {
       try {
-        const r = await fetch(VF_MODELL_PFADE[m] + 'vorschau.jpg', { method: 'HEAD', cache: 'no-store' });
+        const r = await fetch(VF_MODELL_PFADE[m] + 'vorschau.png', { method: 'HEAD', cache: 'no-store' });
         if (!r.ok) fehlt.push(m);
       } catch (e) { fehlt.push(m); }
     }
