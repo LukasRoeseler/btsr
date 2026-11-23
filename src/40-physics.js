@@ -2798,10 +2798,10 @@
     // beigemischt. Spieler 2/3 (wer > 1) bleiben beim bisherigen Weg.
     if ((wer === undefined || wer === 1) && typeof rumbleMixAktiv === 'function' && rumbleMixAktiv()) {
       if (art === 'kerb' || art === 'untersteuern' || art === 'rutschen' || art === 'abseits' || art === 'quietschen') return true;
+      // Einzelereignisse gehen weiter sofort raus UND in die Huellkurve des Mischers (sonst schnitte sein naechster
+      // Takt sie ab).
       if (art === 'crash' || art === 'kill' || art === 'ko') rmStoss(Math.max(strong || 0, weak || 0));
       else rmImpuls(strong, weak, ms);
-      if (triggerRumbleOn && art && TRIGGER_ARTEN[art]) { const [li, re] = TRIGGER_ARTEN[art]; triggerRuettle(li, re, ms, rumblePad(wer)); }
-      return true;
     }
     const ziel = rumblePad(wer);
     ruettle({
