@@ -2254,7 +2254,8 @@
     virtKnopf.innerHTML = t('Virtuell fahren') + ' <span class="wip-tag">WIP</span>';
     virtKnopf.setAttribute('aria-pressed', garVirtuellAuf ? 'true' : 'false');
     if (garVirtuellAuf) virtKnopf.classList.add('primary');
-    virtKnopf.onclick = () => { garVirtuellAuf = true; garKameraAuf = false; renderGarage(); };
+    // v1.6.23: der Knopf schaltet auch den Fahrmodus auf FAHREN auf Virtuell (Issue #7).
+    virtKnopf.onclick = () => { garVirtuellAuf = true; garKameraAuf = false; if (typeof fahrModusSetzen === 'function') fahrModusSetzen('virtuell'); renderGarage(); };
     virt.appendChild(virtKnopf);
     knoepfe.appendChild(virt);
     // v1.5 (WIP) BESTELLT: die Onboard-Kamera "in der Garage verbinden". Wie "Virtuell fahren": links

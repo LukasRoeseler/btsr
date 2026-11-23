@@ -1449,10 +1449,17 @@
     url(img/meisterschaft.jpg) center 40% / cover no-repeat; }
   .k-fahren-unten #fa-profil .k-kk { font-size: clamp(11px, 2vh, 15px); }
   /* v1.5: wie die Startkachel (abgedunkeltes Bild, grosser Titel), schmaler: ohne Zielflaggen, Titel kleiner. */
-  #fa-virtuell.k-virtuell { background: linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)), url(img/virtuell-fahren.jpg) center 55% / cover no-repeat; }
-  #fa-virtuell.k-virtuell::before, #fa-virtuell.k-virtuell::after { display: none; }
-  #fa-virtuell .k-start-innen b { font-size: clamp(15px, 2vw, 30px); }
-  #fa-virtuell .k-start-innen .wip-tag { margin-top: 4px; font-size: 9px; text-shadow: none; }
+  /* v1.6.23: Umschalter Echt | Virtuell an der Stelle der frueheren Kachel "Virtuell fahren". */
+  #fa-modus.k-modus { background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/garage.jpg) center / cover no-repeat; }
+  body.fm-virtuell #fa-modus.k-modus { background: linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)), url(img/virtuell-fahren.jpg) center 55% / cover no-repeat; }
+  #fa-modus.k-modus::before, #fa-modus.k-modus::after { display: none; }
+  .k-modus-wahl { display: flex; width: 100%; margin-top: 6px; border: 1px solid rgba(255,255,255,.55); border-radius: 6px; overflow: hidden; }
+  #fa-modus .k-start-innen { width: 88%; max-width: 340px; }
+  #fa-modus .k-modus-wahl b { flex: 1 1 0; padding: .35em .5em; font-size: clamp(12px, 1.6vw, 19px); font-weight: 800; letter-spacing: .06em; color: rgba(255,255,255,.72); cursor: pointer; text-align: center; white-space: nowrap; text-shadow: none; }
+  #fa-modus .k-modus-wahl b.an { background: #00a3e0; color: #fff; }
+  .k-modus-wahl .wip-tag { margin-left: 3px; font-size: 8px; vertical-align: super; text-shadow: none; }
+  body.fm-virtuell #fa-start { background-image: linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url(img/virtuell-fahren.jpg); background-size: cover; background-position: center 55%; }
+  body.fm-virtuell #fa-auto-bild { background-size: contain, cover; background-repeat: no-repeat; background-position: center, center; }
   /* v1.5: kleine Symbole auf der Garagenkachel (zweiter Laptop, Onboard-Kamera). */
   .k-geraete { position: absolute; top: 6px; right: 8px; display: flex; gap: 6px; z-index: 2; pointer-events: none; }
   .k-geraete[hidden] { display: none; }
@@ -6037,6 +6044,8 @@
           <button type="button" class="k-knopf" id="fa-druck" hidden>Druckvorlagen</button>
           <button type="button" class="k-knopf" id="fa-foto" hidden title="Optimal: quer, z. B. 4:3 oder 16:9">Foto</button>
           <button type="button" class="k-knopf" id="fa-foto-weg" hidden>Foto löschen</button>
+          <!-- v1.6.23: Fahrtrichtung der virtuellen Fahrt (nur im Modus Virtuell, Text setzt konsoleFahrenZeichnen). -->
+          <button type="button" class="k-knopf" id="fa-richtung" hidden data-i18n-skip>Normal</button>
         </span>
       </div>
       <div class="k-kachel " id="fa-renn" role="button" tabindex="0" data-quad="renntyp">
@@ -6058,8 +6067,10 @@
            Groesse) Button einfuegen 'Drive Virtually' (so wie button in der garage, Rennen soll dann direkt losgehen)". -->
       <!-- v1.5 BESTELLT: "Mach das Virtual Bild vom Design so aehnlich wie das Start Practice": Bild ueber die ganze
            Kachel, grosser Titel in der Mitte, darunter Renntyp, ohne die weissen Kopfleisten. -->
-      <div class="k-kachel k-start k-virtuell" id="fa-virtuell" role="button" tabindex="0">
-        <span class="k-start-innen"><b>Virtuell fahren</b><small id="fa-virtuell-unter" data-i18n-skip></small><span class="wip-tag">WIP</span></span>
+      <!-- v1.6.23 (Issue #7) BESTELLT: "Umschalter zwischen echtem und virtuellem Fahren statt der Kachel 'Virtuell fahren'"
+           (51-konsole.js, fahrModusSetzen). Quadrat am Pad schaltet um wie bei den anderen Kacheln. -->
+      <div class="k-kachel k-start k-modus" id="fa-modus" role="button" tabindex="0" data-quad="fahrmodus">
+        <span class="k-start-innen"><small>Fahren</small><span class="k-modus-wahl"><b data-fm="echt" aria-pressed="true">Echt</b><b data-fm="virtuell" aria-pressed="false">Virtuell <span class="wip-tag">WIP</span></b></span></span>
       </div>
         <div class="k-kachel k-start" id="fa-start" role="button" tabindex="0">
           <span class="k-start-innen"><b id="fa-start-titel">Rennen starten</b><small id="fa-start-unter"></small></span>
@@ -7284,6 +7295,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>FAHREN: Umschalter Echt | Virtuell (WIP) statt der Kachel &#8222;Virtuell fahren&#8220;. Im Modus Virtuell zeigt die Autos-Kachel das virtuelle Auto, Garage &#246;ffnet die Optionen der virtuellen Fahrt, die Startkachel startet sie, und die Strecken-Kachel bl&#228;ttert durch die gebaute Bahn und die Rollrennstrecken T&#246;rnerschleife 2.0, T&#246;rnerschleife 2.0 mit Br&#252;cke und neu Heckenhoim (von Gnen54 und Thorsten), mit Vorschau von oben und einem Knopf f&#252;r die Fahrtrichtung.</li>
         <li>Virtuell fahren: Das Ladebild zeigt jetzt die aktuelle Strecke von oben &#252;ber das ganze Bild (wie im Editor, bei der T&#246;rnerschleife ihr Umriss mit Br&#252;cke), in der Mitte dreht sich das Streckenteil &#252;ber Titel und Fortschrittsbalken. Aus Gnen54s Testversion &#252;bernommen: Pad-Diagnose w&#228;hrend der Fahrt (Knopf in der Leiste oder F8) mit Pad-Namen, Belegung, gelernter Ruhelage der Trigger, Rohwerten und der Stelle, an der die Abfrage aussteigt, und in der Anleitung der Abschnitt &#8222;Gamepad einrichten&#8220; mit Hinweisen zum EasySMX X05 (Gas und Bremse auf dem rechten Stick).</li>
         <li>Virtuell fahren, aus dem Pull Request von Gnen54 &#252;bernommen und auf den aktuellen Stand gebracht: T&#246;rnerschleife 2.0 mit und ohne Br&#252;cke (mit Randlinien, Boxengasse und Steigung), R&#252;ckw&#228;rtsgang, keine Runde beim R&#252;ckw&#228;rtsfahren oder Pendeln &#252;ber die Linie, Android-Trigger, die in Ruhe auf halbem Weg stehen, Gamepad-Tasten f&#252;r Licht, Box und Gelbe Flagge, Lichthupe, Pflicht-Boxendurchfahrt (WIP), Boxenservice nur in der Boxengasse, Innenspiegel als schmaler Streifen oben (WIP), fester Motorklang f&#252;r K&#228;fer, Spider und Caravelle, Hilfeseite mit &#8222;?&#8220; in der Garage. Neu: Ladebild ohne Anzeige mit Fortschrittsbalken und einer Strecke, die sich unten links Teil f&#252;r Teil zusammenbaut; Knopfleiste als Piktogramme mit einem Knopf zum Aus- und Einblenden; Fahrtrichtung &#8222;Gegenrichtung&#8220; (WIP).</li>
         <li>Vibration wie bei LibreCorsa: Ein Mischer bedient beide Rumble-Motoren gemeinsam (hoher Motor: Randstein-Pulse und schiebende Vorderr&#228;der, tiefer Motor: St&#246;&#223;e, ausbrechendes Heck, ABS, unebener Boden), statt vieler einzelner St&#246;&#223;e; die DualSense-Griffmotoren und Trigger-Widerst&#228;nde folgen denselben Werten. Die Schalter unter Optionen &gt; Vibration gelten jetzt auch beim virtuellen Fahren; &#8222;Reifenquietschen&#8220; und &#8222;Neben der Bahn&#8220; sind ab Werk aus (einmalig umgestellt). Nach dem virtuellen Fahren gibt die App Grafik, Texturen und Automodelle wieder frei (weniger Speicher beim echten Fahren), und bei sehr wenig freiem Speicher kommt ein Hinweis. Virtuell mehr Wolken bei Sonne. Auf der Startseite gibt es &#8222;Fehler melden&#8220; (&#246;ffnet ein Formular auf GitHub).</li>

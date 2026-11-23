@@ -1589,7 +1589,20 @@
   const VF_STRECKE_STORE = 'omegasim-vf-strecke';
   // Aus PR 4 von gnen54: dieselbe Strecke auch mit Bruecke (die Bahn kreuzt sich, Hoehe z je Punkt).
   const VF_FREIE = { indeq: { name: 'Törnerschleife 2.0', pfad: 'img/strecken/indeq-ring.json' },
-    indeqBruecke: { name: 'Törnerschleife 2.0 mit Brücke', pfad: 'img/strecken/indeq-bruecke.json' } };
+    indeqBruecke: { name: 'Törnerschleife 2.0 mit Brücke', pfad: 'img/strecken/indeq-bruecke.json' },
+    // v1.6.23: Renn-Rollstrecke Heckenhoim (3 x 2 m) aus gnen54s Fork, siehe img/strecken/LIZENZ.txt.
+    heckenhoim: { name: 'Heckenhoim', pfad: 'img/strecken/heckenhoim.json' } };
+  // v1.6.23 BESTELLT: "Wenn ich auf virtuell geschaltet habe, moechte ich bei der Streckenwahl auch die Rollrennstrecken
+  // auswaehlen koennen (Toernerring, Toernerring mit Bruecke, Heckenhoim; jeweils mit Fahrtrichtungsoption)."
+  // Die Strecken-Kachel auf FAHREN blaettert im Modus Virtuell durch: gebaute Bahn, dann die freien Strecken.
+  function vfStreckenListe() { return ['', ...Object.keys(VF_FREIE)]; }
+  function vfStreckeWechseln(dir) {
+    const l = vfStreckenListe(), j = Math.max(0, l.indexOf(vfFreiWahl()));
+    const n = l[(j + (dir || 1) + l.length) % l.length];
+    try { localStorage.setItem(VF_STRECKE_STORE, n); } catch (e) { /* egal */ }
+    if (n) vfFreiLaden(n).catch(() => {});
+    return n;
+  }
   function vfFreiWahl() { try { const v = localStorage.getItem(VF_STRECKE_STORE) || ''; return VF_FREIE[v] ? v : ''; } catch (e) { return ''; } }
   const vfFreiCache = {};
   function vfFreiLaden(k) {
@@ -1688,6 +1701,22 @@
   function vfLackTint(hex) { return hex ? vfHex(hex) : VF_WEISS; }
   // Eine gespeicherte Wahl, die es nicht mehr gibt (z. B. 'porsche', 1.3.94-1.3.131, entfernt), faellt
   // still auf den Vulture V5.R zurueck - kein 404 beim Laden und kein Absturz.
+  // v1.6.23: die Liste der virtuellen Autos (Garage und Autos-Kachel auf FAHREN im Modus Virtuell).
+  function vfAutoListe() {
+    return [{ v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
+            { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
+            // Eigenbau von Gnen54 (CC BY 4.0), WIP: Fahrdaten geschaetzt, siehe img/autos/kaefer/LIZENZ.txt
+            { v: 'kaefer', name: t('VW Käfer 1303 RS mit Boxster-Motor (Gnen54, WIP)') },
+            // v1.5.104: Eigenbau von Gnen54 auf der Modiplay-MP1-Karosserie (Freigabe Sturmkind, nicht kommerziell),
+            // PR 3 auf Luuke42/omegasim. WIP: Fahrdaten geschaetzt (Lister Storm LMP), siehe img/autos/spider/LIZENZ.txt
+            { v: 'spider', name: t('Spider NG1 (Gnen54, WIP)') },
+            // v1.5.150: Eigenbau von Gnen54 auf der Vehicle-World-Karosserie (schriftliche Freigabe),
+            // siehe img/autos/caravelle/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
+            { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') }];
+  }
+  function vfAutoName(id) { const a = vfAutoListe().find((x) => x.v === id); return a ? a.name : id; }
+  // Name der gewaehlten Strecke der virtuellen Fahrt (freie Strecke oder die gebaute Bahn).
+  function vfStreckeName() { const k = vfFreiWahl(); return k ? t(VF_FREIE[k].name) : t('Gebaute Bahn'); }
   function vfAutoWahl() {
     try { const v = localStorage.getItem(VF_AUTO_STORE); return (v && Object.prototype.hasOwnProperty.call(VF_MODELL_PFADE, v)) ? v : 'v5r'; } catch (e) { return 'v5r'; }
   }
@@ -4630,6 +4659,7 @@
   // und die Boxenseite in Fahrtrichtung ist die andere (VF.boxSeite).
   const VF_RICHTUNG_STORE = 'omegasim-vf-richtung';
   function vfGegenAn() { try { return localStorage.getItem(VF_RICHTUNG_STORE) === 'gegen'; } catch (e) { return false; } }
+  function vfRichtungWechseln() { const g = !vfGegenAn(); try { localStorage.setItem(VF_RICHTUNG_STORE, g ? 'gegen' : 'normal'); } catch (e) { /* egal */ } return g; }
   function vfGegenrichtung(pts, B) {
     const n = pts.length, idx = (i) => ((n - i) % n + n) % n;
     const R = [];
@@ -4995,16 +5025,7 @@
       rechts.appendChild(fest);
     } else rechts.appendChild(garWertZeile(t('Motorsound'), werte[j].name, () => wahl(-1), () => wahl(1)));
     // v1.1.9: welches Auto, und wie deutlich die Federung sichtbar neigt.
-    const autos = [{ v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
-                   { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
-                   // Eigenbau von Gnen54 (CC BY 4.0), WIP: Fahrdaten geschaetzt, siehe img/autos/kaefer/LIZENZ.txt
-                   { v: 'kaefer', name: t('VW Käfer 1303 RS mit Boxster-Motor (Gnen54, WIP)') },
-                   // v1.5.104: Eigenbau von Gnen54 auf der Modiplay-MP1-Karosserie (Freigabe Sturmkind, nicht kommerziell),
-                   // PR 3 auf Luuke42/omegasim. WIP: Fahrdaten geschaetzt (Lister Storm LMP), siehe img/autos/spider/LIZENZ.txt
-                   { v: 'spider', name: t('Spider NG1 (Gnen54, WIP)') },
-                   // v1.5.150: Eigenbau von Gnen54 auf der Vehicle-World-Karosserie (schriftliche Freigabe),
-                   // siehe img/autos/caravelle/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
-                   { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') }];
+    const autos = vfAutoListe();
     const ja = Math.max(0, autos.findIndex((a) => a.v === vfAutoWahl()));
     const autoWahl = (dd) => {
       try { localStorage.setItem(VF_AUTO_STORE, autos[(ja + dd + autos.length) % autos.length].v); } catch (e) { /* egal */ }
@@ -5050,7 +5071,7 @@
     bodenZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(bodenZeile);
     // v1.5.150: freie Strecke (Törnerschleife, nur virtuell) oder die gebaute Bahn des Editors.
-    const freiListe = ['', ...Object.keys(VF_FREIE)];
+    const freiListe = vfStreckenListe();
     const jf = Math.max(0, freiListe.indexOf(vfFreiWahl()));
     const freiWahl = (dd) => {
       const ni = (jf + dd + freiListe.length) % freiListe.length;

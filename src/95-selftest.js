@@ -14521,20 +14521,107 @@
   });
 
   // v1.5: dazu "Drive Virtually" zwischen Meisterschaft und Start (ein Drittel der alten Startbreite, Start zwei Drittel).
-  stAdd('Fahren: Motorsound nur noch in der Garage, Meisterschaft, Virtuell fahren und Start fuellen die Reihe', () => {
+  // v1.6.23: an seiner Stelle der Umschalter Echt | Virtuell (fa-modus).
+  stAdd('Fahren: Motorsound nur noch in der Garage, Meisterschaft, Umschalter Echt/Virtuell und Start fuellen die Reihe', () => {
     const f = [];
     if (document.getElementById(['fa', 'motor'].join('-'))) f.push('Motorsound-Kachel noch da');
-    if (!$('fa-profil') || !$('fa-start') || !$('fa-virtuell')) f.push('Meisterschaft, Virtuell oder Start fehlt');
+    if (!$('fa-profil') || !$('fa-start') || !$('fa-modus')) f.push('Meisterschaft, Umschalter oder Start fehlt');
+    if (document.getElementById(['fa', 'virtuell'].join('-'))) f.push('Kachel Virtuell fahren noch da');
     const unten = document.querySelector('.k-fahren-unten');
     const kinder = unten ? [...unten.children].map((x) => x.id) : [];
-    if (kinder.join(',') !== 'fa-profil,fa-virtuell,fa-start') f.push('Reihenfolge ' + kinder.join(','));
+    if (kinder.join(',') !== 'fa-profil,fa-modus,fa-start') f.push('Reihenfolge ' + kinder.join(','));
     if (unten && unten.offsetWidth > 300 && getComputedStyle(unten).gridTemplateColumns.split(' ').length === 3) {
-      const v = $('fa-virtuell').offsetWidth, st = $('fa-start').offsetWidth;
-      if (Math.abs(st / v - 2) > 0.2) f.push('Start/Virtuell ' + (st / v).toFixed(2) + ' statt 2');
+      const v = $('fa-modus').offsetWidth, st = $('fa-start').offsetWidth;
+      if (Math.abs(st / v - 2) > 0.2) f.push('Start/Umschalter ' + (st / v).toFixed(2) + ' statt 2');
     }
-    if (!$('fa-virtuell').querySelector('.wip-tag')) f.push('Virtuell ohne WIP');
-    if (!$('fa-virtuell').classList.contains('k-start') || $('fa-virtuell').querySelector('.k-kk, .k-kopf')) f.push('Virtuell nicht im Stil der Startkachel');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Meisterschaft | Virtuell (1/3 der alten Startbreite) | Start (2/3)' };
+    if (!$('fa-modus').querySelector('.wip-tag')) f.push('Virtuell ohne WIP');
+    if (!$('fa-modus').classList.contains('k-start') || $('fa-modus').querySelector('.k-kk, .k-kopf')) f.push('Umschalter nicht im Stil der Startkachel');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Meisterschaft | Echt/Virtuell (1/3 der alten Startbreite) | Start (2/3)' };
+  });
+  stAdd('Fahren v1.6.23: virtuell waehlt die Strecken-Kachel gebaute Bahn und Rollrennstrecken (Toernerschleife, Bruecke, Heckenhoim) mit Fahrtrichtung', async () => {
+    const f = [], lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merk = { m: lies(FAHR_MODUS_STORE), s: lies(VF_STRECKE_STORE), r: lies(VF_RICHTUNG_STORE) };
+    const merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : '';
+    const namen = [];
+    try {
+      showTab('fahren');
+      fahrModusSetzen('virtuell');
+      try { localStorage.setItem(VF_STRECKE_STORE, ''); localStorage.setItem(VF_RICHTUNG_STORE, 'normal'); } catch (e) { /* egal */ }
+      konsoleFahrenZeichnen();
+      const l = vfStreckenListe();
+      if (l.join(',') !== ',indeq,indeqBruecke,heckenhoim') f.push('Liste ' + l.join(','));
+      if (kQuadPunkte('bahn').anzahl !== 4) f.push('Punkte ' + kQuadPunkte('bahn').anzahl);
+      if ($('fa-strecke-titel').textContent !== t('Gebaute Bahn')) f.push('Titel ' + $('fa-strecke-titel').textContent);
+      if ($('fa-scan').hidden !== true || $('fa-richtung').hidden) f.push('Knoepfe: Scan ' + !$('fa-scan').hidden + ', Richtung ' + !$('fa-richtung').hidden);
+      for (let i = 0; i < 3; i++) {
+        konsoleQuadWechsel('bahn', 1);
+        const k = vfFreiWahl();
+        await vfFreiLaden(k);
+        konsoleFahrenZeichnen();
+        namen.push($('fa-strecke-titel').textContent);
+        if ($('fa-strecke-titel').textContent !== t(VF_FREIE[k].name)) f.push(k + ': Titel ' + $('fa-strecke-titel').textContent);
+        if (!$('fa-strecke-bild').querySelector('svg path')) f.push(k + ': keine Karte');
+        if (!$('fa-editor').hidden) f.push(k + ': Editor sichtbar');
+        if (kQuadPunkte('bahn').index !== i + 1) f.push(k + ': Punkt ' + kQuadPunkte('bahn').index);
+      }
+      const hh = vfFreiCache.heckenhoim;
+      if (!hh || hh.pts.length < 100 || hh.tiles.length < 10) f.push('Heckenhoim laedt nicht richtig');
+      // Fahrtrichtung per Knopf, sichtbar in der Info und auf dem Knopf.
+      $('fa-richtung').click();
+      if (!vfGegenAn() || $('fa-richtung').textContent.indexOf(t('Gegenrichtung')) < 0 || $('fa-strecke-info').textContent.indexOf(t('Gegenrichtung')) < 0) f.push('Richtung: Knopf wirkt nicht');
+      konsoleQuadWechsel('bahn', 1);
+      if (vfFreiWahl() !== '') f.push('nach Heckenhoim nicht zurueck zur gebauten Bahn');
+      // Echt: wie bisher (Auf der Bahn / Frei), Richtung versteckt.
+      fahrModusSetzen('echt');
+      if (!$('fa-richtung').hidden) f.push('echt: Richtung sichtbar');
+      if ([t('Auf der Bahn'), t('Frei')].indexOf($('fa-strecke-titel').textContent) < 0) f.push('echt: Titel ' + $('fa-strecke-titel').textContent);
+    } finally {
+      const setz = (k, v) => { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { /* egal */ } };
+      setz(FAHR_MODUS_STORE, merk.m); setz(VF_STRECKE_STORE, merk.s); setz(VF_RICHTUNG_STORE, merk.r);
+      konsoleFahrenZeichnen();
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Gebaute Bahn → ' + namen.join(' → ') + ' → zurueck, Richtung per Knopf' };
+  });
+  stAdd('Fahren v1.6.23: Umschalter Echt | Virtuell - Autos-Kachel, Garage und Start folgen dem Modus (Issue #7)', () => {
+    const f = [], merk = (() => { try { return localStorage.getItem(FAHR_MODUS_STORE); } catch (e) { return null; } })();
+    const merkTab = (typeof kAktiverTab === 'function' ? kAktiverTab() : ''), merkVA = garVirtuellAuf, merkKA = garKameraAuf;
+    const merkStart = virtuellStarten;
+    let gestartet = 0;
+    try {
+      fahrModusSetzen('echt');
+      const an = (m) => { const b = document.querySelector('#fa-modus [data-fm="' + m + '"]'); return b && b.classList.contains('an'); };
+      if (!an('echt') || an('virtuell')) f.push('echt nicht markiert');
+      if ($('fa-verbinden').hidden) f.push('echt: Verbinden versteckt');
+      if ($('fa-start-titel').textContent === t('Virtuell fahren')) f.push('echt: Start sagt virtuell');
+      // Ein Tipp auf "Virtuell" schaltet um.
+      document.querySelector('#fa-modus [data-fm="virtuell"]').click();
+      if (!fahrModusVirtuell() || !an('virtuell')) f.push('Tipp auf Virtuell schaltet nicht');
+      if (!document.body.classList.contains('fm-virtuell')) f.push('Klasse fm-virtuell fehlt');
+      if (!$('fa-verbinden').hidden || !$('fa-mp').hidden) f.push('virtuell: Verbinden/Mehrspieler sichtbar');
+      if ($('fa-auto-titel').textContent !== t('Virtuelles Auto')) f.push('Titel ' + $('fa-auto-titel').textContent);
+      if ($('fa-auto-bild').style.backgroundImage.indexOf('vorschau.jpg') < 0) f.push('kein Vorschaubild');
+      if ($('fa-auto-info').textContent.indexOf(vfAutoName(vfAutoWahl())) < 0) f.push('Autoname fehlt: ' + $('fa-auto-info').textContent);
+      if ($('fa-start-titel').textContent !== t('Virtuell fahren')) f.push('Start: ' + $('fa-start-titel').textContent);
+      // Garage oeffnet mit den Optionen der virtuellen Fahrt.
+      garVirtuellAuf = false;
+      $('fa-garage').click();
+      if (!garVirtuellAuf) f.push('Garage ohne virtuelle Optionen');
+      // Start startet die virtuelle Fahrt (abgefangen).
+      virtuellStarten = () => { gestartet++; return false; };
+      if (!kRennenLaeuft()) { $('fa-start').click(); if (gestartet !== 1) f.push('Start startet nicht virtuell'); }
+      // Quadrat am Pad schaltet zurueck.
+      konsoleQuadWechsel('fahrmodus', 1);
+      if (fahrModusVirtuell() || !an('echt')) f.push('Quadrat schaltet nicht zurueck');
+      if ($('fa-verbinden').hidden) f.push('zurueck: Verbinden versteckt');
+    } finally {
+      virtuellStarten = merkStart;
+      try { if (merk === null) localStorage.removeItem(FAHR_MODUS_STORE); else localStorage.setItem(FAHR_MODUS_STORE, merk); } catch (e) { /* egal */ }
+      garVirtuellAuf = merkVA; garKameraAuf = merkKA;
+      konsoleFahrenZeichnen();
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'echt/virtuell umschaltbar (Tipp, Quadrat), Kachel, Garage und Start folgen' };
   });
 
   stAdd('Fahren v1.5: Symbole fuer zweiten Laptop und Onboard-Kamera auf der Garagenkachel', () => {
