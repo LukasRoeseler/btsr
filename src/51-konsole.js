@@ -341,12 +341,13 @@
   function fahrModusSetzen(m) {
     const v = m === 'virtuell';
     try { localStorage.setItem(FAHR_MODUS_STORE, v ? 'virtuell' : 'echt'); } catch (e) { /* egal */ }
-    try { garVirtuellAuf = v; if (v) garKameraAuf = false; } catch (e) { /* Garage noch nicht geladen */ }
     konsoleFahrenZeichnen();
   }
   // Garage im passenden Modus oeffnen: virtuell mit den Optionen der virtuellen Fahrt rechts.
+  // v1.6.32: im Modus Virtuell die eigenstaendige virtuelle Garage (#tab-vgarage, 60d-virtuell.js).
   function konsoleGarageOeffnen() {
-    try { if (fahrModusVirtuell()) { garVirtuellAuf = true; garKameraAuf = false; } else garVirtuellAuf = false; } catch (e) { /* egal */ }
+    if (fahrModusVirtuell() && typeof vfGarageZeigen === 'function') { vfGarageZeigen(); window.scrollTo(0, 0); return; }
+    try { garVirtuellAuf = false; } catch (e) { /* egal */ }
     konsoleZeige('garage');
   }
   function konsoleVirtuellStarten() {
@@ -1281,6 +1282,7 @@
     kn('fa-verbinden', () => { konsoleVerbinden(); });
     kn('fa-garage', () => konsoleGarageOeffnen());
     kn('fa-mp', () => konsoleZeige('mp'));
+    kn('vg-zurueck', () => konsoleZeige('fahren'));
     // v1.6.23: im Modus Virtuell startet die Startkachel die virtuelle Fahrt (die Kachel "Virtuell fahren" ist dem
     // Umschalter Echt | Virtuell gewichen). Ein Tipp auf eine Seite des Umschalters waehlt sie, sonst wechselt er.
     kn('fa-start', () => { if (fahrModusVirtuell() && !kRennenLaeuft()) konsoleVirtuellStarten(); else konsoleLosfahren(); });

@@ -4281,6 +4281,33 @@
   .tp-karte .sektor-saum.sektor-puls { stroke-width: 4.5; animation: sektorPuls .53s ease-in-out 3; }
   @keyframes sektorPuls { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .3; } }
   @media (prefers-reduced-motion: reduce) { .tp-karte .sektor-saum.sektor-puls { animation: none; } }
+  /* v1.6.32: virtuelle Garage. Quer (Handy quer, Tablet, PC): Vorschau links fest, Optionen rechts scrollen.
+     Hochformat: Vorschau oben (hoechstens 30 % der Hoehe), Optionen darunter. */
+  #tab-vgarage { background: #0d1118; padding: 6px max(10px, env(safe-area-inset-right)) 12px max(10px, env(safe-area-inset-left)); }
+  .vg-kopf { display: flex; align-items: center; gap: 12px; }
+  .vg-kopf h2 { margin: 0; font-size: clamp(15px, 2.2vw, 22px); }
+  .vg-zurueck { min-height: 32px; padding: 4px 10px; }
+  .vg-raster { display: grid; grid-template-columns: minmax(0, 40%) minmax(0, 1fr); gap: 12px; margin-top: 6px; align-items: start; }
+  .vg-vorschau { position: sticky; top: 6px; display: flex; flex-direction: column; gap: 8px; }
+  .vg-vorschau .vf-vorschau { display: grid; place-items: center; padding: 0; border: 0; overflow: hidden; aspect-ratio: 16 / 9;
+    max-height: 58vh; background: radial-gradient(ellipse at 50% 60%, #263043 0%, #0f141c 75%); border-radius: 8px; }
+  .vg-vorschau .vf-vorschau-bild { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; }
+  .vg-vorschau .vg-heli { width: 55%; height: 75%; color: #9fd8ff; }
+  .vg-name { font-weight: 700; font-size: clamp(13px, 1.8vw, 18px); text-align: center; }
+  .vg-vorschau .vf-los-zeile { display: flex; gap: 8px; justify-content: center; border: 0; padding: 0; }
+  .vg-vorschau .vf-los-zeile .primary { flex: 1 1 auto; min-height: 44px; font-size: 1.05em; }
+  .vg-optionen { min-width: 0; }
+  .vg-optionen .gar-a-titel { margin-top: 0; }
+  .vg-optionen .gk-zeile { display: grid; grid-template-columns: minmax(84px, 36%) minmax(0, 1fr); align-items: center; gap: 4px 8px; }
+  .vg-optionen .gk-w { flex-wrap: wrap; justify-content: center; }
+  .vg-optionen .gk-w > b { width: auto; flex: 1 1 6em; min-width: 0; }
+  .vg-optionen .vf-lack-palette { display: flex; flex-wrap: wrap; justify-content: center; flex: 1 1 100%; margin: 4px 0 0; }
+  .vg-vorschau .vf-los-zeile .vf-hilfe { flex: 0 0 44px; min-height: 44px; }
+  @media (orientation: portrait) {
+    .vg-raster { grid-template-columns: minmax(0, 1fr); }
+    .vg-vorschau { position: static; }
+    .vg-vorschau .vf-vorschau { max-height: 28vh; }
+  }
   .lade-traeger { position: relative; }
   .lade-ueber { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.78); }
@@ -5858,6 +5885,7 @@
   <button class="tab-btn active" data-tab="home" hidden style="display:none">Home</button>
   <button class="tab-btn" data-tab="fahren" hidden style="display:none">Fahren</button>
   <button class="tab-btn" data-tab="garage">Garage</button>
+  <button class="tab-btn" data-tab="vgarage" data-parent="fahren" hidden style="display:none">Virtuelle Garage</button>
   <button class="tab-btn" data-tab="race">Cockpit</button>
   <button class="tab-btn" data-tab="options">Optionen</button>
   <button class="tab-btn" data-tab="track">Strecke</button>
@@ -7309,7 +7337,8 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
-        <li>Virtuell fahren: RC Stunt Copter (WIP, von DeepSeek gebaut, gepr&#252;ft) im freien Training: fliegt mit zwei Sticks (Mode 2, Tastatur W/S, A/D, Pfeile), Modell TREX 700 von Belzar Sirus (CC BY 4.0), Rotor-Ton, H&#246;he und Tempo im HUD, Steuer-Optionen unter Optionen &gt; Virtuell. An den Sektoren und an Start/Ziel stehen leuchtende Tore aus zwei Lichtstangen; eine Runde z&#228;hlt nur, wenn alle Tore der Reihe nach und dann das Start/Ziel-Tor durchflogen wurden. Drift: mit Lenken und Vollgas kommt das Heck jetzt sofort, dazu Low-Poly-Rauch an den Hinterr&#228;dern, erst leicht und mit hei&#223;en Reifen immer dichter. Sektoren (WIP): auf der Streckenkarte je Sektor ein farbiger Saum und die Nummer im Kreis; am Ende eines Sektors pulsiert sein Saum, eine Sektor-Bestzeit wird angesagt (Schalter unter Optionen &gt; Ansagen).</li>
+        <li>Virtuelle Garage (WIP) als eigene Seite, auch f&#252;rs Handy gebaut: quer links das gro&#223;e Vorschaubild mit Name, Losfahren und Anleitung, rechts alle Optionen der virtuellen Fahrt; hochkant steht die Vorschau oben. Sie &#246;ffnet sich &#252;ber FAHREN im Modus Virtuell (Garage oder Autos-Kachel) und nach jeder virtuellen Fahrt. Die echte Garage zeigt keine virtuellen Optionen mehr, ihr Knopf &#8222;Virtuell fahren&#8220; f&#252;hrt in die virtuelle Garage. Die Steuer-Optionen des RC Stunt Copters (Gyro, Rollen und Nicken umkehren) stehen jetzt dort statt unter Optionen.</li>
+        <li>Virtuell fahren: RC Stunt Copter (WIP, von DeepSeek gebaut, gepr&#252;ft) im freien Training: fliegt mit zwei Sticks (Mode 2, Tastatur W/S, A/D, Pfeile), Modell TREX 700 von Belzar Sirus (CC BY 4.0), Rotor-Ton, H&#246;he und Tempo im HUD, Steuer-Optionen in der virtuellen Garage. An den Sektoren und an Start/Ziel stehen leuchtende Tore aus zwei Lichtstangen; eine Runde z&#228;hlt nur, wenn alle Tore der Reihe nach und dann das Start/Ziel-Tor durchflogen wurden. Drift: mit Lenken und Vollgas kommt das Heck jetzt sofort, dazu Low-Poly-Rauch an den Hinterr&#228;dern, erst leicht und mit hei&#223;en Reifen immer dichter. Sektoren (WIP): auf der Streckenkarte je Sektor ein farbiger Saum und die Nummer im Kreis; am Ende eines Sektors pulsiert sein Saum, eine Sektor-Bestzeit wird angesagt (Schalter unter Optionen &gt; Ansagen).</li>
         <li>Virtuell fahren: neues Fahrgef&#252;hl &#8222;Drift&#8220; (WIP) wie ein RC-Driftauto mit Gyro: rutschige Reifen, unter Vollgas bricht das Heck aus, der Gyro lenkt gegen und h&#228;lt den Drift bei etwa 25 Grad, mit halbem Gas greift das Auto wieder. &#8222;Schnell&#8220; hei&#223;t jetzt &#8222;Pacejka&#8220; (WIP) und nutzt die Reifenkurve des echten Fahrens; der Abgleich mit echten Rundenzeiten folgt. Neue Steuerung &#8222;Neigen&#8220; (WIP) auf Handy und Tablet: der Knopf &#8222;Steuerung&#8220; schaltet reihum Touch, Neigen und aus; bei Neigen das Handy quer halten und wie ein Lenkrad drehen, rechts bleibt das Pedal.</li>
         <li>FAHREN: Umschalter Echt | Virtuell (WIP) statt der Kachel &#8222;Virtuell fahren&#8220;. Im Modus Virtuell zeigt die Autos-Kachel das virtuelle Auto, Garage &#246;ffnet die Optionen der virtuellen Fahrt, die Startkachel startet sie, und die Strecken-Kachel bl&#228;ttert durch die gebaute Bahn und die Rollrennstrecken T&#246;rnerschleife 2.0, T&#246;rnerschleife 2.0 mit Br&#252;cke und neu Heckenhoim (von Gnen54 und Thorsten), mit Vorschau von oben und einem Knopf f&#252;r die Fahrtrichtung.</li>
         <li>Virtuell fahren: Das Ladebild zeigt jetzt die aktuelle Strecke von oben &#252;ber das ganze Bild (wie im Editor, bei der T&#246;rnerschleife ihr Umriss mit Br&#252;cke), in der Mitte dreht sich das Streckenteil &#252;ber Titel und Fortschrittsbalken. Aus Gnen54s Testversion &#252;bernommen: Pad-Diagnose w&#228;hrend der Fahrt (Knopf in der Leiste oder F8) mit Pad-Namen, Belegung, gelernter Ruhelage der Trigger, Rohwerten und der Stelle, an der die Abfrage aussteigt, und in der Anleitung der Abschnitt &#8222;Gamepad einrichten&#8220; mit Hinweisen zum EasySMX X05 (Gas und Bremse auf dem rechten Stick).</li>
@@ -10311,6 +10340,18 @@
   </section>
 
   <!-- FAHREN TAB: redesigned as a racing-HUD style drive screen instead of a form/dashboard -->
+  <!-- v1.6.32 BESTELLT: "Die virtuelle Garage sollte komplett eigenstaendig sein und mit der Vorschau fuer Handy optimiert."
+       Gefuellt von vfGarageSeite (60d-virtuell.js): links/oben Vorschau, Name, Losfahren; rechts/unten die Optionen. -->
+  <section class="tabpage" id="tab-vgarage">
+    <div class="vg-kopf">
+      <button type="button" class="vg-zurueck" id="vg-zurueck">&larr; Fahren</button>
+      <h2>Virtuelle Garage <span class="wip-tag">WIP</span></h2>
+    </div>
+    <div class="vg-raster">
+      <div class="vg-vorschau" id="vg-vorschau"></div>
+      <div class="vg-optionen" id="vg-optionen"></div>
+    </div>
+  </section>
   <section class="tabpage" id="tab-garage">
     <div class="card">
       <h2>Garage</h2>
@@ -11115,14 +11156,6 @@
           <b>Fahrgef&uuml;hl</b>
           <span>Fahrhilfe, Fahrwerk, Getriebe, Masse und Reifen, Lenkung.</span>
         </button>
-        <!-- v1.6.27 (Issue #15): Virtuell - Grafik der virtuellen Fahrt und Steuerung des
-             RC Stunt Copters (Optionen > Virtuell). -->
-        <button class="misc-tile subpage-open" data-sub="opt-virtuell">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
-               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 13a7 7 0 0 1 7 7c0 5-3 7-3 11h-8c0-4-3-6-3-11a7 7 0 0 1 7-7z"/><path d="M21 9h6M24 9v4" stroke="var(--bad)"/><path d="M9 38h30M12 42h24"/><path d="M13 31l-3 7M35 31l3 7"/></svg>
-          <b>Virtuell</b>
-          <span>Virtuelle Fahrt: Grafik und Steuerung des RC Stunt Copters.</span>
-        </button>
         <!-- BESTELLT: "Renneinstellungen als eine kachel in den optionen tab verschieben
              (an 3. Stelle)." goto-tab statt subpage-open: die Karte dahinter ist ein
              eigenes tabpage (#tab-control) und bleibt es - nur der Knopf in der
@@ -11592,31 +11625,6 @@
           <span class="opt-val" id="setting-repair-time-val">10 s</span>
         </div></div>
     </div>
-    </div>
-    <!-- v1.6.27 (Issue #15): VIRTUAL - Grafik der virtuellen Fahrt und Steuerung des RC Stunt Copters.
-         Die Seite liegt unter Optionen > Virtuell; die Werte schreibt 60d-virtuell.js auf dieselben
-         Schluessel, die vfGrafik/vfHubGyro beim Fahren lesen. -->
-    <div class="card subpage" id="sub-opt-virtuell">
-      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
-      <h2>Virtuell</h2>
-      <div class="opt-head" style="margin-top:0">Virtuelle Fahrt</div>
-      <div class="opt-row"><div class="opt-label">Grafik<small>Quality (Vorgabe) bringt Schatten,
-          Tonemapping und besseren Lack und kostet mehr Rechenzeit; Performance ist f&uuml;r
-          schwache Handys.</small></div>
-        <select id="setting-vf-grafik" data-preset-skip>
-          <option value="perf">Performance</option>
-          <option value="qual" selected>Quality</option>
-        </select></div>
-      <div class="opt-head">RC Stunt Copter</div>
-      <div class="opt-row"><div class="opt-label">Rollen umkehren<small>Rechter Stick nach links
-          kippt den Hubschrauber nach rechts statt nach links.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-vf-hub-invert-roll" data-preset-skip><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Nicken umkehren<small>Rechter Stick nach vorn
-          kippt die Nase nach hinten statt nach vorn.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-vf-hub-invert-pitch" data-preset-skip><span></span></label></div>
-      <div class="opt-row"><div class="opt-label">Gyro-Stabilisierung<small>An (Vorgabe): ohne Eingang
-          richtet sich der Hubschrauber von selbst wieder auf. Aus: die Schr&auml;glage bleibt stehen.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-vf-hub-gyro" checked data-preset-skip><span></span></label></div>
     </div>
     <div class="card subpage" id="sub-opt-feel">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>

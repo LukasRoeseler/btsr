@@ -11813,7 +11813,8 @@
     // Ebene 1 (oben neben dem Logo, von jeder Seite aus) und die Kacheln des Fahren-Schirms
     // (JS-Knoepfe, hier von Hand genannt). Der Titel fuehrt nach Fahren.
     // v1.3.5: der Mehrspieler ist kein Reiter mehr, sondern der Knopf #fa-mp in der Autos-Kachel.
-    const kanten = { home: ['fahren'], fahren: ['garage', 'control', 'track', 'race', 'mp'] };
+    // v1.6.32: die virtuelle Garage (vgarage) ueber Garage/Autos-Kachel im Modus Virtuell und aus der echten Garage.
+    const kanten = { home: ['fahren'], fahren: ['garage', 'vgarage', 'control', 'track', 'race', 'mp'] };
     K_EBENE1.forEach((x) => { kanten.fahren.push(x); });
     const tabs = [...document.querySelectorAll('.tabpage')].map((t) => t.id.replace(/^tab-/, ''));
     tabs.forEach((t) => {
@@ -14754,6 +14755,57 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'quer +-20 Grad richtig, iOS gedreht, Totzone 2,5, voll 35 Grad, Knopf ' + folge.join(' -> ') };
   });
+  stAdd('Virtuell v1.6.32: eigenstaendige virtuelle Garage - Vorschau links/oben, Optionen scrollen, Heli-Optionen dort, echte Garage ohne virtuelle Spalte', () => {
+    const f = [], merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : '';
+    const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merk = { m: lies(FAHR_MODUS_STORE), a: lies(VF_AUTO_STORE), s: lies(VF_STRECKE_STORE) };
+    const rm = $('race-mode'), merkRm = rm ? rm.value : null;
+    let mass = '';
+    try {
+      vfGarageZeigen();
+      if (!vfGarageSeiteOffen()) f.push('Seite nicht offen');
+      if (!fahrModusVirtuell()) f.push('Modus nicht virtuell');
+      const vor = $('vg-vorschau'), opt = $('vg-optionen');
+      if (!vor.querySelector('.vf-los-zeile [data-vf="los"]')) f.push('Losfahren nicht bei der Vorschau');
+      if (!vor.querySelector('.vg-name') || vor.querySelector('.vg-name').textContent.indexOf(vfAutoName(vfAutoWahl())) < 0) f.push('Name fehlt');
+      if (!opt.querySelector('[data-vf-strecke]')) f.push('Optionen fehlen');
+      if (vor.getBoundingClientRect().width > 0 && opt.getBoundingClientRect().width > 0) {
+        const r1 = vor.getBoundingClientRect(), r2 = opt.getBoundingClientRect();
+        const quer = innerWidth > innerHeight;
+        if (quer && !(r1.right <= r2.left + 1)) f.push('quer: Vorschau nicht links');
+        if (!quer && !(r1.bottom <= r2.top + 1)) f.push('hoch: Vorschau nicht oben');
+        if (quer && getComputedStyle(vor).position !== 'sticky') f.push('quer: Vorschau bleibt beim Scrollen nicht stehen');
+        mass = (quer ? 'quer' : 'hoch') + ' ' + Math.round(r1.width) + '+' + Math.round(r2.width) + ' px';
+      }
+      // Eine Aenderung zeichnet die virtuelle Garage neu, nicht die echte.
+      const stZeile = opt.querySelector('[data-vf-strecke]');
+      const vorher = stZeile.textContent;
+      stZeile.querySelector('button').click();
+      if (!vfGarageSeiteOffen() || $('vg-optionen').querySelector('[data-vf-strecke]').textContent === vorher) f.push('Streckenwahl zeichnet nicht neu');
+      // Heli (Training): seine Optionen stehen hier.
+      if (rm && [...rm.options].some((o) => o.value === 'practice')) {
+        rm.value = 'practice';
+        try { localStorage.setItem(VF_AUTO_STORE, 'hubschrauber'); } catch (e) { /* egal */ }
+        vfGarageSeite();
+        if ($('vg-optionen').querySelectorAll('[data-vf-hub]').length !== 3) f.push('Heli-Optionen fehlen');
+        if (!$('vg-vorschau').querySelector('.vg-heli')) f.push('Heli ohne Bild');
+      }
+      if (document.getElementById(['sub-opt', 'virtuell'].join('-'))) f.push('alte Seite Optionen > Virtuell noch da');
+      // Echte Garage: der Knopf fuehrt in die virtuelle Garage.
+      showTab('garage'); renderGarage();
+      showTab('fahren');
+    } finally {
+      try {
+        if (merk.m === null) localStorage.removeItem(FAHR_MODUS_STORE); else localStorage.setItem(FAHR_MODUS_STORE, merk.m);
+        if (merk.a === null) localStorage.removeItem(VF_AUTO_STORE); else localStorage.setItem(VF_AUTO_STORE, merk.a);
+        if (merk.s === null) localStorage.removeItem(VF_STRECKE_STORE); else localStorage.setItem(VF_STRECKE_STORE, merk.s);
+      } catch (e) { /* egal */ }
+      if (rm && merkRm !== null) rm.value = merkRm;
+      konsoleFahrenZeichnen();
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eigene Seite, ' + mass + ', Heli-Optionen dort' };
+  });
   stAdd('Fahren v1.6.23: Umschalter Echt | Virtuell - Autos-Kachel, Garage und Start folgen dem Modus (Issue #7)', () => {
     const f = [], merk = (() => { try { return localStorage.getItem(FAHR_MODUS_STORE); } catch (e) { return null; } })();
     const merkTab = (typeof kAktiverTab === 'function' ? kAktiverTab() : ''), merkVA = garVirtuellAuf, merkKA = garKameraAuf;
@@ -14774,10 +14826,9 @@
       if ($('fa-auto-bild').style.backgroundImage.indexOf('vorschau.jpg') < 0) f.push('kein Vorschaubild');
       if ($('fa-auto-info').textContent.indexOf(vfAutoName(vfAutoWahl())) < 0) f.push('Autoname fehlt: ' + $('fa-auto-info').textContent);
       if ($('fa-start-titel').textContent !== t('Virtuell fahren')) f.push('Start: ' + $('fa-start-titel').textContent);
-      // Garage oeffnet mit den Optionen der virtuellen Fahrt.
-      garVirtuellAuf = false;
+      // Garage oeffnet die eigenstaendige virtuelle Garage (v1.6.32).
       $('fa-garage').click();
-      if (!garVirtuellAuf) f.push('Garage ohne virtuelle Optionen');
+      if (!vfGarageSeiteOffen() || !$('vg-optionen').querySelector('[data-vf-strecke]')) f.push('Garage oeffnet nicht die virtuelle Garage');
       // Start startet die virtuelle Fahrt (abgefangen).
       virtuellStarten = () => { gestartet++; return false; };
       if (!kRennenLaeuft()) { $('fa-start').click(); if (gestartet !== 1) f.push('Start startet nicht virtuell'); }

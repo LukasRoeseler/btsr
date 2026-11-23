@@ -1947,21 +1947,6 @@
   function vfHubInvertPitch() { try { return localStorage.getItem(VF_HUB_INVERT_PITCH_STORE) === 'an'; } catch (e) { return false; } }
   function vfHubGyro() { try { return localStorage.getItem(VF_HUB_GYRO_STORE) !== 'aus'; } catch (e) { return true; } }
   function vfHubSetzen(key, an) { try { localStorage.setItem(key, an ? 'an' : 'aus'); } catch (e) { /* egal */ } }
-  // Optionen > Virtuell (sub-opt-virtuell, 00-index.head.html): die Seite mit den gespeicherten
-  // Werten fuellen und bei Aenderung auf dieselben Schluessel schreiben, die vfGrafik/vfHubGyro
-  // beim Fahren lesen. Laeuft einmal beim Start (das Skript steht am Ende des Body).
-  function vfOptionenVirtuellInit() {
-    const g = $('setting-vf-grafik');
-    if (g) { g.value = vfGrafik(); g.addEventListener('change', () => vfGrafikSetzen(g.value)); }
-    const ir = $('setting-vf-hub-invert-roll');
-    if (ir) { ir.checked = vfHubInvertRoll(); ir.addEventListener('change', () => vfHubSetzen(VF_HUB_INVERT_ROLL_STORE, ir.checked)); }
-    const ip = $('setting-vf-hub-invert-pitch');
-    if (ip) { ip.checked = vfHubInvertPitch(); ip.addEventListener('change', () => vfHubSetzen(VF_HUB_INVERT_PITCH_STORE, ip.checked)); }
-    const gy = $('setting-vf-hub-gyro');
-    if (gy) { gy.checked = vfHubGyro(); gy.addEventListener('change', () => vfHubSetzen(VF_HUB_GYRO_STORE, gy.checked)); }
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', vfOptionenVirtuellInit);
-  else vfOptionenVirtuellInit();
   // v1.5 (WIP, Plan Paket 4 "Tageszeit"): Farbstimmung der virtuellen Fahrt. Himmel (Horizont, Zenit), Nebel
   // und die Farbe des Lichts auf allem Beleuchteten; selbstleuchtende Teile (Lichter) bleiben, wie sie sind.
   // Die Sonnenrichtung bleibt fest (die Schattenkarte haengt an ihr). Keine Nacht: es gibt keine Lichtkegel.
@@ -5756,6 +5741,41 @@
     if (sampleEngine.loading) return t('Aufnahmen werden geladen …');
     return t('Keine Aufnahmen gefunden – es spielt der Ersatzton.');
   }
+  // ---- VIRTUELLE GARAGE (v1.6.32, WIP) ----
+  // BESTELLT: "Zur virtuellen Garage: Diese sollte komplett eigenstaendig sein und mit der Vorschau fuer Handy optimiert."
+  // Eine eigene Seite (#tab-vgarage) statt der rechten Spalte der echten Garage: links (Hochformat: oben) das Vorschaubild
+  // des gewaehlten Autos mit Name, Losfahren und "?", rechts die Optionen der virtuellen Fahrt (vfGarageOptionen). Jede
+  // Aenderung zeichnet die Seite neu, auf der sie gemacht wurde (vfGarageNeu).
+  function vfGarageSeiteOffen() { const el = $('tab-vgarage'); return !!(el && el.classList.contains('active')); }
+  function vfGarageNeu() { if (vfGarageSeiteOffen()) vfGarageSeite(); else renderGarage(); }
+  const VF_HELI_BILD = '<svg class="vg-heli" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + '<path d="M6 12h36M24 12v5"/><path d="M14 24a10 7 0 0 1 10-7h4a8 8 0 0 1 8 8v2a3 3 0 0 1-3 3H19a5 5 0 0 1-5-6z"/><path d="M36 25h8M44 21v8"/><path d="M18 30l-2 6M30 30l2 6M12 36h24"/></svg>';
+  function vfGarageSeite() {
+    const host = $('vg-optionen'), vor = $('vg-vorschau');
+    if (!host || !vor) return;
+    const y = host.scrollTop;
+    host.innerHTML = '';
+    vfGarageOptionen(host);
+    vor.innerHTML = '';
+    const bild = host.querySelector('.vf-vorschau');
+    if (bild && vfHubschrauber()) bild.remove();   // der Heli hat kein Vorschaubild, statt dessen das Symbol
+    if (bild && !vfHubschrauber()) vor.appendChild(bild);
+    else if (vfHubschrauber()) { const d = document.createElement('div'); d.className = 'opt-row opt-breit vf-vorschau'; d.innerHTML = VF_HELI_BILD; vor.appendChild(d); }
+    const name = document.createElement('div');
+    name.className = 'vg-name';
+    name.setAttribute('data-i18n-skip', '');
+    name.textContent = vfAutoName(vfAutoWahl()) + ' · ' + vfStreckeName();
+    vor.appendChild(name);
+    const los = host.querySelector('.vf-los-zeile');
+    if (los) vor.appendChild(los);
+    host.scrollTop = y;
+    if (host.querySelector('.opt-label small:not(.opt-info-versteckt)') && typeof optInfoEinrichten === 'function') optInfoEinrichten();
+  }
+  function vfGarageZeigen() {
+    if (typeof fahrModusSetzen === 'function' && !fahrModusVirtuell()) fahrModusSetzen('virtuell');
+    if (typeof showTab === 'function') showTab('vgarage');
+    vfGarageSeite();
+  }
   function vfGarageOptionen(rechts) {
     vfTonVorbereiten();
     vfTexturenVorbereiten();   // v1.3.39: Bahn- und Bodentexturen im Leerlauf rechnen
@@ -5771,7 +5791,7 @@
     const wahl = (d) => {
       const n = werte[(j + d + werte.length) % werte.length].v;
       try { localStorage.setItem(VF_MOTOR_STORE, n || VF_MOTOR_GLOBAL); } catch (e) { /* egal */ }
-      renderGarage();
+      vfGarageNeu();
     };
     if (vfMotorFest()) {
       // Eigenbau von Gnen54: Motorklang fest zum Auto, die Pfeile sind gesperrt.
@@ -5785,15 +5805,30 @@
     const ja = Math.max(0, autos.findIndex((a) => a.v === vfAutoWahl()));
     const autoWahl = (dd) => {
       try { localStorage.setItem(VF_AUTO_STORE, autos[(ja + dd + autos.length) % autos.length].v); } catch (e) { /* egal */ }
-      renderGarage();
+      vfGarageNeu();
     };
     rechts.appendChild(garWertZeile(t('Auto'), autos[ja].name, () => autoWahl(-1), () => autoWahl(1)));
+    // v1.6.32: die Steuer-Optionen des RC Stunt Copters stehen in der virtuellen Garage (vorher Optionen > Virtuell).
+    if (vfHubschrauber()) {
+      const umsch = (lbl, an, key, info) => {
+        const w = () => { vfHubSetzen(key, !an); vfGarageNeu(); };
+        const z = garWertZeile(t(lbl), an ? t('An') : t('Aus'), w, w);
+        const l = z.querySelector('.gk-l');
+        l.classList.add('opt-label');
+        l.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t(info) + '</small>');
+        z.dataset.vfHub = key;
+        rechts.appendChild(z);
+      };
+      umsch('Gyro-Stabilisierung', vfHubGyro(), VF_HUB_GYRO_STORE, 'An (Vorgabe): ohne Eingang richtet sich der Hubschrauber von selbst wieder auf. Aus: die Schräglage bleibt stehen.');
+      umsch('Rollen umkehren', vfHubInvertRoll(), VF_HUB_INVERT_ROLL_STORE, 'Rechter Stick nach links kippt den Hubschrauber nach rechts statt nach links.');
+      umsch('Nicken umkehren', vfHubInvertPitch(), VF_HUB_INVERT_PITCH_STORE, 'Rechter Stick nach vorn kippt die Nase nach hinten statt nach vorn.');
+    }
     // v1.5.10 (WIP): Vorschau des gewaehlten Autos (Seitenansicht in der Originalfarbe) und die Lackfarbe.
     // Die Vorschau ist ein Bild je Auto (img/autos/<modell>/vorschau.jpg, tools/vorschau_bilder.py);
     // fehlt ein Bild, verschwindet die Zeile still.
     {
       const jl = Math.max(0, VF_LACK_FARBEN.findIndex((f) => f.v === vfLack()));
-      const lackWahl = (dd) => { vfLackSetzen(VF_LACK_FARBEN[(jl + dd + VF_LACK_FARBEN.length) % VF_LACK_FARBEN.length].v); renderGarage(); };
+      const lackWahl = (dd) => { vfLackSetzen(VF_LACK_FARBEN[(jl + dd + VF_LACK_FARBEN.length) % VF_LACK_FARBEN.length].v); vfGarageNeu(); };
       const zeile = garWertZeile(t('Lackfarbe'), t(VF_LACK_FARBEN[jl].n), () => lackWahl(-1), () => lackWahl(1));
       zeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
       const palette = document.createElement('span');
@@ -5804,7 +5839,7 @@
         b.className = 'vf-lack' + (i === jl ? ' aktiv' : '');
         b.style.background = f.v || 'linear-gradient(135deg,#c8102e 0%,#0057b8 50%,#e8e8e8 100%)';
         b.title = t(f.n); b.setAttribute('aria-label', t(f.n));
-        b.onclick = (e) => { e.stopPropagation(); vfLackSetzen(f.v); renderGarage(); };
+        b.onclick = (e) => { e.stopPropagation(); vfLackSetzen(f.v); vfGarageNeu(); };
         palette.appendChild(b);
       });
       zeile.querySelector('.gk-w').appendChild(palette);
@@ -5821,7 +5856,7 @@
     }
     // v1.3.39 (WIP): der Fussboden unter der Bahn, Dielen in echten Massen (siehe VF_BOEDEN).
     const jb = Math.max(0, VF_BOEDEN.findIndex((b) => b.id === vfBodenWahl()));
-    const bodenWahl = (dd) => { vfBodenSetzen(VF_BOEDEN[(jb + dd + VF_BOEDEN.length) % VF_BOEDEN.length].id); renderGarage(); };
+    const bodenWahl = (dd) => { vfBodenSetzen(VF_BOEDEN[(jb + dd + VF_BOEDEN.length) % VF_BOEDEN.length].id); vfGarageNeu(); };
     const bodenZeile = garWertZeile(t('Boden'), t(VF_BOEDEN[jb].name), () => bodenWahl(-1), () => bodenWahl(1));
     bodenZeile.dataset.vfBoden = '1';
     bodenZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
@@ -5833,7 +5868,7 @@
       const ni = (jf + dd + freiListe.length) % freiListe.length;
       try { localStorage.setItem(VF_STRECKE_STORE, freiListe[ni]); } catch (e) { /* egal */ }
       if (freiListe[ni]) vfFreiLaden(freiListe[ni]).catch(() => {});   // schon vorladen (aus PR 4 von gnen54)
-      renderGarage();
+      vfGarageNeu();
     };
     // Aus PR 4 von gnen54: beide Toernerschleifen (mit und ohne Bruecke) sind waehlbar.
     const freiZeile = garWertZeile(t('Strecke'), freiListe[jf] ? t(VF_FREIE[freiListe[jf]].name) + ' (' + t('nur virtuell') + ')' : t('Gebaute Bahn'), () => freiWahl(-1), () => freiWahl(1));
@@ -5843,7 +5878,7 @@
     // Fahrtrichtung (BESTELLT, WIP): die Strecke andersherum fahren, siehe vfGegenrichtung.
     {
       const gegen = vfGegenAn();
-      const rWahl = () => { try { localStorage.setItem(VF_RICHTUNG_STORE, gegen ? 'normal' : 'gegen'); } catch (e) { /* egal */ } renderGarage(); };
+      const rWahl = () => { try { localStorage.setItem(VF_RICHTUNG_STORE, gegen ? 'normal' : 'gegen'); } catch (e) { /* egal */ } vfGarageNeu(); };
       const rZeile = garWertZeile(t('Fahrtrichtung'), gegen ? t('Gegenrichtung') : t('Normal'), rWahl, rWahl);
       const rL = rZeile.querySelector('.gk-l');
       rL.classList.add('opt-label');
@@ -5855,7 +5890,7 @@
     const autoSch = vfSchaltungAuto();
     const schaltWahl = () => {
       try { localStorage.setItem(VF_SCHALTUNG_STORE, autoSch ? 'manuell' : 'auto'); } catch (e) { /* egal */ }
-      renderGarage();
+      vfGarageNeu();
     };
     rechts.appendChild(garWertZeile(t('Schaltung'), autoSch ? t('Automatik') : t('Manuell'), schaltWahl, schaltWahl));
     // Handling: GT3 (praezise wie in ACC) oder Schnell (mehr Grip, mehr Einschlag, hoeheres Tempo).
@@ -5863,26 +5898,26 @@
     const hWahl = (dd) => {
       const i = Math.max(0, VF_HANDLING_MODI.findIndex((m) => m.id === hId));
       vfHandlingSetzen(VF_HANDLING_MODI[(i + dd + VF_HANDLING_MODI.length) % VF_HANDLING_MODI.length].id);
-      renderGarage();
+      vfGarageNeu();
     };
     rechts.appendChild(garWertZeile(t('Handling'), vfHandlingName(hId), () => hWahl(-1), () => hWahl(1)));
     // Grafik: Performance (wie bisher, fuer schwache Handys) oder Quality (Schatten, Tonemapping,
     // besseres Licht, Vignette).
     const gId = vfGrafik();
-    const gWahl = () => { vfGrafikSetzen(gId === 'perf' ? 'qual' : 'perf'); renderGarage(); };
+    const gWahl = () => { vfGrafikSetzen(gId === 'perf' ? 'qual' : 'perf'); vfGarageNeu(); };
     const grafikZeile = garWertZeile(t('Grafik'), t(vfGrafik() === 'perf' ? 'Performance' : 'Quality'), gWahl, gWahl);
     grafikZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(grafikZeile);
     // v1.5 (WIP): Tageszeit (Farbstimmung), in Performance und Quality.
     const tzA = VF_TAGESZEITEN.indexOf(vfTageszeit());
-    const tzWahl = (d) => { vfTageszeitSetzen(VF_TAGESZEITEN[(tzA + d + VF_TAGESZEITEN.length) % VF_TAGESZEITEN.length].id); renderGarage(); };
+    const tzWahl = (d) => { vfTageszeitSetzen(VF_TAGESZEITEN[(tzA + d + VF_TAGESZEITEN.length) % VF_TAGESZEITEN.length].id); vfGarageNeu(); };
     const tzZeile = garWertZeile(t('Tageszeit'), t(VF_TAGESZEITEN[tzA].name), () => tzWahl(-1), () => tzWahl(1));
     tzZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     tzZeile.dataset.feld = 'tageszeit';
     rechts.appendChild(tzZeile);
     // v1.5.94 (G7) BESTELLT: abschaltbar. Erklaerung im (i).
     const sichtAn = vfSichtTempoAn();
-    const sichtWahl = () => { try { localStorage.setItem(VF_SICHT_STORE, sichtAn ? 'aus' : 'an'); } catch (e) { /* egal */ } renderGarage(); };
+    const sichtWahl = () => { try { localStorage.setItem(VF_SICHT_STORE, sichtAn ? 'aus' : 'an'); } catch (e) { /* egal */ } vfGarageNeu(); };
     const sichtZeile = garWertZeile(t('Sichtfeld mit Tempo'), sichtAn ? t('An') : t('Aus'), sichtWahl, sichtWahl);
     const sichtL = sichtZeile.querySelector('.gk-l');
     sichtL.classList.add('opt-label');
@@ -5893,13 +5928,13 @@
     const geistAn = vfGeistAn();
     const geistWahl = () => {
       try { localStorage.setItem(VF_GEIST_STORE, geistAn ? 'aus' : 'an'); } catch (e) { /* egal */ }
-      renderGarage();
+      vfGarageNeu();
     };
     rechts.appendChild(garWertZeile(t('Geist folgt meiner Linie'), geistAn ? t('An') : t('Aus'), geistWahl, geistWahl));
     // Rueckspiegel in der Motorhauben-Kamera (aus PR 4 von gnen54, Standard aus).
     {
       const spAn = vfSpiegelAn();
-      const spWahl = () => { try { localStorage.setItem(VF_SPIEGEL_STORE, spAn ? 'aus' : 'an'); } catch (e) { /* egal */ } renderGarage(); };
+      const spWahl = () => { try { localStorage.setItem(VF_SPIEGEL_STORE, spAn ? 'aus' : 'an'); } catch (e) { /* egal */ } vfGarageNeu(); };
       const spZeile = garWertZeile(t('Rückspiegel (Motorhaube)'), spAn ? t('An') : t('Aus'), spWahl, spWahl);
       const spL = spZeile.querySelector('.gk-l');
       spL.classList.add('opt-label');
@@ -5912,7 +5947,7 @@
     const abseitsBremse = vfAbseitsBremseAn();
     const abseitsWahl = () => {
       try { localStorage.setItem(VF_ABSEITS_BREMSE_STORE, abseitsBremse ? 'aus' : 'an'); } catch (e) { /* egal */ }
-      renderGarage();
+      vfGarageNeu();
     };
     const abseitsZeile = garWertZeile(t('Kein Tempoverlust neben der Bahn'), abseitsBremse ? t('Aus') : t('An'), abseitsWahl, abseitsWahl);
     abseitsZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
@@ -5921,13 +5956,13 @@
     const nNpc = vfNpcAnzahl();
     const npcWahl = (dd) => {
       try { localStorage.setItem(VF_NPC_STORE, String(Math.max(0, Math.min(3, nNpc + dd)))); } catch (e) { /* egal */ }
-      renderGarage();
+      vfGarageNeu();
     };
     rechts.appendChild(garWertZeile(t('NPCs'), nNpc === 0 ? t('Aus') : String(nNpc), () => npcWahl(-1), () => npcWahl(1)));
     // Pflicht-Boxendurchfahrt im Rennen (Runden, Langstrecke): Aus, 1, 2 oder 3 (aus PR 4 von gnen54).
     {
       const pfl = vfPflichtBox();
-      const pflWahl = (d) => { try { localStorage.setItem(VF_PFLICHTBOX_STORE, String((pfl + d + 4) % 4)); } catch (e) { /* egal */ } renderGarage(); };
+      const pflWahl = (d) => { try { localStorage.setItem(VF_PFLICHTBOX_STORE, String((pfl + d + 4) % 4)); } catch (e) { /* egal */ } vfGarageNeu(); };
       const pflZeile = garWertZeile(t('Pflicht-Boxendurchfahrt'), pfl ? String(pfl) : t('Aus'), () => pflWahl(-1), () => pflWahl(1));
       const pflL = pflZeile.querySelector('.gk-l');
       pflL.classList.add('opt-label');
@@ -5939,7 +5974,7 @@
       const jf = VF_FEDER_WERTE.indexOf(vfFederSicht());
       const federWahl = (dd) => {
         try { localStorage.setItem(VF_FEDER_STORE, String(VF_FEDER_WERTE[Math.max(0, Math.min(VF_FEDER_WERTE.length - 1, jf + dd))])); } catch (e) { /* egal */ }
-        renderGarage();
+        vfGarageNeu();
       };
       rechts.appendChild(garWertZeile(t('Neigung sichtbar'), VF_FEDER_WERTE[jf] + '×', () => federWahl(-1), () => federWahl(1)));
     }
@@ -6177,7 +6212,7 @@
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
     // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).
-    if (!VF.studie && typeof showTab === 'function') showTab('garage');
+    if (!VF.studie && typeof showTab === 'function') { showTab('vgarage'); vfGarageSeite(); }   // v1.6.32: zurueck in die virtuelle Garage
     VF.studie = false;
   }
   window.addEventListener('keydown', (e) => { if (VF.aktiv && e.key === 'Escape') { e.stopImmediatePropagation(); virtuellBeenden(); } }, true);
