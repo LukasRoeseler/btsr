@@ -1143,7 +1143,7 @@
     gl.vertexAttribPointer(H.ap, 3, gl.FLOAT, false, 12, 0);
     gl.uniform3f(H.horizont, z.horizont[0], z.horizont[1], z.horizont[2]); gl.uniform3f(H.zenit, z.zenit[0], z.zenit[1], z.zenit[2]);
     gl.uniform3f(H.dunst, d[0], d[1], d[2]); gl.uniform3f(H.unten, un[0], un[1], un[2]); gl.uniform1f(H.umwelt, 1);
-    gl.uniform1f(H.wolken, 0.5); gl.uniform1f(H.zeit, (performance.now() / 1000) % 10000); gl.uniform1f(H.regen, vfRegenStaerke());
+    gl.uniform1f(H.wolken, VF_WOLKEN); gl.uniform1f(H.zeit, (performance.now() / 1000) % 10000); gl.uniform1f(H.regen, vfRegenStaerke());
     gl.uniform2f(H.halb, 1, 1);
     for (let i = 0; i < 6; i++) {
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, U.tex, 0);
@@ -2017,6 +2017,9 @@
   // 1.3.92, Quality der von v1.3.124 (linear, Himmelslicht, sonnenausgerichteter Glanz, Klarlack,
   // Scheibenspiegelung, Schattenkarte) - mit Blickvektor und Schattenkoordinaten aus dem Vertexshader.
   // Radius des PCF-Kerns im Quality-Autoshader: 2 (5x5) am Rechner, 1 (3x3) auf Touch-Geraeten.
+  // v1.6.5 BESTELLT: "Himmel ist langweilig - etwas mehr Wolken beim sonnigen Modus, aber nicht Performance schlechter
+  // machen." Nur die Dichte (gleiche fbm-Kosten): 0,5 -> 0,72.
+  const VF_WOLKEN = 0.72;
   const VF_PCF_R = (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) ? 1 : 2;
   function vfProgrammTex(gl, qual) {
     const p = gl.createProgram();
@@ -3042,7 +3045,7 @@
       gl.uniform3f(VF.himmelProg.fwd, fx, fy, fz);
       gl.uniform2f(VF.himmelProg.halb, th * w / Math.max(1, h), th);
       // v1.5: Wolken (Bewoelkung mittel, im Regen dichter und grauer), Zeit fuer das Ziehen.
-      gl.uniform1f(VF.himmelProg.wolken, 0.5);
+      gl.uniform1f(VF.himmelProg.wolken, VF_WOLKEN);
       gl.uniform1f(VF.himmelProg.zeit, (performance.now() / 1000) % 10000);
       gl.uniform1f(VF.himmelProg.regen, vfRegenStaerke());
       { const d = VF.dunstF || vfTz().horizont; gl.uniform3f(VF.himmelProg.dunst, d[0], d[1], d[2]); }
@@ -4027,7 +4030,17 @@
   // ---- Starten und Beenden ------------------------------------------------------------------
   // opts.tiles: diese Strecke statt der des Editors (die Studie faehrt Homington), opts.studie: die
   // Fahrt gehoert der Studie (beim Beenden nicht in die Garage). true = gestartet.
+  const VF_FREIGABE_MS = 60000;
+  var vfFreigabeTimer = 0;   // var: virtuellBeenden kann vor dieser Zeile laufen (Selbsttest beim Laden)
+  function vfSpeicherFreigeben() {
+    if (VF.aktiv) return;
+    vfTexDaten.bahn = null; vfTexDaten.rand = null; vfTexDaten.boden = null; vfTexDaten.bodenId = null;
+    vfTexLauf.bahn = null; vfTexLauf.boden = null; vfTexLauf.bodenId = null;
+    vfModellLaden = {}; vfRadModell = null;
+    log('Virtuell: Texturen und Automodelle aus dem Speicher freigegeben.', 'info');
+  }
   function virtuellStarten(opts) {
+    clearTimeout(vfFreigabeTimer);
     opts = opts || {};
     if (VF.aktiv) return false;
     vfHandlingCache = null;   // einmal frisch lesen (z. B. in einem anderen Tab geaendert)
@@ -4629,6 +4642,13 @@
     // Tempo (und der Gang) der virtuellen Fahrt, bis das echte Auto sich bewegte.
     if (typeof physEngine !== 'undefined' && physEngine && typeof physEngine.reset === 'function') physEngine.reset();
     if (VF.schicht) VF.schicht.remove();
+    // v1.5.159 (Latenz/Speicher): den Grafikkontext sofort abgeben (GPU-Puffer und Texturen frei) und die Texturdaten
+    // und Automodelle im JS-Speicher nach VF_FREIGABE_MS freigeben, wenn keine neue Fahrt beginnt. Bis 1.5.158 blieben
+    // sie fuer schnelle Neustarts liegen (Bahn 16 MB, Rasenatlas 8 MB, Randstreifen 4 MB, je Automodell bis 45 MB) und
+    // belegten beim echten Fahren Speicher - mit wenig freiem Speicher stockte dann der Sendetakt.
+    try { const ext = VF.gl && VF.gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); } catch (e) { /* egal */ }
+    clearTimeout(vfFreigabeTimer);
+    vfFreigabeTimer = setTimeout(vfSpeicherFreigeben, VF_FREIGABE_MS);
     VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.weh = null; VF.umw = null; VF.boxStriche = null; VF.boxBucht = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.wetterKnopf = null; VF.stick = null; VF.tasten = {};
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).

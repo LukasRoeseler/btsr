@@ -27387,6 +27387,43 @@
     return { ok: !f.length, mass: f.length ? f.join('; ') : mass };
   });
   // v1.5.101 BESTELLT: H1 (Lenkhilfe, nur LibreCorsa), H2 (Bremstemperatur: kalt schwaecher), H5 (dreckige Luft).
+  // v1.6.5 BESTELLT: Rumble wie LibreCorsa, Vibrationsoptionen auch virtuell, Quietschen/Neben der Bahn ab Werk aus;
+  // Speicher nach der virtuellen Fahrt freigeben (Latenz bei wenig Speicher).
+  stAdd('Vibration v1.6.5: Mischer wie LibreCorsa (Schichten, Arten, Impulse), Speicher nach virtueller Fahrt frei', () => {
+    const f = [];
+    if (Math.abs(rmSchicht(0.5, 0.5) - 0.75) > 1e-9 || rmSchicht(0.9, 1) !== 1) f.push('Schichtung');
+    if ($('vib-quietschen') && $('vib-quietschen').defaultChecked) f.push('Quietschen ab Werk an');
+    if ($('vib-abseits') && $('vib-abseits').defaultChecked) f.push('Neben der Bahn ab Werk an');
+    const merk = Object.assign({}, RUMBLE_ARTEN), merkZ = Object.assign({}, rmZ), merkAktiv = rumbleMixAktiv;
+    try {
+      rmZ.kerbPhase = 0.2; rmZ.stoss = 0; rmZ.impulsBis = 0;
+      const c = { kerb: 0.8, schieben: 0.3, heck: 0.4, abs: 0, boden: 0.2 };
+      RUMBLE_ARTEN.abseits = false; RUMBLE_ARTEN.kerb = true; RUMBLE_ARTEN.rutschen = true; RUMBLE_ARTEN.untersteuern = true;
+      const a = rmMischen(c);
+      if (!(a.schwach > 0.8 && a.stark > 0.5)) f.push('Mischung ' + a.schwach.toFixed(2) + '/' + a.stark.toFixed(2));
+      RUMBLE_ARTEN.kerb = false; RUMBLE_ARTEN.rutschen = false; RUMBLE_ARTEN.untersteuern = false;
+      const b = rmMischen(c);
+      if (b.schwach !== 0 || b.stark !== 0) f.push('abgeschaltete Arten brummen: ' + b.schwach + '/' + b.stark);
+      rumbleMixAktiv = () => true;
+      rmZ.stoss = 0; RUMBLE_ARTEN.crash = true;
+      const merkOn = rumbleOn; rumbleOn = true;
+      padRumble(0.7, 0.7, 40, 'crash', 1);
+      if (!(rmZ.stoss >= 0.69)) f.push('Stoss nicht in der Huellkurve');
+      padRumble(0.3, 0.3, 100, 'schalt', 1);
+      if (!(rmZ.impulsBis > performance.now())) f.push('Einzelereignis nicht beigemischt');
+      rumbleOn = merkOn;
+    } finally {
+      Object.assign(RUMBLE_ARTEN, merk); Object.assign(rmZ, merkZ); rumbleMixAktiv = merkAktiv;
+    }
+    if (!VF.aktiv) {
+      const merkT = Object.assign({}, vfTexDaten), merkM = vfModellLaden;
+      vfTexDaten.bahn = { d: new Uint8Array(4) }; vfModellLaden = { x: 1 };
+      vfSpeicherFreigeben();
+      if (vfTexDaten.bahn !== null || Object.keys(vfModellLaden).length) f.push('Speicher nicht freigegeben');
+      Object.assign(vfTexDaten, merkT); vfModellLaden = merkM;
+    }
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'Schichten, Arten, Stoss/Impuls im Mischer, Freigabe' };
+  });
   stAdd('Fahrgefuehl v1.5.101: Lenkhilfe LibreCorsa (S-Kurve, Scheitel, Ausrichten), kalte Bremse, dreckige Luft virtuell', () => {
     const f = [];
     // H2: kalte Scheiben bremsen schwaecher, warme nicht, Schalter aus = nichts.

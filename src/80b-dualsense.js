@@ -72,8 +72,10 @@
   }
   function dsEffekt(art, links) {
     switch (art) {
-      case 'pedal': return dsWiderstand(1, 2, 7);           // Bremse: wird nach unten fester
-      case 'gas': return dsWiderstand(1, 2, 3);             // Gas: leicht
+      // v1.6.5: Staerken wie LibreCorsa (dualsense-feedback.ts, slopeZones bei voller Trigger-Staerke):
+      // Bremse ab Zone 1 von 3 auf 8, Gas erst ab 30 % des Wegs (Zone 3) von 1 auf 3.
+      case 'pedal': return dsWiderstand(1, 3, 8);           // Bremse: wird nach unten fester
+      case 'gas': return dsWiderstand(3, 1, 3);             // Gas: leicht, erst ab 30 % des Wegs
       case 'abs': return dsVibration(2, 6, DS_HZ.abs);
       case 'block': return dsVibration(2, 7, DS_HZ.block);
       case 'tc': return dsVibration(1, 5, DS_HZ.tc);
@@ -215,6 +217,9 @@
   // auf EINE Seite statt auf beide Motoren, und wie bei LibreCorsa haelt sie, solange der Rutsch da ist.
   function dsGripCue() {
     const g = { links: 0, rechts: 0 };
+    // v1.6.5: mit dem Mischer (41-rumble-mix.js, wie LibreCorsa) bekommen die Griffmotoren dessen Staerken:
+    // links der tiefe (stark), rechts der hohe (schwach) Motor - genau wie bei LibreCorsa (low/high).
+    if (typeof rumbleMixAktiv === 'function' && rumbleMixAktiv()) { g.links = rmZ.letztS; g.rechts = rmZ.letztW; return g; }
     const st = physEngine && physEngine.state;
     if (!rumbleOn || !physicsEnabled || !st || !st.pacZustand) return g;
     let dir = 0, mag = 0;

@@ -2744,7 +2744,7 @@
   // v1.1.42: 'rutschen' ist nur noch das Uebersteuern; dazu 'untersteuern' und 'quietschen' (Kachel Vibration).
   const RUMBLE_ARTEN = { schalt: true, abs: true, crash: true,
                          abseits: false, box: true, meldung: false, rutschen: true,
-                         untersteuern: true, quietschen: true, kerb: true };
+                         untersteuern: true, quietschen: false, kerb: true };   // v1.6.5: Quietschen ab Werk aus
 
   // ---- Trigger-Vibration, und WELCHER Trigger zu welcher Art gehoert -----------------
   //
@@ -2793,6 +2793,16 @@
     // Etikett vergisst, bekommt ein Brummen und merkt es; ein stilles Verschlucken waere
     // ein Feature, das niemand vermisst, bis es fehlt.
     if (art && RUMBLE_ARTEN[art] === false) return false;
+    // v1.6.5: Faehrt der Mischer (41-rumble-mix.js, wie LibreCorsa), uebernimmt er das Dauer-Rumble des Fahrers: die
+    // Dauer-Arten gehen hier nicht mehr einzeln raus, ein Stoss geht in seine Huellkurve, Einzelereignisse werden
+    // beigemischt. Spieler 2/3 (wer > 1) bleiben beim bisherigen Weg.
+    if ((wer === undefined || wer === 1) && typeof rumbleMixAktiv === 'function' && rumbleMixAktiv()) {
+      if (art === 'kerb' || art === 'untersteuern' || art === 'rutschen' || art === 'abseits' || art === 'quietschen') return true;
+      if (art === 'crash' || art === 'kill' || art === 'ko') rmStoss(Math.max(strong || 0, weak || 0));
+      else rmImpuls(strong, weak, ms);
+      if (triggerRumbleOn && art && TRIGGER_ARTEN[art]) { const [li, re] = TRIGGER_ARTEN[art]; triggerRuettle(li, re, ms, rumblePad(wer)); }
+      return true;
+    }
     const ziel = rumblePad(wer);
     ruettle({
       duration: ms, startDelay: 0,

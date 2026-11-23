@@ -962,6 +962,18 @@
     RUMBLE_ARTEN[art] = el.checked;
     el.addEventListener('change', (e) => { RUMBLE_ARTEN[art] = e.target.checked; });
   });
+  // v1.6.5 BESTELLT: "Der Default sollte sein, dass es nicht neben der Strecke vibriert und nicht, wenn der Reifen
+  // quietscht." Einmalig umstellen (nach dem Laden der gespeicherten Einstellungen); danach gilt die eigene Wahl.
+  setTimeout(() => {
+    try {
+      if (localStorage.getItem('omegasim-vib-165')) return;
+      localStorage.setItem('omegasim-vib-165', '1');
+      ['vib-quietschen', 'vib-abseits'].forEach((id) => {
+        const el = $(id);
+        if (el && el.checked) { el.checked = false; el.dispatchEvent(new Event('change', { bubbles: true })); }
+      });
+    } catch (e) { /* privat */ }
+  }, 2500);
 
   // Die Trigger-Vibration, dieselbe Bauform: AUS DEM MARKUP lesen, dann auf 'change'.
   if ($('vib-trigger')) {
@@ -2029,6 +2041,23 @@
   // One place decides what the gear reads, so the racing screen and the driving tab can
   // never disagree. No "M" suffix: the mode is visible in the options, and a letter glued
   // to the gear number was noise on a display meant to be read at a glance.
+  // v1.5.159 GEMELDET: hohe Latenz mit NPCs oder 2 Spielern lag an zu wenig freiem Speicher auf dem Handy. Beim Start
+  // einmal nachsehen: die Speicherquote des Browsers richtet sich nach dem freien Platz (Chrome/WebView: ein Teil davon).
+  // Liegt sie unter SPEICHER_WARN_MB, ein Hinweis (einmal je Sitzung) und eine Zeile im Live-Log.
+  const SPEICHER_WARN_MB = 800;
+  function speicherPruefen() {
+    try {
+      if (!navigator.storage || !navigator.storage.estimate) return;
+      navigator.storage.estimate().then((e) => {
+        const frei = ((e && e.quota) || 0) - ((e && e.usage) || 0);
+        if (!(frei > 0)) return;
+        const mb = Math.round(frei / 1048576);
+        log('Speicher: etwa ' + mb + ' MB fuer die App verfuegbar (Quote des Browsers).', 'info');
+        if (mb < SPEICHER_WARN_MB) showHudToast(t('Wenig freier Speicher auf dem Gerät: das kann beim Fahren mit mehreren Autos zu Verzögerungen führen.'));
+      }).catch(() => {});
+    } catch (e) { /* egal */ }
+  }
+  setTimeout(speicherPruefen, 4000);
   function gearLabel(st) {
     if (st.driveMode === 'reverse') return 'R';
     if (st.driveMode === 'neutral') return 'N';
