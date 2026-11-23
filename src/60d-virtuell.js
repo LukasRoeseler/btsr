@@ -3892,8 +3892,9 @@
     // Tacho-Block: Tempo, Gang, Drehzahl, Reifen, Tank - dieselben Werte wie das Cockpit.
     txt(u.tempo, 'v', String(kmh));
     txt(u.rpm, 'r', String(Math.round(motorDrehzahl(st) / 10) * 10));
-    const g = st.currentGear;
-    txt(u.gang, 'g', g > 0 ? String(g) : (g < 0 ? 'R' : 'N'));
+    // v1.5.158 GEMELDET: "erster Gang wird als N angezeigt, sollte aber 1 sein". currentGear zaehlt ab 0 (wie im
+    // Cockpit, gearLabel in 50-drive.js); vorher stand im 1. Gang "N" und in jedem weiteren eine Zahl zu wenig.
+    txt(u.gang, 'g', gearLabel(st));
     const t4 = st.tyreTemp4 || [st.tyreTempC];
     for (let i = 0; i < 4; i++) {
       const T = Math.round(t4[i] !== undefined ? t4[i] : t4[0]);

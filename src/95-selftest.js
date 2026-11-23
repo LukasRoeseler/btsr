@@ -6229,6 +6229,12 @@
         if (w.join(',') !== '1,1,1,0.52,0.9,1') f.push('Profil (am Kurventeil) ' + w.join(','));
         if (ghostStufeFaktor(auto(1)) !== 1) f.push('ghostStufeFaktor nimmt das MAX-Profil nicht');
         if (ghostStufeFaktor({ role: 'ghost', ghostStufe: 2, tileCode: TILE_TYPE.STRAIGHT, ghost: {} }) === 1) f.push('Stufe schnell faehrt MAX');
+        // v1.5.158: Bremsrampe vor der Haarnadel (S G G G H G): 3 Teile davor <= 0,65, 2 Teile davor <= 0,47.
+        ghostCfg.maxBremspunkt = 'schiene';
+        currentTrackTiles = [TILE_TYPE.START, TILE_TYPE.STRAIGHT, TILE_TYPE.STRAIGHT, TILE_TYPE.STRAIGHT,
+                             TILE_TYPE.HAIRPIN, TILE_TYPE.STRAIGHT].map((type) => ({ type }));
+        const h = [0, 1, 2, 3].map((i) => +ghostMaxTempo(auto(i)).toFixed(2));
+        if (!(h[0] === 1 && h[1] <= 0.65 + 1e-9 && h[2] <= 0.47 + 1e-9 && h[3] <= 0.35 + 1e-9)) f.push('Bremsrampe vor der Haarnadel ' + h.join(','));
       } finally { ortStimmt = merkOrt; }
       // Haarnadel: weiter Abzug, Deckel und Boden; Gelb/Formation wie alle.
       const src = String(ghostTick);
@@ -14540,7 +14546,7 @@
       zl.offen = true; konsoleFahrenGeraete();
       if ($('fa-auto-geraete').hidden || $('fa-auto-geraete').querySelectorAll('i').length !== 1) f.push('Laptop-Symbol fehlt');
       // Kamera mit Bild: Attrappe des WLAN-Bilds.
-      onbZ = { m5: { url: 'x' } };
+      onbZ = { m5: { url: 'x', bild: true } };   // seit 1.5.141: aktiv ab dem ersten Bild (m5.bild)
       const img = $('onboard-bild');
       const merkW = Object.getOwnPropertyDescriptor(img, 'naturalWidth');
       Object.defineProperty(img, 'naturalWidth', { configurable: true, get: () => 640 });

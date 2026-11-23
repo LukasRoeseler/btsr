@@ -8464,6 +8464,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     an();
   }
   function ghostIstMax(car) { return !!car && car.ghostStufe === GHOST_STUFE_MAX; }
+  // Zuschlag auf haarnadelMax je Abstand (Teile) vor einer Haarnadel, fuer MAX-NPCs (ghostMaxTempo).
+  var MAX_HAARNADEL_RAMPE = { 2: 0.12, 3: 0.3 };   // var: ghostTick kann beim Laden vor dieser Zeile laufen
   function ghostMaxArt(typ) {
     if (typ === undefined || typ === null) return 'gerade';
     if (tileTightness(typ) >= 2) return 'haarnadel';
@@ -8488,6 +8490,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     let v = ghostMaxWert(ghostMaxArt(hierTyp));
     if (ghostCfg.maxBremspunkt !== 'teil' && ortOk) {
       v = Math.min(v, ghostMaxWert(ghostMaxArt(tiles[(g.tileIndex + 1) % n].type)));
+    }
+    // v1.5.158 GEMELDET: "MAX-NPC hat in der Haarnadel nicht ordentlich abgebremst". Von Vollgas (1,0) auf das
+    // Haarnadeltempo (0,35) in ein bis zwei Teilen schafft das echte Auto nicht. Jetzt eine Bremsrampe: drei Teile
+    // vor der Haarnadel hoechstens MAX_HAARNADEL_RAMPE[3], zwei Teile davor [2]; ab einem Teil davor gilt wie bisher
+    // die normale Haarnadel-Logik (Obergrenze haarnadelMax).
+    if (ortOk) {
+      const hm = ghostMaxWert('haarnadel');
+      for (let k = 2; k <= 3; k++) {
+        if (tileTightness(tiles[(g.tileIndex + k) % n].type) >= 2) { v = Math.min(v, hm + MAX_HAARNADEL_RAMPE[k]); break; }
+      }
     }
     return Math.max(0.05, Math.min(1, v));
   }
