@@ -14622,6 +14622,39 @@
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Virtuell v1.6.37: Heli - Kippen wie im Vorbild (auf die Modellgroesse skaliert), zwei Touch-Sticks am Handy', () => {
+    const f = [];
+    const merk = { hubschrauber: VF.hubschrauber, x: VF.x, y: VF.y, z: VF.z, h: VF.h, flug: VF.flug, pitch: VF.pitch, roll: VF.roll, hubTasten: VF.hubTasten,
+      hubLuft: VF.hubLuft, touchHeli: VF.touchHeli, stick: VF.stick, stickL: VF.stickL, rotor: VF.rotor, aktiv: VF.aktiv };
+    const merkG = vfHubGyro;
+    let weg = 0;
+    try {
+      vfHubGyro = () => true;
+      // Schweben in 60 Einheiten Hoehe, dann 1,5 s Stick voll vorn: der Hubschrauber muss mindestens 3,5 eigene Laengen (22) fliegen (im Vorbild 4,3).
+      Object.assign(VF, { hubschrauber: true, x: 0, y: 0, z: 60, h: 0, pitch: 0, roll: 0, hubLuft: true, stick: null, stickL: null,
+        touchHeli: null, flug: { vz: 0, vx: 0, vy: 0, rpm: 0.9, collective: VF_HUB_HOVER, yawRate: 0 }, hubTasten: { pitchVorn: true } });
+      for (let i = 0; i < 90; i++) vfHubPhysik(1 / 60);
+      weg = Math.hypot(VF.x, VF.y);
+      if (!(weg > 22)) f.push('nach 1,5 s Neigen nur ' + weg.toFixed(1) + ' Einheiten');
+      if (!(VF_HUB_GRAV > 50 && VF_HUB_THRUST / VF_HUB_GRAV > 1.7 && VF_HUB_THRUST / VF_HUB_GRAV < 1.9)) f.push('Schub/Schwerkraft nicht skaliert');
+      // Touch-Sticks: links hoch = steigen, rechts vor = Nase vor.
+      VF.hubTasten = {}; VF.touchHeli = { l: { x: 0.5, y: -1 }, r: { x: -0.3, y: -0.8 } };
+      const e = vfHubEingabe();
+      if (!(e[0] > 0.9 && Math.abs(e[1] - 0.5) < 1e-9 && Math.abs(e[2] - 0.8) < 1e-9 && Math.abs(e[3] + 0.3) < 1e-9)) f.push('Touch-Eingabe ' + e.join(','));
+      // Anzeige: im Heli die zwei Sticks (Klasse), sonst Lenkung/Pedal.
+      const el = document.createElement('div');
+      el.className = 'vf-touch';
+      const merkTE = vfTouchElement;
+      vfTouchElement = () => el;
+      try {
+        vfTouchAnzeigen(true);
+        if (!el.classList.contains('vf-touch-heli-an')) f.push('Heli-Sticks nicht eingeschaltet');
+        VF.hubschrauber = false; vfTouchAnzeigen(true);
+        if (el.classList.contains('vf-touch-heli-an')) f.push('Heli-Sticks im Auto');
+      } finally { vfTouchElement = merkTE; }
+    } finally { vfHubGyro = merkG; Object.assign(VF, merk); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '1,5 s vorn geneigt: ' + weg.toFixed(0) + ' Einheiten (' + (weg / 6.4).toFixed(1) + ' Heli-Laengen); Touch-Sticks links/rechts' };
+  });
   stAdd('Virtuell v1.6.27: RC Stunt Copter nur im Training, Tore an den Sektoren, Runde nur nach allen Toren und Start/Ziel-Tor (Issue #15)', () => {
     const f = [];
     const rm = $('race-mode'), merkRm = rm ? rm.value : null;
@@ -14738,6 +14771,19 @@
       vfRauchSchritt(0.5, 20, false);
       if (VF.rauch.length) f.push('Rauch ohne Drift-Fahrgefuehl');
     } finally { Object.assign(VF, merkV); }
+    // v1.6.37: ohne Gas schnappt der Drift nicht zurueck - 0,5 s nach dem Gaswegnehmen noch >= 20 Grad, nach 3 s wieder gerade.
+    for (const v of [12, 20]) {
+      const z = { vy: 0, r: 0 }, w = {};
+      for (let t = 0; t < 5; t += 1 / 60) {
+        const gas = t < 1.5 ? 1 : 0;
+        vfDynamik(z, v, gas, gas, 0.5, 1 / 60, 1, P);
+        const be = Math.abs(Math.atan2(z.vy, v)) * 180 / Math.PI;
+        if (Math.abs(t - 2.0) < 1 / 120) w.a = be;
+        if (Math.abs(t - 4.5) < 1 / 120) w.b = be;
+      }
+      if (!(w.a >= 20)) f.push('ohne Gas bei ' + v + ' m/s nach 0,5 s nur ' + (w.a || 0).toFixed(0) + ' Grad');
+      if (!(w.b < 18)) f.push('faengt sich bei ' + v + ' m/s nicht: ' + (w.b || 0).toFixed(0) + ' Grad');
+    }
     const g = lauf(Object.assign({}, VF_GT3), 25, 0.5, 1);
     if (!(g.beta < 8)) f.push('GT3 driftet: ' + g.beta.toFixed(1));
     if (VF_GT3.gyro || VF_GT3.driftGrenze) f.push('GT3 hat Gyro');
@@ -14845,7 +14891,7 @@
       if (!document.body.classList.contains('fm-virtuell')) f.push('Klasse fm-virtuell fehlt');
       if (!$('fa-verbinden').hidden || !$('fa-mp').hidden) f.push('virtuell: Verbinden/Mehrspieler sichtbar');
       if ($('fa-auto-titel').textContent !== t('Virtuelles Auto')) f.push('Titel ' + $('fa-auto-titel').textContent);
-      if ($('fa-auto-bild').style.backgroundImage.indexOf('vorschau.jpg') < 0) f.push('kein Vorschaubild');
+      if ($('fa-auto-bild').style.backgroundImage.indexOf('vorschau.png') < 0) f.push('kein Vorschaubild');
       if ($('fa-auto-info').textContent.indexOf(vfAutoName(vfAutoWahl())) < 0) f.push('Autoname fehlt: ' + $('fa-auto-info').textContent);
       if ($('fa-start-titel').textContent !== t('Virtuell fahren')) f.push('Start: ' + $('fa-start-titel').textContent);
       // Garage oeffnet die eigenstaendige virtuelle Garage (v1.6.32).
@@ -28092,11 +28138,11 @@
     // Der Shader kennt das Umfaerben (beide Varianten) - ohne den Wert fiele die Farbe stillschweigend weg.
     const quelle = Array.from(document.scripts).map((x) => x.text).join(' ');
     if ((quelle.match(/uniform float lack;/g) || []).length < 2) f.push('Shader ohne uniform lack in beiden Varianten');
-    // Vorschaubilder: ein Seitenbild je Auto (img/autos/<modell>/vorschau.jpg).
+    // Vorschaubilder: ein Seitenbild je Auto (img/autos/<modell>/vorschau.png, transparent seit v1.6.37).
     const fehlt = [];
     for (const m of Object.keys(VF_MODELL_PFADE)) {
       try {
-        const r = await fetch(VF_MODELL_PFADE[m] + 'vorschau.jpg', { method: 'HEAD', cache: 'no-store' });
+        const r = await fetch(VF_MODELL_PFADE[m] + 'vorschau.png', { method: 'HEAD', cache: 'no-store' });
         if (!r.ok) fehlt.push(m);
       } catch (e) { fehlt.push(m); }
     }

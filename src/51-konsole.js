@@ -946,7 +946,8 @@
         ab.appendChild(gal);
       } else if (vfM) {
         // Vorschaubild des virtuellen Autos (Seitenansicht), dahinter das Bild der virtuellen Fahrt.
-        ab.style.backgroundImage = 'url("' + vfModellPfad(vfId) + 'vorschau.jpg"), url(img/virtuell-fahren.jpg)';
+        // v1.6.37: transparentes Vorschaubild auf dem Garagenbild der virtuellen Fahrt (BESTELLT: garage_virtual).
+        ab.style.backgroundImage = 'url("' + vfModellPfad(vfId) + 'vorschau.png"), url(img/garage-virtuell.jpg)';
         ab.innerHTML = '';
       } else {
         ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/garage.jpg)';   // v1.0.15: Garagenfoto (BESTELLT)
@@ -1286,10 +1287,8 @@
     // v1.6.23: im Modus Virtuell startet die Startkachel die virtuelle Fahrt (die Kachel "Virtuell fahren" ist dem
     // Umschalter Echt | Virtuell gewichen). Ein Tipp auf eine Seite des Umschalters waehlt sie, sonst wechselt er.
     kn('fa-start', () => { if (fahrModusVirtuell() && !kRennenLaeuft()) konsoleVirtuellStarten(); else konsoleLosfahren(); });
-    kn('fa-modus', (e) => {
-      const s = e.target.closest('[data-fm]');
-      fahrModusSetzen(s ? s.dataset.fm : (fahrModusVirtuell() ? 'echt' : 'virtuell'));
-    });
+    // v1.6.37 BESTELLT: "the real/virtual button should be as big as the box ... I click the box and it switches".
+    kn('fa-modus', () => fahrModusSetzen(fahrModusVirtuell() ? 'echt' : 'virtuell'));
     // v1.1.3 BESTELLT: "Tippe ich bei der Kachel STRECKE auf STRECKE oder AUF DER BAHN, soll
     // umgeschaltet werden; tippe ich auf das Bild, oeffnet sich das Menue dazu." Vorher schaltete nur
     // der Text selbst um, ein Tipp daneben in der Kopfzeile oeffnete das Menue. Jetzt oeffnet nur das

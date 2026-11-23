@@ -1450,16 +1450,22 @@
   .k-fahren-unten #fa-profil .k-kk { font-size: clamp(11px, 2vh, 15px); }
   /* v1.5: wie die Startkachel (abgedunkeltes Bild, grosser Titel), schmaler: ohne Zielflaggen, Titel kleiner. */
   /* v1.6.23: Umschalter Echt | Virtuell an der Stelle der frueheren Kachel "Virtuell fahren". */
-  #fa-modus.k-modus { background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url(img/garage.jpg) center / cover no-repeat; }
-  body.fm-virtuell #fa-modus.k-modus { background: linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)), url(img/virtuell-fahren.jpg) center 55% / cover no-repeat; }
+  /* v1.6.37 BESTELLT: Hintergrund des Umschalters "an image (take from photos/ this: 4201b527...)", und der Umschalter ist
+     die ganze Kachel: links ECHT, rechts VIRTUELL, je die halbe Flaeche, ein Tipp irgendwo schaltet um. */
+  #fa-modus.k-modus { position: relative; overflow: hidden; background: url(img/fahrmodus-rad.jpg) center 45% / cover no-repeat; }
+  #fa-modus .k-start-innen { position: absolute; inset: 0; width: auto; max-width: none; z-index: 1; }
+  #fa-modus .k-start-innen > small { position: absolute; top: 6px; left: 0; right: 0; z-index: 2; pointer-events: none; }
   #fa-modus.k-modus::before, #fa-modus.k-modus::after { display: none; }
-  .k-modus-wahl { display: flex; width: 100%; margin-top: 6px; border: 1px solid rgba(255,255,255,.55); border-radius: 6px; overflow: hidden; }
-  #fa-modus .k-start-innen { width: 88%; max-width: 340px; }
-  #fa-modus .k-modus-wahl b { flex: 1 1 0; padding: .35em .5em; font-size: clamp(12px, 1.6vw, 19px); font-weight: 800; letter-spacing: .06em; color: rgba(255,255,255,.72); cursor: pointer; text-align: center; white-space: nowrap; text-shadow: none; }
-  #fa-modus .k-modus-wahl b.an { background: #00a3e0; color: #fff; }
+  .k-modus-wahl { position: absolute; inset: 0; display: flex; margin: 0; border: 0; border-radius: 0; overflow: hidden; }
+  #fa-modus .k-modus-wahl b { flex: 1 1 0; display: grid; place-items: center; padding: .3em; font-size: clamp(14px, 2.4vw, 30px); font-weight: 900;
+    letter-spacing: .08em; color: rgba(255,255,255,.6); cursor: pointer; text-align: center; white-space: nowrap; background: rgba(0,0,0,.62);
+    text-shadow: 0 2px 10px #000; transition: background .15s, color .15s; }
+  #fa-modus .k-modus-wahl b + b { border-left: 1px solid rgba(255,255,255,.25); }
+  #fa-modus .k-modus-wahl b.an { background: rgba(0,163,224,.42); color: #fff; box-shadow: inset 0 -4px 0 #00a3e0; }
   .k-modus-wahl .wip-tag { margin-left: 3px; font-size: 8px; vertical-align: super; text-shadow: none; }
-  body.fm-virtuell #fa-start { background-image: linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url(img/virtuell-fahren.jpg); background-size: cover; background-position: center 55%; }
-  body.fm-virtuell #fa-auto-bild { background-size: contain, cover; background-repeat: no-repeat; background-position: center, center; }
+  /* v1.6.37 BESTELLT: "background of the drive virtually box should be this image: drive_virtually". */
+  body.fm-virtuell #fa-start { background-image: linear-gradient(rgba(0,0,0,.3), rgba(0,0,0,.3)), url(img/virtuell-fahren-start.jpg); background-size: cover; background-position: center 50%; }
+  body.fm-virtuell #fa-auto-bild { background-size: 88% auto, cover; background-repeat: no-repeat; background-position: center 92%, center; }
   /* v1.5: kleine Symbole auf der Garagenkachel (zweiter Laptop, Onboard-Kamera). */
   .k-geraete { position: absolute; top: 6px; right: 8px; display: flex; gap: 6px; z-index: 2; pointer-events: none; }
   .k-geraete[hidden] { display: none; }
@@ -4150,6 +4156,15 @@
   .vf-touch[hidden] { display: none; }
   /* v1.6.23: Neigen - gelenkt wird mit dem Handy, der Stick links entfaellt, das Pedal rechts bleibt. */
   .vf-touch.vf-touch-neigen .vf-touch-lenk { display: none; }
+  /* v1.6.37: Hubschrauber - zwei Kreis-Sticks statt Lenkung und Pedal. */
+  .vf-touch-heli { display: none; position: absolute; bottom: max(14px, env(safe-area-inset-bottom)); width: min(36vw, 36vh, 200px); aspect-ratio: 1;
+    border-radius: 50%; background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.28); touch-action: none; pointer-events: auto; }
+  .vf-touch-heli-l { left: max(14px, env(safe-area-inset-left)); }
+  .vf-touch-heli-r { right: max(14px, env(safe-area-inset-right)); }
+  .vf-touch-heli .vf-touch-knauf { position: absolute; left: 30%; top: 30%; width: 40%; height: 40%; border-radius: 50%; background: rgba(255,255,255,.35); }
+  .vf-touch-heli .vf-touch-hinweis { position: absolute; left: 0; right: 0; top: -1.6em; text-align: center; }
+  .vf-touch.vf-touch-heli-an .vf-touch-lenk, .vf-touch.vf-touch-heli-an .vf-touch-gas { display: none; }
+  .vf-touch.vf-touch-heli-an .vf-touch-heli { display: block; }
   .vf-touch-lenk { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom));
     width: min(34vw, 38vh, 190px); height: min(34vw, 38vh, 190px); border-radius: 50%;
     background: rgba(8,10,14,.5); border: 2px solid var(--vf-linie); touch-action: none; pointer-events: auto;
@@ -4289,9 +4304,16 @@
   .vg-zurueck { min-height: 32px; padding: 4px 10px; }
   .vg-raster { display: grid; grid-template-columns: minmax(0, 40%) minmax(0, 1fr); gap: 12px; margin-top: 6px; align-items: start; }
   .vg-vorschau { position: sticky; top: 6px; display: flex; flex-direction: column; gap: 8px; }
-  .vg-vorschau .vf-vorschau { display: grid; place-items: center; padding: 0; border: 0; overflow: hidden; aspect-ratio: 16 / 9;
-    max-height: 58vh; background: radial-gradient(ellipse at 50% 60%, #263043 0%, #0f141c 75%); border-radius: 8px; }
-  .vg-vorschau .vf-vorschau-bild { width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; }
+  .vg-vorschau .vf-vorschau { position: relative; display: grid; place-items: center; padding: 0; border: 0; overflow: hidden; aspect-ratio: 16 / 9;
+    max-height: 58vh; background: linear-gradient(#262c36 0%, #3a414c 52%, #1a1e24 53%); border-radius: 8px; }
+  .vg-vorschau .vf-vorschau.vg-draussen { background: linear-gradient(#4f86c6 0%, #b5d3ee 50%, #dfe9e0 52%, #6e8f5a 53%); }
+  /* v1.6.37: der gewaehlte Boden in Perspektive (vfGarageBodenSetzen), darauf das transparente Auto. */
+  .vg-vorschau .vg-boden { position: absolute; left: -40%; right: -40%; bottom: 0; height: 95%; background-size: 22% auto; background-repeat: repeat;
+    transform: perspective(420px) rotateX(62deg); transform-origin: 50% 100%; }
+  .vg-vorschau .vf-vorschau::after { content: ""; position: absolute; left: 0; right: 0; top: 40%; height: 22%; pointer-events: none;
+    background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.25) 45%, rgba(0,0,0,0)); }
+  .vg-vorschau .vf-vorschau-bild { position: relative; z-index: 1; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; object-position: center bottom; }
+  .vg-vorschau .vg-heli { position: relative; z-index: 1; }
   .vg-vorschau .vg-heli { width: 55%; height: 75%; color: #9fd8ff; }
   .vg-name { font-weight: 700; font-size: clamp(13px, 1.8vw, 18px); text-align: center; }
   .vg-vorschau .vf-los-zeile { display: flex; gap: 8px; justify-content: center; border: 0; padding: 0; }
@@ -5826,7 +5848,7 @@
   /* v1.5.10: Vorschau und Lackfarbe im Virtuell-Fenster der Garage (WIP) */
   .vf-vorschau { justify-content: center; padding: 6px 0; }
   /* v1.5.86 BESTELLT: "Bild vom Auto kleiner machen". Hoehe nach dem Fenster begrenzt, Seitenverhaeltnis bleibt. */
-  .vf-vorschau-bild { width: auto; max-width: min(100%, 300px); max-height: clamp(100px, 22vh, 170px); height: auto; border-radius: 6px; display: block; background: #3a3f46; }
+  .vf-vorschau-bild { width: auto; max-width: min(100%, 300px); max-height: clamp(100px, 22vh, 170px); height: auto; border-radius: 6px; display: block; }
   .vf-lack-palette { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
   .vf-lack { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); cursor: pointer; }
   .vf-lack.aktiv { border-color: #fff; box-shadow: 0 0 0 2px rgba(0,160,230,.9); }
@@ -7339,6 +7361,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren: Der RC Stunt Copter hat am Handy ohne Gamepad zwei eigene Touch-Sticks (links Steigen und Drehen, rechts Neigen und Rollen) und reagiert beim Neigen so kr&#228;ftig wie im Vorbild (Schub und Schwerkraft auf seine Gr&#246;&#223;e umgerechnet). Drift: nimmt man das Gas weg, gleitet das Heck weiter und f&#228;ngt sich erst nach und nach. Vorschaubilder neu (transparent, gegl&#228;ttet, mit Bodenschatten, auch die Caravelle ohne Flecken); in der virtuellen Garage steht das Auto auf dem gew&#228;hlten Boden (Rasen mit Himmel, Holz vor einer Wand). FAHREN: der Umschalter Echt | Virtuell ist die ganze Kachel (ein Tipp schaltet um) mit Radbild; im Modus Virtuell neue Bilder f&#252;r Garage und Start.</li>
         <li>Neues virtuelles Auto: Audi RS5 DTM 2019 (WIP), Modell von Dave Love (Sketchfab, CC BY 4.0) mit seiner Lackierung; Fahrdaten gesch&#228;tzt.</li>
         <li>Virtuelle Garage (WIP) als eigene Seite, auch f&#252;rs Handy gebaut: quer links das gro&#223;e Vorschaubild mit Name, Losfahren und Anleitung, rechts alle Optionen der virtuellen Fahrt; hochkant steht die Vorschau oben. Sie &#246;ffnet sich &#252;ber FAHREN im Modus Virtuell (Garage oder Autos-Kachel) und nach jeder virtuellen Fahrt. Die echte Garage zeigt keine virtuellen Optionen mehr, ihr Knopf &#8222;Virtuell fahren&#8220; f&#252;hrt in die virtuelle Garage. Die Steuer-Optionen des RC Stunt Copters (Gyro, Rollen und Nicken umkehren) stehen jetzt dort statt unter Optionen.</li>
         <li>Virtuell fahren: RC Stunt Copter (WIP, von DeepSeek gebaut, gepr&#252;ft) im freien Training: fliegt mit zwei Sticks (Mode 2, Tastatur W/S, A/D, Pfeile), Modell TREX 700 von Belzar Sirus (CC BY 4.0), Rotor-Ton, H&#246;he und Tempo im HUD, Steuer-Optionen in der virtuellen Garage. An den Sektoren und an Start/Ziel stehen leuchtende Tore aus zwei Lichtstangen; eine Runde z&#228;hlt nur, wenn alle Tore der Reihe nach und dann das Start/Ziel-Tor durchflogen wurden. Drift: mit Lenken und Vollgas kommt das Heck jetzt sofort, dazu Low-Poly-Rauch an den Hinterr&#228;dern, erst leicht und mit hei&#223;en Reifen immer dichter. Sektoren (WIP): auf der Streckenkarte je Sektor ein farbiger Saum und die Nummer im Kreis; am Ende eines Sektors pulsiert sein Saum, eine Sektor-Bestzeit wird angesagt (Schalter unter Optionen &gt; Ansagen).</li>

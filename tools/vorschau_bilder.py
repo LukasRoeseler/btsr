@@ -16,6 +16,14 @@ Sehr dichte Modelle (z. B. die Caravelle mit ~1,7 Mio. Dreiecken) werden fuer
 die Vorschau per Vertex-Clustering reduziert, damit das Skript schnell bleibt.
 Das Skript ueberschreibt vorschau.jpg; die alten Einzelbilder vorschau_<farbe>.jpg
 bleiben liegen (werden nicht mehr angezeigt).
+
+v1.6.37 BESTELLT: "Vorschau mit dem gewaehlten Untergrund und darauf das Auto ohne grauen Hintergrund
+(transparent); das Skript so ueberarbeiten, dass alle Vorschauen so gut werden wie die vom Audi." Jetzt:
+  - vorschau.png mit Alphakanal (transparent), weicher Bodenschatten unter den Raedern,
+  - 3-fach ueberabgetastet und mit Lanczos verkleinert (glatte Kanten, keine Treppen),
+  - das Auto steht unten im Bild (Raeder bei 88 % der Hoehe), damit es in der Garage auf dem Boden steht,
+  - dichte Modelle werden nicht mehr reduziert (erst ab 3 Mio. Dreiecken; die Caravelle mit 1,7 Mio. dauert ~5 min,
+    reduziert hatte sie Loecher und Flecken).
 """
 
 import json
@@ -27,8 +35,11 @@ from PIL import Image
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AUTOS = os.path.join(REPO, "img", "autos")
 
-BREITE = 640
-HOEHE = 360
+AUS_BREITE, AUS_HOEHE = 640, 360
+SS = 3                 # Ueberabtastung
+BREITE = AUS_BREITE * SS
+HOEHE = AUS_HOEHE * SS
+BODEN = 0.88           # Unterkante der Raeder in Anteilen der Bildhoehe
 RAND = 0.09            # Anteil Rand um das Auto (Laenge/Hoehe)
 GLAS_ROLLEN = ("glas", "scheinwerferglas")
 
@@ -42,8 +53,8 @@ HINTERGRUND_OBEN = (86, 92, 100)
 HINTERGRUND_UNTEN = (44, 48, 54)
 
 # Ab wie vielen Dreiecken wird fuer die Vorschau reduziert, auf wie viele?
-REDUZIERE_AB = 150000
-REDUZIERE_ZIEL = 15000
+REDUZIERE_AB = 3000000
+REDUZIERE_ZIEL = 120000
 
 # Bis zu dieser Flaechenzahl (in Pixeln) wird ein Dreieck mit der Meshgrid-Methode
 # gefuellt (schnell fuer kleine Dreiecke), darueber per Scanline (schnell fuer grosse).
@@ -87,7 +98,7 @@ def seiten_projektion(verts):
     dy = max(ymax - ymin, 1e-6)
     skala = min((BREITE * (1 - 2 * RAND)) / dx, (HOEHE * (1 - 2 * RAND)) / dy)
     off_x = (BREITE - skala * dx) * 0.5 - skala * zmin
-    off_y = (HOEHE - skala * dy) * 0.5 + skala * ymax
+    off_y = HOEHE * BODEN + skala * ymin
 
     def bild(x, y, z):
         return off_x + skala * z, off_y - skala * y, x
@@ -303,11 +314,8 @@ def zeichne(meta, verts, daten, textur):
     """Rendert das Modell als Seitenansicht, gibt das PIL-Bild zurueck."""
     bild = np.zeros((HOEHE, BREITE, 3), dtype=np.float32)
     tiefe = np.full((HOEHE, BREITE), np.inf, dtype=np.float32)
-    for yy in range(HOEHE):
-        k = yy / (HOEHE - 1)
-        bild[yy, :, 0] = HINTERGRUND_OBEN[0] * (1 - k) + HINTERGRUND_UNTEN[0] * k
-        bild[yy, :, 1] = HINTERGRUND_OBEN[1] * (1 - k) + HINTERGRUND_UNTEN[1] * k
-        bild[yy, :, 2] = HINTERGRUND_OBEN[2] * (1 - k) + HINTERGRUND_UNTEN[2] * k
+    # v1.6.37: transparenter Grund - Glas mischt gegen ein mittleres Grau (sonst wuerde es schwarz).
+    bild[:, :, :] = np.array(HINTERGRUND_OBEN, dtype=np.float32) * 0.8
 
     ab = meta["indexAb"]
     gesamt = sum(t["indizes"] for t in meta["teile"]) // 3
@@ -401,7 +409,31 @@ def zeichne(meta, verts, daten, textur):
     for seite in (-1, 1):
         for ax in ("vorn", "hinten"):
             rad_zeichne(rad_quelle, seite, ax)
-    return Image.fromarray(np.clip(bild, 0, 255).astype(np.uint8))
+    return mit_alpha_und_schatten(bild, tiefe)
+
+
+def mit_alpha_und_schatten(bild, tiefe):
+    """Auto mit Alphakanal (Deckung aus der Tiefe) ueber einem weichen Bodenschatten, verkleinert auf
+    AUS_BREITE x AUS_HOEHE. Der Schatten ist eine verwischte Ellipse unter dem Auto, 55 % dunkel."""
+    from PIL import ImageDraw, ImageFilter
+    deck = np.isfinite(tiefe)
+    ys, xs = np.nonzero(deck)
+    rgba = np.zeros((HOEHE, BREITE, 4), dtype=np.uint8)
+    rgba[:, :, :3] = np.clip(bild, 0, 255).astype(np.uint8)
+    rgba[:, :, 3] = np.where(deck, 255, 0).astype(np.uint8)
+    auto = Image.fromarray(rgba, "RGBA")
+    schatten = Image.new("RGBA", (BREITE, HOEHE), (0, 0, 0, 0))
+    if len(xs):
+        x0, x1, yb = xs.min(), xs.max(), ys.max()
+        b = (x1 - x0) * 0.52
+        cx = (x0 + x1) / 2
+        h = max(4, (x1 - x0) * 0.045)
+        m = Image.new("L", (BREITE, HOEHE), 0)
+        ImageDraw.Draw(m).ellipse([cx - b, yb - h, cx + b, yb + h * 0.8], fill=140)
+        m = m.filter(ImageFilter.GaussianBlur(radius=h * 1.1))
+        schatten.putalpha(m)
+    schatten.alpha_composite(auto)
+    return schatten.resize((AUS_BREITE, AUS_HOEHE), Image.LANCZOS)
 
 
 def main():
@@ -413,8 +445,8 @@ def main():
         name = os.path.basename(p)
         meta, verts, daten, textur = lade(p)
         img = zeichne(meta, verts, daten, textur)
-        ziel = os.path.join(p, "vorschau.jpg")
-        img.save(ziel, "JPEG", quality=88)
+        ziel = os.path.join(p, "vorschau.png")
+        img.save(ziel, "PNG", optimize=True)
         print("%s: %d Dreiecke -> %s" % (name, sum(t["indizes"] for t in meta["teile"]) // 3, ziel))
     return 0
 

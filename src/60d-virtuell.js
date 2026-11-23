@@ -577,7 +577,7 @@
         if (!vfTexDaten.bahn) { if (vfBahnLauf().next().done) vfTexLauf.bahn = null; }
         else if (!vfTexDaten.rand) vfRandTexturDaten();
         else if (!(vfTexDaten.boden && vfTexDaten.bodenId === P.id)) { if (vfBodenLauf(P).next().done) vfTexLauf.boden = null; }
-        else { vfVorbereiten = false; return; }
+        else { vfVorbereiten = false; if (typeof vfGarageSeiteOffen === 'function' && vfGarageSeiteOffen()) vfGarageBodenSetzen(); return; }
       } while (frist.timeRemaining() > 8);
       ric(schritt);
     };
@@ -1640,7 +1640,19 @@
     if (P.driftGrenze) { const be = Math.abs(Math.atan2(z.vy, vx)) * 180 / Math.PI; tcE = P.tc * Math.max(0.3, Math.min(1, 1 - (be - P.driftGrenze) / 15)); }
     const fxH = Math.min((ax < 0 ? P.abs : tcE) * maxH,
       ax < 0 ? (1 - P.bremsVorn) * brems : Math.max(0, antrieb) * P.m * P.antriebMax);
-    const dV = Math.sqrt(maxV * maxV - fxV * fxV), dH = Math.sqrt(maxH * maxH - fxH * fxH);
+    const dV = Math.sqrt(maxV * maxV - fxV * fxV);
+    let dH = Math.sqrt(maxH * maxH - fxH * fxH);
+    // v1.6.37 Drift GEMELDET: "it shouldn't automatically revert back if I don't accelerate". Ohne Gas bekam die
+    // Hinterachse sofort ihren vollen Seitengriff zurueck und schnappte gerade. Jetzt (P.griffTau): ist der Wagen quer
+    // (Schwimmwinkel > 8 Grad) und das Gas weg, bleibt der Hintergriff bei P.gleitOhneGas und kehrt nur mit der
+    // Zeitkonstante P.griffTau zurueck; weniger Griff (Gas, Grenze) gilt sofort.
+    if (P.griffTau) {
+      let soll = maxH > 0 ? dH / maxH : 1;
+      if (P.gleitOhneGas && antrieb <= 0.15 && Math.abs(Math.atan2(z.vy, vx)) > 0.14) soll *= P.gleitOhneGas;
+      const ist = z.griffH === undefined ? soll : z.griffH;
+      z.griffH = (soll < ist || antrieb > 0.15) ? soll : ist + (soll - ist) * Math.min(1, dt / P.griffTau);
+      dH = maxH * z.griffH;
+    }
     const schritte = Math.max(1, Math.ceil(dt / 0.002));
     const h = dt / schritte;
     const lmax = P.lenkGrad * Math.PI / 180;
@@ -2275,7 +2287,10 @@
   // Traegheitsmoment ist das eines leichten Autos (x0,25) und der Gyro etwas weicher (0,15). Pruefstand: Lenken + Vollgas
   // bringt das Heck in 0,25-0,43 s auf 15 Grad, der Drift steht dann bei 28-33 Grad; halbes Gas greift weiter (< 12 Grad).
   const VF_DRIFT_PROFIL = (P) => ({ muV: P.muV * 0.55, muH: P.muH * 0.6, BV: (P.BV || 9) * 0.7, BH: (P.BH || 11) * 0.5, C: 1.15,
-    lenkGrad: 35, yawDamp: 0.6, tc: 1.0, kV: 0, kH: 0, lastEmpf: 0.05, gyro: 0.15, gyroV: 10, driftGrenze: 25, Iz: (P.Iz || 2300) * 0.25 });
+    lenkGrad: 35, yawDamp: 0.5, tc: 1.0, kV: 0, kH: 0, lastEmpf: 0.05, gyro: 0.15, gyroV: 10, driftGrenze: 25, Iz: (P.Iz || 2300) * 0.25,
+    // v1.6.37: Gleiten ohne Gas (Pruefstand: Drift bei 12-30 m/s nach dem Gaswegnehmen 1 s spaeter noch 33-40 Grad, nach
+    // 2 s wieder gerade; Einsetzen und Vollgas-Drift unveraendert 0,25 s / 29 Grad).
+    griffTau: 1.5, gleitOhneGas: 0.74 });
   // ---- DRIFT-RAUCH (v1.6.27, WIP) ----
   // BESTELLT: "low-poly smoke einfuegen, der ganz am Anfang nur leicht ist und dann mehr wird, wenn die Reifen heisser
   // werden." Rutscht die Hinterachse (Schraeglauf hinten > 0,12 rad, ab 3 m/s), steigen an beiden Hinterraedern Wolken
@@ -3067,17 +3082,22 @@
   // Nicken/Rollen kippt den Schub aus der Senkrechten - so verliert er beim Vorwaertsfliegen an Hoehe
   // (der Schub hebt ihn nicht mehr voll), und der Luftwiderstand begrenzt das Tempo statt eines Deckels.
   // Ein Regler (Gyro, Vorgabe) haelt die Lage am Stick und richtet ihn ohne Eingang von selbst auf.
-  const VF_HUB_GRAV = 15.8;     // Einheiten/s^2 Schwerkraft (wie im Vorbild; 1 Einheit ~ 1 cm)
-  const VF_HUB_THRUST = 28.5;   // Einheiten/s^2 max. Schub (Verhaeltnis 1,8 wie im Vorbild)
+  // v1.6.37 GEMELDET: "the tilting of the rc helicopter has a too low effect. It should feel like in the gemini created
+  // html script". Die Werte stammen aus dem Vorbild, dort ist der Hubschrauber aber 1,75 Einheiten lang, hier 6,4 (Skala
+  // 3,64 in hub.json). Beschleunigungen und Tempi muessen mit der Groesse wachsen, sonst kippt er im Verhaeltnis 3,6-mal
+  // zu schwach und schwebt traege. Drehraten, Daempfung und das Schub/Gewicht-Verhaeltnis bleiben (dimensionslos).
+  const VF_HUB_SKALA = 3.64;
+  const VF_HUB_GRAV = 15.8 * VF_HUB_SKALA;     // Einheiten/s^2 Schwerkraft (Vorbild 15,8 je Vorbild-Einheit)
+  const VF_HUB_THRUST = 28.5 * VF_HUB_SKALA;   // Einheiten/s^2 max. Schub (Verhaeltnis 1,8 wie im Vorbild)
   const VF_HUB_DRAG = 0.58;     // 1/s Luftwiderstand (Endtempo = Schubanteil / Drag)
   const VF_HUB_BANK = 0.80;     // rad max. Schraeglage (~46 Grad), wie im Vorbild
   const VF_HUB_ANG_GAIN = 7.8;  // 1/s Gyro: die Lage folgt dem Stick (proportional, wie im Vorbild)
   const VF_HUB_ANG_RATE = 3.6;  // rad/s max. Drehgeschwindigkeit ohne Gyro (Stick = Drehrate, wie im Vorbild)
   const VF_HUB_YAW = 166;       // Grad/s max. Drehgeschwindigkeit (~2,9 rad/s, wie im Vorbild)
-  const VF_HUB_MAXH = 120;      // Einheiten Decke (Flughoehe)
-  const VF_HUB_CRASH_VZ = 7;    // Einheiten/s Abwaerts-Tempo beim Aufprall, das kracht (wie im Vorbild)
-  const VF_HUB_CRASH_VH = 11;   // Einheiten/s Horizontaltempo beim Aufprall, das kracht (wie im Vorbild)
-  const VF_HUB_MAXV = 60;       // Einheiten/s Spitzentempo (nur fuer die Ton-Normalisierung)
+  const VF_HUB_MAXH = 260;      // Einheiten Decke (Flughoehe, gut 2,5 m)
+  const VF_HUB_CRASH_VZ = 7 * VF_HUB_SKALA;    // Einheiten/s Abwaerts-Tempo beim Aufprall, das kracht
+  const VF_HUB_CRASH_VH = 11 * VF_HUB_SKALA;   // Einheiten/s Horizontaltempo beim Aufprall, das kracht
+  const VF_HUB_MAXV = 60 * VF_HUB_SKALA;       // Einheiten/s Spitzentempo (nur fuer die Ton-Normalisierung)
   const VF_HUB_ROTOR_DREH = 48; // rad/s Hauptrotor bei voller Drehzahl (Drehzahl F.rpm 0..1,15, wie im Vorbild)
   // Der collective-Wert in der Stick-Mitte, wie im Vorbild: GRAV/THRUST. (Nicht der exakte
   // Schwebe-Punkt, sondern die Mitte des Gaswegs: ohne Eingang sinkt er leicht, ein kleiner
@@ -3105,6 +3125,9 @@
     const frisch = (s) => s && performance.now() - s.t < VF_DREH_PAD_MS;
     if (frisch(sL)) { coll += -sL.y; yaw += sL.x; }        // linker Stick: hoch = steigen, rechts = rechts drehen
     if (frisch(sR)) { pitch += -sR.y; roll += sR.x; }      // rechter Stick: hoch = vorwaerts, rechts = rechts rollen
+    // v1.6.37: Touch-Sticks am Handy (vfTouchBauen): links Gas/Drehen, rechts Neigen/Rollen.
+    const tH = VF.touchHeli;
+    if (tH) { coll += -tH.l.y; yaw += tH.l.x; pitch += -tH.r.y; roll += tH.r.x; }
     const k = VF.hubTasten || {};
     if (k.collHoch) coll += 1; if (k.collTief) coll -= 1;
     if (k.yawLinks) yaw -= 1; if (k.yawRechts) yaw += 1;
@@ -5097,7 +5120,7 @@
   let vfNeigMitte = null;
   const vfIstIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   function vfNeigenEreignis(e) {
-    if (!VF.aktiv || VF.laedt || vfTouchModus() !== 'neigen') return;
+    if (!VF.aktiv || VF.laedt || VF.hubschrauber || vfTouchModus() !== 'neigen') return;
     const g = e.accelerationIncludingGravity;
     if (!g || typeof g.x !== 'number' || typeof g.y !== 'number') return;
     const ang = screen.orientation && typeof screen.orientation.angle === 'number' ? screen.orientation.angle : (+window.orientation || 0);
@@ -5109,8 +5132,10 @@
   window.addEventListener('devicemotion', vfNeigenEreignis);
   function vfTouchElement() { return VF.schicht ? VF.schicht.querySelector('.vf-touch') : null; }
   function vfTouchAnzeigen(an) {
-    const el = vfTouchElement(), m = vfTouchModus();
-    if (el) { el.hidden = !an; el.classList.toggle('vf-touch-neigen', m === 'neigen'); }
+    const el = vfTouchElement(), m = vfTouchModus(), heli = !!VF.hubschrauber;
+    // v1.6.37 BESTELLT: "The rc helicopter must get its own dual stick virtual control on mobile (if no gamepad is
+    // connected)". Im Hubschrauber zwei Sticks statt Lenkung und Pedal; Neigen gilt dort nicht (zaehlt als Touch).
+    if (el) { el.hidden = !an; el.classList.toggle('vf-touch-neigen', m === 'neigen' && !heli); el.classList.toggle('vf-touch-heli-an', heli); }
     const kn = VF.schicht ? VF.schicht.querySelector('[data-vf="touch"]') : null;
     if (kn) {
       kn.classList.toggle('vf-an', an);
@@ -5141,6 +5166,30 @@
     vfNeigMitte = null;   // Neigen: die Mitte mit der ersten Messung dieser Fahrt eichen
     const el = vfTouchElement();
     if (!el) return;
+    // v1.6.37: die zwei Hubschrauber-Sticks (je ein Zeiger, Kreis, Wert -1..1 je Achse, Loslassen = Mitte).
+    VF.touchHeli = { l: { x: 0, y: 0 }, r: { x: 0, y: 0 } };
+    el.querySelectorAll('.vf-touch-heli').forEach((st) => {
+      const seite = st.classList.contains('vf-touch-heli-l') ? 'l' : 'r';
+      let zeiger = null;
+      const kn = st.querySelector('.vf-touch-knauf');
+      const setzen = (x, y) => {
+        if (VF.touchHeli) VF.touchHeli[seite] = { x, y };
+        if (kn) kn.style.transform = 'translate(' + (x * 38) + '%,' + (y * 38) + '%)';
+      };
+      const bewegen = (e) => {
+        const r = st.getBoundingClientRect(), R = r.width / 2;
+        if (!(R > 0)) return;
+        let x = (e.clientX - r.left - R) / R, y = (e.clientY - r.top - R) / R;
+        const l = Math.hypot(x, y);
+        if (l > 1) { x /= l; y /= l; }
+        setzen(x, y);
+      };
+      const los = (e) => { if (zeiger === null || (e.pointerId !== undefined && e.pointerId !== zeiger)) return; zeiger = null; setzen(0, 0); };
+      st.addEventListener('pointerdown', (e) => { zeiger = e.pointerId; try { st.setPointerCapture(e.pointerId); } catch (err) { /* egal */ } bewegen(e); e.preventDefault(); });
+      st.addEventListener('pointermove', (e) => { if (zeiger !== null && e.pointerId === zeiger) bewegen(e); });
+      st.addEventListener('pointerup', los);
+      st.addEventListener('pointercancel', los);
+    });
     const lenk = el.querySelector('.vf-touch-lenk');
     const gas = el.querySelector('.vf-touch-gas');
     if (lenk) {
@@ -5463,7 +5512,9 @@
       + '<span class="vf-kamfrei" hidden data-i18n-skip>' + t('Kamera frei') + ' · R3 / V: ' + t('Standard') + ' <span class="wip-tag">WIP</span></span>'
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>'
       + '<div class="vf-touch" hidden><div class="vf-touch-lenk"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Lenken') + '</span></div>'
-      + '<div class="vf-touch-gas"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis vf-touch-gas-oben">' + t('Gas') + '</span><span class="vf-touch-hinweis vf-touch-gas-unten">' + t('Bremse') + '</span></div></div>'
+      + '<div class="vf-touch-gas"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis vf-touch-gas-oben">' + t('Gas') + '</span><span class="vf-touch-hinweis vf-touch-gas-unten">' + t('Bremse') + '</span></div>'
+      + '<div class="vf-touch-heli vf-touch-heli-l"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Steigen / Drehen') + '</span></div>'
+      + '<div class="vf-touch-heli vf-touch-heli-r"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Neigen / Rollen') + '</span></div></div>'
       + vfLadebildHtml((() => { try { return vfLadeKarteDrehen(vfLadeKarteSvg(tiles, frei ? frei.pts : null), window.innerWidth, window.innerHeight); } catch (e) { return ''; } })());
     schicht.classList.add('vf-laedt');
     document.body.appendChild(schicht);
@@ -5626,6 +5677,7 @@
     VF.hubTorPuffer = null;
     VF.hubTore = null;
     if (VF.hubschrauber) { try { VF.hubTore = vfHubToreBauen(); } catch (e) { VF.hubTore = null; } }
+    try { vfTouchAktualisieren(); } catch (e) { /* egal */ }   // v1.6.37: Heli-Sticks erst jetzt bekannt (VF.hubschrauber)
     physEngine.state.speedKmh = 0;
     // Ladebild (siehe vfLadeSchritt): ab hier zaehlt die Ladezeit.
     VF.laedt = true; VF.ladeAb = performance.now();
@@ -5764,6 +5816,7 @@
     if (bild && vfHubschrauber()) bild.remove();   // der Heli hat kein Vorschaubild, statt dessen das Symbol
     if (bild && !vfHubschrauber()) vor.appendChild(bild);
     else if (vfHubschrauber()) { const d = document.createElement('div'); d.className = 'opt-row opt-breit vf-vorschau'; d.innerHTML = VF_HELI_BILD; vor.appendChild(d); }
+    vfGarageBodenSetzen();
     const name = document.createElement('div');
     name.className = 'vg-name';
     name.setAttribute('data-i18n-skip', '');
@@ -5773,6 +5826,38 @@
     if (los) vor.appendChild(los);
     host.scrollTop = y;
     if (host.querySelector('.opt-label small:not(.opt-info-versteckt)') && typeof optInfoEinrichten === 'function') optInfoEinrichten();
+  }
+  // v1.6.37 BESTELLT: "the preview should show the background that is selected (eg grass) and on top the car preview
+  // picture but without the grey background". Hinter das transparente Vorschaubild kommt der gewaehlte Boden: ein Stueck
+  // seiner Textur (sobald vfTexturenVorbereiten sie gerechnet hat, einmal je Art als JPEG-Daten-URL gemerkt), in
+  // Perspektive als Boden, darueber Himmel (Rasen) oder eine dunkle Wand (Holz, Laminat). Bis dahin die Grundfarbe.
+  const vfBodenVorschauCache = {};
+  function vfBodenVorschauUrl(id) {
+    if (vfBodenVorschauCache[id]) return vfBodenVorschauCache[id];
+    const T = vfTexDaten.boden;
+    if (!T || vfTexDaten.bodenId !== id) return '';
+    try {
+      const gross = document.createElement('canvas');
+      gross.width = T.w; gross.height = T.h;
+      gross.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(T.d.buffer, T.d.byteOffset, T.w * T.h * 4), T.w, T.h), 0, 0);
+      const k = document.createElement('canvas');
+      k.width = 512; k.height = 256;
+      k.getContext('2d').drawImage(gross, 0, 0, T.w / 2, T.h / 2, 0, 0, 512, 256);
+      vfBodenVorschauCache[id] = k.toDataURL('image/jpeg', 0.8);
+    } catch (e) { return ''; }
+    return vfBodenVorschauCache[id];
+  }
+  function vfGarageBodenSetzen() {
+    const vor = document.querySelector('#vg-vorschau .vf-vorschau');
+    if (!vor) return;
+    const P = vfBodenArt(vfBodenWahl());
+    vor.classList.toggle('vg-draussen', P.id === 'rasen');
+    let b = vor.querySelector('.vg-boden');
+    if (!b) { b = document.createElement('div'); b.className = 'vg-boden'; vor.insertBefore(b, vor.firstChild); }
+    const url = vfBodenVorschauUrl(P.id), f = P.ton && P.ton[0] ? P.ton[0] : [90, 130, 60];
+    b.style.backgroundColor = 'rgb(' + f.join(',') + ')';
+    b.style.backgroundImage = url ? 'url("' + url + '")' : 'none';
+    b.dataset.boden = P.id + (url ? ':bild' : ':farbe');
   }
   function vfGarageZeigen() {
     if (typeof fahrModusSetzen === 'function' && !fahrModusVirtuell()) fahrModusSetzen('virtuell');
@@ -5851,7 +5936,7 @@
       const img = document.createElement('img');
       img.className = 'vf-vorschau-bild';
       img.alt = autos[ja].name;
-      img.src = vfModellPfad(autos[ja].v) + 'vorschau.jpg';
+      img.src = vfModellPfad(autos[ja].v) + 'vorschau.png';   // v1.6.37: transparent (tools/vorschau_bilder.py)
       img.onerror = () => { vor.remove(); };
       vor.appendChild(img);
       rechts.appendChild(vor);

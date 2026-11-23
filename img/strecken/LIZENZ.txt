@@ -9,5 +9,4 @@ Heckenhoim (img/strecken/heckenhoim.json) - Renn-Rollstrecke 3,00 x 2,00 m, nur 
 
 Streckenlayout und DXF (Heckenhoim_V2.dxf): Gnen54 und Thorsten. Umsetzung (Mittellinie, Start/Ziel, Boxengasse): Gnen54,
 aus seinem Fork (Commits 766f306, 7a284ac, 22.11.2026). Uebernommen am 23.11.2026 auf Wunsch von Luuke42.
-Hinweis: Gnen54 hatte die Strecke als "nur Fork" markiert - die ausdrueckliche Freigabe von Gnen54/Thorsten fuer das
-Hauptprojekt steht noch aus (vor dem naechsten Push nach Luuke42/omegasim klaeren).
+Freigabe fuer das Hauptprojekt OmegaSim liegt vor (bestaetigt von Luuke42 am 23.11.2026).
