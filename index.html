@@ -1462,6 +1462,10 @@
     text-shadow: 0 2px 10px #000; transition: background .15s, color .15s; }
   #fa-modus .k-modus-wahl b + b { border-left: 1px solid rgba(255,255,255,.25); }
   #fa-modus .k-modus-wahl b.an { background: rgba(0,163,224,.42); color: #fff; box-shadow: inset 0 -4px 0 #00a3e0; }
+  /* v1.6.46 BESTELLT: "wenn virtuell = an, dann hellblaue Akzentfarbe durch rote ersetzen ueberall in den Menues auf der FAHREN
+     Seite". Die Akzentfarbe ist --k-blau; im Modus Virtuell auf FAHREN und in der virtuellen Garage rot. */
+  body.fm-virtuell #tab-fahren, body.fm-virtuell #tab-vgarage { --k-blau: #e53935; --k-blau-text: #fff; }
+  body.fm-virtuell #fa-modus .k-modus-wahl b.an { background: rgba(229,57,53,.45); box-shadow: inset 0 -4px 0 #e53935; }
   .k-modus-wahl .wip-tag { margin-left: 3px; font-size: 8px; vertical-align: super; text-shadow: none; }
   /* v1.6.37 BESTELLT: "background of the drive virtually box should be this image: drive_virtually". */
   body.fm-virtuell #fa-start { background-image: linear-gradient(rgba(0,0,0,.3), rgba(0,0,0,.3)), url(img/virtuell-fahren-start.jpg); background-size: cover; background-position: center 50%; }
@@ -5863,7 +5867,9 @@
   /* v1.5.86 BESTELLT: "Bild vom Auto kleiner machen". Hoehe nach dem Fenster begrenzt, Seitenverhaeltnis bleibt. */
   .vf-vorschau-bild { width: auto; max-width: min(100%, 300px); max-height: clamp(100px, 22vh, 170px); height: auto; border-radius: 6px; display: block; }
   .vf-lack-palette { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
-  .vf-lack { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); cursor: pointer; }
+  .vf-lack { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); cursor: pointer;
+    /* v1.6.46 GEMELDET: auf dem Handy oval - Knoepfe haben dort eine Mindesthoehe/-breite. */
+    min-width: 0; min-height: 0; flex: 0 0 18px; aspect-ratio: 1; box-sizing: border-box; }
   .vf-lack.aktiv { border-color: #fff; box-shadow: 0 0 0 2px rgba(0,160,230,.9); }
 </style>
 <style>
@@ -6049,7 +6055,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.45</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.47</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7374,6 +7380,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Optionen: &#8222;Virtuell&#8220; und &#8222;RC Heli&#8220; stehen in einem eigenen Abschnitt unter den Einstellungen. Neu unter Virtuell: Gyro-St&#228;rke f&#252;r das Fahrgef&#252;hl Drift und ein eigener Schalter f&#252;r die Strecken-Ambience (ab Werk aus). Neue Startansage &#8222;Gentlemen, start your engines&#8220; (aus Gnen54s Startampel) beim Start aus dem Fenster &#8222;Autos in Position&#8220; und an der virtuellen Startampel. Im Modus Virtuell sind die Akzente auf FAHREN rot. Der Heli ohne Gyro stabilisiert sich nach einem &#220;berschlag, statt zur&#252;ckzudrehen. Der Schatten unter den Autos ist im Performance-Modus jetzt dunkel (das Bild war an halbdurchsichtigen Stellen durchscheinend), die Farbkreise in der Garage sind auch am Handy rund.</li>
         <li>Virtuell fahren, aus Gnen54s Pull Requests nachgeholt: Startampel im Rennen (f&#252;nf rote Lichter, dann los), Onboard-Kamera des VW Caravelle wie im echten Modell (seitlich auf dem Fahrersitz, 100 Grad Blickwinkel, Scheibe nur als Hauch), neue Kamera &#8222;Seitennah&#8220; zwischen naher Verfolgerkamera und Motorhaube, im Auto federt der Blick nach dem Umsehen zur&#252;ck nach vorn, Knopfleiste blendet nach 4 Sekunden Ruhe aus, neuer Boden &#8222;Stein grau marmoriert&#8220;, leichte Modelle f&#252;r Spider und Caravelle im Grafikmodus Performance (fl&#252;ssiger auf Tablets), Startfehler auch in der Garage sichtbar und der Streckencode in der Pad-Diagnose.</li>
         <li>Optionen: neue Kacheln &#8222;Virtuell&#8220; (Schaltung, Grafik, Tageszeit, Sichtfeld, Geist, R&#252;ckspiegel, Tempoverlust neben der Bahn, Pflicht-Boxendurchfahrt, sichtbare Neigung) und &#8222;RC Heli&#8220; (Gyro-Stabilisierung, Rollen und Nicken umkehren). Die virtuelle Garage beh&#228;lt die Auswahl von Auto, Lack, Boden, Strecke, Fahrtrichtung, Handling und NPCs und hat einen Knopf zu den Optionen.</li>
         <li>Virtuell fahren: Der RC Stunt Copter driftet nicht mehr zur Seite. Ein Vorzeichenfehler im Schubvektor lie&#223; ihn beim Rollen in die falsche Richtung und beim Neigen je nach Kurs schr&#228;g fliegen; jetzt fliegt er dorthin, wohin er geneigt ist. Jedes virtuelle Auto hat seinen festen, passenden Motorklang: Vulture V5.R Corvette C5-R, FMC GT4 Ford GT40, Boxer 96 Porsche 911 GT3, Lynx 220 V6 (Ferrari 296 GT3), Audi RS5 DTM sein Reihen-4-Turbo; K&#228;fer, Spider und Caravelle wie bisher.</li>
@@ -11193,18 +11200,6 @@
           <b>Allgemein</b>
           <span>Licht, Betriebsart, Akku, Tank, Schaden, Vibration.</span>
         </button>
-        <!-- v1.6.41 BESTELLT: "Menues fuer virtuelle Dinge in einer extra Kachel in den Optionen (zB VIRTUELL Kachel und RC Heli
-             Kachel)". Inhalt baut vfOptionenSeite (60d-virtuell.js) beim Oeffnen. -->
-        <button class="misc-tile subpage-open" data-sub="opt-virtuell">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="10" width="36" height="24" rx="3"/><path d="M16 40h16M24 34v6"/><path d="M13 28l7-9 5 6 4-4 6 7" stroke="var(--bad)"/></svg>
-          <b>Virtuell</b>
-          <span>Grafik, Tageszeit, Sicht, Geist, Spiegel, Schaltung, Boxendurchfahrt.</span>
-        </button>
-        <button class="misc-tile subpage-open" data-sub="opt-heli">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h36M24 12v5"/><path d="M14 24a10 7 0 0 1 10-7h4a8 8 0 0 1 8 8v2a3 3 0 0 1-3 3H19a5 5 0 0 1-5-6z"/><path d="M36 25h8M44 21v8" stroke="var(--bad)"/><path d="M18 30l-2 6M30 30l2 6M12 36h24"/></svg>
-          <b>RC Heli</b>
-          <span>Gyro-Stabilisierung, Rollen und Nicken umkehren.</span>
-        </button>
         <button class="misc-tile subpage-open" data-sub="opt-feel">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><circle cx="24" cy="24" r="5"/><path d="M24 8v11M13 33l8-6M35 33l-8-6" stroke="var(--bad)"/></svg>
@@ -11329,6 +11324,22 @@
       <!-- INFO OHNE EIGENE EBENE (v0.8.35). BESTELLT: "Die Kacheln aus INFO alles einzeln
            auflisten, aber extra gruppiert mit Zwischenueberschrift, um klar zu unterscheiden
            und eine Menue-Ebene zu sparen." Die Unterseiten bleiben im Reiter Info. -->
+      <!-- v1.6.46 BESTELLT: "virtuelle Optionen fuer Fahren und Heli sollten unter den anderen Einstellungen mit eigener Ueberschrift sein". -->
+      <div class="k-zwischen">Virtuell</div>
+      <div class="misc-grid">
+        <!-- v1.6.41 BESTELLT: "Menues fuer virtuelle Dinge in einer extra Kachel in den Optionen (zB VIRTUELL Kachel und RC Heli
+             Kachel)". Inhalt baut vfOptionenSeite (60d-virtuell.js) beim Oeffnen. -->
+        <button class="misc-tile subpage-open" data-sub="opt-virtuell">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="10" width="36" height="24" rx="3"/><path d="M16 40h16M24 34v6"/><path d="M13 28l7-9 5 6 4-4 6 7" stroke="var(--bad)"/></svg>
+          <b>Virtuell</b>
+          <span>Grafik, Tageszeit, Sicht, Geist, Spiegel, Schaltung, Boxendurchfahrt.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-heli">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h36M24 12v5"/><path d="M14 24a10 7 0 0 1 10-7h4a8 8 0 0 1 8 8v2a3 3 0 0 1-3 3H19a5 5 0 0 1-5-6z"/><path d="M36 25h8M44 21v8" stroke="var(--bad)"/><path d="M18 30l-2 6M30 30l2 6M12 36h24"/></svg>
+          <b>RC Heli</b>
+          <span>Gyro-Stabilisierung, Rollen und Nicken umkehren.</span>
+        </button>
+      </div>
       <div class="k-zwischen">Info</div>
       <div class="misc-grid">
         <button class="misc-tile info-open" data-sub="wozu">
@@ -12805,6 +12816,9 @@
       <div class="opt-row"><div class="opt-label">Sektor-Bestzeiten ansagen <span class="wip-tag">WIP</span>
         <small>Wenn ein Sektor schneller war als jeder fr&uuml;here dieser Sitzung: &bdquo;Sektor 2, Bestzeit, 4,3 Sekunden&ldquo;. Der Sektor pulsiert dabei auf der Streckenkarte.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-sektor" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Startansage <span class="wip-tag">WIP</span>
+        <small>Beim Start im Fenster &bdquo;Bringe die Autos in Position&ldquo; und an der Startampel der virtuellen Fahrt: &bdquo;Gentlemen, start your engines&ldquo; (immer englisch). Der Countdown beginnt, wenn der Satz gesprochen ist. Aus der Startampel von Gnen54.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-start" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Akku ansagen<small>Einmal, wenn der Akku unter 25&nbsp;% f&auml;llt. Erst nach dem Laden wieder scharf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-battery"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Meisterschaft ansagen <span class="wip-tag">WIP</span>
@@ -17868,6 +17882,12 @@
     "Stein grau marmoriert": "Grey marbled stone",
     "Los!": "Go!",
     "Virtuell fahren, aus Gnen54s Pull Requests nachgeholt: Startampel im Rennen (fünf rote Lichter, dann los), Onboard-Kamera des VW Caravelle wie im echten Modell (seitlich auf dem Fahrersitz, 100 Grad Blickwinkel, Scheibe nur als Hauch), neue Kamera „Seitennah“ zwischen naher Verfolgerkamera und Motorhaube, im Auto federt der Blick nach dem Umsehen zurück nach vorn, Knopfleiste blendet nach 4 Sekunden Ruhe aus, neuer Boden „Stein grau marmoriert“, leichte Modelle für Spider und Caravelle im Grafikmodus Performance (flüssiger auf Tablets), Startfehler auch in der Garage sichtbar und der Streckencode in der Pad-Diagnose.": "Virtual driving, caught up from Gnen54's pull requests: start lights in races (five red lights, then go), VW Caravelle onboard camera as in the real model (on the driver's seat, 100 degree field of view, windscreen only a hint), new camera “Close side” between close chase camera and bonnet, inside the car the view springs back forward after looking around, the button bar fades out after 4 seconds of rest, new floor “Grey marbled stone”, light models for Spider and Caravelle in Performance graphics (smoother on tablets), start errors also visible in the garage and the track code in the pad diagnostics.",
+    "Drift-Gyro": "Drift gyro",
+    "Nur im Fahrgefühl Drift: wie stark der Gyro gegenlenkt. Weniger: größere Driftwinkel, bei Aus dreht sich das Auto unter Vollgas ein. Mehr: der Drift bleibt kleiner und ruhiger. Gilt ab der nächsten Fahrt.": "Drift handling only: how strongly the gyro counter-steers. Less: bigger drift angles, with Off the car spins under full throttle. More: the drift stays smaller and calmer. Applies from the next drive.",
+    "Teppich und Vorbeifahrten der Strecke während der virtuellen Fahrt (ab Werk aus). Beim echten Fahren gilt der Schalter unter Optionen > Ton.": "Background bed and pass-bys of the track during virtual driving (off by default). For real driving the switch under Options > Sound applies.",
+    "Startansage": "Start announcement",
+    "Beim Start im Fenster „Bringe die Autos in Position“ und an der Startampel der virtuellen Fahrt: „Gentlemen, start your engines“ (immer englisch). Der Countdown beginnt, wenn der Satz gesprochen ist. Aus der Startampel von Gnen54.": "When starting from the “Bring the cars into position” window and at the start lights of virtual driving: “Gentlemen, start your engines” (always English). The countdown begins once the sentence has been spoken. From Gnen54's start lights.",
+    "Optionen: „Virtuell“ und „RC Heli“ stehen in einem eigenen Abschnitt unter den Einstellungen. Neu unter Virtuell: Gyro-Stärke für das Fahrgefühl Drift und ein eigener Schalter für die Strecken-Ambience (ab Werk aus). Neue Startansage „Gentlemen, start your engines“ (aus Gnen54s Startampel) beim Start aus dem Fenster „Autos in Position“ und an der virtuellen Startampel. Im Modus Virtuell sind die Akzente auf FAHREN rot. Der Heli ohne Gyro stabilisiert sich nach einem Überschlag, statt zurückzudrehen. Der Schatten unter den Autos ist im Performance-Modus jetzt dunkel (das Bild war an halbdurchsichtigen Stellen durchscheinend), die Farbkreise in der Garage sind auch am Handy rund.": "Options: “Virtual” and “RC heli” are in their own section below the settings. New under Virtual: gyro strength for the Drift handling and a separate switch for the track ambience (off by default). New start announcement “Gentlemen, start your engines” (from Gnen54's start lights) when starting from the “Cars in position” window and at the virtual start lights. In virtual mode the accents on DRIVE are red. The heli without gyro stabilises after a flip instead of turning back. The shadow under the cars is now dark in Performance mode (the picture was see-through at translucent spots), the paint circles in the garage are round on phones too.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20745,6 +20765,12 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Drift-Gyro": "Giroscopio de drift",
+    "Nur im Fahrgefühl Drift: wie stark der Gyro gegenlenkt. Weniger: größere Driftwinkel, bei Aus dreht sich das Auto unter Vollgas ein. Mehr: der Drift bleibt kleiner und ruhiger. Gilt ab der nächsten Fahrt.": "Solo con el manejo Drift: cuánto contravolantea el giroscopio. Menos: ángulos mayores, con Apagado el coche trompea a fondo. Más: el drift es menor y más tranquilo. Se aplica desde la próxima conducción.",
+    "Strecken-Ambience": "Ambiente de pista",
+    "Teppich und Vorbeifahrten der Strecke während der virtuellen Fahrt (ab Werk aus). Beim echten Fahren gilt der Schalter unter Optionen > Ton.": "Fondo y pasadas de la pista durante la conducción virtual (apagado de fábrica). Al conducir real vale el interruptor en Opciones > Sonido.",
+    "Startansage": "Anuncio de salida",
+    "Beim Start im Fenster „Bringe die Autos in Position“ und an der Startampel der virtuellen Fahrt: „Gentlemen, start your engines“ (immer englisch). Der Countdown beginnt, wenn der Satz gesprochen ist. Aus der Startampel von Gnen54.": "Al salir desde la ventana “Coloca los coches en posición” y en el semáforo de la conducción virtual: “Gentlemen, start your engines” (siempre en inglés). La cuenta atrás empieza cuando se ha dicho la frase. Del semáforo de Gnen54.",
     "Seitennahe Kamera": "Cámara lateral cercana",
     "Stein grau marmoriert": "Piedra gris jaspeada",
     "Los!": "¡Ya!",
@@ -45631,11 +45657,16 @@
   // 0,6-1,2 s (tc 0,9, Gierträgheit des GT3). Jetzt: die Traktion darf den ganzen Hinterachsgriff nehmen (tc 1), das
   // Traegheitsmoment ist das eines leichten Autos (x0,25) und der Gyro etwas weicher (0,15). Pruefstand: Lenken + Vollgas
   // bringt das Heck in 0,25-0,43 s auf 15 Grad, der Drift steht dann bei 28-33 Grad; halbes Gas greift weiter (< 12 Grad).
+  // v1.6.46 BESTELLT: "drift modus: gib mir eine option, die Gyro-Staerke anzupassen" (Optionen > Virtuell). Faktor auf
+  // den abgestimmten Gyro (0,15): 0 = aus (dreht sich unter Vollgas ein), 1 = Vorgabe, 2 = doppelt (haelt den Winkel kleiner).
+  const VF_DRIFT_GYRO_STORE = 'omegasim-vf-drift-gyro';
+  const VF_DRIFT_GYRO_WERTE = [0, 0.5, 0.75, 1, 1.25, 1.5, 2];
+  function vfDriftGyro() { try { const v = +localStorage.getItem(VF_DRIFT_GYRO_STORE); return VF_DRIFT_GYRO_WERTE.indexOf(v) >= 0 && localStorage.getItem(VF_DRIFT_GYRO_STORE) !== null ? v : 1; } catch (e) { return 1; } }
   const VF_DRIFT_PROFIL = (P) => ({ muV: P.muV * 0.55, muH: P.muH * 0.6, BV: (P.BV || 9) * 0.7, BH: (P.BH || 11) * 0.5, C: 1.15,
     lenkGrad: 35, yawDamp: 0.5, tc: 1.0, kV: 0, kH: 0, lastEmpf: 0.05, gyro: 0.15, gyroV: 10, driftGrenze: 25, Iz: (P.Iz || 2300) * 0.25,
     // v1.6.37: Gleiten ohne Gas (Pruefstand: Drift bei 12-30 m/s nach dem Gaswegnehmen 1 s spaeter noch 33-40 Grad, nach
     // 2 s wieder gerade; Einsetzen und Vollgas-Drift unveraendert 0,25 s / 29 Grad).
-    griffTau: 1.5, gleitOhneGas: 0.74 });
+    griffTau: 1.5, gleitOhneGas: 0.74, gyro: 0.15 * vfDriftGyro() });
   // ---- DRIFT-RAUCH (v1.6.27, WIP) ----
   // BESTELLT: "low-poly smoke einfuegen, der ganz am Anfang nur leicht ist und dann mehr wird, wenn die Reifen heisser
   // werden." Rutscht die Hinterachse (Schraeglauf hinten > 0,12 rad, ab 3 m/s), steigen an beiden Hinterraedern Wolken
@@ -46526,9 +46557,16 @@
     } else {
       // Ohne Gyro: der Stick ist eine Drehrate. Laesst man ihn los, richtet ein Pendel den Copter
       // langsam wieder auf (wie das Vorbild ohne GyroAssist): je schraeger er steht, desto staerker.
-      const stickAus = Math.max(0, 1 - Math.hypot(pitch, roll) * 1.6);
-      const pendPitch = -VF.pitch * 2.4 * stickAus * (0.35 + 0.65 * Math.abs(Math.cos(VF.pitch || 0)));
-      const pendRoll = -VF.roll * 2.4 * stickAus * (0.35 + 0.65 * Math.abs(Math.cos(VF.roll || 0)));
+      // v1.6.46 GEMELDET: "nach einer 360-Grad-Neigungsdrehung sollte er sich korrekt stabilisieren und nicht komplett
+      // zurueckdrehen". Die Winkel liefen ueber 2 pi hinaus, und das Pendel zog sie die ganze Umdrehung zurueck. Jetzt
+      // gewickelt auf -pi..pi, und wie im Vorbild (localUp.y < -0,15: targetSign -1): kopfueber haelt er die Rueckenlage.
+      const wick = (w) => Math.atan2(Math.sin(w), Math.cos(w));
+      VF.pitch = wick(VF.pitch || 0); VF.roll = wick(VF.roll || 0);
+      const upY = Math.cos(VF.pitch) * Math.cos(VF.roll), kopf = upY < -0.15;
+      const ziel = (w) => (kopf && Math.abs(w) > Math.PI / 2 ? Math.PI : 0);
+      const stickAus = Math.max(0, 1 - Math.hypot(pitch, roll) * 1.6), staerke = 2.4 * stickAus * (0.35 + 0.65 * Math.abs(upY));
+      const pendPitch = -wick(VF.pitch - ziel(VF.pitch)) * staerke;
+      const pendRoll = -wick(VF.roll - ziel(VF.roll)) * staerke;
       F.angPitch = (F.angPitch || 0) + (pitch * VF_HUB_ANG_RATE + pendPitch - (F.angPitch || 0)) * Math.min(1, dt * 7.5);
       F.angRoll = (F.angRoll || 0) + (roll * VF_HUB_ANG_RATE + pendRoll - (F.angRoll || 0)) * Math.min(1, dt * 7.5);
       VF.pitch = (VF.pitch || 0) + F.angPitch * dt;
@@ -48828,7 +48866,10 @@
   }
   function vfLadenEnde() {
     VF.laedt = false;
-    if (VF.modus && VF.modus !== 'practice' && !VF.studie && !VF.hubschrauber) VF.ampel = { t0: performance.now(), aus: 5300 + Math.random() * 1200 };
+    if (VF.modus && VF.modus !== 'practice' && !VF.studie && !VF.hubschrauber) {
+      VF.ampel = { t0: performance.now(), aus: 5300 + Math.random() * 1200 };
+      if (typeof startAnsageSprechen === 'function') startAnsageSprechen();   // v1.6.46 (gnen54): "Gentlemen, start your engines"
+    }
     if (VF.schicht) {
       VF.schicht.classList.remove('vf-laedt');
       const el = VF.schicht.querySelector('.vf-laden');
@@ -48959,7 +49000,10 @@
         zeigen();
       } }
     const cv = schicht.querySelector('canvas');
-    const gl = cv.getContext('webgl', { antialias: true }) || cv.getContext('experimental-webgl');
+    // v1.6.46 GEMELDET: "der Schatten unter den virtuellen Autos im Performance-Modus ist heller als die Strasse". Mit dem
+    // Alphakanal der Leinwand (Vorgabe) senkte jede halbdurchsichtige Flaeche (Schatten, Geist, Rauch) die Deckkraft des
+    // Bildes, und der helle Seitenhintergrund schien durch. alpha: false = undurchsichtige Leinwand.
+    const gl = cv.getContext('webgl', { antialias: true, alpha: false }) || cv.getContext('experimental-webgl', { alpha: false });
     if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
     // v1.5.154: OES_standard_derivatives (fwidth) fuer den bildschirm-adaptiven Schatten-PCF des Autos.
     // Ohne die Erweiterung bleibt der feste Kern; der Shader prueft das selbst ueber GL_OES_standard_derivatives.
@@ -49192,6 +49236,7 @@
     if (VF.modus === 'knockout') showHudToast(t('NPC-Knockout') + ': ' + (VF.npcs ? VF.npcs.length : 0) + ' ' + t('Gegner') + ' · 3 ' + t('Leben'));
     else if (VF.modus === 'derby') showHudToast(t('Derby') + ': ' + (VF.npcs ? VF.npcs.length : 0) + ' ' + t('Gegner') + ' · ' + t('Health') + ' 100');
     if (!VF.hubschrauber) vfMotorsound();
+    vfAmbienceAnwenden();   // v1.6.46: Ambience-Schalter der virtuellen Fahrt
     if (typeof showTab === 'function') showTab('race');
     VF.takt = setInterval(vfPaket, VF_TAKT_MS);
     VF.raf = requestAnimationFrame(vfBild);
@@ -49247,7 +49292,18 @@
   // Optionen > Virtuell die Einstellungen der Fahrt (VF_OPT_FAHRT), Optionen > RC Heli die des Hubschraubers (VF_OPT_HELI),
   // die virtuelle Garage den Rest (Auto, Lack, Boden, Strecke, Richtung, Handling, NPCs, Losfahren).
   const VF_OPT_FAHRT = ['Schaltung', 'Grafik', 'Tageszeit', 'Sichtfeld mit Tempo', 'Geist folgt meiner Linie', 'Rückspiegel (Motorhaube)',
-    'Kein Tempoverlust neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar'];
+    'Kein Tempoverlust neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar', 'Drift-Gyro', 'Strecken-Ambience'];
+  // v1.6.46 BESTELLT: "fuer Strecken Ambience extra Option im virtuellen Fahren" (aus gnen54s 817c361: ab Werk aus).
+  // Waehrend einer virtuellen Fahrt gilt dieser Schalter statt Optionen > Ton (ambienceAktiv, 80-sound.js).
+  const VF_AMBIENCE_STORE = 'omegasim-vf-ambience';
+  function vfAmbienceAn() { try { return localStorage.getItem(VF_AMBIENCE_STORE) === 'an'; } catch (e) { return false; } }
+  function vfAmbienceAnwenden() {
+    try {
+      if (typeof ambienceAktiv !== 'function') return;
+      if (ambienceAktiv()) startAmbienceBeds();
+      refreshAmbienceGains();
+    } catch (e) { /* ohne Ton */ }
+  }
   const VF_OPT_HELI = ['Gyro-Stabilisierung', 'Rollen umkehren', 'Nicken umkehren'];
   function vfZeileTitel(z) {
     const l = z.querySelector(':scope > .gk-l');
@@ -49467,6 +49523,22 @@
     const grafikZeile = garWertZeile(t('Grafik'), t(vfGrafik() === 'perf' ? 'Performance' : 'Quality'), gWahl, gWahl);
     grafikZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(grafikZeile);
+    // v1.6.46: Gyro-Staerke des Drift-Fahrgefuehls und die Strecken-Ambience der virtuellen Fahrt (stehen unter Optionen > Virtuell).
+    {
+      const jg = Math.max(0, VF_DRIFT_GYRO_WERTE.indexOf(vfDriftGyro()));
+      const gw = (dd) => { try { localStorage.setItem(VF_DRIFT_GYRO_STORE, String(VF_DRIFT_GYRO_WERTE[(jg + dd + VF_DRIFT_GYRO_WERTE.length) % VF_DRIFT_GYRO_WERTE.length])); } catch (e) { /* egal */ } vfGarageNeu(); };
+      const v = VF_DRIFT_GYRO_WERTE[jg];
+      const z = garWertZeile(t('Drift-Gyro'), v === 0 ? t('Aus') : Math.round(v * 100) + ' %' + (v === 1 ? ' (' + t('Vorgabe') + ')' : ''), () => gw(-1), () => gw(1));
+      const l = z.querySelector('.gk-l'); l.classList.add('opt-label');
+      l.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Nur im Fahrgefühl Drift: wie stark der Gyro gegenlenkt. Weniger: größere Driftwinkel, bei Aus dreht sich das Auto unter Vollgas ein. Mehr: der Drift bleibt kleiner und ruhiger. Gilt ab der nächsten Fahrt.') + '</small>');
+      rechts.appendChild(z);
+      const amb = vfAmbienceAn();
+      const aw = () => { try { localStorage.setItem(VF_AMBIENCE_STORE, amb ? 'aus' : 'an'); } catch (e) { /* egal */ } if (VF.aktiv) vfAmbienceAnwenden(); vfGarageNeu(); };
+      const za = garWertZeile(t('Strecken-Ambience'), amb ? t('An') : t('Aus'), aw, aw);
+      const la = za.querySelector('.gk-l'); la.classList.add('opt-label');
+      la.insertAdjacentHTML('beforeend', '<small>' + t('Teppich und Vorbeifahrten der Strecke während der virtuellen Fahrt (ab Werk aus). Beim echten Fahren gilt der Schalter unter Optionen > Ton.') + '</small>');
+      rechts.appendChild(za);
+    }
     // v1.5 (WIP): Tageszeit (Farbstimmung), in Performance und Quality.
     const tzA = VF_TAGESZEITEN.indexOf(vfTageszeit());
     const tzWahl = (d) => { vfTageszeitSetzen(VF_TAGESZEITEN[(tzA + d + VF_TAGESZEITEN.length) % VF_TAGESZEITEN.length].id); vfGarageNeu(); };
@@ -49689,6 +49761,7 @@
     rennPauseBeenden();
     if (VF.hubschrauber) vfHubTon.ausblenden();
     if (!VF.aktiv) return;
+    setTimeout(vfAmbienceAnwenden, 0);   // v1.6.46: nach dem Ende wieder der Schalter unter Optionen > Ton
     // Laeuft eine Challenge (z. B. die Studienfahrt) mit dem virtuellen Auto, endet sie mit: abgebrochen,
     // nicht gewertet (VF.abbruch sagt das der Studie, 98f-studie.js).
     if (typeof chLauf !== 'undefined' && chLauf) {
@@ -52118,6 +52191,7 @@
   }
   function raceGridAnzeigen(weiter) {
     raceGridWeiter = typeof weiter === 'function' ? weiter : null;
+    if (typeof startAnsageVorwaermen === 'function') startAnsageVorwaermen();
     const gs = $('race-gridscreen');
     if (!gs) { if (raceGridWeiter) raceGridWeiter(); return; }
     // v1.0.29: die angezeigte Reihenfolge IST die Startreihenfolge - auch fuer Autos, die seit
@@ -52179,7 +52253,13 @@
     if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
     syncRaceGridOrder();
     const w = raceGridWeiter; raceGridWeiter = null;
-    if (w) w();
+    // v1.6.46 (gnen54): "Gentlemen, start your engines" sofort, der Countdown erst, wenn der Satz gesprochen ist
+    // (ab Beginn der Ansage 2,4 s, spaetestens 4,5 s nach dem Knopf - eine haengende Stimme blockiert den Start nicht).
+    if (!w) return;
+    let fertig = false;
+    const los = () => { if (fertig) return; fertig = true; w(); };
+    if (typeof startAnsageSprechen === 'function' && startAnsageSprechen(() => setTimeout(los, 2400))) setTimeout(los, 4500);
+    else los();
   }
   // BESTELLT: "X auf dem Controller soll auf dem Autos-in-Position-Schirm funktionieren".
   // flagTasteTick() fragt das ab, bevor es den normalen Cockpit-Weg (Boxenstopp/Gelb) nimmt.
@@ -66761,7 +66841,7 @@
   // Akku: BESTELLT "Akku-Ansage < 25 %" - eine eigene Schwelle, nicht die 10 % oben.
   const AKKU_SCHWELLE = 0.25;
   const AKKU_HYSTERESE = 0.32;
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: true };
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: true, start: true };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false };
   // JE Auto ein Latch fuer die Akku-Meldung: jedes Auto meldet unter 25 % einmal, erst nach
   // der Erholung wieder scharf. Ein gemeinsames Latch wuerde nur das ERSTE Auto melden.
@@ -67053,6 +67133,7 @@
                              'setting-announce-battery': 'battery',
                              'setting-announce-meister': 'meister',
                              'setting-announce-sektor': 'sektor',
+                             'setting-announce-start': 'start',
                              'setting-status-announce': 'status' };
   Object.keys(ANSAGE_KAESTCHEN).forEach((id) => {
     const el = $(id);
@@ -67424,8 +67505,13 @@
     ambience.bedGain = ambience.rainGain = null;
   }
 
+  // v1.6.46: waehrend einer virtuellen Fahrt gilt deren eigener Schalter (vfAmbienceAn, Optionen > Virtuell).
+  function ambienceAktiv() {
+    try { if (typeof VF !== 'undefined' && VF.aktiv && typeof vfAmbienceAn === 'function') return vfAmbienceAn(); } catch (e) { /* weiter */ }
+    return ambienceEnabled;
+  }
   function startAmbienceBeds() {
-    if (!ambience.ready || !ambienceEnabled || ambience.bedNode) return;
+    if (!ambience.ready || !ambienceAktiv() || ambience.bedNode) return;
     const a = loopBed(ambience.bed, 0);
     ambience.bedNode = a.src; ambience.bedGain = a.g;
     if (ambience.rainBed) {
@@ -67438,7 +67524,7 @@
   function refreshAmbienceGains() {
     if (!audioCtx) return;
     const t = audioCtx.currentTime;
-    const live = soundEnabled && ambienceEnabled;
+    const live = soundEnabled && ambienceAktiv();
     const on = live ? ambienceVolume : 0;
     const wet = live ? rainVolume : 0;
     if (ambience.bedGain) ambience.bedGain.gain.setTargetAtTime(on * 0.7, t, 0.4);
@@ -67454,7 +67540,7 @@
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopAmbienceBeds();
-    else if (ambienceEnabled) startAmbienceBeds();
+    else if (ambienceAktiv()) startAmbienceBeds();
     refreshAmbienceGains();
   });
 
@@ -68984,6 +69070,43 @@
     if (knallVal) knallVal.textContent = Math.round(knallVolume * 100) + '%';
   }
 
+  // ---- STARTANSAGE: "Gentlemen, start your engines" (v1.6.46, aus gnen54s Startampel-Zweig, 67061f7) ----
+  // Beim Start-Knopf im Fenster "Bringe die Autos in Position" (raceGridStart, 70-race.js) und an der Startampel der
+  // virtuellen Fahrt. IMMER ENGLISCH: ein feststehender Ruf (Indianapolis), eine deutsche Stimme spricht ihn falsch aus.
+  // `beginn` wird gerufen, sobald die Ansage wirklich zu hoeren ist (Chrome/Android meldet onstart nicht immer, deshalb
+  // zusaetzlich speechSynthesis.speaking). Die Stimme wird beim Oeffnen des Fensters vorgewaermt (sonst kaeme der Satz
+  // beim ersten Start erst nach der Ampel).
+  const START_ANSAGE = 'Gentlemen, start your engines';
+  let startAnsageAktuell = null, startAnsageWarm = false;
+  function startAnsageEnglisch() {
+    const st = window.speechSynthesis && window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+    return st.find((v) => /^en[-_]US/i.test(v.lang)) || st.find((v) => /^en/i.test(v.lang)) || null;
+  }
+  function startAnsageVorwaermen() {
+    if (startAnsageWarm || !ansageAn.start || !soundEnabled || !('speechSynthesis' in window)) return;
+    startAnsageWarm = true;
+    try { window.speechSynthesis.getVoices(); const u = new SpeechSynthesisUtterance(' '); u.volume = 0; u.lang = 'en-US'; window.speechSynthesis.speak(u); } catch (e) { /* egal */ }
+  }
+  function startAnsageSprechen(beginn) {
+    if (!ansageAn.start || !soundEnabled || !('speechSynthesis' in window)) return false;
+    try {
+      const u = new SpeechSynthesisUtterance(START_ANSAGE);
+      startAnsageAktuell = u;
+      u.lang = 'en-US'; u.rate = 0.95;
+      const en = startAnsageEnglisch();
+      if (en) u.voice = en;
+      if (beginn) {
+        let einmal = false, abfrage = null;
+        const los = () => { if (abfrage) { clearInterval(abfrage); abfrage = null; } if (!einmal) { einmal = true; beginn(); } };
+        u.onstart = los; u.onerror = los;
+        abfrage = setInterval(() => { try { if (window.speechSynthesis.speaking) los(); } catch (e) { los(); } }, 100);
+        setTimeout(() => { if (abfrage) { clearInterval(abfrage); abfrage = null; } }, 15000);
+      }
+      u.onend = () => { if (startAnsageAktuell === u) startAnsageAktuell = null; };
+      window.speechSynthesis.speak(u);
+      return true;
+    } catch (e) { return false; }
+  }
   function updateEngineSound(throttleMagnitude) {
     if (!soundEnabled || !engineOsc) return;
     // v1.6.27 (Issue #15): Der RC Stunt Copter hat keinen Motor, nur den Rotor-Ton (vfHubTon). Der
@@ -111007,6 +111130,70 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } finally { sectorHistory = merkH; ansagenEinreihen = merkE; }
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
+  });
+  stAdd('Virtuell v1.6.46: Heli ohne Gyro bleibt nach Ueberschlag stabil, Drift-Gyro einstellbar, Ambience-Schalter, undurchsichtige Leinwand, runde Farbkreise, rote Akzente, Startansage', () => {
+    const f = [];
+    // Heli: 1,2 s Stick vorn ohne Gyro (Ueberschlag), dann loslassen: Winkel bleibt in -pi..pi und dreht nicht zurueck.
+    const merk = { hubschrauber: VF.hubschrauber, x: VF.x, y: VF.y, z: VF.z, h: VF.h, flug: VF.flug, pitch: VF.pitch, roll: VF.roll, hubTasten: VF.hubTasten,
+      hubLuft: VF.hubLuft, touchHeli: VF.touchHeli, stick: VF.stick, stickL: VF.stickL, rotor: VF.rotor };
+    const merkG = vfHubGyro;
+    let weg = 0;
+    try {
+      vfHubGyro = () => false;
+      Object.assign(VF, { hubschrauber: true, x: 0, y: 0, z: 200, h: 0, pitch: 0, roll: 0, hubLuft: true, stick: null, stickL: null, touchHeli: null,
+        flug: { vz: 0, vx: 0, vy: 0, rpm: 0.9, collective: VF_HUB_HOVER, yawRate: 0, angPitch: 0, angRoll: 0 }, hubTasten: { pitchVorn: true } });
+      let summe = 0, vor = 0;
+      for (let i = 0; i < 120; i++) { vfHubPhysik(1 / 60); const d = Math.atan2(Math.sin(VF.pitch - vor), Math.cos(VF.pitch - vor)); summe += d; vor = VF.pitch; }
+      if (!(summe > 2 * Math.PI)) f.push('kein Ueberschlag (' + (summe * 180 / Math.PI).toFixed(0) + ' Grad)');
+      VF.hubTasten = {};
+      let rueck = 0;
+      for (let i = 0; i < 180; i++) { vfHubPhysik(1 / 60); const d = Math.atan2(Math.sin(VF.pitch - vor), Math.cos(VF.pitch - vor)); rueck += d; vor = VF.pitch; }
+      if (Math.abs(VF.pitch) > Math.PI + 1e-9) f.push('Winkel nicht gewickelt ' + VF.pitch.toFixed(2));
+      if (rueck < -Math.PI) f.push('dreht nach dem Loslassen zurueck: ' + (rueck * 180 / Math.PI).toFixed(0) + ' Grad');
+      weg = rueck * 180 / Math.PI;
+    } finally { vfHubGyro = merkG; Object.assign(VF, merk); }
+    // Drift-Gyro: Faktor auf 0,15.
+    const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merkDg = lies(VF_DRIFT_GYRO_STORE), merkH = vfHandling();
+    try {
+      localStorage.setItem(VF_DRIFT_GYRO_STORE, '2'); vfHandlingSetzen('drift');
+      if (Math.abs(vfHandlingProfil(Object.assign({}, VF_GT3)).gyro - 0.3) > 1e-9) f.push('Drift-Gyro 200 % wirkt nicht');
+      localStorage.removeItem(VF_DRIFT_GYRO_STORE);
+      if (Math.abs(vfHandlingProfil(Object.assign({}, VF_GT3)).gyro - 0.15) > 1e-9) f.push('Drift-Gyro Vorgabe nicht 0,15');
+    } finally { try { if (merkDg === null) localStorage.removeItem(VF_DRIFT_GYRO_STORE); else localStorage.setItem(VF_DRIFT_GYRO_STORE, merkDg); } catch (e) { /* egal */ } vfHandlingSetzen(merkH); }
+    // Ambience: virtuell eigener Schalter (ab Werk aus).
+    const merkA = lies(VF_AMBIENCE_STORE), merkAkt = VF.aktiv;
+    try {
+      localStorage.removeItem(VF_AMBIENCE_STORE); VF.aktiv = true;
+      if (ambienceAktiv()) f.push('virtuell Ambience ab Werk an');
+      localStorage.setItem(VF_AMBIENCE_STORE, 'an');
+      if (!ambienceAktiv()) f.push('virtuell Ambience-Schalter wirkt nicht');
+      VF.aktiv = false;
+      if (ambienceAktiv() !== ambienceEnabled) f.push('echt nicht der Ton-Schalter');
+    } finally { VF.aktiv = merkAkt; try { if (merkA === null) localStorage.removeItem(VF_AMBIENCE_STORE); else localStorage.setItem(VF_AMBIENCE_STORE, merkA); } catch (e) { /* egal */ } }
+    // Optionen: eigener Abschnitt "Virtuell" unter den Einstellungen.
+    const opt = document.querySelector('#sub-home-options');
+    const kv = opt && opt.querySelector('[data-sub="opt-virtuell"]'), kh = opt && opt.querySelector('[data-sub="opt-heli"]');
+    if (!kv || !kh || kv.parentElement !== kh.parentElement) f.push('Kacheln Virtuell/RC Heli fehlen');
+    else {
+      const vorher = kv.parentElement.previousElementSibling;
+      if (!vorher || !vorher.classList.contains('k-zwischen') || vorher.textContent.trim() !== t('Virtuell')) f.push('keine eigene Ueberschrift');
+      if (kv.parentElement.querySelector('[data-sub="opt-general"]')) f.push('noch bei den allgemeinen Einstellungen');
+    }
+    // Farbkreis rund, auch mit Mindesthoehe fuer Knoepfe.
+    const b = document.createElement('button'); b.className = 'vf-lack'; document.body.appendChild(b);
+    try { const r = b.getBoundingClientRect(); if (Math.abs(r.width - r.height) > 0.5) f.push('Farbkreis ' + r.width + 'x' + r.height); } finally { b.remove(); }
+    // Rote Akzente im Modus Virtuell auf FAHREN.
+    const merkFm = document.body.classList.contains('fm-virtuell');
+    try {
+      document.body.classList.add('fm-virtuell');
+      const c = getComputedStyle($('tab-fahren')).getPropertyValue('--k-blau').trim().toLowerCase();
+      if (c !== '#e53935') f.push('Akzent virtuell ' + c);
+      document.body.classList.remove('fm-virtuell');
+      if (getComputedStyle($('tab-fahren')).getPropertyValue('--k-blau').trim().toLowerCase() !== '#00a3e0') f.push('Akzent echt nicht blau');
+    } finally { document.body.classList.toggle('fm-virtuell', merkFm); }
+    if (!$('setting-announce-start') || typeof startAnsageSprechen !== 'function') f.push('Startansage fehlt');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Heli nach Ueberschlag ' + weg.toFixed(0) + ' Grad Nachlauf; Drift-Gyro, Ambience, Optionen-Abschnitt, Farbkreis, Akzente, Startansage' };
   });
   stAdd('Virtuell v1.6.44: aus gnen54s PRs - Startampel im Rennen, Bulli-Kamera (seitlich, 100 Grad, durchsichtige Scheibe), seitennahe Kamera, Blick federt zurueck, Steinboden, leichte Modelle', async () => {
     const f = [];
