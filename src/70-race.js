@@ -4417,6 +4417,7 @@
   function wxRadarDraw() {
     const cv = $('race-wx-radar');
     if (!cv || document.hidden || !cv.clientWidth || !wxRadarAn()) return;
+    if (typeof vfAktiv === 'function' && vfAktiv()) return;   // v1.6.48: unter der virtuellen Fahrt unsichtbar
     const mitKarte = false;   // v1.2.39: Strecke im Radar entfernt (Latenz), siehe wxRadarAn()
     // Auf die tatsaechliche Anzeigegroesse ziehen: ein Canvas mit falscher Pufferbreite wird
     // von der Grafikkarte skaliert und sieht unscharf aus.

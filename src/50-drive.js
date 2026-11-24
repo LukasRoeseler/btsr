@@ -2845,7 +2845,8 @@
   function cockpitNachSenden() {
     if (!cockpitMalFaellig) return;
     const jetzt = performance.now();
-    if (jetzt - cockpitGemaltAt < COCKPIT_MAL_MS) return;
+    // v1.6.48: waehrend der virtuellen Fahrt liegt das Cockpit verdeckt unter dem 3D-Bild - nur alle 500 ms (Performance).
+    if (jetzt - cockpitGemaltAt < (typeof vfAktiv === 'function' && vfAktiv() ? 500 : COCKPIT_MAL_MS)) return;
     cockpitGemaltAt = jetzt;
     cockpitMalFaellig = false;
     updateRaceScreen(physEngine.state);

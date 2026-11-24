@@ -14622,6 +14622,25 @@
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Virtuell v1.6.48: Performance - leichte Modelle fuer Audi und Kaefer, Geist ohne zweites Modell, Cockpit darunter gedrosselt', async () => {
+    const f = [], mass = [];
+    for (const m of ['audirs5', 'kaefer']) {
+      try {
+        const meta = await (await fetch(VF_MODELL_PFADE[m] + 'auto.json', { cache: 'no-store' })).json();
+        const g = await (await fetch(VF_MODELL_PFADE[m] + 'auto_perf.json', { cache: 'no-store' })).json();
+        if (meta.perf !== 'auto_perf') f.push(m + ' ohne perf');
+        if (!(g.indizes <= meta.indizes * 0.6)) f.push(m + ' kaum leichter: ' + g.indizes / 3 + ' von ' + meta.indizes / 3);
+        if (g.teile.length !== meta.teile.length) f.push(m + ': Teile ' + g.teile.length + '/' + meta.teile.length);
+        if (g.teile.some((t) => t.ecken > 65535)) f.push(m + ': Teil ueber 65535 Ecken');
+        const bin = await (await fetch(VF_MODELL_PFADE[m] + 'auto_perf.bin', { cache: 'no-store' })).arrayBuffer();
+        if (bin.byteLength !== g.indexAb + g.indizes * 2) f.push(m + ': auto_perf.bin Laenge ' + bin.byteLength);
+        mass.push(m + ' ' + Math.round(g.indizes / 3 / 1000) + 'k');
+      } catch (e) { f.push(m + ': ' + e.message); }
+    }
+    const quelle = String(vfMalen);
+    if (quelle.indexOf('geistModell') < 0 || quelle.indexOf('VF.grafik') < 0) f.push('Geist-Weiche fehlt');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'leicht: ' + mass.join(', ') + '; Geist in Performance als Kiste' };
+  });
   stAdd('Virtuell v1.6.46: Heli ohne Gyro bleibt nach Ueberschlag stabil, Drift-Gyro einstellbar, Ambience-Schalter, undurchsichtige Leinwand, runde Farbkreise, rote Akzente, Startansage', () => {
     const f = [];
     // Heli: 1,2 s Stick vorn ohne Gyro (Ueberschlag), dann loslassen: Winkel bleibt in -pi..pi und dreht nicht zurueck.

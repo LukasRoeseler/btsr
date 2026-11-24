@@ -4137,7 +4137,10 @@
     }
     const geistDa = !!(VF.geist && VF.geist.aktiv && VF.geist.an);
     // Ohne Modell (Kasten gewaehlt oder Modell noch nicht geladen) bleibt der blaue Kasten als Geist.
-    if (geistDa && !(VF.modell && VF.tprog)) {
+    // v1.6.48 (GEMELDET: Ruckeln im Performance-Modus nach ein paar Runden - ab Runde 2 faehrt der Geist): in Performance ist der
+    // Geist die leichte blaue Kiste statt eines zweiten vollen Modells in zwei Durchgaengen.
+    const geistModell = geistDa && VF.modell && VF.tprog && VF.grafik;
+    if (geistDa && !geistModell) {
       if (!VF.geistAuto) VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
       gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.uniform1f(L.alf, 0.45);
@@ -4184,7 +4187,7 @@
       }
     }
     // v1.5.84: der Geist als durchscheinende Kopie des gewaehlten Autos, nach allen undurchsichtigen Autos.
-    if (geistDa && VF.modell && VF.tprog) vfGeistMalen(gl, pv, blick, k.auge);
+    if (geistModell) vfGeistMalen(gl, pv, blick, k.auge);
     // v1.5 (Quality): Bloom auf das fertige Bild, vor dem Regen. Scheitert er einmal, bleibt er fuer die Fahrt aus.
     if (vfBloomAn()) vfPassZeit('bloom', () => { try { vfBloomMalen(gl, w, h); } catch (e) { VF.bloomKaputt = true; VF.bloom = null; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h); log('Virtuell: Bloom aus (' + e.message + ').', 'info'); } });
     // v1.5.19: Regen zuletzt (durchsichtig, ohne Tiefe zu schreiben).
@@ -4947,10 +4950,11 @@
       gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
     };
     const flaeche = (ecken, tx) => {      // ecken: je Ecke x y z u v (Welt)
-      const a = [];
-      ecken.forEach((e) => a.push(e[0], e[1], e[2], 0, 1, 0, e[3], e[4]));
+      // v1.6.48: ein fester Puffer je Modell statt eines neuen Arrays je Bild (weniger Muellsammlung auf dem Handy).
+      const a = M.quadF || (M.quadF = new Float32Array(6 * 8));
+      ecken.forEach((e, i) => a.set([e[0], e[1], e[2], 0, 1, 0, e[3], e[4]], i * 8));
       gl.bindBuffer(gl.ARRAY_BUFFER, M.quad);
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(a), gl.DYNAMIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, ecken.length === 6 ? a : a.subarray(0, ecken.length * 8), gl.DYNAMIC_DRAW);
       gl.vertexAttribPointer(T.ap, 3, gl.FLOAT, false, 32, 0);
       gl.vertexAttribPointer(T.an, 3, gl.FLOAT, false, 32, 12);
       gl.vertexAttribPointer(T.auv, 2, gl.FLOAT, false, 32, 24);
