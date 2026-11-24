@@ -6018,7 +6018,11 @@
         ['mousemove', 'pointerdown', 'touchstart'].forEach((ev) => schicht.addEventListener(ev, wecken, { passive: true }));
         zeigen();
       } }
-    const cv = schicht.querySelector('canvas');
+    let cv = schicht.querySelector('canvas');
+    // v1.6.63: in AR die Leinwand der Sitzung (60e-ar.js) - ihr Kontext ist schon XR-faehig und die AR-Ebene laeuft seit
+    // dem ersten Bild der Sitzung (sonst lieferte die Seite waehrend des Aufbaus der Fahrt kein Bild, und Chrome beendete
+    // die Sitzung nach einem kurzen eingefrorenen Kamerabild).
+    if (VF.ar && VF.ar.cv) { cv.replaceWith(VF.ar.cv); cv = VF.ar.cv; }
     // v1.6.46 GEMELDET: "der Schatten unter den virtuellen Autos im Performance-Modus ist heller als die Strasse". Mit dem
     // Alphakanal der Leinwand (Vorgabe) senkte jede halbdurchsichtige Flaeche (Schatten, Geist, Rauch) die Deckkraft des
     // Bildes, und der helle Seitenhintergrund schien durch. alpha: false = undurchsichtige Leinwand.
@@ -6265,7 +6269,7 @@
     vfAmbienceAnwenden();   // v1.6.46: Ambience-Schalter der virtuellen Fahrt
     if (typeof showTab === 'function') showTab('race');
     VF.takt = setInterval(vfPaket, VF_TAKT_MS);
-    VF.raf = VF.ar ? VF.ar.session.requestAnimationFrame(vfArBild) : requestAnimationFrame(vfBild);
+    VF.raf = VF.ar ? 0 : requestAnimationFrame(vfBild);   // v1.6.63: in AR laeuft der Takt der Sitzung schon (vfArBild)
     showHudToast(t('Virtuelle Fahrt: frei fahren, ✕ beendet'));
     return true;
   }

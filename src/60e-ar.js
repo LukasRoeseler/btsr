@@ -37,8 +37,25 @@
   }
   setTimeout(vfArPruefen, 0);
 
+  // v1.6.63 GEMELDET: "Wenn ich den AR-Knopf klicke, oeffnen sich 2 Fenster, die mich fragen, ob sie die Kamera benutzen
+  // duerfen. Wenn ich bei beiden OK klicke, passiert nichts, nur der Hintergrund zeigt ein kurzes eingefrorenes
+  // Kamerabild." Die zwei Fenster sind Chrome (Seite darf die Kamera) und Android (Chrome darf die Kamera) - beim ersten
+  // Mal. Danach endete die Sitzung: bis 1.6.62 baute die Seite erst die ganze virtuelle Fahrt auf (Sekunden, Texturen,
+  // Modelle) und setzte die AR-Ebene erst danach; die Sitzung bekam so lange kein Bild. Jetzt:
+  //   1. Sitzung da -> sofort eine XR-faehige Leinwand, AR-Ebene, Bezugsraum und ein Bildtakt, der nur durchsichtig
+  //      loescht und den Boden sucht (vfArBild ohne Fahrt);
+  //   2. erst im naechsten Takt die virtuelle Fahrt, die genau diese Leinwand uebernimmt (virtuellStarten, opts.ar.cv).
+  // Kein doppelter Start (vfArLaeuft). Endet die Sitzung, ohne dass die Strecke stand, zeigt ein Fenster das Protokoll
+  // (vfArLog) und den Hinweis, es nochmal zu versuchen.
+  let vfArLaeuft = null;
+  function vfArLog(ar, text) {
+    const z = ((performance.now() - ar.t0) / 1000).toFixed(1) + ' s: ' + text;
+    ar.protokoll.push(z);
+    if (ar.protokoll.length > 40) ar.protokoll.shift();
+    try { log('AR ' + z, 'info'); } catch (e) { /* egal */ }
+  }
   function vfArStarten() {
-    if (VF.aktiv) return;
+    if (VF.aktiv || vfArLaeuft) return;
     if (!(navigator.xr && navigator.xr.requestSession)) {
       showHudToast(t('AR geht hier nicht: sie braucht Chrome auf einem Android-Handy mit ARCore (nicht in der App, nicht am PC).'));
       return;
@@ -46,69 +63,102 @@
     const wurzel = document.createElement('div');
     wurzel.className = 'vf-ar-wurzel';
     document.body.appendChild(wurzel);
-    const ar = { session: null, wurzel, frame: null, ref: null, hitSrc: null, treffer: null, platz: null, kamera: null, layerOk: false };
+    const ar = { session: null, wurzel, cv: null, gl: null, frame: null, ref: null, hitSrc: null, treffer: null, platz: null, kamera: null,
+                 layerOk: false, t0: performance.now(), protokoll: [], bilder: 0, fehler: null };
+    vfArLaeuft = ar;
+    vfArLog(ar, 'Sitzung angefragt');
     // Sofort anfragen (Nutzergeste), alles andere danach.
     navigator.xr.requestSession('immersive-ar', {
-      requiredFeatures: ['hit-test', 'local'],
-      optionalFeatures: ['dom-overlay'],
+      requiredFeatures: ['local'],
+      optionalFeatures: ['hit-test', 'dom-overlay'],
       domOverlay: { root: wurzel },
     }).then((session) => {
       ar.session = session;
-      session.addEventListener('end', () => {
-        ar.beendet = true;
-        if (VF.aktiv && VF.ar === ar) virtuellBeenden();
-        else vfArAufraeumen(ar);
-      });
+      vfArLog(ar, 'Sitzung laeuft' + (session.domOverlayState ? ' (Ueberlagerung ' + session.domOverlayState.type + ')' : ' (ohne Ueberlagerung)'));
+      session.addEventListener('end', () => vfArEnde(ar));
       // Tipps auf Knoepfe der Ueberlagerung sind keine AR-Auswahl (Steuerung, Knopfleiste).
       wurzel.addEventListener('beforexrselect', (e) => { if (e.target && e.target.closest && e.target.closest('button, .vf-touch, .vf-knoepfe, input, select')) e.preventDefault(); });
       session.addEventListener('select', () => vfArPlatzieren(ar));
-      if (!virtuellStarten({ ar })) { session.end().catch(() => {}); return; }
-      vfArEbene(ar);
-      session.requestReferenceSpace('local').then((ref) => {
-        ar.ref = ref;
-        return session.requestReferenceSpace('viewer');
-      }).then((viewer) => session.requestHitTestSource({ space: viewer })).then((src) => { ar.hitSrc = src; })
-        .catch((e) => { log('AR: Bodensuche nicht moeglich (' + e.message + ')', 'warn'); });
-      vfArHinweis(ar);
+      // 1. Leinwand und AR-Ebene sofort.
+      ar.cv = document.createElement('canvas');
+      ar.cv.style.visibility = 'hidden';
+      ar.gl = ar.cv.getContext('webgl', { antialias: true, alpha: false, xrCompatible: true });
+      if (!ar.gl) { vfArLog(ar, 'kein WebGL'); session.end().catch(() => {}); return; }
+      (ar.gl.makeXRCompatible ? ar.gl.makeXRCompatible() : Promise.resolve()).then(() => {
+        if (ar.beendet) return;
+        session.updateRenderState({ baseLayer: new XRWebGLLayer(session, ar.gl) });
+        ar.layerOk = true;
+        vfArLog(ar, 'AR-Ebene bereit');
+        session.requestAnimationFrame(vfArBild);
+        return session.requestReferenceSpace('local').then((ref) => {
+          ar.ref = ref;
+          vfArLog(ar, 'Bezugsraum local');
+          return session.requestReferenceSpace('viewer').then((viewer) => session.requestHitTestSource({ space: viewer }))
+            .then((src) => { ar.hitSrc = src; vfArLog(ar, 'Bodensuche bereit'); })
+            .catch((e) => vfArLog(ar, 'Bodensuche nicht moeglich: ' + e.message + ' (Strecke dann vor dir)'));
+        });
+      }).catch((e) => { vfArLog(ar, 'AR-Ebene: ' + (e && e.message)); session.end().catch(() => {}); });
+      // 2. Die virtuelle Fahrt einen Takt spaeter (uebernimmt ar.cv).
+      setTimeout(() => {
+        if (ar.beendet) return;
+        let ok = false;
+        try { ok = virtuellStarten({ ar }); } catch (e) { vfArLog(ar, 'Start der Fahrt: ' + e.message); }
+        vfArLog(ar, ok ? 'virtuelle Fahrt gestartet' : 'virtuelle Fahrt startet nicht');
+        if (!ok) { session.end().catch(() => {}); return; }
+        vfArHinweis(ar);
+      }, 0);
     }).catch((e) => {
+      vfArLaeuft = null;
       wurzel.remove();
-      showHudToast(t('AR konnte nicht starten') + ': ' + (e && e.message ? e.message : e));
-      log('AR: Sitzung nicht gestartet (' + (e && e.message) + ')', 'warn');
+      const m = (e && e.message) || String(e);
+      showHudToast(t('AR konnte nicht starten') + ': ' + m);
+      log('AR: Sitzung nicht gestartet (' + m + ')', 'warn');
     });
   }
-  // Die AR-Ebene braucht den Grafikkontext der virtuellen Fahrt; bei einer freien Strecke entsteht er erst nach dem Laden.
-  function vfArEbene(ar) {
-    if (ar.beendet || ar.layerOk) return;
-    if (!VF.gl || VF.ar !== ar) { setTimeout(() => vfArEbene(ar), 120); return; }
-    const gl = VF.gl;
-    const fertig = () => {
-      if (ar.beendet) return;
-      ar.session.updateRenderState({ baseLayer: new XRWebGLLayer(ar.session, gl) });
-      ar.layerOk = true;
-      VF.raf = ar.session.requestAnimationFrame(vfArBild);
-    };
-    (gl.makeXRCompatible ? gl.makeXRCompatible() : Promise.resolve()).then(fertig, (e) => {
-      showHudToast(t('AR konnte nicht starten') + ': ' + e.message);
-      ar.session.end().catch(() => {});
-    });
+  // Ende der Sitzung (Nutzer, Browser oder Fehler): Fahrt beenden, aufraeumen, bei einem fruehen Ende das Protokoll zeigen.
+  function vfArEnde(ar) {
+    if (ar.endeGemeldet) return;
+    ar.endeGemeldet = true;
+    ar.beendet = true;
+    vfArLog(ar, 'Sitzung beendet nach ' + ar.bilder + ' Bildern');
+    if (VF.aktiv && VF.ar === ar) virtuellBeenden(); else vfArAufraeumen(ar);
+    if (vfArLaeuft === ar) vfArLaeuft = null;
+    if (!ar.platz && !ar.vonHand && typeof konsoleFrage === 'function') {
+      setTimeout(() => konsoleFrage(t('AR wurde beendet'),
+        t('Die AR-Sitzung hat geendet, bevor die Strecke stand. Beim ersten Mal fragen Chrome und Android nach der Kamera - danach bitte nochmal AR tippen. Protokoll:') + '\n' + ar.protokoll.slice(-12).join('\n'),
+        [[t('Nochmal'), () => vfArStarten()], [t('Schließen'), null]], true), 300);
+    }
   }
-  // Ein Bild der AR-Sitzung: Physik und Anzeige wie sonst (vfBild), gezeichnet in vfArMalen.
+  // Ein Bild der AR-Sitzung. Vor dem Start der Fahrt (und waehrend sie laedt) nur durchsichtig loeschen und den Boden
+  // suchen; danach Physik und Anzeige wie sonst (vfBild), gezeichnet in vfArMalen.
   function vfArBild(zeit, frame) {
-    const ar = VF.ar;
-    if (!ar || !VF.aktiv) return;
-    // Doppelte Anmeldungen (Start der Fahrt und Ebene fertig) im selben Bild: nur eine rechnet, die andere endet hier.
+    const ar = vfArLaeuft;
+    if (!ar || ar.beendet) return;
+    // Doppelte Anmeldungen im selben Bild: nur eine rechnet, die andere endet hier.
     if (ar.letzteZeit === zeit) return;
     ar.letzteZeit = zeit;
+    ar.bilder++;
+    const fahrt = VF.aktiv && VF.ar === ar;
+    if (!fahrt) ar.session.requestAnimationFrame(vfArBild);
     ar.frame = frame;
-    try { vfBild(zeit); } finally { ar.frame = null; }
-    // Waehrend des Ladebilds zeichnet vfBild nichts: dann wenigstens die Bodensuche.
-    if (VF.laedt && ar.layerOk) { ar.frame = frame; try { vfArMalen(frame); } finally { ar.frame = null; } }
+    try {
+      if (fahrt) vfBild(zeit);
+      if (!fahrt || VF.laedt) vfArMalen(frame);
+    } catch (e) {
+      if (!ar.fehler) { ar.fehler = e; vfArLog(ar, 'Fehler im Bild: ' + e.message); }
+    } finally { ar.frame = null; }
   }
 
   // Strecke an die Trefferstelle setzen, gedreht vom Betrachter weg.
   function vfArPlatzieren(ar) {
-    if (!ar.treffer || ar.platz) return;
-    const m = ar.treffer;
+    if (ar.platz || !VF.aktiv || VF.laedt) return;
+    let m = ar.treffer;
+    if (!m && !ar.hitSrc && ar.kamera) {
+      const k = ar.kamera, f = [-k[8], -k[10]], l = Math.hypot(f[0], f[1]) || 1;
+      m = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, k[12] + f[0] / l * 1.2, k[13] - 1.2, k[14] + f[1] / l * 1.2, 1];
+    }
+    if (!m) return;
+    vfArLog(ar, 'Strecke platziert');
     let yaw = 0;
     if (ar.kamera) { const f = [-ar.kamera[8], -ar.kamera[10]]; yaw = Math.atan2(-f[0], -f[1]); }
     // Mitte der Strecke (Mittellinie) in den Anker.
@@ -161,7 +211,7 @@
 
   // Ein Bild in die AR-Ebene: Kamerabild kommt vom System (durchsichtig loeschen), darueber je Auge die Szene.
   function vfArMalen(frame) {
-    const ar = VF.ar, gl = VF.gl;
+    const ar = vfArLaeuft, gl = ar && ar.gl;
     if (!ar || !ar.ref || !ar.layerOk || !gl) return;
     const pose = frame.getViewerPose(ar.ref);
     if (!pose) return;
@@ -180,8 +230,8 @@
       const vp = layer.getViewport(view);
       gl.viewport(vp.x, vp.y, vp.width, vp.height);
       const proj = Array.from(view.projectionMatrix), sicht = Array.from(view.transform.inverse.matrix);
-      if (!ar.platz) {
-        if (ar.treffer) {
+      if (!ar.platz || !VF.aktiv || VF.laedt || !VF.prog) {
+        if (ar.treffer && VF.prog) {
           if (!ar.ring) ar.ring = vfArRingBauen(gl);
           // Ring mit 15 cm Radius flach auf dem Treffer.
           const m = ar.treffer;
@@ -219,7 +269,9 @@
   }
   function vfArAufraeumen(ar) {
     if (!ar) return;
+    ar.vonHand = ar.vonHand || !!VF.beendenVonHand;
+    if (vfArLaeuft === ar && ar.beendet) vfArLaeuft = null;
     try { if (ar.hitSrc) ar.hitSrc.cancel(); } catch (e) { /* egal */ }
-    if (ar.session && !ar.beendet) { ar.beendet = true; ar.session.end().catch(() => {}); }
+    if (ar.session && !ar.beendet) { ar.vonHand = true; ar.beendet = true; ar.session.end().catch(() => {}); if (vfArLaeuft === ar) vfArLaeuft = null; }
     if (ar.wurzel) ar.wurzel.remove();
   }

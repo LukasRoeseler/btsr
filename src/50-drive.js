@@ -2007,7 +2007,10 @@
     document.body.classList.remove('race-fs', 'race-turn');
     $('race-fs').hidden = false; $('race-fs-exit').hidden = true;
     try {
-      if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
+      // v1.6.63: die AR-Ueberlagerung (60e-ar.js) ist das Vollbild-Element der AR-Sitzung - verlassen hiesse AR beenden.
+      const arFs = document.fullscreenElement && document.fullscreenElement.classList && document.fullscreenElement.classList.contains('vf-ar-wurzel');
+      if (arFs) { /* AR laeuft */ }
+      else if (document.fullscreenElement && document.exitFullscreen) await document.exitFullscreen();
       else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
     } catch (e) { /* already out */ }
     try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); }
