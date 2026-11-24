@@ -1474,7 +1474,7 @@
   .k-modus-wahl .wip-tag { margin-left: 3px; font-size: 8px; vertical-align: super; text-shadow: none; }
   /* v1.6.37 BESTELLT: "background of the drive virtually box should be this image: drive_virtually". */
   body.fm-virtuell #fa-start { background-image: linear-gradient(rgba(0,0,0,.3), rgba(0,0,0,.3)), url(img/virtuell-fahren-start.jpg); background-size: cover; background-position: center 50%; }
-  body.fm-virtuell #fa-auto-bild { background-size: 88% auto, cover; background-repeat: no-repeat; background-position: center 92%, center; }
+  body.fm-virtuell #fa-auto-bild { background-size: cover; background-repeat: no-repeat; background-position: center 70%; background-color: #a9adb3; }
   /* v1.5: kleine Symbole auf der Garagenkachel (zweiter Laptop, Onboard-Kamera). */
   .k-geraete { position: absolute; top: 6px; right: 8px; display: flex; gap: 6px; z-index: 2; pointer-events: none; }
   .k-geraete[hidden] { display: none; }
@@ -4361,8 +4361,9 @@
   .vg-vorschau { position: sticky; top: 6px; display: flex; flex-direction: column; gap: 8px; }
   .vg-vorschau .vf-vorschau { position: relative; display: grid; place-items: center; padding: 0; border: 0; overflow: hidden; aspect-ratio: 16 / 9;
     max-height: 58vh; background: transparent; box-shadow: none; border-radius: 8px; }
-  /* v1.6.56: Hintergrund durchsichtig, nur das transparente Auto (bzw. der Hubschrauber) auf der Menue-Farbe. */
-  .vg-vorschau .vf-vorschau-bild { position: relative; z-index: 1; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; object-position: center bottom; }
+  /* v1.6.56: Hintergrund durchsichtig, nur das transparente Auto (bzw. der Hubschrauber) auf der Menue-Farbe.
+     v1.6.81: das Bild bringt seinen grauen Verlauf selbst mit (tools/vorschau_bilder.py), abgerundet. */
+  .vg-vorschau .vf-vorschau-bild { position: relative; z-index: 1; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; object-position: center; border-radius: 8px; }
   .vg-name { font-weight: 700; font-size: clamp(13px, 1.8vw, 18px); text-align: center; }
   .vg-vorschau .vf-los-zeile { display: flex; gap: 8px; justify-content: center; border: 0; padding: 0; }
   .vg-vorschau .vf-los-zeile .primary { flex: 1 1 auto; min-height: 44px; font-size: 1.05em; }
@@ -7418,6 +7419,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Vorschaubilder neu: grauer Hintergrund mit leichtem Verlauf f&#252;r alle Autos und den Hubschrauber (ein Skript f&#252;r alles: tools/vorschau_bilder.py). Bei Boxer 96, FMC GT4 und Lynx 220 sitzen die R&#228;der jetzt in den Radk&#228;sten (die Karosserie steht wie im Spiel um die Bodenfreiheit h&#246;her). Marker-AR: Kamerabild und Strecke geh&#246;ren jetzt immer zum selben Moment (das Bild wird erst mit der erkannten Lage gezeigt), die Lage folgt Bewegungen schneller, ohne im Stand mehr zu zittern. Brems-, R&#252;ck- und Scheinwerferlicht leuchten in AR schw&#228;cher.</li>
         <li>Freie virtuelle Strecken: Zur Auswahl stehen die T&#246;rnerschleife 2.0 mit und ohne Br&#252;cke. Bestenlisten zeigen nur noch Zeiten von Strecken, die es in der App gibt.</li>
         <li>Marker-AR: Die Strecke kippt nicht mehr &#8222;wie ein Necker-W&#252;rfel&#8220; in die andere Neigung. Ein flacher Marker l&#228;sst zwei fast gleich gute Neigungen zu; gew&#228;hlt wird jetzt die, bei der das Papier im Bild nach oben zeigt (der Marker liegt am Boden), die zur bisherigen passt (auch &#252;ber kurze Aussetzer) und den kleineren Fehler hat, mit Hysterese gegen st&#228;ndiges Wechseln.</li>
         <li>Marker-AR ruhiger: Die Ecken des Markers werden jetzt auf Bruchteile eines Pixels genau vermessen (Kanten im Graubild, angepasste Geraden) und mit einem One-Euro-Filter gegl&#228;ttet; die Erkennung l&#228;uft mit einer festen Breite von 960 Pixeln statt abwechselnd 640/400. Neigung und Abstand werden bei ruhiger Kamera st&#228;rker gegl&#228;ttet, bei Bewegung folgt das Bild sofort. Gemessen bei 1,3 m Abstand: Zittern 2- bis 5-mal kleiner, Erkennung in 98 % statt 38 % der Bilder.</li>

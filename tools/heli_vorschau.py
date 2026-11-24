@@ -6,6 +6,8 @@ auto.json (tools/vorschau_bilder.py rechnet nur Autos); seine Daten liegen in im
 Ecken Rotor), dann je Ecke x y z r g b (float32), je drei Ecken ein Dreieck, App-Koordinaten (+x links, +y oben, +z vorn).
 Gezeichnet schraeg von vorn-seitlich, mit Z-Puffer, flacher Schattierung, 3-fach ueberabgetastet und einem weichen
 Bodenschatten, wie die Autos. Aufruf aus dem Repo: python tools/heli_vorschau.py
+v1.6.81: rendern() liefert das transparente Bild; tools/vorschau_bilder.py legt es auf den grauen Hintergrund der Autos
+(python tools/vorschau_bilder.py heli). Direkt aufgerufen schreibt dieses Skript das Bild ebenfalls mit Hintergrund.
 """
 import os
 import struct
@@ -23,7 +25,7 @@ def lade():
     return a.reshape(-1, 3, 6)
 
 
-def main():
+def rendern():
     T = lade().astype(np.float64)
     P = T[:, :, :3]; C = T[:, :, 3:6]
     # Blick: Gier 35 Grad (schraeg von vorn rechts), leicht von oben (12 Grad).
@@ -74,10 +76,15 @@ def main():
     aus = np.zeros_like(bild)
     aus[:, :, :3] = rgb
     aus[:, :, 3] = a + (1 - a) * sch
-    img = Image.fromarray((np.clip(aus, 0, 1) * 255).astype(np.uint8), 'RGBA').resize((B, H), Image.LANCZOS)
-    ziel = os.path.join(REPO, 'img', 'vf', 'vorschau.png')
-    img.save(ziel, optimize=True)
-    print(ziel, os.path.getsize(ziel))
+    return Image.fromarray((np.clip(aus, 0, 1) * 255).astype(np.uint8), 'RGBA').resize((B, H), Image.LANCZOS)
+
+
+def main():
+    import sys
+    sys.argv = [sys.argv[0], 'heli']
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import vorschau_bilder
+    vorschau_bilder.main()
 
 
 if __name__ == '__main__':

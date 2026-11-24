@@ -1474,7 +1474,7 @@
   .k-modus-wahl .wip-tag { margin-left: 3px; font-size: 8px; vertical-align: super; text-shadow: none; }
   /* v1.6.37 BESTELLT: "background of the drive virtually box should be this image: drive_virtually". */
   body.fm-virtuell #fa-start { background-image: linear-gradient(rgba(0,0,0,.3), rgba(0,0,0,.3)), url(img/virtuell-fahren-start.jpg); background-size: cover; background-position: center 50%; }
-  body.fm-virtuell #fa-auto-bild { background-size: 88% auto, cover; background-repeat: no-repeat; background-position: center 92%, center; }
+  body.fm-virtuell #fa-auto-bild { background-size: cover; background-repeat: no-repeat; background-position: center 70%; background-color: #a9adb3; }
   /* v1.5: kleine Symbole auf der Garagenkachel (zweiter Laptop, Onboard-Kamera). */
   .k-geraete { position: absolute; top: 6px; right: 8px; display: flex; gap: 6px; z-index: 2; pointer-events: none; }
   .k-geraete[hidden] { display: none; }
@@ -4361,8 +4361,9 @@
   .vg-vorschau { position: sticky; top: 6px; display: flex; flex-direction: column; gap: 8px; }
   .vg-vorschau .vf-vorschau { position: relative; display: grid; place-items: center; padding: 0; border: 0; overflow: hidden; aspect-ratio: 16 / 9;
     max-height: 58vh; background: transparent; box-shadow: none; border-radius: 8px; }
-  /* v1.6.56: Hintergrund durchsichtig, nur das transparente Auto (bzw. der Hubschrauber) auf der Menue-Farbe. */
-  .vg-vorschau .vf-vorschau-bild { position: relative; z-index: 1; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; object-position: center bottom; }
+  /* v1.6.56: Hintergrund durchsichtig, nur das transparente Auto (bzw. der Hubschrauber) auf der Menue-Farbe.
+     v1.6.81: das Bild bringt seinen grauen Verlauf selbst mit (tools/vorschau_bilder.py), abgerundet. */
+  .vg-vorschau .vf-vorschau-bild { position: relative; z-index: 1; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: cover; object-position: center; border-radius: 8px; }
   .vg-name { font-weight: 700; font-size: clamp(13px, 1.8vw, 18px); text-align: center; }
   .vg-vorschau .vf-los-zeile { display: flex; gap: 8px; justify-content: center; border: 0; padding: 0; }
   .vg-vorschau .vf-los-zeile .primary { flex: 1 1 auto; min-height: 44px; font-size: 1.05em; }
@@ -7418,6 +7419,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Vorschaubilder neu: grauer Hintergrund mit leichtem Verlauf f&#252;r alle Autos und den Hubschrauber (ein Skript f&#252;r alles: tools/vorschau_bilder.py). Bei Boxer 96, FMC GT4 und Lynx 220 sitzen die R&#228;der jetzt in den Radk&#228;sten (die Karosserie steht wie im Spiel um die Bodenfreiheit h&#246;her). Marker-AR: Kamerabild und Strecke geh&#246;ren jetzt immer zum selben Moment (das Bild wird erst mit der erkannten Lage gezeigt), die Lage folgt Bewegungen schneller, ohne im Stand mehr zu zittern. Brems-, R&#252;ck- und Scheinwerferlicht leuchten in AR schw&#228;cher.</li>
         <li>Freie virtuelle Strecken: Zur Auswahl stehen die T&#246;rnerschleife 2.0 mit und ohne Br&#252;cke. Bestenlisten zeigen nur noch Zeiten von Strecken, die es in der App gibt.</li>
         <li>Marker-AR: Die Strecke kippt nicht mehr &#8222;wie ein Necker-W&#252;rfel&#8220; in die andere Neigung. Ein flacher Marker l&#228;sst zwei fast gleich gute Neigungen zu; gew&#228;hlt wird jetzt die, bei der das Papier im Bild nach oben zeigt (der Marker liegt am Boden), die zur bisherigen passt (auch &#252;ber kurze Aussetzer) und den kleineren Fehler hat, mit Hysterese gegen st&#228;ndiges Wechseln.</li>
         <li>Marker-AR ruhiger: Die Ecken des Markers werden jetzt auf Bruchteile eines Pixels genau vermessen (Kanten im Graubild, angepasste Geraden) und mit einem One-Euro-Filter gegl&#228;ttet; die Erkennung l&#228;uft mit einer festen Breite von 960 Pixeln statt abwechselnd 640/400. Neigung und Abstand werden bei ruhiger Kamera st&#228;rker gegl&#228;ttet, bei Bewegung folgt das Bild sofort. Gemessen bei 1,3 m Abstand: Zittern 2- bis 5-mal kleiner, Erkennung in 98 % statt 38 % der Bilder.</li>
@@ -18037,6 +18039,7 @@
     "Marker-AR ruhiger: Die Ecken des Markers werden jetzt auf Bruchteile eines Pixels genau vermessen (Kanten im Graubild, angepasste Geraden) und mit einem One-Euro-Filter geglättet; die Erkennung läuft mit einer festen Breite von 960 Pixeln statt abwechselnd 640/400. Neigung und Abstand werden bei ruhiger Kamera stärker geglättet, bei Bewegung folgt das Bild sofort. Gemessen bei 1,3 m Abstand: Zittern 2- bis 5-mal kleiner, Erkennung in 98 % statt 38 % der Bilder.": "Marker AR calmer: the marker corners are now measured to a fraction of a pixel (edges in the greyscale image, fitted lines) and smoothed with a One Euro filter; detection runs at a fixed width of 960 pixels instead of alternating 640/400. Tilt and distance are smoothed more while the camera is still, and the image follows immediately when you move. Measured at 1.3 m: jitter 2 to 5 times smaller, detection in 98 % instead of 38 % of frames.",
     "Marker-AR: Die Strecke kippt nicht mehr „wie ein Necker-Würfel“ in die andere Neigung. Ein flacher Marker lässt zwei fast gleich gute Neigungen zu; gewählt wird jetzt die, bei der das Papier im Bild nach oben zeigt (der Marker liegt am Boden), die zur bisherigen passt (auch über kurze Aussetzer) und den kleineren Fehler hat, mit Hysterese gegen ständiges Wechseln.": "Marker AR: the track no longer flips “like a Necker cube” to the other tilt. A flat marker allows two almost equally good tilts; the app now picks the one where the paper points upward in the image (the marker lies on the floor), that matches the previous one (also across short dropouts) and has the smaller error, with hysteresis against constant switching.",
     "Freie virtuelle Strecken: Zur Auswahl stehen die Törnerschleife 2.0 mit und ohne Brücke. Bestenlisten zeigen nur noch Zeiten von Strecken, die es in der App gibt.": "Free virtual tracks: you can choose the Törnerschleife 2.0 with and without bridge. Best-time lists now only show times of tracks that exist in the app.",
+    "Vorschaubilder neu: grauer Hintergrund mit leichtem Verlauf für alle Autos und den Hubschrauber (ein Skript für alles: tools/vorschau_bilder.py). Bei Boxer 96, FMC GT4 und Lynx 220 sitzen die Räder jetzt in den Radkästen (die Karosserie steht wie im Spiel um die Bodenfreiheit höher). Marker-AR: Kamerabild und Strecke gehören jetzt immer zum selben Moment (das Bild wird erst mit der erkannten Lage gezeigt), die Lage folgt Bewegungen schneller, ohne im Stand mehr zu zittern. Brems-, Rück- und Scheinwerferlicht leuchten in AR schwächer.": "New preview images: gray background with a light gradient for all cars and the helicopter (one script for everything: tools/vorschau_bilder.py). On the Boxer 96, FMC GT4 and Lynx 220 the wheels now sit in the wheel arches (the body is raised by the ground clearance, as in the game). Marker AR: camera image and track now always belong to the same moment (the image is shown together with the detected pose), and the pose follows movements faster without more jitter when still. Brake, tail and head lights are dimmer in AR.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -34323,7 +34326,9 @@
       } else if (vfM) {
         // Vorschaubild des virtuellen Autos (Seitenansicht), dahinter das Bild der virtuellen Fahrt.
         // v1.6.37: transparentes Vorschaubild auf dem Garagenbild der virtuellen Fahrt (BESTELLT: garage_virtual).
-        ab.style.backgroundImage = 'url("' + vfVorschauUrl(vfId) + '"), url(img/garage-virtuell.jpg)';
+        // v1.6.81: die Vorschaubilder haben jetzt einen eigenen grauen Hintergrund (BESTELLT: "Vorschaubilder nochmal
+        // aufhuebschen mit grauem Hintergrund (leichter Farbverlauf)") - sie fuellen die Kachel allein.
+        ab.style.backgroundImage = 'url("' + vfVorschauUrl(vfId) + '")';
         ab.innerHTML = '';
       } else {
         ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/garage.jpg)';   // v1.0.15: Garagenfoto (BESTELLT)
@@ -48858,10 +48863,13 @@
       gl.depthMask(true); gl.disable(gl.BLEND);
     }
     // 2. Aufbau, undurchsichtige Teile; Scheinwerfer und Ruecklicht leuchten selbst
-    const ruecklichtEmis = bremst ? 1.7 : (licht ? 0.55 : 0);
+    // v1.6.81 GEMELDET: "Bremslicht in AR ist zu hell (und die anderen Lichter evtl. auch)". Vor dem Kamerabild
+    // (AR, Marker-AR) leuchten Lichter schwaecher und die Lichtpunkte sind kleiner (VF_AR_LICHT).
+    const arL = (VF.ar || VF.marker) ? VF_AR_LICHT : null;
+    const ruecklichtEmis = (bremst ? 1.7 : (licht ? 0.55 : 0)) * (arL ? arL.emis : 1);
     const lackTint = vfLackTint(lackHex);
     for (const t of M.aufbauTeile) {
-      const emis = t.rolle === 'scheinwerfer' ? (licht ? 1.3 : 0) : t.rolle === 'ruecklicht' ? ruecklichtEmis : 0;
+      const emis = t.rolle === 'scheinwerfer' ? (licht ? 1.3 * (arL ? arL.emis : 1) : 0) : t.rolle === 'ruecklicht' ? ruecklichtEmis : 0;
       // Karosserie mit leichtem Clear-Coat-Glanz (klar, nur Quality), Scheiben/Glas dagegen nicht.
       // Der Lack betrifft nur Karosserieteile: Scheinwerfer, Ruecklichter und Scheiben bleiben unveraendert.
       const lackTeil = !t.rolle || t.rolle === 'karosserie' || t.rolle === 'lack';
@@ -48914,12 +48922,13 @@
     const innen = auge && Math.hypot(auge[0] - x, auge[2] - y) < d.laenge * s * 0.45 && auge[1] < (d.hoehe || 1.4) * s;
     for (const t of M.glasTeile) {
       if (t.rolle === 'glas') { setze(aufbau, VF_GLAS_TINT, 0, innen ? 0.12 : 0.86, 0, 1, 0, innen ? 0.2 : 1); teil(t); }
-      else { setze(aufbau, VF_WEISS, licht ? 0.6 : 0, 0.9, 1, 1, 0, 0.5); teil(t); }
+      else { setze(aufbau, VF_WEISS, licht ? 0.6 * (arL ? arL.emis : 1) : 0, 0.9, 1, 1, 0, 0.5); teil(t); }
     }
     // 5. Leuchten: Lichtpunkte (zur Kamera gedreht) und vorn der Lichtkegel auf der Bahn
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
     const rechts = [blick[0], blick[4], blick[8]], oben = [blick[1], blick[5], blick[9]];
     const punkt = (p, gr, farbe, staerke) => {
+      if (arL) { gr *= arL.gross; staerke *= arL.staerke; }
       const c = ort(aufbau, p), k = gr * s;
       const e = (a, b) => [c[0] + (rechts[0] * a + oben[0] * b) * k, c[1] + (rechts[1] * a + oben[1] * b) * k, c[2] + (rechts[2] * a + oben[2] * b) * k];
       const q = [e(-1, -1).concat([0, 0]), e(1, -1).concat([1, 0]), e(1, 1).concat([1, 1]), e(-1, 1).concat([0, 1])];
@@ -48930,7 +48939,7 @@
       const vorn = d.laenge / 2 + zSp;
       const kegel = [[0.9, 0.02, vorn, 0.25, 0.5], [-0.9, 0.02, vorn, 0.75, 0.5], [-3.2, 0.02, vorn + 13, 1, 1], [3.2, 0.02, vorn + 13, 0, 1]]
         .map((p) => ort(lage, p).concat(p.slice(3)));
-      setze(VF_EINS, [1, 0.95, 0.82], 0, 0.30, 1, 0, 0, 0);
+      setze(VF_EINS, [1, 0.95, 0.82], 0, 0.30 * (arL ? arL.kegel : 1), 1, 0, 0, 0);
       flaeche([kegel[0], kegel[1], kegel[2], kegel[0], kegel[2], kegel[3]], M.glanz);
       (M.meta.lichter.front && M.meta.lichter.front.length ? M.meta.lichter.front : [[d.breite * 0.35, d.hoehe * 0.5, d.laenge / 2 - 0.15, 0.2], [-d.breite * 0.35, d.hoehe * 0.5, d.laenge / 2 - 0.15, 0.2]])
         .forEach((l) => punkt(l, l[3] * 2.6, [1, 0.96, 0.85], 0.95));
@@ -48942,6 +48951,8 @@
     gl.depthMask(true); gl.disable(gl.BLEND);
     [T.ap, T.an, T.auv].forEach((a) => gl.disableVertexAttribArray(a));
   }
+  // v1.6.81: Lichter vor dem Kamerabild (AR): Selbstleuchten, Groesse und Staerke der Lichtpunkte, Lichtkegel.
+  const VF_AR_LICHT = { emis: 0.5, gross: 0.45, staerke: 0.4, kegel: 0.35 };
   function vfZeit(ms) { return ms === null || ms === undefined ? '–' : (ms / 1000).toFixed(2) + ' s'; }
   // ---- HUD im Stil von ACC (WIP) -----------------------------------------------------------------
   // BESTELLT: "Aendere im virtuellen Fahren das UI so, dass es so aehnlich wie Assetto Corsa
@@ -50012,7 +50023,7 @@
       const img = document.createElement('img');
       img.className = 'vf-vorschau-bild';
       img.alt = autos[ja].name;
-      img.src = vfVorschauUrl(autos[ja].v);   // transparent (tools/vorschau_bilder.py, Heli: tools/heli_vorschau.py)
+      img.src = vfVorschauUrl(autos[ja].v);   // grauer Verlauf seit v1.6.81 (alles: python tools/vorschau_bilder.py)
       img.onerror = () => { vor.remove(); };
       vor.appendChild(img);
       rechts.appendChild(vor);
@@ -50862,10 +50873,9 @@
     }
     return neu;
   }
-  // One-Euro-Filter (Casiez et al. 2012) auf mehreren Werten: Grenzfrequenz = min + beta * |Geschwindigkeit|. Zustand f
-  // (Objekt), t in ms. Nach einer Pause (> 500 ms) beginnt er neu.
-  function vfMkEinEuro(f, werte, t) {
-    var MIN = 0.8, BETA = 0.04, DC = 1.0;
+  // One-Euro-Filter (Casiez et al. 2012): Grenzfrequenz = min + beta * |Geschwindigkeit|. Zustand f (Objekt), t in ms,
+  // p = { min, beta, dc }. Nach einer Pause (> 500 ms) beginnt er neu.
+  function vfMkEuro1(f, werte, t, p) {
     if (!f.x || t - f.t > 500) { f.x = werte.slice(); f.dx = werte.map(function () { return 0; }); f.t = t; return werte.slice(); }
     var dt = Math.max(0.001, (t - f.t) / 1000);
     f.t = t;
@@ -50873,12 +50883,28 @@
     var raus = [];
     for (var i = 0; i < werte.length; i++) {
       var d = (werte[i] - f.x[i]) / dt;
-      f.dx[i] = f.dx[i] + al(DC) * (d - f.dx[i]);
-      var fc = MIN + BETA * Math.abs(f.dx[i]);
+      f.dx[i] = f.dx[i] + al(p.dc) * (d - f.dx[i]);
+      var fc = p.min + p.beta * Math.abs(f.dx[i]);
       f.x[i] = f.x[i] + al(fc) * (werte[i] - f.x[i]);
       raus.push(f.x[i]);
     }
     return raus;
+  }
+  // Die acht Eckwerte [x0, y0, ... x3, y3] getrennt gefiltert:
+  // v1.6.81 GEMELDET: "Strecke ist stabil, reagiert aber zu spaet (~30ms) nach Bewegung und zuckt dann". Bisher ein
+  // Filter je Eckwert mit 1-Hz-Geschwindigkeit: er oeffnete erst ~150 ms nach Bewegungsbeginn und holte dann ruckartig
+  // auf. Jetzt: die MITTE des Markers (Verschiebung im Bild = Kamerabewegung) mit einem schnellen Filter (dc 4 Hz, beta
+  // 0,1) - sie folgt sofort; die FORM (Ecken relativ zur Mitte: daraus kommen Abstand und Neigung, die am staerksten
+  // rauschen) mit dem bisherigen ruhigen Filter. So bleibt die Strecke still ruhig und klebt bei Bewegung am Bild.
+  // Werte, die nicht acht sind, laufen durch den ruhigen Filter.
+  function vfMkEinEuro(f, werte, t) {
+    var RUHIG = { min: 0.8, beta: 0.04, dc: 1.0 }, SCHNELL = { min: 0.8, beta: 0.1, dc: 4.0 };
+    if (werte.length !== 8) return vfMkEuro1(f, werte, t, RUHIG);
+    var cx = (werte[0] + werte[2] + werte[4] + werte[6]) / 4, cy = (werte[1] + werte[3] + werte[5] + werte[7]) / 4;
+    var form = werte.map(function (w, i) { return w - (i % 2 ? cy : cx); });
+    var m = vfMkEuro1(f.mitte || (f.mitte = {}), [cx, cy], t, SCHNELL);
+    var fo = vfMkEuro1(f.form || (f.form = {}), form, t, RUHIG);
+    return fo.map(function (w, i) { return w + m[i % 2]; });
   }
   const VF_MK_MASSSTAB_STORE = 'omegasim-vf-ar-massstab';
   const VF_MK_MASSSTAEBE = [1, 0.5, 0.25];
@@ -50984,7 +51010,7 @@
       const u = (f) => new URL('lib/js-aruco2/' + f, location.href).href;
       const code = 'importScripts(' + ['cv.js', 'aruco.js', 'svd.js', 'posit1.js'].map((f) => JSON.stringify(u(f))).join(',') + ');\n'
         + 'var det = new AR.Detector({ dictionaryName: "ARUCO_MIP_36h12", maxHammingDistance: ' + VF_MK.hamming + ' }), pos = null, pf = 0, filt = {};\n'
-        + 'var vfMkVerfeinern = ' + vfMkVerfeinern.toString() + ';\nvar vfMkEinEuro = ' + vfMkEinEuro.toString() + ';\n'
+        + 'var vfMkVerfeinern = ' + vfMkVerfeinern.toString() + ';\nvar vfMkEuro1 = ' + vfMkEuro1.toString() + ';\nvar vfMkEinEuro = ' + vfMkEinEuro.toString() + ';\n'
         + 'onmessage = function (e) { var d = e.data, r = { n: d.n, ok: false, buf: d.buf, w: d.w, h: d.h }, t0 = Date.now();\n'
         + '  try { if (!pos || pf !== d.f) { pos = new POS.Posit(d.mm, d.f); pf = d.f; }\n'
         + '    var ms = det.detect({ width: d.w, height: d.h, data: new Uint8ClampedArray(d.buf) }) || [], m = null;\n'
@@ -50998,7 +51024,7 @@
         + '  } catch (err) { r.fehler = String(err); }\n'
         + '  postMessage(r, [r.buf]); };\n';
       const w = new Worker(URL.createObjectURL(new Blob([code], { type: 'text/javascript' })));
-      w.onmessage = (e) => { mk.wartet = false; vfMkAntwort(mk, e.data); };
+      w.onmessage = (e) => { mk.wartet = false; vfMkHgUmschalten(mk); vfMkAntwort(mk, e.data); };
       w.onerror = (e) => { log('Marker-AR: Worker ' + (e.message || 'Fehler') + ' - Erkennung im Hauptthread', 'warn'); try { w.terminate(); } catch (err) { /* egal */ } mk.worker = null; mk.wartet = false; };
       mk.worker = w;
     } catch (e) { mk.worker = null; }
@@ -51067,6 +51093,7 @@
       // Neigung getrennt und langsamer: sie haengt an der Verkuerzung des kleinen Markers und rauscht am staerksten.
       // Still (kleine Aenderung) nur 15 % je Erkennung, bei Bewegung (Weg oder Drehung) schnell bis ganz.
       const bew = Math.min(1, dt / 80 + dr * 40);   // Abstandsrauschen (~1 cm bei 1,3 m) zaehlt nicht als Bewegung
+      // v1.6.81: schneller (vorher aT ab 0,5, aR ab 0,15 mit bew einfach): sonst zieht die Strecke bei Bewegung nach.
       const aT = Math.max(0.5, Math.min(1, 0.5 + bew)), aR = Math.max(0.15, Math.min(1, 0.15 + bew));
       for (let i = 0; i < 16; i++) mk.pose[i] += (M[i] - mk.pose[i]) * (i === 12 || i === 13 ? aT : aR);   // Abstand (14) ruhig wie die Neigung
       vfMkOrtho(mk.pose);
@@ -51082,8 +51109,15 @@
     const dw = Math.min(VF_MK.breiten[mk.stufe], v.videoWidth), dh = Math.round(dw * v.videoHeight / v.videoWidth);
     const f = (dw / 2) / Math.tan(VF_MK.bildwinkel * Math.PI / 360);
     if (mk.worker) {
-      if (mk.wartet) return;
+      // Haengt der Worker (> 1 s ohne Antwort), weiter ohne ihn zu blockieren.
+      if (mk.wartet && performance.now() - (mk.gesendetAt || 0) < 1000) return;
       if (mk.cnv.width !== dw || mk.cnv.height !== dh) { mk.cnv.width = dw; mk.cnv.height = dh; }
+      // v1.6.81 GEMELDET: "Strecke ist stabil, reagiert aber zu spaet (~30ms) nach Bewegung und zuckt dann". Die Lage
+      // kommt aus einem Bild, das 1-2 Bilder alt ist, das Kamerabild dahinter war aber das neueste - die Strecke lief
+      // dem Bild hinterher. Jetzt wird genau das Bild, das zur Erkennung geht, in eine zweite Textur geladen und erst
+      // mit der Antwort gezeigt: Kamerabild und Strecke gehoeren immer zum selben Moment.
+      try { vfMkHgLaden(VF.gl, mk, 1 - (mk.hgZeig || 0)); mk.hgWartend = 1 - (mk.hgZeig || 0); } catch (e) { mk.hgWartend = undefined; }
+      mk.gesendetAt = performance.now();
       const S = mk.stat || (mk.stat = { gesendet: 0, erkannt: 0, verworfen: 0, ms: 0, dist: 0, w: 0, h: 0, kand: 0 });
       S.gesendet++;
       mk.ctx.drawImage(v, 0, 0, dw, dh);
@@ -51128,10 +51162,25 @@
     const A = [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1];
     return vfKette(A, vfS(s, s, s), vfRy(sh), vfT(-sx, 0, -sy));
   }
-  // Das Kamerabild als Hintergrund (Textur, Ausschnitt wie object-fit: cover), ohne Tiefe.
-  function vfMkHintergrund(gl, mk, W, H) {
+  // v1.6.81: zwei Texturen fuer das Kamerabild - eine wird gezeigt (mk.hgZeig), in die andere kommt das Bild, das
+  // gerade erkannt wird. Ohne Worker (oder bis zur ersten Antwort) wird das neueste Bild gezeigt.
+  function vfMkHgUmschalten(mk) {
+    if (mk.hgWartend === undefined) return;
+    mk.hgZeig = mk.hgWartend; mk.hgWartend = undefined; mk.hgSync = true;
+  }
+  function vfMkHgLaden(gl, mk, i) {
     const v = mk.video;
     if (!(v.readyState >= 2 && v.videoWidth)) return;
+    vfMkHgInit(gl, mk);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, mk.hg.tx[i]);
+    const flip = gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL), pre = gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, v); } catch (e) { /* Bild noch nicht bereit */ }
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flip); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, pre);
+  }
+  // Das Kamerabild als Hintergrund (Textur, Ausschnitt wie object-fit: cover), ohne Tiefe.
+  function vfMkHgInit(gl, mk) {
     if (!mk.hg) {
       const vs = 'attribute vec2 p; uniform vec4 c; varying vec2 uv; void main() { vec2 t = p * 0.5 + 0.5; uv = vec2(c.x + t.x * (c.z - c.x), c.w - t.y * (c.w - c.y)); gl_Position = vec4(p, 0.0, 1.0); }';
       const fs = 'precision mediump float; uniform sampler2D tx; varying vec2 uv; void main() { gl_FragColor = vec4(texture2D(tx, uv).rgb, 1.0); }';
@@ -51140,18 +51189,24 @@
       gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr);
       const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
-      const tx = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tx);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      mk.hg = { pr, b, tx, ap: gl.getAttribLocation(pr, 'p'), c: gl.getUniformLocation(pr, 'c'), t: gl.getUniformLocation(pr, 'tx') };
+      const neu = () => {
+        const tx = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tx);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        return tx;
+      };
+      mk.hg = { pr, b, tx: [neu(), neu()], ap: gl.getAttribLocation(pr, 'p'), c: gl.getUniformLocation(pr, 'c'), t: gl.getUniformLocation(pr, 'tx') };
     }
+  }
+  function vfMkHintergrund(gl, mk, W, H) {
+    const v = mk.video;
+    if (!(v.readyState >= 2 && v.videoWidth)) return;
+    vfMkHgInit(gl, mk);
     const g = mk.hg;
+    // Ohne Worker oder vor der ersten Antwort: das neueste Bild.
+    if (!mk.worker || !mk.hgSync) vfMkHgLaden(gl, mk, mk.hgZeig || 0);
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, g.tx);
-    const flip = gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL), pre = gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-    try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, v); } catch (e) { /* Bild noch nicht bereit */ }
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flip); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, pre);
+    gl.bindTexture(gl.TEXTURE_2D, g.tx[mk.hgZeig || 0]);
     const vw = v.videoWidth, vh = v.videoHeight, sc = Math.max(W / vw, H / vh);
     const du = (1 - (W / sc) / vw) / 2, dv = (1 - (H / sc) / vh) / 2;
     gl.useProgram(g.pr);
@@ -51177,8 +51232,8 @@
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     const jetzt = performance.now();
-    try { vfMkHintergrund(gl, mk, W, H); } catch (e) { if (!mk.hgFehler) { mk.hgFehler = e; log('Marker-AR Hintergrund: ' + e.message, 'warn'); } }
     try { vfMkErkennen(mk); } catch (e) { if (!mk.fehler) { mk.fehler = e; log('Marker-AR: ' + e.message, 'warn'); } }
+    try { vfMkHintergrund(gl, mk, W, H); } catch (e) { if (!mk.hgFehler) { mk.hgFehler = e; log('Marker-AR Hintergrund: ' + e.message, 'warn'); } }
     const sichtbar = !!(mk.pose && jetzt - mk.zuletzt < VF_MK.verlorenMs);
     const h2 = VF.schicht && VF.schicht.querySelector('.vf-ar-hinweis');
     if (h2) h2.hidden = sichtbar;
@@ -112898,6 +112953,48 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       try { if (merk === null) localStorage.removeItem(VF_ZEITEN_STORE); else localStorage.setItem(VF_ZEITEN_STORE, merk); } catch (e) { /* egal */ }
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bestzeit 29,000 s mit Zwischenzeiten, Gegenrichtung getrennt, Bestenliste, AR-Knopf ' + (vfArMoeglich() ? 'sichtbar' : 'verborgen (kein WebXR-AR)') };
+  });
+  stAdd('Virtuell v1.6.81: Marker-AR - Kamerabild gehoert zur erkannten Lage, Filter folgt Bewegung schnell, Lichter in AR gedaempft', () => {
+    const f = [];
+    // 1. One-Euro: still ruhig, Bewegung (300 px/s) nach drei Bildern hoechstens 3 px hinterher.
+    let st = {}, seed = 7, t = 0;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647 - 0.5; };
+    const aus = [];
+    const ecken = [400, 200, 460, 200, 460, 260, 400, 260];
+    for (let k = 0; k < 60; k++) { t += 33; aus.push(vfMkEinEuro(st, ecken.map((e) => e + rnd() * 1.2), t)[0]); }
+    const o = aus.slice(20), mw = o.reduce((a, b) => a + b, 0) / o.length;
+    const sd = Math.sqrt(o.reduce((a, b) => a + (b - mw) * (b - mw), 0) / o.length);
+    if (sd > 0.15) f.push('still zittrig: sd ' + sd.toFixed(3));
+    // Kamerabewegung: alle Ecken 8 px je Bild nach rechts (240 px/s).
+    let x = 0, lag = 0;
+    for (let k = 0; k < 3; k++) { t += 33; x += 8; lag = 400 + x - vfMkEinEuro(st, ecken.map((e, i) => e + (i % 2 ? 0 : x)), t)[0]; }
+    if (lag > 3) f.push('Bewegung: ' + lag.toFixed(1) + ' px hinterher');
+    // 2. Kamerabild: das Bild, das zur Erkennung geht, wird erst mit der Antwort gezeigt.
+    const glAlt = VF.gl;
+    try {
+      const gc = document.createElement('canvas');
+      VF.gl = gc.getContext('webgl');
+      const v = document.createElement('canvas'); v.width = 16; v.height = 9;
+      Object.defineProperty(v, 'readyState', { value: 2 }); Object.defineProperty(v, 'videoWidth', { value: 16 }); Object.defineProperty(v, 'videoHeight', { value: 9 });
+      let gesendet = 0;
+      const mk = { video: v, worker: { postMessage: () => { gesendet++; } }, cnv: document.createElement('canvas'), wartet: false, n: 0, bilder: 0 };
+      mk.ctx = mk.cnv.getContext('2d');
+      if (VF.gl) {
+        vfMkErkennen(mk);
+        if (gesendet !== 1 || mk.hgWartend !== 1 || (mk.hgZeig || 0) !== 0) f.push('Senden: ' + gesendet + ', wartend ' + mk.hgWartend + ', gezeigt ' + mk.hgZeig);
+        vfMkErkennen(mk);
+        if (gesendet !== 1) f.push('sendet, obwohl der Worker noch rechnet');
+        mk.wartet = false; vfMkHgUmschalten(mk);
+        if (mk.hgZeig !== 1 || !mk.hgSync || mk.hgWartend !== undefined) f.push('Antwort schaltet das Bild nicht um');
+        vfMkErkennen(mk);
+        if (gesendet !== 2 || mk.hgWartend !== 0 || mk.hgZeig !== 1) f.push('zweites Bild: wartend ' + mk.hgWartend + ', gezeigt ' + mk.hgZeig);
+        if (!mk.hg || mk.hg.tx.length !== 2) f.push('keine zwei Texturen');
+      } else f.push('kein WebGL im Test');
+    } finally { VF.gl = glAlt; }
+    // 3. Lichter vor dem Kamerabild schwaecher und kleiner.
+    if (!(VF_AR_LICHT.emis < 1 && VF_AR_LICHT.gross < 1 && VF_AR_LICHT.staerke < 1 && VF_AR_LICHT.kegel < 1)) f.push('AR-Licht nicht gedaempft');
+    if (vfModellZeichnen.toString().indexOf('VF_AR_LICHT') < 0) f.push('vfModellZeichnen ohne AR-Licht');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'still sd ' + sd.toFixed(3) + ' px, Bewegung ' + lag.toFixed(1) + ' px hinterher, Bild wartet auf die Antwort, Lichter gedaempft' };
   });
   stAdd('Virtuell v1.6.77: Marker-AR waehlt die Neigung mit Normale nach oben, haelt sie ueber Aussetzer, kommt aus einer falschen Wahl heraus', () => {
     const f = [];

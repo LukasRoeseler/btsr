@@ -14650,6 +14650,48 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bestzeit 29,000 s mit Zwischenzeiten, Gegenrichtung getrennt, Bestenliste, AR-Knopf ' + (vfArMoeglich() ? 'sichtbar' : 'verborgen (kein WebXR-AR)') };
   });
+  stAdd('Virtuell v1.6.81: Marker-AR - Kamerabild gehoert zur erkannten Lage, Filter folgt Bewegung schnell, Lichter in AR gedaempft', () => {
+    const f = [];
+    // 1. One-Euro: still ruhig, Bewegung (300 px/s) nach drei Bildern hoechstens 3 px hinterher.
+    let st = {}, seed = 7, t = 0;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647 - 0.5; };
+    const aus = [];
+    const ecken = [400, 200, 460, 200, 460, 260, 400, 260];
+    for (let k = 0; k < 60; k++) { t += 33; aus.push(vfMkEinEuro(st, ecken.map((e) => e + rnd() * 1.2), t)[0]); }
+    const o = aus.slice(20), mw = o.reduce((a, b) => a + b, 0) / o.length;
+    const sd = Math.sqrt(o.reduce((a, b) => a + (b - mw) * (b - mw), 0) / o.length);
+    if (sd > 0.15) f.push('still zittrig: sd ' + sd.toFixed(3));
+    // Kamerabewegung: alle Ecken 8 px je Bild nach rechts (240 px/s).
+    let x = 0, lag = 0;
+    for (let k = 0; k < 3; k++) { t += 33; x += 8; lag = 400 + x - vfMkEinEuro(st, ecken.map((e, i) => e + (i % 2 ? 0 : x)), t)[0]; }
+    if (lag > 3) f.push('Bewegung: ' + lag.toFixed(1) + ' px hinterher');
+    // 2. Kamerabild: das Bild, das zur Erkennung geht, wird erst mit der Antwort gezeigt.
+    const glAlt = VF.gl;
+    try {
+      const gc = document.createElement('canvas');
+      VF.gl = gc.getContext('webgl');
+      const v = document.createElement('canvas'); v.width = 16; v.height = 9;
+      Object.defineProperty(v, 'readyState', { value: 2 }); Object.defineProperty(v, 'videoWidth', { value: 16 }); Object.defineProperty(v, 'videoHeight', { value: 9 });
+      let gesendet = 0;
+      const mk = { video: v, worker: { postMessage: () => { gesendet++; } }, cnv: document.createElement('canvas'), wartet: false, n: 0, bilder: 0 };
+      mk.ctx = mk.cnv.getContext('2d');
+      if (VF.gl) {
+        vfMkErkennen(mk);
+        if (gesendet !== 1 || mk.hgWartend !== 1 || (mk.hgZeig || 0) !== 0) f.push('Senden: ' + gesendet + ', wartend ' + mk.hgWartend + ', gezeigt ' + mk.hgZeig);
+        vfMkErkennen(mk);
+        if (gesendet !== 1) f.push('sendet, obwohl der Worker noch rechnet');
+        mk.wartet = false; vfMkHgUmschalten(mk);
+        if (mk.hgZeig !== 1 || !mk.hgSync || mk.hgWartend !== undefined) f.push('Antwort schaltet das Bild nicht um');
+        vfMkErkennen(mk);
+        if (gesendet !== 2 || mk.hgWartend !== 0 || mk.hgZeig !== 1) f.push('zweites Bild: wartend ' + mk.hgWartend + ', gezeigt ' + mk.hgZeig);
+        if (!mk.hg || mk.hg.tx.length !== 2) f.push('keine zwei Texturen');
+      } else f.push('kein WebGL im Test');
+    } finally { VF.gl = glAlt; }
+    // 3. Lichter vor dem Kamerabild schwaecher und kleiner.
+    if (!(VF_AR_LICHT.emis < 1 && VF_AR_LICHT.gross < 1 && VF_AR_LICHT.staerke < 1 && VF_AR_LICHT.kegel < 1)) f.push('AR-Licht nicht gedaempft');
+    if (vfModellZeichnen.toString().indexOf('VF_AR_LICHT') < 0) f.push('vfModellZeichnen ohne AR-Licht');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'still sd ' + sd.toFixed(3) + ' px, Bewegung ' + lag.toFixed(1) + ' px hinterher, Bild wartet auf die Antwort, Lichter gedaempft' };
+  });
   stAdd('Virtuell v1.6.77: Marker-AR waehlt die Neigung mit Normale nach oben, haelt sie ueber Aussetzer, kommt aus einer falschen Wahl heraus', () => {
     const f = [];
     // POSIT-Zeilen: richtig = Blatt-oben (0, 0,643, -0,766) in GL, Normale (0, 0,766, 0,643); gekippt = Normale (0, -0,766, 0,643).

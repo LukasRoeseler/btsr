@@ -84,10 +84,9 @@
     }
     return neu;
   }
-  // One-Euro-Filter (Casiez et al. 2012) auf mehreren Werten: Grenzfrequenz = min + beta * |Geschwindigkeit|. Zustand f
-  // (Objekt), t in ms. Nach einer Pause (> 500 ms) beginnt er neu.
-  function vfMkEinEuro(f, werte, t) {
-    var MIN = 0.8, BETA = 0.04, DC = 1.0;
+  // One-Euro-Filter (Casiez et al. 2012): Grenzfrequenz = min + beta * |Geschwindigkeit|. Zustand f (Objekt), t in ms,
+  // p = { min, beta, dc }. Nach einer Pause (> 500 ms) beginnt er neu.
+  function vfMkEuro1(f, werte, t, p) {
     if (!f.x || t - f.t > 500) { f.x = werte.slice(); f.dx = werte.map(function () { return 0; }); f.t = t; return werte.slice(); }
     var dt = Math.max(0.001, (t - f.t) / 1000);
     f.t = t;
@@ -95,12 +94,28 @@
     var raus = [];
     for (var i = 0; i < werte.length; i++) {
       var d = (werte[i] - f.x[i]) / dt;
-      f.dx[i] = f.dx[i] + al(DC) * (d - f.dx[i]);
-      var fc = MIN + BETA * Math.abs(f.dx[i]);
+      f.dx[i] = f.dx[i] + al(p.dc) * (d - f.dx[i]);
+      var fc = p.min + p.beta * Math.abs(f.dx[i]);
       f.x[i] = f.x[i] + al(fc) * (werte[i] - f.x[i]);
       raus.push(f.x[i]);
     }
     return raus;
+  }
+  // Die acht Eckwerte [x0, y0, ... x3, y3] getrennt gefiltert:
+  // v1.6.81 GEMELDET: "Strecke ist stabil, reagiert aber zu spaet (~30ms) nach Bewegung und zuckt dann". Bisher ein
+  // Filter je Eckwert mit 1-Hz-Geschwindigkeit: er oeffnete erst ~150 ms nach Bewegungsbeginn und holte dann ruckartig
+  // auf. Jetzt: die MITTE des Markers (Verschiebung im Bild = Kamerabewegung) mit einem schnellen Filter (dc 4 Hz, beta
+  // 0,1) - sie folgt sofort; die FORM (Ecken relativ zur Mitte: daraus kommen Abstand und Neigung, die am staerksten
+  // rauschen) mit dem bisherigen ruhigen Filter. So bleibt die Strecke still ruhig und klebt bei Bewegung am Bild.
+  // Werte, die nicht acht sind, laufen durch den ruhigen Filter.
+  function vfMkEinEuro(f, werte, t) {
+    var RUHIG = { min: 0.8, beta: 0.04, dc: 1.0 }, SCHNELL = { min: 0.8, beta: 0.1, dc: 4.0 };
+    if (werte.length !== 8) return vfMkEuro1(f, werte, t, RUHIG);
+    var cx = (werte[0] + werte[2] + werte[4] + werte[6]) / 4, cy = (werte[1] + werte[3] + werte[5] + werte[7]) / 4;
+    var form = werte.map(function (w, i) { return w - (i % 2 ? cy : cx); });
+    var m = vfMkEuro1(f.mitte || (f.mitte = {}), [cx, cy], t, SCHNELL);
+    var fo = vfMkEuro1(f.form || (f.form = {}), form, t, RUHIG);
+    return fo.map(function (w, i) { return w + m[i % 2]; });
   }
   const VF_MK_MASSSTAB_STORE = 'omegasim-vf-ar-massstab';
   const VF_MK_MASSSTAEBE = [1, 0.5, 0.25];
@@ -206,7 +221,7 @@
       const u = (f) => new URL('lib/js-aruco2/' + f, location.href).href;
       const code = 'importScripts(' + ['cv.js', 'aruco.js', 'svd.js', 'posit1.js'].map((f) => JSON.stringify(u(f))).join(',') + ');\n'
         + 'var det = new AR.Detector({ dictionaryName: "ARUCO_MIP_36h12", maxHammingDistance: ' + VF_MK.hamming + ' }), pos = null, pf = 0, filt = {};\n'
-        + 'var vfMkVerfeinern = ' + vfMkVerfeinern.toString() + ';\nvar vfMkEinEuro = ' + vfMkEinEuro.toString() + ';\n'
+        + 'var vfMkVerfeinern = ' + vfMkVerfeinern.toString() + ';\nvar vfMkEuro1 = ' + vfMkEuro1.toString() + ';\nvar vfMkEinEuro = ' + vfMkEinEuro.toString() + ';\n'
         + 'onmessage = function (e) { var d = e.data, r = { n: d.n, ok: false, buf: d.buf, w: d.w, h: d.h }, t0 = Date.now();\n'
         + '  try { if (!pos || pf !== d.f) { pos = new POS.Posit(d.mm, d.f); pf = d.f; }\n'
         + '    var ms = det.detect({ width: d.w, height: d.h, data: new Uint8ClampedArray(d.buf) }) || [], m = null;\n'
@@ -220,7 +235,7 @@
         + '  } catch (err) { r.fehler = String(err); }\n'
         + '  postMessage(r, [r.buf]); };\n';
       const w = new Worker(URL.createObjectURL(new Blob([code], { type: 'text/javascript' })));
-      w.onmessage = (e) => { mk.wartet = false; vfMkAntwort(mk, e.data); };
+      w.onmessage = (e) => { mk.wartet = false; vfMkHgUmschalten(mk); vfMkAntwort(mk, e.data); };
       w.onerror = (e) => { log('Marker-AR: Worker ' + (e.message || 'Fehler') + ' - Erkennung im Hauptthread', 'warn'); try { w.terminate(); } catch (err) { /* egal */ } mk.worker = null; mk.wartet = false; };
       mk.worker = w;
     } catch (e) { mk.worker = null; }
@@ -289,6 +304,7 @@
       // Neigung getrennt und langsamer: sie haengt an der Verkuerzung des kleinen Markers und rauscht am staerksten.
       // Still (kleine Aenderung) nur 15 % je Erkennung, bei Bewegung (Weg oder Drehung) schnell bis ganz.
       const bew = Math.min(1, dt / 80 + dr * 40);   // Abstandsrauschen (~1 cm bei 1,3 m) zaehlt nicht als Bewegung
+      // v1.6.81: schneller (vorher aT ab 0,5, aR ab 0,15 mit bew einfach): sonst zieht die Strecke bei Bewegung nach.
       const aT = Math.max(0.5, Math.min(1, 0.5 + bew)), aR = Math.max(0.15, Math.min(1, 0.15 + bew));
       for (let i = 0; i < 16; i++) mk.pose[i] += (M[i] - mk.pose[i]) * (i === 12 || i === 13 ? aT : aR);   // Abstand (14) ruhig wie die Neigung
       vfMkOrtho(mk.pose);
@@ -304,8 +320,15 @@
     const dw = Math.min(VF_MK.breiten[mk.stufe], v.videoWidth), dh = Math.round(dw * v.videoHeight / v.videoWidth);
     const f = (dw / 2) / Math.tan(VF_MK.bildwinkel * Math.PI / 360);
     if (mk.worker) {
-      if (mk.wartet) return;
+      // Haengt der Worker (> 1 s ohne Antwort), weiter ohne ihn zu blockieren.
+      if (mk.wartet && performance.now() - (mk.gesendetAt || 0) < 1000) return;
       if (mk.cnv.width !== dw || mk.cnv.height !== dh) { mk.cnv.width = dw; mk.cnv.height = dh; }
+      // v1.6.81 GEMELDET: "Strecke ist stabil, reagiert aber zu spaet (~30ms) nach Bewegung und zuckt dann". Die Lage
+      // kommt aus einem Bild, das 1-2 Bilder alt ist, das Kamerabild dahinter war aber das neueste - die Strecke lief
+      // dem Bild hinterher. Jetzt wird genau das Bild, das zur Erkennung geht, in eine zweite Textur geladen und erst
+      // mit der Antwort gezeigt: Kamerabild und Strecke gehoeren immer zum selben Moment.
+      try { vfMkHgLaden(VF.gl, mk, 1 - (mk.hgZeig || 0)); mk.hgWartend = 1 - (mk.hgZeig || 0); } catch (e) { mk.hgWartend = undefined; }
+      mk.gesendetAt = performance.now();
       const S = mk.stat || (mk.stat = { gesendet: 0, erkannt: 0, verworfen: 0, ms: 0, dist: 0, w: 0, h: 0, kand: 0 });
       S.gesendet++;
       mk.ctx.drawImage(v, 0, 0, dw, dh);
@@ -350,10 +373,25 @@
     const A = [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1];
     return vfKette(A, vfS(s, s, s), vfRy(sh), vfT(-sx, 0, -sy));
   }
-  // Das Kamerabild als Hintergrund (Textur, Ausschnitt wie object-fit: cover), ohne Tiefe.
-  function vfMkHintergrund(gl, mk, W, H) {
+  // v1.6.81: zwei Texturen fuer das Kamerabild - eine wird gezeigt (mk.hgZeig), in die andere kommt das Bild, das
+  // gerade erkannt wird. Ohne Worker (oder bis zur ersten Antwort) wird das neueste Bild gezeigt.
+  function vfMkHgUmschalten(mk) {
+    if (mk.hgWartend === undefined) return;
+    mk.hgZeig = mk.hgWartend; mk.hgWartend = undefined; mk.hgSync = true;
+  }
+  function vfMkHgLaden(gl, mk, i) {
     const v = mk.video;
     if (!(v.readyState >= 2 && v.videoWidth)) return;
+    vfMkHgInit(gl, mk);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, mk.hg.tx[i]);
+    const flip = gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL), pre = gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, v); } catch (e) { /* Bild noch nicht bereit */ }
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flip); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, pre);
+  }
+  // Das Kamerabild als Hintergrund (Textur, Ausschnitt wie object-fit: cover), ohne Tiefe.
+  function vfMkHgInit(gl, mk) {
     if (!mk.hg) {
       const vs = 'attribute vec2 p; uniform vec4 c; varying vec2 uv; void main() { vec2 t = p * 0.5 + 0.5; uv = vec2(c.x + t.x * (c.z - c.x), c.w - t.y * (c.w - c.y)); gl_Position = vec4(p, 0.0, 1.0); }';
       const fs = 'precision mediump float; uniform sampler2D tx; varying vec2 uv; void main() { gl_FragColor = vec4(texture2D(tx, uv).rgb, 1.0); }';
@@ -362,18 +400,24 @@
       gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr);
       const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
-      const tx = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tx);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      mk.hg = { pr, b, tx, ap: gl.getAttribLocation(pr, 'p'), c: gl.getUniformLocation(pr, 'c'), t: gl.getUniformLocation(pr, 'tx') };
+      const neu = () => {
+        const tx = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tx);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        return tx;
+      };
+      mk.hg = { pr, b, tx: [neu(), neu()], ap: gl.getAttribLocation(pr, 'p'), c: gl.getUniformLocation(pr, 'c'), t: gl.getUniformLocation(pr, 'tx') };
     }
+  }
+  function vfMkHintergrund(gl, mk, W, H) {
+    const v = mk.video;
+    if (!(v.readyState >= 2 && v.videoWidth)) return;
+    vfMkHgInit(gl, mk);
     const g = mk.hg;
+    // Ohne Worker oder vor der ersten Antwort: das neueste Bild.
+    if (!mk.worker || !mk.hgSync) vfMkHgLaden(gl, mk, mk.hgZeig || 0);
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, g.tx);
-    const flip = gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL), pre = gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-    try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, v); } catch (e) { /* Bild noch nicht bereit */ }
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flip); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, pre);
+    gl.bindTexture(gl.TEXTURE_2D, g.tx[mk.hgZeig || 0]);
     const vw = v.videoWidth, vh = v.videoHeight, sc = Math.max(W / vw, H / vh);
     const du = (1 - (W / sc) / vw) / 2, dv = (1 - (H / sc) / vh) / 2;
     gl.useProgram(g.pr);
@@ -399,8 +443,8 @@
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     const jetzt = performance.now();
-    try { vfMkHintergrund(gl, mk, W, H); } catch (e) { if (!mk.hgFehler) { mk.hgFehler = e; log('Marker-AR Hintergrund: ' + e.message, 'warn'); } }
     try { vfMkErkennen(mk); } catch (e) { if (!mk.fehler) { mk.fehler = e; log('Marker-AR: ' + e.message, 'warn'); } }
+    try { vfMkHintergrund(gl, mk, W, H); } catch (e) { if (!mk.hgFehler) { mk.hgFehler = e; log('Marker-AR Hintergrund: ' + e.message, 'warn'); } }
     const sichtbar = !!(mk.pose && jetzt - mk.zuletzt < VF_MK.verlorenMs);
     const h2 = VF.schicht && VF.schicht.querySelector('.vf-ar-hinweis');
     if (h2) h2.hidden = sichtbar;

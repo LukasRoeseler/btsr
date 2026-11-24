@@ -5299,10 +5299,13 @@
       gl.depthMask(true); gl.disable(gl.BLEND);
     }
     // 2. Aufbau, undurchsichtige Teile; Scheinwerfer und Ruecklicht leuchten selbst
-    const ruecklichtEmis = bremst ? 1.7 : (licht ? 0.55 : 0);
+    // v1.6.81 GEMELDET: "Bremslicht in AR ist zu hell (und die anderen Lichter evtl. auch)". Vor dem Kamerabild
+    // (AR, Marker-AR) leuchten Lichter schwaecher und die Lichtpunkte sind kleiner (VF_AR_LICHT).
+    const arL = (VF.ar || VF.marker) ? VF_AR_LICHT : null;
+    const ruecklichtEmis = (bremst ? 1.7 : (licht ? 0.55 : 0)) * (arL ? arL.emis : 1);
     const lackTint = vfLackTint(lackHex);
     for (const t of M.aufbauTeile) {
-      const emis = t.rolle === 'scheinwerfer' ? (licht ? 1.3 : 0) : t.rolle === 'ruecklicht' ? ruecklichtEmis : 0;
+      const emis = t.rolle === 'scheinwerfer' ? (licht ? 1.3 * (arL ? arL.emis : 1) : 0) : t.rolle === 'ruecklicht' ? ruecklichtEmis : 0;
       // Karosserie mit leichtem Clear-Coat-Glanz (klar, nur Quality), Scheiben/Glas dagegen nicht.
       // Der Lack betrifft nur Karosserieteile: Scheinwerfer, Ruecklichter und Scheiben bleiben unveraendert.
       const lackTeil = !t.rolle || t.rolle === 'karosserie' || t.rolle === 'lack';
@@ -5355,12 +5358,13 @@
     const innen = auge && Math.hypot(auge[0] - x, auge[2] - y) < d.laenge * s * 0.45 && auge[1] < (d.hoehe || 1.4) * s;
     for (const t of M.glasTeile) {
       if (t.rolle === 'glas') { setze(aufbau, VF_GLAS_TINT, 0, innen ? 0.12 : 0.86, 0, 1, 0, innen ? 0.2 : 1); teil(t); }
-      else { setze(aufbau, VF_WEISS, licht ? 0.6 : 0, 0.9, 1, 1, 0, 0.5); teil(t); }
+      else { setze(aufbau, VF_WEISS, licht ? 0.6 * (arL ? arL.emis : 1) : 0, 0.9, 1, 1, 0, 0.5); teil(t); }
     }
     // 5. Leuchten: Lichtpunkte (zur Kamera gedreht) und vorn der Lichtkegel auf der Bahn
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
     const rechts = [blick[0], blick[4], blick[8]], oben = [blick[1], blick[5], blick[9]];
     const punkt = (p, gr, farbe, staerke) => {
+      if (arL) { gr *= arL.gross; staerke *= arL.staerke; }
       const c = ort(aufbau, p), k = gr * s;
       const e = (a, b) => [c[0] + (rechts[0] * a + oben[0] * b) * k, c[1] + (rechts[1] * a + oben[1] * b) * k, c[2] + (rechts[2] * a + oben[2] * b) * k];
       const q = [e(-1, -1).concat([0, 0]), e(1, -1).concat([1, 0]), e(1, 1).concat([1, 1]), e(-1, 1).concat([0, 1])];
@@ -5371,7 +5375,7 @@
       const vorn = d.laenge / 2 + zSp;
       const kegel = [[0.9, 0.02, vorn, 0.25, 0.5], [-0.9, 0.02, vorn, 0.75, 0.5], [-3.2, 0.02, vorn + 13, 1, 1], [3.2, 0.02, vorn + 13, 0, 1]]
         .map((p) => ort(lage, p).concat(p.slice(3)));
-      setze(VF_EINS, [1, 0.95, 0.82], 0, 0.30, 1, 0, 0, 0);
+      setze(VF_EINS, [1, 0.95, 0.82], 0, 0.30 * (arL ? arL.kegel : 1), 1, 0, 0, 0);
       flaeche([kegel[0], kegel[1], kegel[2], kegel[0], kegel[2], kegel[3]], M.glanz);
       (M.meta.lichter.front && M.meta.lichter.front.length ? M.meta.lichter.front : [[d.breite * 0.35, d.hoehe * 0.5, d.laenge / 2 - 0.15, 0.2], [-d.breite * 0.35, d.hoehe * 0.5, d.laenge / 2 - 0.15, 0.2]])
         .forEach((l) => punkt(l, l[3] * 2.6, [1, 0.96, 0.85], 0.95));
@@ -5383,6 +5387,8 @@
     gl.depthMask(true); gl.disable(gl.BLEND);
     [T.ap, T.an, T.auv].forEach((a) => gl.disableVertexAttribArray(a));
   }
+  // v1.6.81: Lichter vor dem Kamerabild (AR): Selbstleuchten, Groesse und Staerke der Lichtpunkte, Lichtkegel.
+  const VF_AR_LICHT = { emis: 0.5, gross: 0.45, staerke: 0.4, kegel: 0.35 };
   function vfZeit(ms) { return ms === null || ms === undefined ? '–' : (ms / 1000).toFixed(2) + ' s'; }
   // ---- HUD im Stil von ACC (WIP) -----------------------------------------------------------------
   // BESTELLT: "Aendere im virtuellen Fahren das UI so, dass es so aehnlich wie Assetto Corsa
@@ -6453,7 +6459,7 @@
       const img = document.createElement('img');
       img.className = 'vf-vorschau-bild';
       img.alt = autos[ja].name;
-      img.src = vfVorschauUrl(autos[ja].v);   // transparent (tools/vorschau_bilder.py, Heli: tools/heli_vorschau.py)
+      img.src = vfVorschauUrl(autos[ja].v);   // grauer Verlauf seit v1.6.81 (alles: python tools/vorschau_bilder.py)
       img.onerror = () => { vor.remove(); };
       vor.appendChild(img);
       rechts.appendChild(vor);

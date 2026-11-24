@@ -958,7 +958,9 @@
       } else if (vfM) {
         // Vorschaubild des virtuellen Autos (Seitenansicht), dahinter das Bild der virtuellen Fahrt.
         // v1.6.37: transparentes Vorschaubild auf dem Garagenbild der virtuellen Fahrt (BESTELLT: garage_virtual).
-        ab.style.backgroundImage = 'url("' + vfVorschauUrl(vfId) + '"), url(img/garage-virtuell.jpg)';
+        // v1.6.81: die Vorschaubilder haben jetzt einen eigenen grauen Hintergrund (BESTELLT: "Vorschaubilder nochmal
+        // aufhuebschen mit grauem Hintergrund (leichter Farbverlauf)") - sie fuellen die Kachel allein.
+        ab.style.backgroundImage = 'url("' + vfVorschauUrl(vfId) + '")';
         ab.innerHTML = '';
       } else {
         ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/garage.jpg)';   // v1.0.15: Garagenfoto (BESTELLT)
