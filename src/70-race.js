@@ -1875,6 +1875,7 @@
   }
   function raceGridAnzeigen(weiter) {
     raceGridWeiter = typeof weiter === 'function' ? weiter : null;
+    if (typeof startAnsageVorwaermen === 'function') startAnsageVorwaermen();
     const gs = $('race-gridscreen');
     if (!gs) { if (raceGridWeiter) raceGridWeiter(); return; }
     // v1.0.29: die angezeigte Reihenfolge IST die Startreihenfolge - auch fuer Autos, die seit
@@ -1936,7 +1937,13 @@
     if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
     syncRaceGridOrder();
     const w = raceGridWeiter; raceGridWeiter = null;
-    if (w) w();
+    // v1.6.46 (gnen54): "Gentlemen, start your engines" sofort, der Countdown erst, wenn der Satz gesprochen ist
+    // (ab Beginn der Ansage 2,4 s, spaetestens 4,5 s nach dem Knopf - eine haengende Stimme blockiert den Start nicht).
+    if (!w) return;
+    let fertig = false;
+    const los = () => { if (fertig) return; fertig = true; w(); };
+    if (typeof startAnsageSprechen === 'function' && startAnsageSprechen(() => setTimeout(los, 2400))) setTimeout(los, 4500);
+    else los();
   }
   // BESTELLT: "X auf dem Controller soll auf dem Autos-in-Position-Schirm funktionieren".
   // flagTasteTick() fragt das ab, bevor es den normalen Cockpit-Weg (Boxenstopp/Gelb) nimmt.

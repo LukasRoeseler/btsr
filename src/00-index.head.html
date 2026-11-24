@@ -1462,6 +1462,10 @@
     text-shadow: 0 2px 10px #000; transition: background .15s, color .15s; }
   #fa-modus .k-modus-wahl b + b { border-left: 1px solid rgba(255,255,255,.25); }
   #fa-modus .k-modus-wahl b.an { background: rgba(0,163,224,.42); color: #fff; box-shadow: inset 0 -4px 0 #00a3e0; }
+  /* v1.6.46 BESTELLT: "wenn virtuell = an, dann hellblaue Akzentfarbe durch rote ersetzen ueberall in den Menues auf der FAHREN
+     Seite". Die Akzentfarbe ist --k-blau; im Modus Virtuell auf FAHREN und in der virtuellen Garage rot. */
+  body.fm-virtuell #tab-fahren, body.fm-virtuell #tab-vgarage { --k-blau: #e53935; --k-blau-text: #fff; }
+  body.fm-virtuell #fa-modus .k-modus-wahl b.an { background: rgba(229,57,53,.45); box-shadow: inset 0 -4px 0 #e53935; }
   .k-modus-wahl .wip-tag { margin-left: 3px; font-size: 8px; vertical-align: super; text-shadow: none; }
   /* v1.6.37 BESTELLT: "background of the drive virtually box should be this image: drive_virtually". */
   body.fm-virtuell #fa-start { background-image: linear-gradient(rgba(0,0,0,.3), rgba(0,0,0,.3)), url(img/virtuell-fahren-start.jpg); background-size: cover; background-position: center 50%; }
@@ -5863,7 +5867,9 @@
   /* v1.5.86 BESTELLT: "Bild vom Auto kleiner machen". Hoehe nach dem Fenster begrenzt, Seitenverhaeltnis bleibt. */
   .vf-vorschau-bild { width: auto; max-width: min(100%, 300px); max-height: clamp(100px, 22vh, 170px); height: auto; border-radius: 6px; display: block; }
   .vf-lack-palette { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
-  .vf-lack { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); cursor: pointer; }
+  .vf-lack { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); cursor: pointer;
+    /* v1.6.46 GEMELDET: auf dem Handy oval - Knoepfe haben dort eine Mindesthoehe/-breite. */
+    min-width: 0; min-height: 0; flex: 0 0 18px; aspect-ratio: 1; box-sizing: border-box; }
   .vf-lack.aktiv { border-color: #fff; box-shadow: 0 0 0 2px rgba(0,160,230,.9); }
 </style>
 <style>
@@ -7374,6 +7380,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Optionen: &#8222;Virtuell&#8220; und &#8222;RC Heli&#8220; stehen in einem eigenen Abschnitt unter den Einstellungen. Neu unter Virtuell: Gyro-St&#228;rke f&#252;r das Fahrgef&#252;hl Drift und ein eigener Schalter f&#252;r die Strecken-Ambience (ab Werk aus). Neue Startansage &#8222;Gentlemen, start your engines&#8220; (aus Gnen54s Startampel) beim Start aus dem Fenster &#8222;Autos in Position&#8220; und an der virtuellen Startampel. Im Modus Virtuell sind die Akzente auf FAHREN rot. Der Heli ohne Gyro stabilisiert sich nach einem &#220;berschlag, statt zur&#252;ckzudrehen. Der Schatten unter den Autos ist im Performance-Modus jetzt dunkel (das Bild war an halbdurchsichtigen Stellen durchscheinend), die Farbkreise in der Garage sind auch am Handy rund.</li>
         <li>Virtuell fahren, aus Gnen54s Pull Requests nachgeholt: Startampel im Rennen (f&#252;nf rote Lichter, dann los), Onboard-Kamera des VW Caravelle wie im echten Modell (seitlich auf dem Fahrersitz, 100 Grad Blickwinkel, Scheibe nur als Hauch), neue Kamera &#8222;Seitennah&#8220; zwischen naher Verfolgerkamera und Motorhaube, im Auto federt der Blick nach dem Umsehen zur&#252;ck nach vorn, Knopfleiste blendet nach 4 Sekunden Ruhe aus, neuer Boden &#8222;Stein grau marmoriert&#8220;, leichte Modelle f&#252;r Spider und Caravelle im Grafikmodus Performance (fl&#252;ssiger auf Tablets), Startfehler auch in der Garage sichtbar und der Streckencode in der Pad-Diagnose.</li>
         <li>Optionen: neue Kacheln &#8222;Virtuell&#8220; (Schaltung, Grafik, Tageszeit, Sichtfeld, Geist, R&#252;ckspiegel, Tempoverlust neben der Bahn, Pflicht-Boxendurchfahrt, sichtbare Neigung) und &#8222;RC Heli&#8220; (Gyro-Stabilisierung, Rollen und Nicken umkehren). Die virtuelle Garage beh&#228;lt die Auswahl von Auto, Lack, Boden, Strecke, Fahrtrichtung, Handling und NPCs und hat einen Knopf zu den Optionen.</li>
         <li>Virtuell fahren: Der RC Stunt Copter driftet nicht mehr zur Seite. Ein Vorzeichenfehler im Schubvektor lie&#223; ihn beim Rollen in die falsche Richtung und beim Neigen je nach Kurs schr&#228;g fliegen; jetzt fliegt er dorthin, wohin er geneigt ist. Jedes virtuelle Auto hat seinen festen, passenden Motorklang: Vulture V5.R Corvette C5-R, FMC GT4 Ford GT40, Boxer 96 Porsche 911 GT3, Lynx 220 V6 (Ferrari 296 GT3), Audi RS5 DTM sein Reihen-4-Turbo; K&#228;fer, Spider und Caravelle wie bisher.</li>
@@ -11193,18 +11200,6 @@
           <b>Allgemein</b>
           <span>Licht, Betriebsart, Akku, Tank, Schaden, Vibration.</span>
         </button>
-        <!-- v1.6.41 BESTELLT: "Menues fuer virtuelle Dinge in einer extra Kachel in den Optionen (zB VIRTUELL Kachel und RC Heli
-             Kachel)". Inhalt baut vfOptionenSeite (60d-virtuell.js) beim Oeffnen. -->
-        <button class="misc-tile subpage-open" data-sub="opt-virtuell">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="10" width="36" height="24" rx="3"/><path d="M16 40h16M24 34v6"/><path d="M13 28l7-9 5 6 4-4 6 7" stroke="var(--bad)"/></svg>
-          <b>Virtuell</b>
-          <span>Grafik, Tageszeit, Sicht, Geist, Spiegel, Schaltung, Boxendurchfahrt.</span>
-        </button>
-        <button class="misc-tile subpage-open" data-sub="opt-heli">
-          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h36M24 12v5"/><path d="M14 24a10 7 0 0 1 10-7h4a8 8 0 0 1 8 8v2a3 3 0 0 1-3 3H19a5 5 0 0 1-5-6z"/><path d="M36 25h8M44 21v8" stroke="var(--bad)"/><path d="M18 30l-2 6M30 30l2 6M12 36h24"/></svg>
-          <b>RC Heli</b>
-          <span>Gyro-Stabilisierung, Rollen und Nicken umkehren.</span>
-        </button>
         <button class="misc-tile subpage-open" data-sub="opt-feel">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><circle cx="24" cy="24" r="5"/><path d="M24 8v11M13 33l8-6M35 33l-8-6" stroke="var(--bad)"/></svg>
@@ -11329,6 +11324,22 @@
       <!-- INFO OHNE EIGENE EBENE (v0.8.35). BESTELLT: "Die Kacheln aus INFO alles einzeln
            auflisten, aber extra gruppiert mit Zwischenueberschrift, um klar zu unterscheiden
            und eine Menue-Ebene zu sparen." Die Unterseiten bleiben im Reiter Info. -->
+      <!-- v1.6.46 BESTELLT: "virtuelle Optionen fuer Fahren und Heli sollten unter den anderen Einstellungen mit eigener Ueberschrift sein". -->
+      <div class="k-zwischen">Virtuell</div>
+      <div class="misc-grid">
+        <!-- v1.6.41 BESTELLT: "Menues fuer virtuelle Dinge in einer extra Kachel in den Optionen (zB VIRTUELL Kachel und RC Heli
+             Kachel)". Inhalt baut vfOptionenSeite (60d-virtuell.js) beim Oeffnen. -->
+        <button class="misc-tile subpage-open" data-sub="opt-virtuell">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="10" width="36" height="24" rx="3"/><path d="M16 40h16M24 34v6"/><path d="M13 28l7-9 5 6 4-4 6 7" stroke="var(--bad)"/></svg>
+          <b>Virtuell</b>
+          <span>Grafik, Tageszeit, Sicht, Geist, Spiegel, Schaltung, Boxendurchfahrt.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-heli">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h36M24 12v5"/><path d="M14 24a10 7 0 0 1 10-7h4a8 8 0 0 1 8 8v2a3 3 0 0 1-3 3H19a5 5 0 0 1-5-6z"/><path d="M36 25h8M44 21v8" stroke="var(--bad)"/><path d="M18 30l-2 6M30 30l2 6M12 36h24"/></svg>
+          <b>RC Heli</b>
+          <span>Gyro-Stabilisierung, Rollen und Nicken umkehren.</span>
+        </button>
+      </div>
       <div class="k-zwischen">Info</div>
       <div class="misc-grid">
         <button class="misc-tile info-open" data-sub="wozu">
@@ -12805,6 +12816,9 @@
       <div class="opt-row"><div class="opt-label">Sektor-Bestzeiten ansagen <span class="wip-tag">WIP</span>
         <small>Wenn ein Sektor schneller war als jeder fr&uuml;here dieser Sitzung: &bdquo;Sektor 2, Bestzeit, 4,3 Sekunden&ldquo;. Der Sektor pulsiert dabei auf der Streckenkarte.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-sektor" checked><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Startansage <span class="wip-tag">WIP</span>
+        <small>Beim Start im Fenster &bdquo;Bringe die Autos in Position&ldquo; und an der Startampel der virtuellen Fahrt: &bdquo;Gentlemen, start your engines&ldquo; (immer englisch). Der Countdown beginnt, wenn der Satz gesprochen ist. Aus der Startampel von Gnen54.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-start" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Akku ansagen<small>Einmal, wenn der Akku unter 25&nbsp;% f&auml;llt. Erst nach dem Laden wieder scharf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-battery"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Meisterschaft ansagen <span class="wip-tag">WIP</span>

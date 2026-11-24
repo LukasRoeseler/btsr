@@ -718,7 +718,7 @@
   // Akku: BESTELLT "Akku-Ansage < 25 %" - eine eigene Schwelle, nicht die 10 % oben.
   const AKKU_SCHWELLE = 0.25;
   const AKKU_HYSTERESE = 0.32;
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: true };
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: true, start: true };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false };
   // JE Auto ein Latch fuer die Akku-Meldung: jedes Auto meldet unter 25 % einmal, erst nach
   // der Erholung wieder scharf. Ein gemeinsames Latch wuerde nur das ERSTE Auto melden.
@@ -1010,6 +1010,7 @@
                              'setting-announce-battery': 'battery',
                              'setting-announce-meister': 'meister',
                              'setting-announce-sektor': 'sektor',
+                             'setting-announce-start': 'start',
                              'setting-status-announce': 'status' };
   Object.keys(ANSAGE_KAESTCHEN).forEach((id) => {
     const el = $(id);
@@ -1381,8 +1382,13 @@
     ambience.bedGain = ambience.rainGain = null;
   }
 
+  // v1.6.46: waehrend einer virtuellen Fahrt gilt deren eigener Schalter (vfAmbienceAn, Optionen > Virtuell).
+  function ambienceAktiv() {
+    try { if (typeof VF !== 'undefined' && VF.aktiv && typeof vfAmbienceAn === 'function') return vfAmbienceAn(); } catch (e) { /* weiter */ }
+    return ambienceEnabled;
+  }
   function startAmbienceBeds() {
-    if (!ambience.ready || !ambienceEnabled || ambience.bedNode) return;
+    if (!ambience.ready || !ambienceAktiv() || ambience.bedNode) return;
     const a = loopBed(ambience.bed, 0);
     ambience.bedNode = a.src; ambience.bedGain = a.g;
     if (ambience.rainBed) {
@@ -1395,7 +1401,7 @@
   function refreshAmbienceGains() {
     if (!audioCtx) return;
     const t = audioCtx.currentTime;
-    const live = soundEnabled && ambienceEnabled;
+    const live = soundEnabled && ambienceAktiv();
     const on = live ? ambienceVolume : 0;
     const wet = live ? rainVolume : 0;
     if (ambience.bedGain) ambience.bedGain.gain.setTargetAtTime(on * 0.7, t, 0.4);
@@ -1411,7 +1417,7 @@
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopAmbienceBeds();
-    else if (ambienceEnabled) startAmbienceBeds();
+    else if (ambienceAktiv()) startAmbienceBeds();
     refreshAmbienceGains();
   });
 
@@ -2941,6 +2947,43 @@
     if (knallVal) knallVal.textContent = Math.round(knallVolume * 100) + '%';
   }
 
+  // ---- STARTANSAGE: "Gentlemen, start your engines" (v1.6.46, aus gnen54s Startampel-Zweig, 67061f7) ----
+  // Beim Start-Knopf im Fenster "Bringe die Autos in Position" (raceGridStart, 70-race.js) und an der Startampel der
+  // virtuellen Fahrt. IMMER ENGLISCH: ein feststehender Ruf (Indianapolis), eine deutsche Stimme spricht ihn falsch aus.
+  // `beginn` wird gerufen, sobald die Ansage wirklich zu hoeren ist (Chrome/Android meldet onstart nicht immer, deshalb
+  // zusaetzlich speechSynthesis.speaking). Die Stimme wird beim Oeffnen des Fensters vorgewaermt (sonst kaeme der Satz
+  // beim ersten Start erst nach der Ampel).
+  const START_ANSAGE = 'Gentlemen, start your engines';
+  let startAnsageAktuell = null, startAnsageWarm = false;
+  function startAnsageEnglisch() {
+    const st = window.speechSynthesis && window.speechSynthesis.getVoices ? window.speechSynthesis.getVoices() : [];
+    return st.find((v) => /^en[-_]US/i.test(v.lang)) || st.find((v) => /^en/i.test(v.lang)) || null;
+  }
+  function startAnsageVorwaermen() {
+    if (startAnsageWarm || !ansageAn.start || !soundEnabled || !('speechSynthesis' in window)) return;
+    startAnsageWarm = true;
+    try { window.speechSynthesis.getVoices(); const u = new SpeechSynthesisUtterance(' '); u.volume = 0; u.lang = 'en-US'; window.speechSynthesis.speak(u); } catch (e) { /* egal */ }
+  }
+  function startAnsageSprechen(beginn) {
+    if (!ansageAn.start || !soundEnabled || !('speechSynthesis' in window)) return false;
+    try {
+      const u = new SpeechSynthesisUtterance(START_ANSAGE);
+      startAnsageAktuell = u;
+      u.lang = 'en-US'; u.rate = 0.95;
+      const en = startAnsageEnglisch();
+      if (en) u.voice = en;
+      if (beginn) {
+        let einmal = false, abfrage = null;
+        const los = () => { if (abfrage) { clearInterval(abfrage); abfrage = null; } if (!einmal) { einmal = true; beginn(); } };
+        u.onstart = los; u.onerror = los;
+        abfrage = setInterval(() => { try { if (window.speechSynthesis.speaking) los(); } catch (e) { los(); } }, 100);
+        setTimeout(() => { if (abfrage) { clearInterval(abfrage); abfrage = null; } }, 15000);
+      }
+      u.onend = () => { if (startAnsageAktuell === u) startAnsageAktuell = null; };
+      window.speechSynthesis.speak(u);
+      return true;
+    } catch (e) { return false; }
+  }
   function updateEngineSound(throttleMagnitude) {
     if (!soundEnabled || !engineOsc) return;
     // v1.6.27 (Issue #15): Der RC Stunt Copter hat keinen Motor, nur den Rotor-Ton (vfHubTon). Der

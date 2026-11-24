@@ -2341,11 +2341,16 @@
   // 0,6-1,2 s (tc 0,9, Gierträgheit des GT3). Jetzt: die Traktion darf den ganzen Hinterachsgriff nehmen (tc 1), das
   // Traegheitsmoment ist das eines leichten Autos (x0,25) und der Gyro etwas weicher (0,15). Pruefstand: Lenken + Vollgas
   // bringt das Heck in 0,25-0,43 s auf 15 Grad, der Drift steht dann bei 28-33 Grad; halbes Gas greift weiter (< 12 Grad).
+  // v1.6.46 BESTELLT: "drift modus: gib mir eine option, die Gyro-Staerke anzupassen" (Optionen > Virtuell). Faktor auf
+  // den abgestimmten Gyro (0,15): 0 = aus (dreht sich unter Vollgas ein), 1 = Vorgabe, 2 = doppelt (haelt den Winkel kleiner).
+  const VF_DRIFT_GYRO_STORE = 'omegasim-vf-drift-gyro';
+  const VF_DRIFT_GYRO_WERTE = [0, 0.5, 0.75, 1, 1.25, 1.5, 2];
+  function vfDriftGyro() { try { const v = +localStorage.getItem(VF_DRIFT_GYRO_STORE); return VF_DRIFT_GYRO_WERTE.indexOf(v) >= 0 && localStorage.getItem(VF_DRIFT_GYRO_STORE) !== null ? v : 1; } catch (e) { return 1; } }
   const VF_DRIFT_PROFIL = (P) => ({ muV: P.muV * 0.55, muH: P.muH * 0.6, BV: (P.BV || 9) * 0.7, BH: (P.BH || 11) * 0.5, C: 1.15,
     lenkGrad: 35, yawDamp: 0.5, tc: 1.0, kV: 0, kH: 0, lastEmpf: 0.05, gyro: 0.15, gyroV: 10, driftGrenze: 25, Iz: (P.Iz || 2300) * 0.25,
     // v1.6.37: Gleiten ohne Gas (Pruefstand: Drift bei 12-30 m/s nach dem Gaswegnehmen 1 s spaeter noch 33-40 Grad, nach
     // 2 s wieder gerade; Einsetzen und Vollgas-Drift unveraendert 0,25 s / 29 Grad).
-    griffTau: 1.5, gleitOhneGas: 0.74 });
+    griffTau: 1.5, gleitOhneGas: 0.74, gyro: 0.15 * vfDriftGyro() });
   // ---- DRIFT-RAUCH (v1.6.27, WIP) ----
   // BESTELLT: "low-poly smoke einfuegen, der ganz am Anfang nur leicht ist und dann mehr wird, wenn die Reifen heisser
   // werden." Rutscht die Hinterachse (Schraeglauf hinten > 0,12 rad, ab 3 m/s), steigen an beiden Hinterraedern Wolken
@@ -3236,9 +3241,16 @@
     } else {
       // Ohne Gyro: der Stick ist eine Drehrate. Laesst man ihn los, richtet ein Pendel den Copter
       // langsam wieder auf (wie das Vorbild ohne GyroAssist): je schraeger er steht, desto staerker.
-      const stickAus = Math.max(0, 1 - Math.hypot(pitch, roll) * 1.6);
-      const pendPitch = -VF.pitch * 2.4 * stickAus * (0.35 + 0.65 * Math.abs(Math.cos(VF.pitch || 0)));
-      const pendRoll = -VF.roll * 2.4 * stickAus * (0.35 + 0.65 * Math.abs(Math.cos(VF.roll || 0)));
+      // v1.6.46 GEMELDET: "nach einer 360-Grad-Neigungsdrehung sollte er sich korrekt stabilisieren und nicht komplett
+      // zurueckdrehen". Die Winkel liefen ueber 2 pi hinaus, und das Pendel zog sie die ganze Umdrehung zurueck. Jetzt
+      // gewickelt auf -pi..pi, und wie im Vorbild (localUp.y < -0,15: targetSign -1): kopfueber haelt er die Rueckenlage.
+      const wick = (w) => Math.atan2(Math.sin(w), Math.cos(w));
+      VF.pitch = wick(VF.pitch || 0); VF.roll = wick(VF.roll || 0);
+      const upY = Math.cos(VF.pitch) * Math.cos(VF.roll), kopf = upY < -0.15;
+      const ziel = (w) => (kopf && Math.abs(w) > Math.PI / 2 ? Math.PI : 0);
+      const stickAus = Math.max(0, 1 - Math.hypot(pitch, roll) * 1.6), staerke = 2.4 * stickAus * (0.35 + 0.65 * Math.abs(upY));
+      const pendPitch = -wick(VF.pitch - ziel(VF.pitch)) * staerke;
+      const pendRoll = -wick(VF.roll - ziel(VF.roll)) * staerke;
       F.angPitch = (F.angPitch || 0) + (pitch * VF_HUB_ANG_RATE + pendPitch - (F.angPitch || 0)) * Math.min(1, dt * 7.5);
       F.angRoll = (F.angRoll || 0) + (roll * VF_HUB_ANG_RATE + pendRoll - (F.angRoll || 0)) * Math.min(1, dt * 7.5);
       VF.pitch = (VF.pitch || 0) + F.angPitch * dt;
@@ -5538,7 +5550,10 @@
   }
   function vfLadenEnde() {
     VF.laedt = false;
-    if (VF.modus && VF.modus !== 'practice' && !VF.studie && !VF.hubschrauber) VF.ampel = { t0: performance.now(), aus: 5300 + Math.random() * 1200 };
+    if (VF.modus && VF.modus !== 'practice' && !VF.studie && !VF.hubschrauber) {
+      VF.ampel = { t0: performance.now(), aus: 5300 + Math.random() * 1200 };
+      if (typeof startAnsageSprechen === 'function') startAnsageSprechen();   // v1.6.46 (gnen54): "Gentlemen, start your engines"
+    }
     if (VF.schicht) {
       VF.schicht.classList.remove('vf-laedt');
       const el = VF.schicht.querySelector('.vf-laden');
@@ -5669,7 +5684,10 @@
         zeigen();
       } }
     const cv = schicht.querySelector('canvas');
-    const gl = cv.getContext('webgl', { antialias: true }) || cv.getContext('experimental-webgl');
+    // v1.6.46 GEMELDET: "der Schatten unter den virtuellen Autos im Performance-Modus ist heller als die Strasse". Mit dem
+    // Alphakanal der Leinwand (Vorgabe) senkte jede halbdurchsichtige Flaeche (Schatten, Geist, Rauch) die Deckkraft des
+    // Bildes, und der helle Seitenhintergrund schien durch. alpha: false = undurchsichtige Leinwand.
+    const gl = cv.getContext('webgl', { antialias: true, alpha: false }) || cv.getContext('experimental-webgl', { alpha: false });
     if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
     // v1.5.154: OES_standard_derivatives (fwidth) fuer den bildschirm-adaptiven Schatten-PCF des Autos.
     // Ohne die Erweiterung bleibt der feste Kern; der Shader prueft das selbst ueber GL_OES_standard_derivatives.
@@ -5902,6 +5920,7 @@
     if (VF.modus === 'knockout') showHudToast(t('NPC-Knockout') + ': ' + (VF.npcs ? VF.npcs.length : 0) + ' ' + t('Gegner') + ' · 3 ' + t('Leben'));
     else if (VF.modus === 'derby') showHudToast(t('Derby') + ': ' + (VF.npcs ? VF.npcs.length : 0) + ' ' + t('Gegner') + ' · ' + t('Health') + ' 100');
     if (!VF.hubschrauber) vfMotorsound();
+    vfAmbienceAnwenden();   // v1.6.46: Ambience-Schalter der virtuellen Fahrt
     if (typeof showTab === 'function') showTab('race');
     VF.takt = setInterval(vfPaket, VF_TAKT_MS);
     VF.raf = requestAnimationFrame(vfBild);
@@ -5957,7 +5976,18 @@
   // Optionen > Virtuell die Einstellungen der Fahrt (VF_OPT_FAHRT), Optionen > RC Heli die des Hubschraubers (VF_OPT_HELI),
   // die virtuelle Garage den Rest (Auto, Lack, Boden, Strecke, Richtung, Handling, NPCs, Losfahren).
   const VF_OPT_FAHRT = ['Schaltung', 'Grafik', 'Tageszeit', 'Sichtfeld mit Tempo', 'Geist folgt meiner Linie', 'Rückspiegel (Motorhaube)',
-    'Kein Tempoverlust neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar'];
+    'Kein Tempoverlust neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar', 'Drift-Gyro', 'Strecken-Ambience'];
+  // v1.6.46 BESTELLT: "fuer Strecken Ambience extra Option im virtuellen Fahren" (aus gnen54s 817c361: ab Werk aus).
+  // Waehrend einer virtuellen Fahrt gilt dieser Schalter statt Optionen > Ton (ambienceAktiv, 80-sound.js).
+  const VF_AMBIENCE_STORE = 'omegasim-vf-ambience';
+  function vfAmbienceAn() { try { return localStorage.getItem(VF_AMBIENCE_STORE) === 'an'; } catch (e) { return false; } }
+  function vfAmbienceAnwenden() {
+    try {
+      if (typeof ambienceAktiv !== 'function') return;
+      if (ambienceAktiv()) startAmbienceBeds();
+      refreshAmbienceGains();
+    } catch (e) { /* ohne Ton */ }
+  }
   const VF_OPT_HELI = ['Gyro-Stabilisierung', 'Rollen umkehren', 'Nicken umkehren'];
   function vfZeileTitel(z) {
     const l = z.querySelector(':scope > .gk-l');
@@ -6177,6 +6207,22 @@
     const grafikZeile = garWertZeile(t('Grafik'), t(vfGrafik() === 'perf' ? 'Performance' : 'Quality'), gWahl, gWahl);
     grafikZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(grafikZeile);
+    // v1.6.46: Gyro-Staerke des Drift-Fahrgefuehls und die Strecken-Ambience der virtuellen Fahrt (stehen unter Optionen > Virtuell).
+    {
+      const jg = Math.max(0, VF_DRIFT_GYRO_WERTE.indexOf(vfDriftGyro()));
+      const gw = (dd) => { try { localStorage.setItem(VF_DRIFT_GYRO_STORE, String(VF_DRIFT_GYRO_WERTE[(jg + dd + VF_DRIFT_GYRO_WERTE.length) % VF_DRIFT_GYRO_WERTE.length])); } catch (e) { /* egal */ } vfGarageNeu(); };
+      const v = VF_DRIFT_GYRO_WERTE[jg];
+      const z = garWertZeile(t('Drift-Gyro'), v === 0 ? t('Aus') : Math.round(v * 100) + ' %' + (v === 1 ? ' (' + t('Vorgabe') + ')' : ''), () => gw(-1), () => gw(1));
+      const l = z.querySelector('.gk-l'); l.classList.add('opt-label');
+      l.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Nur im Fahrgefühl Drift: wie stark der Gyro gegenlenkt. Weniger: größere Driftwinkel, bei Aus dreht sich das Auto unter Vollgas ein. Mehr: der Drift bleibt kleiner und ruhiger. Gilt ab der nächsten Fahrt.') + '</small>');
+      rechts.appendChild(z);
+      const amb = vfAmbienceAn();
+      const aw = () => { try { localStorage.setItem(VF_AMBIENCE_STORE, amb ? 'aus' : 'an'); } catch (e) { /* egal */ } if (VF.aktiv) vfAmbienceAnwenden(); vfGarageNeu(); };
+      const za = garWertZeile(t('Strecken-Ambience'), amb ? t('An') : t('Aus'), aw, aw);
+      const la = za.querySelector('.gk-l'); la.classList.add('opt-label');
+      la.insertAdjacentHTML('beforeend', '<small>' + t('Teppich und Vorbeifahrten der Strecke während der virtuellen Fahrt (ab Werk aus). Beim echten Fahren gilt der Schalter unter Optionen > Ton.') + '</small>');
+      rechts.appendChild(za);
+    }
     // v1.5 (WIP): Tageszeit (Farbstimmung), in Performance und Quality.
     const tzA = VF_TAGESZEITEN.indexOf(vfTageszeit());
     const tzWahl = (d) => { vfTageszeitSetzen(VF_TAGESZEITEN[(tzA + d + VF_TAGESZEITEN.length) % VF_TAGESZEITEN.length].id); vfGarageNeu(); };
@@ -6399,6 +6445,7 @@
     rennPauseBeenden();
     if (VF.hubschrauber) vfHubTon.ausblenden();
     if (!VF.aktiv) return;
+    setTimeout(vfAmbienceAnwenden, 0);   // v1.6.46: nach dem Ende wieder der Schalter unter Optionen > Ton
     // Laeuft eine Challenge (z. B. die Studienfahrt) mit dem virtuellen Auto, endet sie mit: abgebrochen,
     // nicht gewertet (VF.abbruch sagt das der Studie, 98f-studie.js).
     if (typeof chLauf !== 'undefined' && chLauf) {

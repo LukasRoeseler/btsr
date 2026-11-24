@@ -14622,6 +14622,70 @@
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Virtuell v1.6.46: Heli ohne Gyro bleibt nach Ueberschlag stabil, Drift-Gyro einstellbar, Ambience-Schalter, undurchsichtige Leinwand, runde Farbkreise, rote Akzente, Startansage', () => {
+    const f = [];
+    // Heli: 1,2 s Stick vorn ohne Gyro (Ueberschlag), dann loslassen: Winkel bleibt in -pi..pi und dreht nicht zurueck.
+    const merk = { hubschrauber: VF.hubschrauber, x: VF.x, y: VF.y, z: VF.z, h: VF.h, flug: VF.flug, pitch: VF.pitch, roll: VF.roll, hubTasten: VF.hubTasten,
+      hubLuft: VF.hubLuft, touchHeli: VF.touchHeli, stick: VF.stick, stickL: VF.stickL, rotor: VF.rotor };
+    const merkG = vfHubGyro;
+    let weg = 0;
+    try {
+      vfHubGyro = () => false;
+      Object.assign(VF, { hubschrauber: true, x: 0, y: 0, z: 200, h: 0, pitch: 0, roll: 0, hubLuft: true, stick: null, stickL: null, touchHeli: null,
+        flug: { vz: 0, vx: 0, vy: 0, rpm: 0.9, collective: VF_HUB_HOVER, yawRate: 0, angPitch: 0, angRoll: 0 }, hubTasten: { pitchVorn: true } });
+      let summe = 0, vor = 0;
+      for (let i = 0; i < 120; i++) { vfHubPhysik(1 / 60); const d = Math.atan2(Math.sin(VF.pitch - vor), Math.cos(VF.pitch - vor)); summe += d; vor = VF.pitch; }
+      if (!(summe > 2 * Math.PI)) f.push('kein Ueberschlag (' + (summe * 180 / Math.PI).toFixed(0) + ' Grad)');
+      VF.hubTasten = {};
+      let rueck = 0;
+      for (let i = 0; i < 180; i++) { vfHubPhysik(1 / 60); const d = Math.atan2(Math.sin(VF.pitch - vor), Math.cos(VF.pitch - vor)); rueck += d; vor = VF.pitch; }
+      if (Math.abs(VF.pitch) > Math.PI + 1e-9) f.push('Winkel nicht gewickelt ' + VF.pitch.toFixed(2));
+      if (rueck < -Math.PI) f.push('dreht nach dem Loslassen zurueck: ' + (rueck * 180 / Math.PI).toFixed(0) + ' Grad');
+      weg = rueck * 180 / Math.PI;
+    } finally { vfHubGyro = merkG; Object.assign(VF, merk); }
+    // Drift-Gyro: Faktor auf 0,15.
+    const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merkDg = lies(VF_DRIFT_GYRO_STORE), merkH = vfHandling();
+    try {
+      localStorage.setItem(VF_DRIFT_GYRO_STORE, '2'); vfHandlingSetzen('drift');
+      if (Math.abs(vfHandlingProfil(Object.assign({}, VF_GT3)).gyro - 0.3) > 1e-9) f.push('Drift-Gyro 200 % wirkt nicht');
+      localStorage.removeItem(VF_DRIFT_GYRO_STORE);
+      if (Math.abs(vfHandlingProfil(Object.assign({}, VF_GT3)).gyro - 0.15) > 1e-9) f.push('Drift-Gyro Vorgabe nicht 0,15');
+    } finally { try { if (merkDg === null) localStorage.removeItem(VF_DRIFT_GYRO_STORE); else localStorage.setItem(VF_DRIFT_GYRO_STORE, merkDg); } catch (e) { /* egal */ } vfHandlingSetzen(merkH); }
+    // Ambience: virtuell eigener Schalter (ab Werk aus).
+    const merkA = lies(VF_AMBIENCE_STORE), merkAkt = VF.aktiv;
+    try {
+      localStorage.removeItem(VF_AMBIENCE_STORE); VF.aktiv = true;
+      if (ambienceAktiv()) f.push('virtuell Ambience ab Werk an');
+      localStorage.setItem(VF_AMBIENCE_STORE, 'an');
+      if (!ambienceAktiv()) f.push('virtuell Ambience-Schalter wirkt nicht');
+      VF.aktiv = false;
+      if (ambienceAktiv() !== ambienceEnabled) f.push('echt nicht der Ton-Schalter');
+    } finally { VF.aktiv = merkAkt; try { if (merkA === null) localStorage.removeItem(VF_AMBIENCE_STORE); else localStorage.setItem(VF_AMBIENCE_STORE, merkA); } catch (e) { /* egal */ } }
+    // Optionen: eigener Abschnitt "Virtuell" unter den Einstellungen.
+    const opt = document.querySelector('#sub-home-options');
+    const kv = opt && opt.querySelector('[data-sub="opt-virtuell"]'), kh = opt && opt.querySelector('[data-sub="opt-heli"]');
+    if (!kv || !kh || kv.parentElement !== kh.parentElement) f.push('Kacheln Virtuell/RC Heli fehlen');
+    else {
+      const vorher = kv.parentElement.previousElementSibling;
+      if (!vorher || !vorher.classList.contains('k-zwischen') || vorher.textContent.trim() !== t('Virtuell')) f.push('keine eigene Ueberschrift');
+      if (kv.parentElement.querySelector('[data-sub="opt-general"]')) f.push('noch bei den allgemeinen Einstellungen');
+    }
+    // Farbkreis rund, auch mit Mindesthoehe fuer Knoepfe.
+    const b = document.createElement('button'); b.className = 'vf-lack'; document.body.appendChild(b);
+    try { const r = b.getBoundingClientRect(); if (Math.abs(r.width - r.height) > 0.5) f.push('Farbkreis ' + r.width + 'x' + r.height); } finally { b.remove(); }
+    // Rote Akzente im Modus Virtuell auf FAHREN.
+    const merkFm = document.body.classList.contains('fm-virtuell');
+    try {
+      document.body.classList.add('fm-virtuell');
+      const c = getComputedStyle($('tab-fahren')).getPropertyValue('--k-blau').trim().toLowerCase();
+      if (c !== '#e53935') f.push('Akzent virtuell ' + c);
+      document.body.classList.remove('fm-virtuell');
+      if (getComputedStyle($('tab-fahren')).getPropertyValue('--k-blau').trim().toLowerCase() !== '#00a3e0') f.push('Akzent echt nicht blau');
+    } finally { document.body.classList.toggle('fm-virtuell', merkFm); }
+    if (!$('setting-announce-start') || typeof startAnsageSprechen !== 'function') f.push('Startansage fehlt');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Heli nach Ueberschlag ' + weg.toFixed(0) + ' Grad Nachlauf; Drift-Gyro, Ambience, Optionen-Abschnitt, Farbkreis, Akzente, Startansage' };
+  });
   stAdd('Virtuell v1.6.44: aus gnen54s PRs - Startampel im Rennen, Bulli-Kamera (seitlich, 100 Grad, durchsichtige Scheibe), seitennahe Kamera, Blick federt zurueck, Steinboden, leichte Modelle', async () => {
     const f = [];
     // Startampel: Rennen ja, Training nein; Lichter je Sekunde; danach frei.
