@@ -6036,7 +6036,14 @@
     // Bildes, und der helle Seitenhintergrund schien durch. alpha: false = undurchsichtige Leinwand.
     const gl = cv.getContext('webgl', { antialias: true, alpha: false, xrCompatible: !!opts.ar }) || cv.getContext('experimental-webgl', { alpha: false });
     if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
-    if (VF.ar) cv.style.visibility = 'hidden';   // v1.6.60: in AR zeichnet die Sitzung, die Leinwand bleibt unsichtbar
+    if (VF.ar) cv.style.visibility = 'hidden';
+    // v1.6.73: in AR (WebXR und Marker) kein Dunst/Nebel - er beginnt 250 Einheiten vor dem Auge, in AR (1:2) also schon
+    // ~67 cm vor der Kamera, und alles wurde zur hellen Dunstfarbe hin verwaschen ("alles ist viel zu hell"). Jede Fahrt
+    // hat einen eigenen Grafikkontext; nur dessen Shader werden ohne den Nebelterm uebersetzt.
+    if (opts.ar || opts.marker) {
+      const quelle = gl.shaderSource.bind(gl);
+      gl.shaderSource = (sh, src) => quelle(sh, String(src).replace(/clamp\(\(vd - 250\.0\) \/ 900\.0, 0\.0, 1\.0\)/g, '0.0'));
+    }   // v1.6.60: in AR zeichnet die Sitzung, die Leinwand bleibt unsichtbar
     // v1.5.154: OES_standard_derivatives (fwidth) fuer den bildschirm-adaptiven Schatten-PCF des Autos.
     // Ohne die Erweiterung bleibt der feste Kern; der Shader prueft das selbst ueber GL_OES_standard_derivatives.
     gl.getExtension('OES_standard_derivatives');

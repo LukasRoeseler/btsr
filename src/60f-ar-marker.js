@@ -20,7 +20,13 @@
   //   - der Marker ist Start/Ziel (vorher die Mitte der Strecke - das Auto stand oft ausserhalb des Bildes);
   //   - von den zwei Loesungen der Lage (Kippmehrdeutigkeit bei ebenen Markern) die, die zur vorigen passt; Glaettung
   //     je nach Bewegung (ruhig: stark, schnell: schwach), Aussetzer bis 1,5 s ueberbrueckt.
-  const VF_MK = { id: 0, mm: 160, bildwinkel: 63, erkennBreite: 720, verlorenMs: 1500 };
+  // v1.6.73 GEMELDET: "Die Strecke poppt immer noch nur ganz selten auf und ist dann eine weisse Textur. Ich sehe kein
+  // Auto." Verdacht: Falscherkennungen - die Bibliothek nimmt beim Woerterbuch ARUCO_MIP_36h12 bis zu 11 falsche von 36
+  // Bits hin, zufaellige Kanten im Bild galten dann als Marker 0 mit unsinniger Lage (Kamera mitten in der Strecke: weisse
+  // Randsteine und Linien ganz nah, kein Auto). Jetzt hoechstens 2 falsche Bits (hamming), unplausible Lagen verworfen
+  // (Marker hinter der Kamera, von hinten/kantig, naeher als 5 cm oder weiter als 8 m), Erkennung abwechselnd mit 640
+  // und 400 Pixeln Breite (breiten), und eine Diagnosezeile im Bild mit gruenen Punkten an den erkannten Ecken.
+  const VF_MK = { id: 0, mm: 160, bildwinkel: 63, breiten: [640, 400], hamming: 3, verlorenMs: 1500 };
   const VF_MK_MASSSTAB_STORE = 'omegasim-vf-ar-massstab';
   const VF_MK_MASSSTAEBE = [1, 0.5, 0.25];
   function vfMkMassstab() { try { const v = +localStorage.getItem(VF_MK_MASSSTAB_STORE); return VF_MK_MASSSTAEBE.indexOf(v) >= 0 ? v : 0.5; } catch (e) { return 0.5; } }
@@ -124,12 +130,13 @@
     try {
       const u = (f) => new URL('lib/js-aruco2/' + f, location.href).href;
       const code = 'importScripts(' + ['cv.js', 'aruco.js', 'svd.js', 'posit1.js'].map((f) => JSON.stringify(u(f))).join(',') + ');\n'
-        + 'var det = new AR.Detector({ dictionaryName: "ARUCO_MIP_36h12" }), pos = null, pf = 0;\n'
-        + 'onmessage = function (e) { var d = e.data, r = { n: d.n, ok: false, buf: d.buf };\n'
+        + 'var det = new AR.Detector({ dictionaryName: "ARUCO_MIP_36h12", maxHammingDistance: ' + VF_MK.hamming + ' }), pos = null, pf = 0;\n'
+        + 'onmessage = function (e) { var d = e.data, r = { n: d.n, ok: false, buf: d.buf, w: d.w, h: d.h }, t0 = Date.now();\n'
         + '  try { if (!pos || pf !== d.f) { pos = new POS.Posit(d.mm, d.f); pf = d.f; }\n'
         + '    var ms = det.detect({ width: d.w, height: d.h, data: new Uint8ClampedArray(d.buf) }) || [], m = null;\n'
         + '    for (var i = 0; i < ms.length; i++) if (ms[i].id === d.id) m = ms[i];\n'
-        + '    if (m) { var ec = m.corners.map(function (c) { return { x: c.x - d.w / 2, y: d.h / 2 - c.y }; }); var p = pos.pose(ec);\n'
+        + '    r.kand = ms.length; r.ms = Date.now() - t0;\n'
+        + '    if (m) { r.ecken = m.corners.map(function (c) { return [c.x / d.w, c.y / d.h]; }); var ec = m.corners.map(function (c) { return { x: c.x - d.w / 2, y: d.h / 2 - c.y }; }); var p = pos.pose(ec);\n'
         + '      r.ok = true; r.r1 = p.bestRotation; r.t1 = p.bestTranslation; r.e1 = p.bestError; r.r2 = p.alternativeRotation; r.t2 = p.alternativeTranslation; r.e2 = p.alternativeError; }\n'
         + '  } catch (err) { r.fehler = String(err); }\n'
         + '  postMessage(r, [r.buf]); };\n';
@@ -140,13 +147,26 @@
     } catch (e) { mk.worker = null; }
   }
   // POSIT -> GL (Kamera <- Marker, mm): POSIT x rechts, y oben, z nach vorn; GL z zum Betrachter -> F = diag(1, 1, -1) links.
+  // v1.6.73: die dritte Achse aus dem Kreuzprodukt. POSIT liefert sie mit wechselndem Vorzeichen (mal Drehung, mal
+  // Spiegelung, Determinante -1) - gespiegelt war die Welt "von innen" gezeichnet: Auto kaum sichtbar (Rueckseiten
+  // weggeschnitten), Licht verkehrt (zu hell), und der Wechsel zwischen beiden liess die Strecke zittern.
   function vfMkGl(R, T) {
-    return [R[0][0], R[1][0], -R[2][0], 0, R[0][1], R[1][1], -R[2][1], 0, R[0][2], R[1][2], -R[2][2], 0, T[0], T[1], -T[2], 1];
+    const x = [R[0][0], R[1][0], -R[2][0]], y = [R[0][1], R[1][1], -R[2][1]];
+    const z = [x[1] * y[2] - x[2] * y[1], x[2] * y[0] - x[0] * y[2], x[0] * y[1] - x[1] * y[0]];
+    return [x[0], x[1], x[2], 0, y[0], y[1], y[2], 0, z[0], z[1], z[2], 0, T[0], T[1], -T[2], 1];
   }
   function vfMkAntwort(mk, r) {
+    const S = mk.stat || (mk.stat = { gesendet: 0, erkannt: 0, verworfen: 0, ms: 0, dist: 0, w: 0, h: 0, kand: 0 });
+    if (r) { if (r.ms !== undefined) S.ms = r.ms; if (r.w) { S.w = r.w; S.h = r.h; } if (r.kand !== undefined) S.kand = r.kand; }
     if (!r || !r.ok || !r.r1 || !r.t1) { if (r && r.fehler && !mk.fehler) { mk.fehler = r.fehler; log('Marker-AR: ' + r.fehler, 'warn'); } return; }
     const jetzt = performance.now();
     let M = vfMkGl(r.r1, r.t1);
+    // Plausibel? Vor der Kamera (GL z negativ), 5 cm bis 8 m, Papier zur Kamera gewandt (Normale mit +z-Anteil).
+    const plausibel = (Q) => Q[14] < -50 && Q[14] > -8000 && Q[10] > 0.08;
+    if (!plausibel(M) && r.r2 && r.t2) { const M2 = vfMkGl(r.r2, r.t2); if (plausibel(M2)) M = M2; }
+    if (!plausibel(M)) { S.verworfen++; S.zuletztVerworfen = [M[10], M[14]].map((x) => Math.round(x * 1000) / 1000); return; }
+    S.erkannt++; S.dist = Math.round(-M[14]);
+    mk.ecken = r.ecken || null; mk.eckenAt = jetzt;
     // Kippmehrdeutigkeit: passt die zweite Loesung besser zur vorigen Lage (Normale), und ist ihr Fehler nicht viel
     // groesser, die zweite nehmen - sonst springt die Strecke zwischen zwei Neigungen.
     const vor = mk.pose && jetzt - mk.zuletzt < VF_MK.verlorenMs ? mk.pose : null;
@@ -159,7 +179,7 @@
     if (vor) {
       const dt = Math.hypot(M[12] - vor[12], M[13] - vor[13], M[14] - vor[14]);
       const dr = 1 - (M[8] * vor[8] + M[9] * vor[9] + M[10] * vor[10]);
-      const a = Math.max(0.25, Math.min(1, 0.25 + dt / 40 + dr * 25));
+      const a = Math.max(0.15, Math.min(1, 0.15 + dt / 60 + dr * 15));   // v1.6.73: ruhiger (vorher 0,25 + dt/40)
       for (let i = 0; i < 16; i++) mk.pose[i] += (M[i] - mk.pose[i]) * a;
       vfMkOrtho(mk.pose);
     } else mk.pose = M;
@@ -170,11 +190,14 @@
   function vfMkErkennen(mk) {
     const v = mk.video;
     if (!(v.readyState >= 2 && v.videoWidth)) return;
-    const dw = Math.min(VF_MK.erkennBreite, v.videoWidth), dh = Math.round(dw * v.videoHeight / v.videoWidth);
+    mk.stufe = ((mk.stufe || 0) + 1) % VF_MK.breiten.length;
+    const dw = Math.min(VF_MK.breiten[mk.stufe], v.videoWidth), dh = Math.round(dw * v.videoHeight / v.videoWidth);
     const f = (dw / 2) / Math.tan(VF_MK.bildwinkel * Math.PI / 360);
     if (mk.worker) {
       if (mk.wartet) return;
       if (mk.cnv.width !== dw || mk.cnv.height !== dh) { mk.cnv.width = dw; mk.cnv.height = dh; }
+      const S = mk.stat || (mk.stat = { gesendet: 0, erkannt: 0, verworfen: 0, ms: 0, dist: 0, w: 0, h: 0, kand: 0 });
+      S.gesendet++;
       mk.ctx.drawImage(v, 0, 0, dw, dh);
       const bild = mk.ctx.getImageData(0, 0, dw, dh);
       mk.wartet = true; mk.bilder++;
@@ -182,7 +205,7 @@
       return;
     }
     // Rueckfall ohne Worker
-    if (!mk.det) mk.det = new window.AR.Detector({ dictionaryName: 'ARUCO_MIP_36h12' });
+    if (!mk.det) mk.det = new window.AR.Detector({ dictionaryName: 'ARUCO_MIP_36h12', maxHammingDistance: VF_MK.hamming });
     if (mk.cnv.width !== dw || mk.cnv.height !== dh) { mk.cnv.width = dw; mk.cnv.height = dh; mk.posit = null; }
     if (!mk.posit) mk.posit = new window.POS.Posit(VF_MK.mm, f);
     mk.ctx.drawImage(v, 0, 0, dw, dh);
@@ -191,7 +214,7 @@
     const m = liste.find((x) => x.id === VF_MK.id);
     if (!m) return;
     const p = mk.posit.pose(m.corners.map((c) => ({ x: c.x - dw / 2, y: dh / 2 - c.y })));
-    vfMkAntwort(mk, { ok: true, r1: p.bestRotation, t1: p.bestTranslation, e1: p.bestError, r2: p.alternativeRotation, t2: p.alternativeTranslation, e2: p.alternativeError });
+    vfMkAntwort(mk, { ok: true, w: dw, h: dh, ecken: m.corners.map((c) => [c.x / dw, c.y / dh]), r1: p.bestRotation, t1: p.bestTranslation, e1: p.bestError, r2: p.alternativeRotation, t2: p.alternativeTranslation, e2: p.alternativeError });
   }
   // Drehteil wieder orthonormal machen (Gram-Schmidt auf den Spalten).
   function vfMkOrtho(M) {
@@ -268,6 +291,7 @@
     const sichtbar = !!(mk.pose && jetzt - mk.zuletzt < VF_MK.verlorenMs);
     const h2 = VF.schicht && VF.schicht.querySelector('.vf-ar-hinweis');
     if (h2) h2.hidden = sichtbar;
+    vfMkDiagnose(mk, W, H, jetzt);
     if (!sichtbar) return;
     gl.enable(gl.DEPTH_TEST);
     const blick = vfMal(mk.pose, vfMkWelt());
@@ -280,4 +304,31 @@
     const s2 = B[0] * B[0] + B[1] * B[1] + B[2] * B[2] || 1;   // Massstab^2 der ersten Spalte
     const t = [B[12], B[13], B[14]];
     return [-(B[0] * t[0] + B[1] * t[1] + B[2] * t[2]) / s2, -(B[4] * t[0] + B[5] * t[1] + B[6] * t[2]) / s2, -(B[8] * t[0] + B[9] * t[1] + B[10] * t[2]) / s2];
+  }
+
+  // v1.6.73: Diagnose im Bild (WIP, bis die Marker-AR am Geraet sicher laeuft): Zahlen und gruene Punkte an den Ecken.
+  function vfMkDiagnose(mk, W, H, jetzt) {
+    const sch = VF.schicht;
+    if (!sch) return;
+    let d = sch.querySelector('.vf-mk-diag');
+    if (!d) { d = document.createElement('div'); d.className = 'vf-mk-diag'; sch.appendChild(d); }
+    if (!mk.diagAt || jetzt - mk.diagAt > 250) {
+      mk.diagAt = jetzt;
+      const S = mk.stat || {}, v = mk.video;
+      d.textContent = t('Kamera') + ' ' + (v.videoWidth || 0) + '×' + (v.videoHeight || 0) + ' · ' + t('erkannt') + ' ' + (S.erkannt || 0) + '/' + (S.gesendet || mk.bilder || 0)
+        + ' · ' + t('verworfen') + ' ' + (S.verworfen || 0) + ' · ' + t('Kandidaten') + ' ' + (S.kand || 0) + ' · ' + (S.ms || 0) + ' ms · '
+        + (S.dist ? Math.round(S.dist / 10) + ' cm' : '–') + ' · ' + (mk.worker ? 'Worker' : t('Hauptthread')) + (mk.fehler ? ' · ⚠ ' + String(mk.fehler).slice(0, 60) : '');
+    }
+    // Ecken: aus Bildanteilen (0..1 des Videos) in Schirmpixel (Ausschnitt wie object-fit: cover).
+    let punkte = sch.querySelectorAll('.vf-mk-punkt');
+    if (punkte.length < 4) { for (let i = punkte.length; i < 4; i++) { const p = document.createElement('i'); p.className = 'vf-mk-punkt'; sch.appendChild(p); } punkte = sch.querySelectorAll('.vf-mk-punkt'); }
+    const zeigen = !!(mk.ecken && jetzt - (mk.eckenAt || 0) < 400 && mk.video.videoWidth);
+    const vw = mk.video.videoWidth || 1, vh = mk.video.videoHeight || 1, sc = Math.max(W / vw, H / vh);
+    punkte.forEach((p, i) => {
+      p.hidden = !zeigen;
+      if (!zeigen) return;
+      const c = mk.ecken[i];
+      p.style.left = (W / 2 + (c[0] - 0.5) * vw * sc) + 'px';
+      p.style.top = (H / 2 + (c[1] - 0.5) * vh * sc) + 'px';
+    });
   }
