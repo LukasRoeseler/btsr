@@ -234,26 +234,53 @@
     const z = [x[1] * y[2] - x[2] * y[1], x[2] * y[0] - x[0] * y[2], x[0] * y[1] - x[1] * y[0]];
     return [x[0], x[1], x[2], 0, y[0], y[1], y[2], 0, z[0], z[1], z[2], 0, T[0], T[1], -T[2], 1];
   }
+  // v1.6.77 GEMELDET: "Ab und zu glitcht sie auch noch in die andere Richtung wie ein Neckarwuerfel/Kippbild." Ein ebener
+  // Marker hat aus vier Ecken zwei fast gleich gute Neigungen (gespiegelt um die Blickrichtung); die Bibliothek nimmt die
+  // mit dem kleineren Fehler, und im Rauschen wechselte das - vor allem nach einem Aussetzer, wenn es keine vorige Lage
+  // zum Vergleich gab. Jetzt hat jede plausible Loesung eine Wertung:
+  //   + Normale des Papiers zeigt im Bild nach oben (der Marker liegt am Boden, die Kamera ist darueber),
+  //   + passt zur zuletzt gewaehlten Normalen (auch ueber Aussetzer hinweg: der Marker liegt fest),
+  //   - groesserer Rueckprojektionsfehler (Pixel),
+  // und ein Wechsel gegen die bisherige Wahl braucht einen Vorsprung (Hysterese).
+  function vfMkWaehlen(mk, r, jetzt) {
+    // Plausibel? Vor der Kamera (GL z negativ), 5 cm bis 8 m, Papier zur Kamera gewandt (Normale mit +z-Anteil).
+    const plausibel = (Q) => Q[14] < -50 && Q[14] > -8000 && Q[10] > 0.08;
+    const kand = [];
+    const M1 = vfMkGl(r.r1, r.t1);
+    if (plausibel(M1)) kand.push({ M: M1, e: isFinite(r.e1) && r.e1 >= 0 ? r.e1 : 0 });
+    if (r.r2 && r.t2 && isFinite(r.e2) && r.e2 >= 0) { const M2 = vfMkGl(r.r2, r.t2); if (plausibel(M2)) kand.push({ M: M2, e: r.e2 }); }
+    if (!kand.length) return null;
+    if (kand.length === 1) { mk.wahlN = [kand[0].M[8], kand[0].M[9], kand[0].M[10]]; return kand[0].M; }
+    const eMin = Math.min(kand[0].e, kand[1].e);
+    const N = mk.wahlN;
+    const wert = (k) => {
+      let w = 1.2 * k.M[9];                                      // Normale nach oben im Bild
+      if (N) w += 1.0 * (k.M[8] * N[0] + k.M[9] * N[1] + k.M[10] * N[2]);   // wie zuletzt (schwaecher als oben: kommt aus falscher Wahl heraus)
+      w -= 0.25 * Math.max(0, k.e - eMin);                       // Fehler in Pixeln
+      return w;
+    };
+    const w0 = wert(kand[0]), w1 = wert(kand[1]);
+    let b = w1 > w0 ? 1 : 0;
+    // Hysterese: gegen die bisherige Wahl nur mit 0,3 Vorsprung wechseln.
+    if (N) {
+      const nah = (k) => k.M[8] * N[0] + k.M[9] * N[1] + k.M[10] * N[2];
+      const bisher = nah(kand[0]) >= nah(kand[1]) ? 0 : 1;
+      if (b !== bisher && Math.abs(w1 - w0) < 0.3) b = bisher;
+    }
+    const M = kand[b].M;
+    mk.wahlN = [M[8], M[9], M[10]];
+    return M;
+  }
   function vfMkAntwort(mk, r) {
     const S = mk.stat || (mk.stat = { gesendet: 0, erkannt: 0, verworfen: 0, ms: 0, dist: 0, w: 0, h: 0, kand: 0 });
     if (r) { if (r.ms !== undefined) S.ms = r.ms; if (r.w) { S.w = r.w; S.h = r.h; } if (r.kand !== undefined) S.kand = r.kand; if (r.ok) { S.fein = (S.fein || 0) + (r.fein ? 1 : 0); } }
     if (!r || !r.ok || !r.r1 || !r.t1) { if (r && r.fehler && !mk.fehler) { mk.fehler = r.fehler; log('Marker-AR: ' + r.fehler, 'warn'); } return; }
     const jetzt = performance.now();
-    let M = vfMkGl(r.r1, r.t1);
-    // Plausibel? Vor der Kamera (GL z negativ), 5 cm bis 8 m, Papier zur Kamera gewandt (Normale mit +z-Anteil).
-    const plausibel = (Q) => Q[14] < -50 && Q[14] > -8000 && Q[10] > 0.08;
-    if (!plausibel(M) && r.r2 && r.t2) { const M2 = vfMkGl(r.r2, r.t2); if (plausibel(M2)) M = M2; }
-    if (!plausibel(M)) { S.verworfen++; S.zuletztVerworfen = [M[10], M[14]].map((x) => Math.round(x * 1000) / 1000); return; }
+    const M = vfMkWaehlen(mk, r, jetzt);
+    if (!M) { S.verworfen++; return; }
     S.erkannt++; S.dist = Math.round(-M[14]);
     mk.ecken = r.ecken || null; mk.eckenAt = jetzt;
-    // Kippmehrdeutigkeit: passt die zweite Loesung besser zur vorigen Lage (Normale), und ist ihr Fehler nicht viel
-    // groesser, die zweite nehmen - sonst springt die Strecke zwischen zwei Neigungen.
     const vor = mk.pose && jetzt - mk.zuletzt < VF_MK.verlorenMs ? mk.pose : null;
-    if (vor && r.r2 && r.t2 && isFinite(r.e2) && r.e2 >= 0 && r.e2 < Math.max(3, (r.e1 || 0) * 3)) {
-      const M2 = vfMkGl(r.r2, r.t2);
-      const d1 = M[8] * vor[8] + M[9] * vor[9] + M[10] * vor[10], d2 = M2[8] * vor[8] + M2[9] * vor[9] + M2[10] * vor[10];
-      if (d2 > d1 + 0.05) M = M2;
-    }
     // Glaettung je nach Bewegung: kleine Aenderung stark glaetten (Zittern), grosse fast sofort uebernehmen.
     if (vor) {
       const dt = Math.hypot(M[12] - vor[12], M[13] - vor[13], M[14] - vor[14]);

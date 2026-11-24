@@ -14652,6 +14652,32 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bestzeit 29,000 s mit Zwischenzeiten, Gegenrichtung getrennt, Bestenliste, AR-Knopf ' + (vfArMoeglich() ? 'sichtbar' : 'verborgen (kein WebXR-AR)') };
   });
+  stAdd('Virtuell v1.6.77: Marker-AR waehlt die Neigung mit Normale nach oben, haelt sie ueber Aussetzer, kommt aus einer falschen Wahl heraus', () => {
+    const f = [];
+    // POSIT-Zeilen: richtig = Blatt-oben (0, 0,643, -0,766) in GL, Normale (0, 0,766, 0,643); gekippt = Normale (0, -0,766, 0,643).
+    const richtig = [[1, 0, 0], [0, 0.643, 0.766], [0, 0.766, -0.643]], gekippt = [[1, 0, 0], [0, 0.643, -0.766], [0, -0.766, -0.643]];
+    const T = [0, -100, 1200];
+    const ny = (M) => M && M[9];
+    let mk = {};
+    // 1. Nach einem Aussetzer (keine vorige Wahl): die Bibliothek bevorzugt die gekippte (kleinerer Fehler) - gewaehlt wird die richtige.
+    let M = vfMkWaehlen(mk, { r1: gekippt, t1: T, e1: 0.5, r2: richtig, t2: T, e2: 0.6 }, 0);
+    if (!(ny(M) > 0.5)) f.push('ohne Vorgeschichte gekippt gewaehlt: ' + ny(M));
+    // 2. Bisherige Wahl richtig, Bibliothek liefert gekippt zuerst: bleibt richtig.
+    M = vfMkWaehlen(mk, { r1: gekippt, t1: T, e1: 0.4, r2: richtig, t2: T, e2: 0.5 }, 30);
+    if (!(ny(M) > 0.5)) f.push('springt auf gekippt: ' + ny(M));
+    // 3. Falsch eingerastet (vorige Wahl gekippt): kommt zur richtigen zurueck.
+    mk = { wahlN: [0, -0.766, 0.643] };
+    M = vfMkWaehlen(mk, { r1: gekippt, t1: T, e1: 0.5, r2: richtig, t2: T, e2: 0.5 }, 60);
+    if (!(ny(M) > 0.5)) f.push('bleibt falsch eingerastet: ' + ny(M));
+    // 4. Viel groesserer Fehler der Alternative (deutlich falsche Loesung): die bessere bleibt.
+    mk = {};
+    M = vfMkWaehlen(mk, { r1: richtig, t1: T, e1: 0.5, r2: gekippt, t2: T, e2: 9 }, 0);
+    if (!(ny(M) > 0.5)) f.push('Fehler nicht beachtet');
+    // Die gewaehlte Lage ist eine Drehung (keine Spiegelung).
+    const d = M[0] * (M[5] * M[10] - M[6] * M[9]) - M[4] * (M[1] * M[10] - M[2] * M[9]) + M[8] * (M[1] * M[6] - M[2] * M[5]);
+    if (Math.abs(d - 1) > 0.01) f.push('Determinante ' + d.toFixed(3));
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'richtige Neigung nach Aussetzer, kein Springen, aus falscher Wahl zurueck, Drehung' };
+  });
   stAdd('Virtuell v1.6.69: Zuruecksetzen neben der Bahn abschaltbar (Optionen > Virtuell, ab Werk an)', () => {
     const f = [];
     const merk = (() => { try { return localStorage.getItem(VF_ZURUECK_STORE); } catch (e) { return null; } })();
