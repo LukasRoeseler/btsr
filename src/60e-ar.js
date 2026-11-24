@@ -54,26 +54,68 @@
     if (ar.protokoll.length > 40) ar.protokoll.shift();
     try { log('AR ' + z, 'info'); } catch (e) { /* egal */ }
   }
+  // v1.6.65 GEMELDET: "Nothing happens when I click on AR". Bis 1.6.64 meldete der Start Fehler nur als HUD-Hinweis (in
+  // der Garage nicht zu sehen), eine haengende oder fehlgeschlagene Anfrage liess den Laufmerker und die unsichtbare
+  // Vollbild-Ueberlagerung stehen - danach schluckte sie jeden Tipp. Jetzt: Fehler als Fenster mit Protokoll, die
+  // Ueberlagerung faengt keine Tipps (pointer-events), sofortige Rueckmeldung am Knopf, Waechter nach 12 s.
+  function vfArMeldung(titel, text, ar) {
+    const prot = ar && ar.protokoll && ar.protokoll.length ? '\n\n' + t('Protokoll:') + '\n' + ar.protokoll.slice(-12).join('\n') : '';
+    if (typeof konsoleFrage === 'function') konsoleFrage(titel, text + prot, [[t('Nochmal'), () => vfArStarten()], [t('Schließen'), null]], true);
+    else showHudToast(titel + ': ' + text);
+  }
+  function vfArKnopf(text) {
+    document.querySelectorAll('[data-vf="ar"]').forEach((b) => {
+      if (!b.dataset.text) b.dataset.text = b.innerHTML;
+      b.innerHTML = text || b.dataset.text;
+      b.disabled = !!text;
+    });
+  }
   function vfArStarten() {
-    if (VF.aktiv || vfArLaeuft) return;
-    if (!(navigator.xr && navigator.xr.requestSession)) {
-      showHudToast(t('AR geht hier nicht: sie braucht Chrome auf einem Android-Handy mit ARCore (nicht in der App, nicht am PC).'));
+    if (VF.aktiv) {
+      vfArMeldung(t('AR konnte nicht starten'), t('Eine virtuelle Fahrt läuft noch. Erst beenden, dann AR tippen.'));
       return;
     }
+    if (vfArLaeuft) {
+      // Haengt ein alter Versuch (keine Sitzung nach 12 s), aufraeumen und neu beginnen.
+      if (!vfArLaeuft.session && performance.now() - vfArLaeuft.t0 > 12000) { vfArAufraeumen(vfArLaeuft); vfArLaeuft = null; }
+      else return;
+    }
+    if (!(navigator.xr && navigator.xr.requestSession)) {
+      vfArMeldung(t('AR konnte nicht starten'), t('AR geht hier nicht: sie braucht Chrome auf einem Android-Handy mit ARCore (nicht in der App, nicht am PC).'));
+      return;
+    }
+    vfArKnopf(t('AR startet …'));
     const wurzel = document.createElement('div');
     wurzel.className = 'vf-ar-wurzel';
     document.body.appendChild(wurzel);
     const ar = { session: null, wurzel, cv: null, gl: null, frame: null, ref: null, hitSrc: null, treffer: null, platz: null, kamera: null,
                  layerOk: false, t0: performance.now(), protokoll: [], bilder: 0, fehler: null };
     vfArLaeuft = ar;
-    vfArLog(ar, 'Sitzung angefragt');
+    vfArLog(ar, 'Sitzung angefragt (AR unterstuetzt: ' + vfArUnterstuetzt + ')');
+    const fehlschlag = (titel, m) => {
+      if (vfArLaeuft === ar) vfArLaeuft = null;
+      ar.beendet = true;
+      wurzel.remove();
+      vfArKnopf('');
+      vfArLog(ar, 'Fehler: ' + m);
+      log('AR: ' + m, 'warn');
+      vfArMeldung(titel, m + '\n\n' + t('Hinweise: Chrome auf dem Handy aktualisieren; im Play Store „Google Play-Dienste für AR“ installieren bzw. aktualisieren; Kamera für Chrome und diese Seite erlauben.'), ar);
+    };
+    // Waechter: kommt nach 12 s keine Sitzung (Anfrage haengt), aufraeumen und melden.
+    setTimeout(() => { if (!ar.session && !ar.beendet) fehlschlag(t('AR antwortet nicht'), t('Chrome hat die AR-Sitzung nach 12 s nicht gestartet.')); }, 12000);
     // Sofort anfragen (Nutzergeste), alles andere danach.
-    navigator.xr.requestSession('immersive-ar', {
+    let anfrage;
+    try {
+      anfrage = navigator.xr.requestSession('immersive-ar', {
       requiredFeatures: ['local'],
       optionalFeatures: ['hit-test', 'dom-overlay'],
       domOverlay: { root: wurzel },
-    }).then((session) => {
+    });
+    } catch (e) { fehlschlag(t('AR konnte nicht starten'), (e && e.message) || String(e)); return; }
+    anfrage.then((session) => {
+      if (ar.beendet) { session.end().catch(() => {}); return; }   // der Waechter hat schon aufgegeben
       ar.session = session;
+      vfArKnopf('');
       vfArLog(ar, 'Sitzung laeuft' + (session.domOverlayState ? ' (Ueberlagerung ' + session.domOverlayState.type + ')' : ' (ohne Ueberlagerung)'));
       session.addEventListener('end', () => vfArEnde(ar));
       // Tipps auf Knoepfe der Ueberlagerung sind keine AR-Auswahl (Steuerung, Knopfleiste).
@@ -108,11 +150,8 @@
         vfArHinweis(ar);
       }, 0);
     }).catch((e) => {
-      vfArLaeuft = null;
-      wurzel.remove();
-      const m = (e && e.message) || String(e);
-      showHudToast(t('AR konnte nicht starten') + ': ' + m);
-      log('AR: Sitzung nicht gestartet (' + m + ')', 'warn');
+      if (ar.beendet) return;
+      fehlschlag(t('AR konnte nicht starten'), (e && e.name ? e.name + ': ' : '') + ((e && e.message) || String(e)));
     });
   }
   // Ende der Sitzung (Nutzer, Browser oder Fehler): Fahrt beenden, aufraeumen, bei einem fruehen Ende das Protokoll zeigen.
@@ -123,10 +162,10 @@
     vfArLog(ar, 'Sitzung beendet nach ' + ar.bilder + ' Bildern');
     if (VF.aktiv && VF.ar === ar) virtuellBeenden(); else vfArAufraeumen(ar);
     if (vfArLaeuft === ar) vfArLaeuft = null;
-    if (!ar.platz && !ar.vonHand && typeof konsoleFrage === 'function') {
-      setTimeout(() => konsoleFrage(t('AR wurde beendet'),
-        t('Die AR-Sitzung hat geendet, bevor die Strecke stand. Beim ersten Mal fragen Chrome und Android nach der Kamera - danach bitte nochmal AR tippen. Protokoll:') + '\n' + ar.protokoll.slice(-12).join('\n'),
-        [[t('Nochmal'), () => vfArStarten()], [t('Schließen'), null]], true), 300);
+    vfArKnopf('');
+    if (!ar.platz && !ar.vonHand) {
+      setTimeout(() => vfArMeldung(t('AR wurde beendet'),
+        t('Die AR-Sitzung hat geendet, bevor die Strecke stand. Beim ersten Mal fragen Chrome und Android nach der Kamera - danach bitte nochmal AR tippen.'), ar), 300);
     }
   }
   // Ein Bild der AR-Sitzung. Vor dem Start der Fahrt (und waehrend sie laedt) nur durchsichtig loeschen und den Boden
