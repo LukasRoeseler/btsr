@@ -5809,7 +5809,36 @@
   // des gewaehlten Autos mit Name, Losfahren und "?", rechts die Optionen der virtuellen Fahrt (vfGarageOptionen). Jede
   // Aenderung zeichnet die Seite neu, auf der sie gemacht wurde (vfGarageNeu).
   function vfGarageSeiteOffen() { const el = $('tab-vgarage'); return !!(el && el.classList.contains('active')); }
-  function vfGarageNeu() { if (vfGarageSeiteOffen()) vfGarageSeite(); else renderGarage(); }
+  // v1.6.41 BESTELLT: "Es braucht dann noch Menues fuer virtuelle Dinge in einer extra Kachel in den Optionen (zB VIRTUELL
+  // Kachel und RC Heli Kachel)." Die Zeilen entstehen weiter in vfGarageOptionen; je Seite werden die passenden genommen:
+  // Optionen > Virtuell die Einstellungen der Fahrt (VF_OPT_FAHRT), Optionen > RC Heli die des Hubschraubers (VF_OPT_HELI),
+  // die virtuelle Garage den Rest (Auto, Lack, Boden, Strecke, Richtung, Handling, NPCs, Losfahren).
+  const VF_OPT_FAHRT = ['Schaltung', 'Grafik', 'Tageszeit', 'Sichtfeld mit Tempo', 'Geist folgt meiner Linie', 'Rückspiegel (Motorhaube)',
+    'Kein Tempoverlust neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar'];
+  const VF_OPT_HELI = ['Gyro-Stabilisierung', 'Rollen umkehren', 'Nicken umkehren'];
+  function vfZeileTitel(z) {
+    const l = z.querySelector(':scope > .gk-l');
+    if (!l) return '';
+    const n = l.firstChild;
+    return (n && n.nodeType === 3 ? n.nodeValue : l.textContent).trim();
+  }
+  function vfZeilenWahl(host, liste) { const titel = liste.map((x) => t(x)); return [...host.children].filter((z) => titel.indexOf(vfZeileTitel(z)) >= 0); }
+  function vfOptionenSeiteOffen(key) { const p = $('sub-' + key); return !!(p && p.classList.contains('on') && p.closest('.tabpage.active')); }
+  function vfOptionenSeite(key) {
+    const host = $(key + '-inhalt');
+    if (!host) return;
+    const tmp = document.createElement('div');
+    vfGarageOptionen(tmp, { heliImmer: true });
+    host.innerHTML = '';
+    vfZeilenWahl(tmp, key === 'opt-heli' ? VF_OPT_HELI : VF_OPT_FAHRT).forEach((z) => host.appendChild(z));
+    if (host.querySelector('.opt-label small:not(.opt-info-versteckt)') && typeof optInfoEinrichten === 'function') optInfoEinrichten();
+  }
+  function vfGarageNeu() {
+    if (vfOptionenSeiteOffen('opt-virtuell')) vfOptionenSeite('opt-virtuell');
+    else if (vfOptionenSeiteOffen('opt-heli')) vfOptionenSeite('opt-heli');
+    else if (vfGarageSeiteOffen()) vfGarageSeite();
+    else renderGarage();
+  }
   const VF_HELI_BILD = '<svg class="vg-heli" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
     + '<path d="M6 12h36M24 12v5"/><path d="M14 24a10 7 0 0 1 10-7h4a8 8 0 0 1 8 8v2a3 3 0 0 1-3 3H19a5 5 0 0 1-5-6z"/><path d="M36 25h8M44 21v8"/><path d="M18 30l-2 6M30 30l2 6M12 36h24"/></svg>';
   function vfGarageSeite() {
@@ -5818,6 +5847,8 @@
     const y = host.scrollTop;
     host.innerHTML = '';
     vfGarageOptionen(host);
+    // v1.6.41: Einstellungen der Fahrt und des Hubschraubers stehen in den Optionen (Kacheln Virtuell und RC Heli).
+    vfZeilenWahl(host, VF_OPT_FAHRT.concat(VF_OPT_HELI)).forEach((z) => z.remove());
     vor.innerHTML = '';
     const bild = host.querySelector('.vf-vorschau');
     if (bild && vfHubschrauber()) bild.remove();   // der Heli hat kein Vorschaubild, statt dessen das Symbol
@@ -5871,7 +5902,7 @@
     if (typeof showTab === 'function') showTab('vgarage');
     vfGarageSeite();
   }
-  function vfGarageOptionen(rechts) {
+  function vfGarageOptionen(rechts, opts) {
     vfTonVorbereiten();
     vfTexturenVorbereiten();   // v1.3.39: Bahn- und Bodentexturen im Leerlauf rechnen
     const kopf = document.createElement('h3');
@@ -5904,7 +5935,7 @@
     };
     rechts.appendChild(garWertZeile(t('Auto'), autos[ja].name, () => autoWahl(-1), () => autoWahl(1)));
     // v1.6.32: die Steuer-Optionen des RC Stunt Copters stehen in der virtuellen Garage (vorher Optionen > Virtuell).
-    if (vfHubschrauber()) {
+    if (vfHubschrauber() || (opts && opts.heliImmer)) {
       const umsch = (lbl, an, key, info) => {
         const w = () => { vfHubSetzen(key, !an); vfGarageNeu(); };
         const z = garWertZeile(t(lbl), an ? t('An') : t('Aus'), w, w);

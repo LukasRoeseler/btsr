@@ -4302,6 +4302,9 @@
   .vg-kopf { display: flex; align-items: center; gap: 12px; }
   .vg-kopf h2 { margin: 0; font-size: clamp(15px, 2.2vw, 22px); }
   .vg-zurueck { min-height: 32px; padding: 4px 10px; }
+  .vg-einstellungen { margin-left: auto; }
+  .vf-opt-seite .gk-zeile { display: grid; grid-template-columns: minmax(110px, 40%) minmax(0, 1fr); align-items: center; gap: 4px 8px; }
+  .vf-opt-seite .gk-w { justify-content: center; }
   .vg-raster { display: grid; grid-template-columns: minmax(0, 40%) minmax(0, 1fr); gap: 12px; margin-top: 6px; align-items: start; }
   .vg-vorschau { position: sticky; top: 6px; display: flex; flex-direction: column; gap: 8px; }
   .vg-vorschau .vf-vorschau { position: relative; display: grid; place-items: center; padding: 0; border: 0; overflow: hidden; aspect-ratio: 16 / 9;
@@ -7361,6 +7364,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Optionen: neue Kacheln &#8222;Virtuell&#8220; (Schaltung, Grafik, Tageszeit, Sichtfeld, Geist, R&#252;ckspiegel, Tempoverlust neben der Bahn, Pflicht-Boxendurchfahrt, sichtbare Neigung) und &#8222;RC Heli&#8220; (Gyro-Stabilisierung, Rollen und Nicken umkehren). Die virtuelle Garage beh&#228;lt die Auswahl von Auto, Lack, Boden, Strecke, Fahrtrichtung, Handling und NPCs und hat einen Knopf zu den Optionen.</li>
         <li>Virtuell fahren: Der RC Stunt Copter driftet nicht mehr zur Seite. Ein Vorzeichenfehler im Schubvektor lie&#223; ihn beim Rollen in die falsche Richtung und beim Neigen je nach Kurs schr&#228;g fliegen; jetzt fliegt er dorthin, wohin er geneigt ist. Jedes virtuelle Auto hat seinen festen, passenden Motorklang: Vulture V5.R Corvette C5-R, FMC GT4 Ford GT40, Boxer 96 Porsche 911 GT3, Lynx 220 V6 (Ferrari 296 GT3), Audi RS5 DTM sein Reihen-4-Turbo; K&#228;fer, Spider und Caravelle wie bisher.</li>
         <li>Virtuell fahren: Der RC Stunt Copter hat am Handy ohne Gamepad zwei eigene Touch-Sticks (links Steigen und Drehen, rechts Neigen und Rollen) und reagiert beim Neigen so kr&#228;ftig wie im Vorbild (Schub und Schwerkraft auf seine Gr&#246;&#223;e umgerechnet). Drift: nimmt man das Gas weg, gleitet das Heck weiter und f&#228;ngt sich erst nach und nach. Vorschaubilder neu (transparent, gegl&#228;ttet, mit Bodenschatten, auch die Caravelle ohne Flecken); in der virtuellen Garage steht das Auto auf dem gew&#228;hlten Boden (Rasen mit Himmel, Holz vor einer Wand). FAHREN: der Umschalter Echt | Virtuell ist die ganze Kachel (ein Tipp schaltet um) mit Radbild; im Modus Virtuell neue Bilder f&#252;r Garage und Start.</li>
         <li>Neues virtuelles Auto: Audi RS5 DTM 2019 (WIP), Modell von Dave Love (Sketchfab, CC BY 4.0) mit seiner Lackierung; Fahrdaten gesch&#228;tzt.</li>
@@ -10373,6 +10377,7 @@
     <div class="vg-kopf">
       <button type="button" class="vg-zurueck" id="vg-zurueck">&larr; Fahren</button>
       <h2>Virtuelle Garage <span class="wip-tag">WIP</span></h2>
+      <button type="button" class="vg-zurueck vg-einstellungen" id="vg-einstellungen">Optionen Virtuell</button>
     </div>
     <div class="vg-raster">
       <div class="vg-vorschau" id="vg-vorschau"></div>
@@ -11177,6 +11182,18 @@
           <b>Allgemein</b>
           <span>Licht, Betriebsart, Akku, Tank, Schaden, Vibration.</span>
         </button>
+        <!-- v1.6.41 BESTELLT: "Menues fuer virtuelle Dinge in einer extra Kachel in den Optionen (zB VIRTUELL Kachel und RC Heli
+             Kachel)". Inhalt baut vfOptionenSeite (60d-virtuell.js) beim Oeffnen. -->
+        <button class="misc-tile subpage-open" data-sub="opt-virtuell">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="10" width="36" height="24" rx="3"/><path d="M16 40h16M24 34v6"/><path d="M13 28l7-9 5 6 4-4 6 7" stroke="var(--bad)"/></svg>
+          <b>Virtuell</b>
+          <span>Grafik, Tageszeit, Sicht, Geist, Spiegel, Schaltung, Boxendurchfahrt.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-heli">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h36M24 12v5"/><path d="M14 24a10 7 0 0 1 10-7h4a8 8 0 0 1 8 8v2a3 3 0 0 1-3 3H19a5 5 0 0 1-5-6z"/><path d="M36 25h8M44 21v8" stroke="var(--bad)"/><path d="M18 30l-2 6M30 30l2 6M12 36h24"/></svg>
+          <b>RC Heli</b>
+          <span>Gyro-Stabilisierung, Rollen und Nicken umkehren.</span>
+        </button>
         <button class="misc-tile subpage-open" data-sub="opt-feel">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><circle cx="24" cy="24" r="5"/><path d="M24 8v11M13 33l8-6M35 33l-8-6" stroke="var(--bad)"/></svg>
@@ -11652,6 +11669,16 @@
           <span class="opt-val" id="setting-repair-time-val">10 s</span>
         </div></div>
     </div>
+    </div>
+    <div class="card subpage" id="sub-opt-virtuell">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Virtuell <span class="wip-tag">WIP</span></h2>
+      <div class="vf-opt-seite" id="opt-virtuell-inhalt"></div>
+    </div>
+    <div class="card subpage" id="sub-opt-heli">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>RC Heli <span class="wip-tag">WIP</span></h2>
+      <div class="vf-opt-seite" id="opt-heli-inhalt"></div>
     </div>
     <div class="card subpage" id="sub-opt-feel">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>

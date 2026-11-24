@@ -14622,6 +14622,40 @@
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Optionen v1.6.41: Kacheln Virtuell und RC Heli mit den Einstellungen der virtuellen Fahrt, die Garage behaelt die Auswahl', () => {
+    const f = [], merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : '';
+    const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merkGeist = lies(VF_GEIST_STORE), merkModus = lies(FAHR_MODUS_STORE);
+    try {
+      if (!document.querySelector('#tab-options [data-sub="opt-virtuell"]') || !document.querySelector('#tab-options [data-sub="opt-heli"]')) f.push('Kacheln fehlen');
+      showTab('options'); showSubpage('opt-virtuell');
+      const titel = (host) => [...host.children].map((z) => vfZeileTitel(z));
+      const tv = titel($('opt-virtuell-inhalt'));
+      VF_OPT_FAHRT.forEach((x) => { if (tv.indexOf(t(x)) < 0) f.push('Virtuell ohne ' + x); });
+      if (tv.length !== VF_OPT_FAHRT.length) f.push('Virtuell: ' + tv.length + ' Zeilen');
+      // Umschalten bleibt auf der Seite und wirkt.
+      const gz = [...$('opt-virtuell-inhalt').children].find((z) => vfZeileTitel(z) === t('Geist folgt meiner Linie'));
+      const vorher = vfGeistAn();
+      gz.querySelector('button').click();
+      if (vfGeistAn() === vorher) f.push('Geist-Schalter wirkt nicht');
+      if (!vfOptionenSeiteOffen('opt-virtuell') || !$('opt-virtuell-inhalt').children.length) f.push('Seite nach dem Umschalten weg');
+      showSubpage('opt-heli');
+      const th = titel($('opt-heli-inhalt'));
+      VF_OPT_HELI.forEach((x) => { if (th.indexOf(t(x)) < 0) f.push('RC Heli ohne ' + x); });
+      // Die virtuelle Garage zeigt diese Zeilen nicht mehr.
+      vfGarageZeigen();
+      const tg = titel($('vg-optionen'));
+      VF_OPT_FAHRT.concat(VF_OPT_HELI).forEach((x) => { if (tg.indexOf(t(x)) >= 0) f.push('Garage zeigt noch ' + x); });
+      ['Auto', 'Strecke', 'Handling', 'NPCs'].forEach((x) => { if (tg.indexOf(t(x)) < 0) f.push('Garage ohne ' + x); });
+      if (!$('vg-einstellungen')) f.push('kein Knopf zu den Optionen');
+    } finally {
+      try { if (merkGeist === null) localStorage.removeItem(VF_GEIST_STORE); else localStorage.setItem(VF_GEIST_STORE, merkGeist); } catch (e) { /* egal */ }
+      try { if (merkModus === null) localStorage.removeItem(FAHR_MODUS_STORE); else localStorage.setItem(FAHR_MODUS_STORE, merkModus); } catch (e) { /* egal */ }
+      if (typeof konsoleFahrenZeichnen === 'function') konsoleFahrenZeichnen();
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : VF_OPT_FAHRT.length + ' Zeilen unter Virtuell, ' + VF_OPT_HELI.length + ' unter RC Heli, Garage behaelt die Auswahl' };
+  });
   stAdd('Virtuell v1.6.39: Heli fliegt in Richtung der Neigung (vorn = Nase, rechts = rechts) bei jedem Kurs, schwebt ohne Eingabe auf der Stelle; jedes Auto hat seinen festen Motorklang', () => {
     const f = [];
     const merk = { hubschrauber: VF.hubschrauber, x: VF.x, y: VF.y, z: VF.z, h: VF.h, flug: VF.flug, pitch: VF.pitch, roll: VF.roll, hubTasten: VF.hubTasten,
@@ -14891,10 +14925,10 @@
         rm.value = 'practice';
         try { localStorage.setItem(VF_AUTO_STORE, 'hubschrauber'); } catch (e) { /* egal */ }
         vfGarageSeite();
-        if ($('vg-optionen').querySelectorAll('[data-vf-hub]').length !== 3) f.push('Heli-Optionen fehlen');
+        if ($('vg-optionen').querySelectorAll('[data-vf-hub]').length !== 0) f.push('Heli-Optionen noch in der Garage (gehoeren nach Optionen > RC Heli)');
         if (!$('vg-vorschau').querySelector('.vg-heli')) f.push('Heli ohne Bild');
       }
-      if (document.getElementById(['sub-opt', 'virtuell'].join('-'))) f.push('alte Seite Optionen > Virtuell noch da');
+      // v1.6.41: Optionen > Virtuell gibt es wieder, jetzt mit den Einstellungen der Fahrt (Test 'Optionen v1.6.41').
       // Echte Garage: der Knopf fuehrt in die virtuelle Garage.
       showTab('garage'); renderGarage();
       showTab('fahren');
@@ -14908,7 +14942,7 @@
       konsoleFahrenZeichnen();
       if (merkTab) showTab(merkTab);
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eigene Seite, ' + mass + ', Heli-Optionen dort' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eigene Seite, ' + mass + ', Heli-Bild im Training' };
   });
   stAdd('Fahren v1.6.23: Umschalter Echt | Virtuell - Autos-Kachel, Garage und Start folgen dem Modus (Issue #7)', () => {
     const f = [], merk = (() => { try { return localStorage.getItem(FAHR_MODUS_STORE); } catch (e) { return null; } })();

@@ -1284,6 +1284,7 @@
     kn('fa-garage', () => konsoleGarageOeffnen());
     kn('fa-mp', () => konsoleZeige('mp'));
     kn('vg-zurueck', () => konsoleZeige('fahren'));
+    kn('vg-einstellungen', () => konsoleZeige('options', 'opt-virtuell'));
     // v1.6.23: im Modus Virtuell startet die Startkachel die virtuelle Fahrt (die Kachel "Virtuell fahren" ist dem
     // Umschalter Echt | Virtuell gewichen). Ein Tipp auf eine Seite des Umschalters waehlt sie, sonst wechselt er.
     kn('fa-start', () => { if (fahrModusVirtuell() && !kRennenLaeuft()) konsoleVirtuellStarten(); else konsoleLosfahren(); });
