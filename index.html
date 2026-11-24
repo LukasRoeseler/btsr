@@ -4302,6 +4302,9 @@
   .vg-kopf { display: flex; align-items: center; gap: 12px; }
   .vg-kopf h2 { margin: 0; font-size: clamp(15px, 2.2vw, 22px); }
   .vg-zurueck { min-height: 32px; padding: 4px 10px; }
+  .vg-einstellungen { margin-left: auto; }
+  .vf-opt-seite .gk-zeile { display: grid; grid-template-columns: minmax(110px, 40%) minmax(0, 1fr); align-items: center; gap: 4px 8px; }
+  .vf-opt-seite .gk-w { justify-content: center; }
   .vg-raster { display: grid; grid-template-columns: minmax(0, 40%) minmax(0, 1fr); gap: 12px; margin-top: 6px; align-items: start; }
   .vg-vorschau { position: sticky; top: 6px; display: flex; flex-direction: column; gap: 8px; }
   .vg-vorschau .vf-vorschau { position: relative; display: grid; place-items: center; padding: 0; border: 0; overflow: hidden; aspect-ratio: 16 / 9;
@@ -6036,7 +6039,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.40</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.43</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7361,6 +7364,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Optionen: neue Kacheln &#8222;Virtuell&#8220; (Schaltung, Grafik, Tageszeit, Sichtfeld, Geist, R&#252;ckspiegel, Tempoverlust neben der Bahn, Pflicht-Boxendurchfahrt, sichtbare Neigung) und &#8222;RC Heli&#8220; (Gyro-Stabilisierung, Rollen und Nicken umkehren). Die virtuelle Garage beh&#228;lt die Auswahl von Auto, Lack, Boden, Strecke, Fahrtrichtung, Handling und NPCs und hat einen Knopf zu den Optionen.</li>
         <li>Virtuell fahren: Der RC Stunt Copter driftet nicht mehr zur Seite. Ein Vorzeichenfehler im Schubvektor lie&#223; ihn beim Rollen in die falsche Richtung und beim Neigen je nach Kurs schr&#228;g fliegen; jetzt fliegt er dorthin, wohin er geneigt ist. Jedes virtuelle Auto hat seinen festen, passenden Motorklang: Vulture V5.R Corvette C5-R, FMC GT4 Ford GT40, Boxer 96 Porsche 911 GT3, Lynx 220 V6 (Ferrari 296 GT3), Audi RS5 DTM sein Reihen-4-Turbo; K&#228;fer, Spider und Caravelle wie bisher.</li>
         <li>Virtuell fahren: Der RC Stunt Copter hat am Handy ohne Gamepad zwei eigene Touch-Sticks (links Steigen und Drehen, rechts Neigen und Rollen) und reagiert beim Neigen so kr&#228;ftig wie im Vorbild (Schub und Schwerkraft auf seine Gr&#246;&#223;e umgerechnet). Drift: nimmt man das Gas weg, gleitet das Heck weiter und f&#228;ngt sich erst nach und nach. Vorschaubilder neu (transparent, gegl&#228;ttet, mit Bodenschatten, auch die Caravelle ohne Flecken); in der virtuellen Garage steht das Auto auf dem gew&#228;hlten Boden (Rasen mit Himmel, Holz vor einer Wand). FAHREN: der Umschalter Echt | Virtuell ist die ganze Kachel (ein Tipp schaltet um) mit Radbild; im Modus Virtuell neue Bilder f&#252;r Garage und Start.</li>
         <li>Neues virtuelles Auto: Audi RS5 DTM 2019 (WIP), Modell von Dave Love (Sketchfab, CC BY 4.0) mit seiner Lackierung; Fahrdaten gesch&#228;tzt.</li>
@@ -10373,6 +10377,7 @@
     <div class="vg-kopf">
       <button type="button" class="vg-zurueck" id="vg-zurueck">&larr; Fahren</button>
       <h2>Virtuelle Garage <span class="wip-tag">WIP</span></h2>
+      <button type="button" class="vg-zurueck vg-einstellungen" id="vg-einstellungen">Optionen Virtuell</button>
     </div>
     <div class="vg-raster">
       <div class="vg-vorschau" id="vg-vorschau"></div>
@@ -11177,6 +11182,18 @@
           <b>Allgemein</b>
           <span>Licht, Betriebsart, Akku, Tank, Schaden, Vibration.</span>
         </button>
+        <!-- v1.6.41 BESTELLT: "Menues fuer virtuelle Dinge in einer extra Kachel in den Optionen (zB VIRTUELL Kachel und RC Heli
+             Kachel)". Inhalt baut vfOptionenSeite (60d-virtuell.js) beim Oeffnen. -->
+        <button class="misc-tile subpage-open" data-sub="opt-virtuell">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="10" width="36" height="24" rx="3"/><path d="M16 40h16M24 34v6"/><path d="M13 28l7-9 5 6 4-4 6 7" stroke="var(--bad)"/></svg>
+          <b>Virtuell</b>
+          <span>Grafik, Tageszeit, Sicht, Geist, Spiegel, Schaltung, Boxendurchfahrt.</span>
+        </button>
+        <button class="misc-tile subpage-open" data-sub="opt-heli">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 12h36M24 12v5"/><path d="M14 24a10 7 0 0 1 10-7h4a8 8 0 0 1 8 8v2a3 3 0 0 1-3 3H19a5 5 0 0 1-5-6z"/><path d="M36 25h8M44 21v8" stroke="var(--bad)"/><path d="M18 30l-2 6M30 30l2 6M12 36h24"/></svg>
+          <b>RC Heli</b>
+          <span>Gyro-Stabilisierung, Rollen und Nicken umkehren.</span>
+        </button>
         <button class="misc-tile subpage-open" data-sub="opt-feel">
           <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"
                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="24" r="16"/><circle cx="24" cy="24" r="5"/><path d="M24 8v11M13 33l8-6M35 33l-8-6" stroke="var(--bad)"/></svg>
@@ -11652,6 +11669,16 @@
           <span class="opt-val" id="setting-repair-time-val">10 s</span>
         </div></div>
     </div>
+    </div>
+    <div class="card subpage" id="sub-opt-virtuell">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Virtuell <span class="wip-tag">WIP</span></h2>
+      <div class="vf-opt-seite" id="opt-virtuell-inhalt"></div>
+    </div>
+    <div class="card subpage" id="sub-opt-heli">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>RC Heli <span class="wip-tag">WIP</span></h2>
+      <div class="vf-opt-seite" id="opt-heli-inhalt"></div>
     </div>
     <div class="card subpage" id="sub-opt-feel">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
@@ -17821,6 +17848,11 @@
     "Neigen / Rollen": "Pitch / roll",
     "Virtuell fahren: Der RC Stunt Copter hat am Handy ohne Gamepad zwei eigene Touch-Sticks (links Steigen und Drehen, rechts Neigen und Rollen) und reagiert beim Neigen so kräftig wie im Vorbild (Schub und Schwerkraft auf seine Größe umgerechnet). Drift: nimmt man das Gas weg, gleitet das Heck weiter und fängt sich erst nach und nach. Vorschaubilder neu (transparent, geglättet, mit Bodenschatten, auch die Caravelle ohne Flecken); in der virtuellen Garage steht das Auto auf dem gewählten Boden (Rasen mit Himmel, Holz vor einer Wand). FAHREN: der Umschalter Echt | Virtuell ist die ganze Kachel (ein Tipp schaltet um) mit Radbild; im Modus Virtuell neue Bilder für Garage und Start.": "Virtual driving: on phones without a gamepad the RC stunt copter has its own two touch sticks (left climb and turn, right pitch and roll) and reacts to tilting as strongly as in the original (thrust and gravity scaled to its size). Drift: lifting off the throttle lets the rear keep sliding and recover gradually. New preview images (transparent, smoothed, with a ground shadow, the Caravelle without blotches); in the virtual garage the car stands on the selected floor (grass with sky, wood in front of a wall). DRIVE: the Real | Virtual switch is the whole tile (one tap switches) with a wheel picture; in virtual mode new pictures for garage and start.",
     "Virtuell fahren: Der RC Stunt Copter driftet nicht mehr zur Seite. Ein Vorzeichenfehler im Schubvektor ließ ihn beim Rollen in die falsche Richtung und beim Neigen je nach Kurs schräg fliegen; jetzt fliegt er dorthin, wohin er geneigt ist. Jedes virtuelle Auto hat seinen festen, passenden Motorklang: Vulture V5.R Corvette C5-R, FMC GT4 Ford GT40, Boxer 96 Porsche 911 GT3, Lynx 220 V6 (Ferrari 296 GT3), Audi RS5 DTM sein Reihen-4-Turbo; Käfer, Spider und Caravelle wie bisher.": "Virtual driving: the RC stunt copter no longer drifts sideways. A sign error in the thrust vector made it roll the wrong way and fly diagonally when pitching, depending on its heading; now it flies where it is tilted. Every virtual car has its own fixed, fitting engine sound: Vulture V5.R Corvette C5-R, FMC GT4 Ford GT40, Boxer 96 Porsche 911 GT3, Lynx 220 V6 (Ferrari 296 GT3), Audi RS5 DTM its inline-4 turbo; Beetle, Spider and Caravelle as before.",
+    "RC Heli": "RC heli",
+    "Grafik, Tageszeit, Sicht, Geist, Spiegel, Schaltung, Boxendurchfahrt.": "Graphics, time of day, view, spirit car, mirror, gearbox, pit drive-through.",
+    "Gyro-Stabilisierung, Rollen und Nicken umkehren.": "Gyro stabilisation, invert roll and pitch.",
+    "Optionen Virtuell": "Virtual options",
+    "Optionen: neue Kacheln „Virtuell“ (Schaltung, Grafik, Tageszeit, Sichtfeld, Geist, Rückspiegel, Tempoverlust neben der Bahn, Pflicht-Boxendurchfahrt, sichtbare Neigung) und „RC Heli“ (Gyro-Stabilisierung, Rollen und Nicken umkehren). Die virtuelle Garage behält die Auswahl von Auto, Lack, Boden, Strecke, Fahrtrichtung, Handling und NPCs und hat einen Knopf zu den Optionen.": "Options: new tiles “Virtual” (gearbox, graphics, time of day, field of view, ghost, mirror, speed loss off track, mandatory pit drive-through, visible body roll) and “RC heli” (gyro stabilisation, invert roll and pitch). The virtual garage keeps the choice of car, paint, floor, track, direction, handling and NPCs and has a button to the options.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20698,6 +20730,10 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "RC Heli": "Helicóptero RC",
+    "Grafik, Tageszeit, Sicht, Geist, Spiegel, Schaltung, Boxendurchfahrt.": "Gráficos, hora del día, vista, espíritu, retrovisor, cambio, paso por boxes.",
+    "Gyro-Stabilisierung, Rollen und Nicken umkehren.": "Estabilización giroscópica, invertir alabeo y cabeceo.",
+    "Optionen Virtuell": "Opciones virtuales",
     "Steigen / Drehen": "Subir / girar",
     "Neigen / Rollen": "Cabeceo / alabeo",
     "Virtuelle Garage": "Garaje virtual",
@@ -22687,6 +22723,8 @@
     if (key) {
       const p = $('sub-' + key);
       if (p) p.classList.add('on');
+      // v1.6.41: Optionen > Virtuell / RC Heli werden beim Oeffnen aus den Zeilen der virtuellen Fahrt gebaut.
+      if ((key === 'opt-virtuell' || key === 'opt-heli') && typeof vfOptionenSeite === 'function') vfOptionenSeite(key);
     }
     // Die Linienvorschau auf der Ghost-Seite wird erst hier gezeichnet. Sie kostet rund
     // 94 ms; sie beim Laden oder bei jedem Streckenklick mitzurechnen waere Aufwand fuer
@@ -34339,6 +34377,7 @@
     kn('fa-garage', () => konsoleGarageOeffnen());
     kn('fa-mp', () => konsoleZeige('mp'));
     kn('vg-zurueck', () => konsoleZeige('fahren'));
+    kn('vg-einstellungen', () => konsoleZeige('options', 'opt-virtuell'));
     // v1.6.23: im Modus Virtuell startet die Startkachel die virtuelle Fahrt (die Kachel "Virtuell fahren" ist dem
     // Umschalter Echt | Virtuell gewichen). Ein Tipp auf eine Seite des Umschalters waehlt sie, sonst wechselt er.
     kn('fa-start', () => { if (fahrModusVirtuell() && !kRennenLaeuft()) konsoleVirtuellStarten(); else konsoleLosfahren(); });
@@ -49042,7 +49081,36 @@
   // des gewaehlten Autos mit Name, Losfahren und "?", rechts die Optionen der virtuellen Fahrt (vfGarageOptionen). Jede
   // Aenderung zeichnet die Seite neu, auf der sie gemacht wurde (vfGarageNeu).
   function vfGarageSeiteOffen() { const el = $('tab-vgarage'); return !!(el && el.classList.contains('active')); }
-  function vfGarageNeu() { if (vfGarageSeiteOffen()) vfGarageSeite(); else renderGarage(); }
+  // v1.6.41 BESTELLT: "Es braucht dann noch Menues fuer virtuelle Dinge in einer extra Kachel in den Optionen (zB VIRTUELL
+  // Kachel und RC Heli Kachel)." Die Zeilen entstehen weiter in vfGarageOptionen; je Seite werden die passenden genommen:
+  // Optionen > Virtuell die Einstellungen der Fahrt (VF_OPT_FAHRT), Optionen > RC Heli die des Hubschraubers (VF_OPT_HELI),
+  // die virtuelle Garage den Rest (Auto, Lack, Boden, Strecke, Richtung, Handling, NPCs, Losfahren).
+  const VF_OPT_FAHRT = ['Schaltung', 'Grafik', 'Tageszeit', 'Sichtfeld mit Tempo', 'Geist folgt meiner Linie', 'Rückspiegel (Motorhaube)',
+    'Kein Tempoverlust neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar'];
+  const VF_OPT_HELI = ['Gyro-Stabilisierung', 'Rollen umkehren', 'Nicken umkehren'];
+  function vfZeileTitel(z) {
+    const l = z.querySelector(':scope > .gk-l');
+    if (!l) return '';
+    const n = l.firstChild;
+    return (n && n.nodeType === 3 ? n.nodeValue : l.textContent).trim();
+  }
+  function vfZeilenWahl(host, liste) { const titel = liste.map((x) => t(x)); return [...host.children].filter((z) => titel.indexOf(vfZeileTitel(z)) >= 0); }
+  function vfOptionenSeiteOffen(key) { const p = $('sub-' + key); return !!(p && p.classList.contains('on') && p.closest('.tabpage.active')); }
+  function vfOptionenSeite(key) {
+    const host = $(key + '-inhalt');
+    if (!host) return;
+    const tmp = document.createElement('div');
+    vfGarageOptionen(tmp, { heliImmer: true });
+    host.innerHTML = '';
+    vfZeilenWahl(tmp, key === 'opt-heli' ? VF_OPT_HELI : VF_OPT_FAHRT).forEach((z) => host.appendChild(z));
+    if (host.querySelector('.opt-label small:not(.opt-info-versteckt)') && typeof optInfoEinrichten === 'function') optInfoEinrichten();
+  }
+  function vfGarageNeu() {
+    if (vfOptionenSeiteOffen('opt-virtuell')) vfOptionenSeite('opt-virtuell');
+    else if (vfOptionenSeiteOffen('opt-heli')) vfOptionenSeite('opt-heli');
+    else if (vfGarageSeiteOffen()) vfGarageSeite();
+    else renderGarage();
+  }
   const VF_HELI_BILD = '<svg class="vg-heli" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
     + '<path d="M6 12h36M24 12v5"/><path d="M14 24a10 7 0 0 1 10-7h4a8 8 0 0 1 8 8v2a3 3 0 0 1-3 3H19a5 5 0 0 1-5-6z"/><path d="M36 25h8M44 21v8"/><path d="M18 30l-2 6M30 30l2 6M12 36h24"/></svg>';
   function vfGarageSeite() {
@@ -49051,6 +49119,8 @@
     const y = host.scrollTop;
     host.innerHTML = '';
     vfGarageOptionen(host);
+    // v1.6.41: Einstellungen der Fahrt und des Hubschraubers stehen in den Optionen (Kacheln Virtuell und RC Heli).
+    vfZeilenWahl(host, VF_OPT_FAHRT.concat(VF_OPT_HELI)).forEach((z) => z.remove());
     vor.innerHTML = '';
     const bild = host.querySelector('.vf-vorschau');
     if (bild && vfHubschrauber()) bild.remove();   // der Heli hat kein Vorschaubild, statt dessen das Symbol
@@ -49104,7 +49174,7 @@
     if (typeof showTab === 'function') showTab('vgarage');
     vfGarageSeite();
   }
-  function vfGarageOptionen(rechts) {
+  function vfGarageOptionen(rechts, opts) {
     vfTonVorbereiten();
     vfTexturenVorbereiten();   // v1.3.39: Bahn- und Bodentexturen im Leerlauf rechnen
     const kopf = document.createElement('h3');
@@ -49137,7 +49207,7 @@
     };
     rechts.appendChild(garWertZeile(t('Auto'), autos[ja].name, () => autoWahl(-1), () => autoWahl(1)));
     // v1.6.32: die Steuer-Optionen des RC Stunt Copters stehen in der virtuellen Garage (vorher Optionen > Virtuell).
-    if (vfHubschrauber()) {
+    if (vfHubschrauber() || (opts && opts.heliImmer)) {
       const umsch = (lbl, an, key, info) => {
         const w = () => { vfHubSetzen(key, !an); vfGarageNeu(); };
         const z = garWertZeile(t(lbl), an ? t('An') : t('Aus'), w, w);
@@ -110777,6 +110847,40 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Optionen v1.6.41: Kacheln Virtuell und RC Heli mit den Einstellungen der virtuellen Fahrt, die Garage behaelt die Auswahl', () => {
+    const f = [], merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : '';
+    const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merkGeist = lies(VF_GEIST_STORE), merkModus = lies(FAHR_MODUS_STORE);
+    try {
+      if (!document.querySelector('#tab-options [data-sub="opt-virtuell"]') || !document.querySelector('#tab-options [data-sub="opt-heli"]')) f.push('Kacheln fehlen');
+      showTab('options'); showSubpage('opt-virtuell');
+      const titel = (host) => [...host.children].map((z) => vfZeileTitel(z));
+      const tv = titel($('opt-virtuell-inhalt'));
+      VF_OPT_FAHRT.forEach((x) => { if (tv.indexOf(t(x)) < 0) f.push('Virtuell ohne ' + x); });
+      if (tv.length !== VF_OPT_FAHRT.length) f.push('Virtuell: ' + tv.length + ' Zeilen');
+      // Umschalten bleibt auf der Seite und wirkt.
+      const gz = [...$('opt-virtuell-inhalt').children].find((z) => vfZeileTitel(z) === t('Geist folgt meiner Linie'));
+      const vorher = vfGeistAn();
+      gz.querySelector('button').click();
+      if (vfGeistAn() === vorher) f.push('Geist-Schalter wirkt nicht');
+      if (!vfOptionenSeiteOffen('opt-virtuell') || !$('opt-virtuell-inhalt').children.length) f.push('Seite nach dem Umschalten weg');
+      showSubpage('opt-heli');
+      const th = titel($('opt-heli-inhalt'));
+      VF_OPT_HELI.forEach((x) => { if (th.indexOf(t(x)) < 0) f.push('RC Heli ohne ' + x); });
+      // Die virtuelle Garage zeigt diese Zeilen nicht mehr.
+      vfGarageZeigen();
+      const tg = titel($('vg-optionen'));
+      VF_OPT_FAHRT.concat(VF_OPT_HELI).forEach((x) => { if (tg.indexOf(t(x)) >= 0) f.push('Garage zeigt noch ' + x); });
+      ['Auto', 'Strecke', 'Handling', 'NPCs'].forEach((x) => { if (tg.indexOf(t(x)) < 0) f.push('Garage ohne ' + x); });
+      if (!$('vg-einstellungen')) f.push('kein Knopf zu den Optionen');
+    } finally {
+      try { if (merkGeist === null) localStorage.removeItem(VF_GEIST_STORE); else localStorage.setItem(VF_GEIST_STORE, merkGeist); } catch (e) { /* egal */ }
+      try { if (merkModus === null) localStorage.removeItem(FAHR_MODUS_STORE); else localStorage.setItem(FAHR_MODUS_STORE, merkModus); } catch (e) { /* egal */ }
+      if (typeof konsoleFahrenZeichnen === 'function') konsoleFahrenZeichnen();
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : VF_OPT_FAHRT.length + ' Zeilen unter Virtuell, ' + VF_OPT_HELI.length + ' unter RC Heli, Garage behaelt die Auswahl' };
+  });
   stAdd('Virtuell v1.6.39: Heli fliegt in Richtung der Neigung (vorn = Nase, rechts = rechts) bei jedem Kurs, schwebt ohne Eingabe auf der Stelle; jedes Auto hat seinen festen Motorklang', () => {
     const f = [];
     const merk = { hubschrauber: VF.hubschrauber, x: VF.x, y: VF.y, z: VF.z, h: VF.h, flug: VF.flug, pitch: VF.pitch, roll: VF.roll, hubTasten: VF.hubTasten,
@@ -111046,10 +111150,10 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         rm.value = 'practice';
         try { localStorage.setItem(VF_AUTO_STORE, 'hubschrauber'); } catch (e) { /* egal */ }
         vfGarageSeite();
-        if ($('vg-optionen').querySelectorAll('[data-vf-hub]').length !== 3) f.push('Heli-Optionen fehlen');
+        if ($('vg-optionen').querySelectorAll('[data-vf-hub]').length !== 0) f.push('Heli-Optionen noch in der Garage (gehoeren nach Optionen > RC Heli)');
         if (!$('vg-vorschau').querySelector('.vg-heli')) f.push('Heli ohne Bild');
       }
-      if (document.getElementById(['sub-opt', 'virtuell'].join('-'))) f.push('alte Seite Optionen > Virtuell noch da');
+      // v1.6.41: Optionen > Virtuell gibt es wieder, jetzt mit den Einstellungen der Fahrt (Test 'Optionen v1.6.41').
       // Echte Garage: der Knopf fuehrt in die virtuelle Garage.
       showTab('garage'); renderGarage();
       showTab('fahren');
@@ -111063,7 +111167,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       konsoleFahrenZeichnen();
       if (merkTab) showTab(merkTab);
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eigene Seite, ' + mass + ', Heli-Optionen dort' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'eigene Seite, ' + mass + ', Heli-Bild im Training' };
   });
   stAdd('Fahren v1.6.23: Umschalter Echt | Virtuell - Autos-Kachel, Garage und Start folgen dem Modus (Issue #7)', () => {
     const f = [], merk = (() => { try { return localStorage.getItem(FAHR_MODUS_STORE); } catch (e) { return null; } })();
