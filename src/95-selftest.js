@@ -14986,7 +14986,8 @@
       if (rm && merkRm !== null) rm.value = merkRm;
     }
     // Tore: Oval mit n Sektoren (seit v1.6.56: 8) -> n-1 Sektortore + Start/Ziel.
-    const merkVF = { pts: VF.pts, nrm: VF.nrm, tiles: VF.tiles, frei: VF.frei, zielIdx: VF.zielIdx, x: VF.x, y: VF.y, z: VF.z, rundeAb: VF.rundeAb, hubTore: VF.hubTore };
+    const merkVF = { pts: VF.pts, nrm: VF.nrm, tiles: VF.tiles, frei: VF.frei, zielIdx: VF.zielIdx, x: VF.x, y: VF.y, z: VF.z, rundeAb: VF.rundeAb, hubTore: VF.hubTore,
+      zielAt: VF.zielAt, letzte: VF.letzte, beste: VF.beste, runden: VF.runden, splits: VF.splits, geist: VF.geist, modus: VF.modus };
     let mass = '';
     try {
       const tiles = codeToTrack(ST_SEK_OVAL).tiles;
@@ -15004,14 +15005,16 @@
       if (T.naechstes !== 1) f.push('Tor 1 nicht gezaehlt');
       durch(T.liste[1], VF_HUB_TOR_H + 20);
       if (T.naechstes !== 1) f.push('ueber Tor 2 hinweg gezaehlt');
-      VF.rundeAb = 1000;
+      // v1.6.58: die Runde zaehlt beim Flug durch das Start/Ziel-Tor selbst (nicht mehr an der Mittellinie).
+      VF.geist = null; VF.modus = 'practice'; VF.rundeAb = 1000; VF.beste = null;
       durch(T.liste[T.liste.length - 1], 10);
-      if (vfHubRundeErlaubt(rennZeitJetzt())) f.push('Runde ohne alle Tore erlaubt');
+      if (VF.rundeAb !== 1000) f.push('Runde ohne alle Tore gezaehlt');
       for (let k = 1; k < T.liste.length - 1; k++) durch(T.liste[k], 10);
+      if (T.naechstes !== T.liste.length - 1) f.push('nicht alle Tore gezaehlt: ' + T.naechstes);
       durch(T.liste[T.liste.length - 1], 10);
-      if (!vfHubRundeErlaubt(rennZeitJetzt())) f.push('Runde nach allen Toren nicht erlaubt');
-      vfHubRundeGezaehlt();
+      if (VF.rundeAb === 1000 || !VF.zielAt) f.push('Runde nach allen Toren nicht gezaehlt');
       if (T.naechstes !== 0) f.push('nach der Runde nicht zurueckgesetzt');
+      if (VF_HUB_TOR_H < 100) f.push('Tore zu niedrig: ' + VF_HUB_TOR_H);
       mass = T.liste.length + ' Tore (' + (T.liste.length - 1) + ' Sektoren + Start/Ziel)';
     } finally { Object.assign(VF, merkVF); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'nur im Training waehlbar; ' + mass + '; drueber fliegen zaehlt nicht; Runde erst nach allen Toren' };
@@ -15064,6 +15067,16 @@
     // Handbremse: 0,4 s bei 20 m/s mit halbem Einschlag dreht das Auto auf mindestens 25 Grad.
     { const b = lauf(20, (t) => ({ lenk: 0.5, gas: t > 0.4 ? 0.7 : 0, hand: t < 0.4 }), 1), x = b.find((q) => q[0] >= 0.6);
       mass.push('Handbremse ' + Math.abs(x[1]).toFixed(0) + ' Grad'); if (!(Math.abs(x[1]) >= 25)) f.push('Handbremse nur ' + x[1].toFixed(0) + ' Grad'); }
+    // v1.6.58 GEMELDET: nach 0,5 s Handbremse stoppte das Auto ploetzlich; nach einer Drehung ueber 90 Grad rollte es nicht
+    // rueckwaerts weiter. Jetzt: 1 s nach dem Loslassen rutscht es noch (> 5 m/s), rueckwaerts rollt es weiter.
+    { const z = { vx: 20, vy: 0, r: 0, w: 20, ax: 0 };
+      for (let t = 0; t < 1.5; t += 1 / 60) vfDriftSchritt(z, Object.assign({ mu: 1 }, H, { lenk: t < 0.5 ? 0.6 : 0, hand: t < 0.5 }), 1 / 60);
+      const sp = Math.hypot(z.vx, z.vy);
+      mass.push('nach Handbremse ' + sp.toFixed(1) + ' m/s');
+      if (!(sp > 5)) f.push('Handbremse haelt das Auto an: ' + sp.toFixed(1) + ' m/s'); }
+    { const z = { vx: -8, vy: 3, r: 0.5, w: 0, ax: 0 };
+      for (let t = 0; t < 0.6; t += 1 / 60) vfDriftSchritt(z, Object.assign({ mu: 1 }, { hilfe: 0, gyro: 0 }, { lenk: 0 }), 1 / 60);
+      if (!(z.vx < -2 && Math.hypot(z.vx, z.vy) > 3)) f.push('rollt nicht rueckwaerts weiter: vx ' + z.vx.toFixed(1)); }
     // Halbes Gas greift.
     { const b = lauf(20, () => ({ lenk: 0.3, gas: 0.4 }), 4); if (!(Math.abs(b[b.length - 1][1]) < 10)) f.push('halbes Gas driftet: ' + b[b.length - 1][1].toFixed(0)); }
     // Ohne Hilfe (Drift-Gyro Aus): reine Physik - Vollgas mit vollem Einschlag dreht ein.

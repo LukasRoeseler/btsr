@@ -6651,7 +6651,9 @@
       // v1.4.54: setupVerbrauch = Motorkennfeld aus dem Setup (98i-setup.js), sonst 1.
       // v1.5: Karriere-Upgrade Spritverbrauch (98l-karriere.js), ausserhalb der Karriere 1.
       fuel = Math.max(0, fuel - Math.abs(throttle) * dt * fuelDrainPerSec * zevVerbrauch[1] * (physEngine.state.setupVerbrauch || 1)
-        * (typeof karriereUpgrade === 'function' ? karriereUpgrade('sprit') : 1));
+        * (typeof karriereUpgrade === 'function' ? karriereUpgrade('sprit') : 1)
+        // v1.6.58 BESTELLT: im virtuellen Drift (X ist die Handbremse, kein Boxenstopp) kein Spritverbrauch.
+        * (typeof vfDriftOhneSprit === 'function' && vfDriftOhneSprit() ? 0 : 1));
       // Edge-triggered: without this it would rumble again on every 45ms heartbeat.
       if (fuelBefore > 0 && fuel <= 0) {
         padRumble(0.2, 0.12, 160, 'meldung');

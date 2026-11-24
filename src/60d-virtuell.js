@@ -1530,7 +1530,17 @@
         const bodyF = new Float32Array(bin, 8, bodyEcken * 6);
         const rotorF = new Float32Array(bin, 8 + bodyEcken * 24, rotorEcken * 6);
         if (!VF.aktiv || VF.gl !== gl) return;
-        VF.auto = vfPuffer(gl, bodyF);
+        // v1.6.58 GEMELDET: "Beim RC Heli dreht sich der Heckrotor nicht." Er steckt im Rumpf (hub.bin hat nur Rumpf und
+        // Hauptrotor). Seine Blaetter liegen seitlich am Heckende (Dreiecksmitte x > 0,17, z < -3,25, Modelleinheiten):
+        // die kommen in einen eigenen Puffer und drehen um die Querachse durch die Nabe (VF_HUB_HECK_NABE).
+        const rumpf = [], heck = [];
+        for (let i = 0; i < bodyF.length; i += 18) {
+          const cx = (bodyF[i] + bodyF[i + 6] + bodyF[i + 12]) / 3, cz = (bodyF[i + 2] + bodyF[i + 8] + bodyF[i + 14]) / 3;
+          const ziel = cx > 0.17 && cz < -3.25 ? heck : rumpf;
+          for (let k = 0; k < 18; k++) ziel.push(bodyF[i + k]);
+        }
+        VF.auto = vfPuffer(gl, heck.length ? rumpf : bodyF);
+        VF.hubHeck = heck.length ? vfPuffer(gl, heck) : null;
         VF.hubRotor = vfPuffer(gl, rotorF);
         VF.hubTrex = true;
       }).catch(() => { /* Kasten bleibt */ });
@@ -1825,7 +1835,11 @@
   // Einzelpunkte: bei hohem Tempo springt der Index mehrere Punkte je Bild.
   function vfBoxDurchfahrt(o, zus) {
     if (!VF.boxN) return;
-    const drin = zus > VF.boxMax * 0.3 && Math.abs(o.quer) > TRACK_HALF_W + zus * 0.5;
+    // v1.6.58 GEMELDET: "Der Pit Button funktioniert nicht ... sodass ich irgendwann einen leeren Tank habe". Der Service
+    // beginnt nur in der Bucht, und "in der Bucht" hiess: mehr als halb so tief drin wie die Bucht breit ist. Wer neben der
+    // Bucht am Fahrbahnrand hielt, bekam nur "In die Boxengasse fahren". Jetzt genuegt es, mit dem Auto in die Bucht zu
+    // ragen (ueber den Fahrbahnrand hinaus, auf Hoehe der Bucht).
+    const drin = zus > VF.boxMax * 0.3 && Math.abs(o.quer) > TRACK_HALF_W * 0.85;
     VF.inBox = drin;
     if (drin) { if (!VF.boxBesucht) VF.boxBesucht = { von: o.idx, bis: o.idx }; else VF.boxBesucht.bis = o.idx; return; }
     if (!VF.boxBesucht) return;
@@ -2391,11 +2405,13 @@
       const fzV = Math.max(300, fz0V - dFz), fzH = Math.max(300, fz0H + dFz);
       const mu = (e.mu === undefined ? 1 : e.mu) * P.mu;
       const DV = mu * fzV * (1 - P.lastEmpf * (fzV / fz0V - 1)), DH = mu * fzH * (1 - P.lastEmpf * (fzH / fz0H - 1));
-      // Vorn: rollt frei, bremst (am Reibkreis).
-      const aV = Math.atan((z.vy + P.a * z.r) / vxs) - d;
+      // Vorn: rollt frei, bremst (am Reibkreis). v1.6.58: Schraeglauf im Radsystem (vorwaerts wie rueckwaerts richtig):
+      // Laengs u und quer q der Radmitte im gelenkten Rad, Winkel atan(q / |u|).
+      const vyV = z.vy + P.a * z.r, uV = z.vx * Math.cos(d) + vyV * Math.sin(d), qV = -z.vx * Math.sin(d) + vyV * Math.cos(d);
+      const aV = Math.atan(qV / Math.max(Math.abs(uV), 2));
       let fyV = -DV * Math.sin(P.C * Math.atan(P.B * aV)), fxV = 0;
-      if (e.bremse > 0 && z.vx > 0.05) {
-        fxV = -Math.min(0.95 * DV, e.bremse * P.bremsG * P.m * g * P.bremsVorn);
+      if (e.bremse > 0 && Math.abs(uV) > 0.05) {
+        fxV = -Math.sign(uV) * Math.min(0.95 * DV, e.bremse * P.bremsG * P.m * g * P.bremsVorn);
         fyV *= Math.sqrt(Math.max(0, 1 - (fxV / DV) * (fxV / DV)));
       }
       // Hinten: kombinierter Schlupf.
@@ -2409,17 +2425,21 @@
       if (z.vx < 6 && kap > 0.25) antrieb *= Math.max(0.35, 1 - (kap - 0.25) * 2);
       z.w += h * (antrieb - fxH) / P.mRad;
       const bw = ((e.bremse || 0) * P.bremsG * P.m * g * (1 - P.bremsVorn) + (e.hand ? P.hand : 0)) * h / P.mRad;
-      z.w = z.w > bw ? z.w - bw : 0;
+      z.w = Math.abs(z.w) > bw ? z.w - Math.sign(z.w) * bw : 0;   // haelt das Rad an, in beide Richtungen
       // Aufbau.
       const cd = Math.cos(d), sd = Math.sin(d);
-      const fx = fxH + fxV * cd - fyV * sd - P.luft * z.vx * Math.abs(z.vx) - (z.vx > 0.05 ? P.roll * P.m * g : 0);
+      const fx = fxH + fxV * cd - fyV * sd - P.luft * z.vx * Math.abs(z.vx) - (Math.abs(z.vx) > 0.05 ? Math.sign(z.vx) * P.roll * P.m * g : 0);
       const fy = fyH + fyV * cd + fxV * sd;
       z.vx += h * (fx / P.m + z.vy * z.r);
       z.vy += h * (fy / P.m - z.vx * z.r);
       z.r += h * ((P.a * (fyV * cd + fxV * sd) - P.b * fyH) / P.Iz);
       z.ax = fx / P.m;
-      if (z.vx < 0) z.vx = 0;
-      if (z.vx < 0.3 && !(e.gas > 0)) { z.vy *= 0.9; z.r *= 0.9; }
+      // v1.6.58 GEMELDET: "Wenn ich ca. 0,5 s die Handbremse druecke, stoppt das Auto ploetzlich, sollte aber weitersliden.
+      // Ebenso, wenn ich ohne Gyro eine ~120-Grad-Drehung mache - das Auto sollte dann rueckwaerts weiterrollen/rutschen."
+      // Hier stand "vx < 0 -> 0" und "vx < 0,3 m/s -> quer und Gieren daempfen": quer zur Fahrt (vx ~ 0) hielt das
+      // das rutschende Auto an, und rueckwaerts gab es nicht. Jetzt rollt es in jede Richtung; zur Ruhe kommt es erst,
+      // wenn das ganze Tempo klein ist.
+      if (Math.hypot(z.vx, z.vy) < 0.3 && !(e.gas > 0)) { z.vx *= 0.9; z.vy *= 0.9; z.r *= 0.9; }
       z.r = Math.max(-6, Math.min(6, z.r));
       z.d = d; z.aV = aV; z.kap = kap;
       z.aH = (tA < 0 ? -1 : 1) * sl;
@@ -2427,6 +2447,8 @@
     }
     return z;
   }
+  // v1.6.58: im Drift braucht das virtuelle Auto keinen Sprit (kein Boxenstopp, X ist die Handbremse).
+  function vfDriftOhneSprit() { try { return !!(VF.aktiv && !VF.hubschrauber && vfHandling() === 'drift'); } catch (e) { return false; } }
   // v1.6.54: X (Tastatur, Gamepad-Taste fuer Box/Gelb) ist im Drift die Handbremse. true = verbraucht.
   function vfHandbremse(an) {
     if (!VF.aktiv || VF.hubschrauber || vfHandling() !== 'drift') { VF.handbremse = false; return false; }
@@ -2438,7 +2460,8 @@
   function vfDriftTeil(sdt, st, lenk) {
     const tf = VF.tempoFaktor || 1, zuReal = REAL_SCALE / 3.6;
     // Von aussen auf 0 gesetzt (Zuruecksetzen, Box, Unfall): das Modell beginnt neu.
-    if (VF.dp && st.speedKmh === 0 && VF.dpKmh > 0) VF.dp = null;
+    // v1.6.58: kein Neustart mehr, wenn der Tacho 0 zeigt (das blockierte Hinterrad zeigte 0 und hielt das Auto an);
+    // wer das Auto anhaelt (Zuruecksetzen, Derby), setzt VF.dp selbst zurueck.
     if (!VF.dp) { const v0 = Math.max(0, (st.speedKmh || 0) * tf * zuReal); VF.dp = { vx: v0, vy: 0, r: 0, w: v0, ax: 0, d: 0 }; }
     const z = VF.dp;
     const ty = typeof throttleY === 'number' ? throttleY : 0;
@@ -2452,13 +2475,15 @@
     VF.ax = z.ax; VF.ay = z.vx * z.r;
     VF.pitch = Math.max(-0.03, Math.min(0.03, -(VF.ax || 0) * 0.0018));
     VF.h += z.r * sdt * 180 / Math.PI;
-    const sp = Math.hypot(z.vx, z.vy), rich = VF.h * Math.PI / 180 + Math.atan2(z.vy, Math.max(0.1, z.vx));
+    const sp = Math.hypot(z.vx, z.vy), rich = VF.h * Math.PI / 180 + (sp > 0.05 ? Math.atan2(z.vy, z.vx) : 0);   // v1.6.58: auch rueckwaerts
     const vE = sp / REAL_SCALE * 100 * TRACK_UNITS_PER_CM;
     VF.x += Math.sin(rich) * vE * sdt;
     VF.y -= Math.cos(rich) * vE * sdt;
     // Tacho und Motorklang folgen dem Hinterrad (dreht es durch, steigt die Drehzahl); mit gezogener Handbremse
     // (Kupplung getreten) das Auto selbst.
-    st.speedKmh = (VF.handbremse ? z.vx : z.w) / zuReal / tf;
+    // v1.6.58: Tacho und Drehzahl = das Groessere aus Hinterrad und Tempo ueber Grund (rutscht das Auto quer oder rueckwaerts
+    // bei stehendem Rad, zeigt er trotzdem die Fahrt; dreht das Rad durch, steigt die Drehzahl).
+    st.speedKmh = Math.max(Math.abs(z.w), sp) / zuReal / tf;
     VF.dpKmh = st.speedKmh;
     if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
     VF.dyn.vy = z.vy; VF.dyn.r = z.r; VF.dyn.aH = z.aH; VF.dyn.aV = z.aV; VF.dyn.nutzung = z.nutzung;
@@ -3083,10 +3108,9 @@
     const genugWeg = VF.rundeAb ? VF.fort > VF.pts.length * 0.75 : VF.fort >= 0;
     if (ueber < 0) VF.zielRueck = (VF.zielRueck || 0) + 1;          // rueckwaerts ueber die Linie: die naechste zaehlt nicht
     else if (ueber > 0 && VF.zielRueck) VF.zielRueck--;
-    else if (ueber > 0 && !VF.abseits && genugWeg && (!VF.hubschrauber || vfHubRundeErlaubt(jetzt))) {
+    else if (ueber > 0 && !VF.abseits && genugWeg && !VF.hubschrauber) {   // der Heli zaehlt an den Toren (vfHubToreSchritt)
       VF.zielAt = jetzt;
       VF.fort = 0;
-      if (VF.hubschrauber) vfHubRundeGezaehlt();
       vfRundeAnLinie(jetzt);
     }
     const b = new Uint8Array(19);
@@ -3405,10 +3429,11 @@
       VF.pitch = (VF.pitch || 0) + F.angPitch * dt;
       VF.roll = (VF.roll || 0) + F.angRoll * dt;
     }
-    // Am Boden legt er sich flach (wie das Vorbild: euler.x/z werden gedämpft).
+    // Am Boden steht er flach auf den Kufen. v1.6.58 GEMELDET: "ich kann ihn neigen, waehrend er auf dem Boden steht" -
+    // bisher nur gedaempft (der Gyro zog ihn schneller zum Stick, als der Boden ihn aufrichtete). Jetzt: am Boden keine
+    // Schraeglage und keine Drehrate; geneigt wird erst in der Luft.
     if (!inLuft) {
-      VF.pitch = (VF.pitch || 0) * Math.max(0, 1 - dt * 5);
-      VF.roll = (VF.roll || 0) * Math.max(0, 1 - dt * 5);
+      VF.pitch = 0; VF.roll = 0; F.angPitch = 0; F.angRoll = 0;
     }
 
     // --- Drehen (yaw): die Nase dreht weich zur Eingabe (Grad/s).
@@ -3456,6 +3481,7 @@
 
     // --- Rotor-Optik & Werte fuer den Ton.
     VF.rotor = ((VF.rotor || 0) + (F.rpm || 0) * VF_HUB_ROTOR_DREH * dt) % (Math.PI * 2);
+    VF.heckRotor = ((VF.heckRotor || 0) + (F.rpm || 0) * VF_HUB_ROTOR_DREH * 4.6 * dt) % (Math.PI * 2);   // Heckrotor ~4,6-mal schneller
     VF.hubLast = Math.abs(coll) + Math.hypot(pitch, roll) * 0.45;
     VF.hubSpeed = Math.hypot(F.vx || 0, F.vy || 0);
   }
@@ -3647,7 +3673,19 @@
   // jenseits des Randsteins, VF_HUB_TOR_H hoch. Durchflogen = die Strecke vom letzten zum jetzigen Flugort schneidet die
   // Linie zwischen den Stangen, unterhalb der Spitze. Die Runde (vfPaket) zaehlt beim Heli nur, wenn er eben durch das
   // Start/Ziel-Tor geflogen ist und vorher alle anderen Tore der Reihe nach (die erste Ueberfahrt startet nur die Uhr).
-  const VF_HUB_TOR_H = 40, VF_HUB_TOR_B = 0.9;
+  // v1.6.58 BESTELLT: "mach sie hoeher und spiele ein 'bling' ab, wenn ich durch eins geflogen bin" - 100 statt 40.
+  const VF_HUB_TOR_H = 100, VF_HUB_TOR_B = 0.9;
+  const VF_HUB_HECK_NABE = [0.815, -3.36];   // Heckrotor-Nabe: Hoehe y und Laenge z im Modell (hub.bin)
+  function vfHubBling(hoch) {
+    if (typeof playTone !== 'function') return;
+    playTone(hoch ? 1760 : 1320, 0.07, 'sine', 0.16);
+    setTimeout(() => playTone(hoch ? 2637 : 1976, 0.12, 'sine', 0.13), 70);
+  }
+  // In Fahrtrichtung durch das Tor? (Flugrichtung gegen die Richtung der Mittellinie an diesem Punkt)
+  function vfHubVorwaerts(g, a, b) {
+    const n = VF.pts.length, p = VF.pts[g.i], q = VF.pts[(g.i + 1) % n];
+    return (b[0] - a[0]) * (q.x - p.x) + (b[1] - a[1]) * (q.y - p.y) > 0;
+  }
   function vfHubToreBauen() {
     const pts = VF.pts, nrm = VF.nrm, n = pts.length;
     let idx = [];
@@ -3677,12 +3715,27 @@
     if (!T) return;
     const a = [vorX, vorY], b = [VF.x, VF.y], hoch = (VF.z || 0) <= VF_HUB_TOR_H;
     const sf = T.liste[T.liste.length - 1];
-    if (hoch && vfStreckenSchnitt(a, b, sf.l, sf.r)) T.sfAt = rennZeitJetzt();
     const g = T.liste[T.naechstes];
     if (g && !g.sf && hoch && vfStreckenSchnitt(a, b, g.l, g.r)) {
       T.naechstes++;
       VF.hubTorPuffer = null;   // neu zeichnen: durchflogene Tore werden gruen
       showHudToast(t('Tor') + ' ' + T.naechstes + '/' + (T.liste.length - 1));
+      vfHubBling(false);
+    }
+    // v1.6.58 GEMELDET: "die Rundenzaehlung funktioniert nicht so gut, wenn ich durch die Tore geflogen bin". Die Runde
+    // kam bisher aus der Linie der Mittellinie (vfPaket, Punkt-Index) und zaehlte nur, wenn das Start/Ziel-Tor in den
+    // 1,5 s davor durchflogen war; ueber dem Innenfeld springt der naechste Mittellinienpunkt, und eine scheinbar
+    // rueckwaerts ueberflogene Linie sperrte die naechste Runde. Jetzt zaehlt die Runde genau beim Flug durch das
+    // Start/Ziel-Tor (vorwaerts), wenn vorher alle Tore der Reihe nach durchflogen sind; der erste Durchflug startet die Uhr.
+    if (hoch && vfStreckenSchnitt(a, b, sf.l, sf.r) && vfHubVorwaerts(sf, a, b)) {
+      const jetzt = rennZeitJetzt();
+      T.sfAt = jetzt;
+      if (vfHubRundeErlaubt(jetzt)) {
+        VF.zielAt = jetzt;
+        vfHubRundeGezaehlt();
+        vfRundeAnLinie(jetzt);
+        vfHubBling(true);
+      } else if (VF.rundeAb) showHudToast(t('Tor') + ' ' + (T.naechstes + 1) + ' ' + t('fehlt'));
     }
   }
   // Fuer vfPaket: darf diese Ueberfahrt der Linie eine Runde sein?
@@ -4119,7 +4172,7 @@
       padRumble(0.6, 0.6, 60, 'kill', 1);
     } else if (VF.derbyHealth <= 0 && !VF.derbyTot) {
       VF.derbyTot = true;
-      physEngine.state.speedKmh = 0;
+      physEngine.state.speedKmh = 0; VF.dp = null;
       showHudToast(t('Dein Auto ist aus'));
     }
     vfDerbyPruefen();
@@ -4312,6 +4365,8 @@
       const welt = vfHubLage(VF.x, VF.y, VF.h, VF.z || 0, VF.roll || 0, VF.pitch || 0);
       zeichne(VF.auto, welt);
       if (VF.hubRotor) zeichne(VF.hubRotor, vfMal(welt, vfRy(VF.rotor || 0)));
+      if (VF.hubHeck) zeichne(VF.hubHeck, vfKette(welt, vfT(0, VF_HUB_HECK_NABE[0], VF_HUB_HECK_NABE[1]), vfRx(VF.heckRotor || 0),
+        vfT(0, -VF_HUB_HECK_NABE[0], -VF_HUB_HECK_NABE[1])));
       if (VF.hubTore) { if (!VF.hubTorPuffer) VF.hubTorPuffer = vfHubTorPufferBauen(gl); zeichne(VF.hubTorPuffer, vfT(0, 0, 0)); }
       gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
     } else if (VF.modell && VF.tprog) vfModellMalen(gl, pv, blick, k.auge);
@@ -6037,7 +6092,10 @@
       else if (b.dataset.vf === 'touch') vfTouchUmschalten();
       else if (b.dataset.vf === 'box') {
         if (VF.modus === 'derby') showHudToast(t('Derby: kein Boxenstopp'));
-        else if (typeof requestPitStop === 'function') { requestPitStop(); if (typeof pitState !== 'undefined' && pitState === 'limited') showHudToast(t('Boxenstopp: anhalten')); }
+        else if (typeof requestPitStop === 'function') {
+          requestPitStop();
+          if (typeof pitState !== 'undefined' && pitState === 'limited') showHudToast(VF.boxN ? t('Boxenstopp: in der Boxenbucht anhalten') : t('Boxenstopp: anhalten'));
+        }
       }
       else if (b.dataset.vf === 'flag') {
         if (typeof flagState !== 'undefined' && flagState === 'green') { if (typeof setFlag === 'function') setFlag('yellow'); }
