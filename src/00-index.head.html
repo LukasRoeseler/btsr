@@ -4181,6 +4181,14 @@
   .vf-touch-heli .vf-touch-hinweis { position: absolute; left: 0; right: 0; top: -1.6em; text-align: center; }
   .vf-touch.vf-touch-heli-an .vf-touch-lenk, .vf-touch.vf-touch-heli-an .vf-touch-gas { display: none; }
   .vf-touch.vf-touch-heli-an .vf-touch-heli { display: block; }
+  /* v1.6.54: Handbremse im Drift, links neben dem Gaspedal. */
+  .vf-touch-hb { display: none; position: absolute; bottom: max(12px, env(safe-area-inset-bottom));
+    right: calc(max(12px, env(safe-area-inset-right)) + min(20vw, 26vh, 120px) + 12px);
+    width: min(18vw, 22vh, 96px); height: min(18vw, 22vh, 96px); border-radius: 50%; pointer-events: auto; touch-action: none;
+    background: rgba(8,10,14,.5); border: 2px solid var(--vf-linie); color: var(--vf-dim); font-weight: 700;
+    font-size: calc(var(--vf-s) * .48); text-transform: uppercase; letter-spacing: .06em; }
+  .vf-touch.vf-touch-drift .vf-touch-hb { display: block; }
+  .vf-touch-hb.vf-an { background: var(--vf-linie); color: var(--k-blau-text, #04070c); }
   .vf-touch-lenk { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom));
     width: min(34vw, 38vh, 190px); height: min(34vw, 38vh, 190px); border-radius: 50%;
     background: rgba(8,10,14,.5); border: 2px solid var(--vf-linie); touch-action: none; pointer-events: auto;
@@ -7388,6 +7396,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuelles Fahren, Prototyp zum Testen: Das Fahrgef&#252;hl Drift ist neu und physikbasiert (WIP). Eigenes Fahrzeugmodell (Hecktriebler): durchdrehende Hinterr&#228;der mit kombiniertem Schlupf, Gewichtsverlagerung, Luft- und Rollwiderstand; mehr Gas = mehr Driftwinkel. X ist im Drift die Handbremse (Tastatur, Gamepad, am Handy ein Knopf links neben dem Gaspedal). Optionen &gt; Virtuell &gt; Drift-Gyro stellt die Gegenlenk-Hilfe ein (wie der Gyro eines RC-Driftautos), Aus = reine Physik.</li>
         <li>Virtuelles Fahren: Reifenwahl in der virtuellen Garage (weich, mittel, hart, Regen), dieselben Mischungen wie beim echten Fahren, damit du im Regen auf Regenreifen fahren kannst. Neue Option &#8222;Rauch-Aufl&#246;sung&#8220; unter Optionen &gt; Virtuell (Automatisch: wie bisher in Performance, etwas feiner in Quality; von Hand bis 8&#215;). Der Ladebalken sitzt jetzt unten links statt mitten &#252;ber der Strecke. Die Motorhaubenkamera des Audi RS5 DTM sitzt weiter vorn, der Scheibenwischer ist nicht mehr im Bild.</li>
         <li>Men&#252;s: Wisch-Animationen beim Wechsel der Seiten (vom Startbildschirm zu FAHREN, zwischen den Reitern je nach Richtung) und beim &#214;ffnen und Schlie&#223;en der Unterseiten; nicht ins Cockpit, und aus, wenn das Ger&#228;t reduzierte Bewegung w&#252;nscht.</li>
         <li>Virtuell fahren, Grafikmodus Performance fl&#252;ssiger: leichte Modellfassungen f&#252;r den Audi RS5 DTM und den K&#228;fer (gut halb so viele Dreiecke, Werkzeug tools/modell_perf.py nach Gnen54), der Geist ist in Performance eine einfache Kiste statt eines zweiten vollen Modells, das verdeckte Cockpit unter der virtuellen Fahrt zeichnet seltener und das Regenradar gar nicht.</li>

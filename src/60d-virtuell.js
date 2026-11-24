@@ -2346,11 +2346,131 @@
   const VF_DRIFT_GYRO_STORE = 'omegasim-vf-drift-gyro';
   const VF_DRIFT_GYRO_WERTE = [0, 0.5, 0.75, 1, 1.25, 1.5, 2];
   function vfDriftGyro() { try { const v = +localStorage.getItem(VF_DRIFT_GYRO_STORE); return VF_DRIFT_GYRO_WERTE.indexOf(v) >= 0 && localStorage.getItem(VF_DRIFT_GYRO_STORE) !== null ? v : 1; } catch (e) { return 1; } }
-  const VF_DRIFT_PROFIL = (P) => ({ muV: P.muV * 0.55, muH: P.muH * 0.6, BV: (P.BV || 9) * 0.7, BH: (P.BH || 11) * 0.5, C: 1.15,
-    lenkGrad: 35, yawDamp: 0.5, tc: 1.0, kV: 0, kH: 0, lastEmpf: 0.05, gyro: 0.15, gyroV: 10, driftGrenze: 25, Iz: (P.Iz || 2300) * 0.25,
-    // v1.6.37: Gleiten ohne Gas (Pruefstand: Drift bei 12-30 m/s nach dem Gaswegnehmen 1 s spaeter noch 33-40 Grad, nach
-    // 2 s wieder gerade; Einsetzen und Vollgas-Drift unveraendert 0,25 s / 29 Grad).
-    griffTau: 1.5, gleitOhneGas: 0.74, gyro: 0.15 * vfDriftGyro() });
+  // ---- v1.6.54 DRIFT MIT PHYSIK -------------------------------------------------------------------------
+  // BESTELLT: "Virtueller Drift Modus: der aktuelle Modus ist schrott. Baue einen neuen Modus ein, er soll moeglichst
+  // physik-basiert sein, oder sich so anfuehlen. Im Physik-Modus gibt es keinen Boxenstopp, darum darf X die Handbremse
+  // sein. Referenzgefuehl: BeamNG mit Drift-Autos, DR!FT Sturmkind, Dirt Rally 1.0".
+  // Bis 1.6.53 war Drift das GT3-Einspurmodell mit gestutztem Hinterachsgriff, einer Winkelgrenze und Zeitkonstanten:
+  // der Drift kam aus Regeln, nicht aus der Physik. Jetzt ein eigenes Fahrzeugmodell (Hecktriebler, 1250 kg) mit
+  // eigenem Laengstempo:
+  //   - Zustand vx, vy, r (Aufbau) und w (Umfangsgeschwindigkeit der Hinterraeder samt Motortraegheit, mRad).
+  //   - Hinterachse mit kombiniertem Schlupf (Pacejka ueber Laengs- und Schraeglauf zusammen): dreht das Rad durch,
+  //     bleibt weniger Seitenfuehrung, das Heck kommt. Mehr Gas = mehr Schlupf = mehr Winkel.
+  //   - Antrieb: Leistung/Tempo, gedeckelt (fMax); Radlast mit Laengsverlagerung (Gas belastet hinten).
+  //   - Bremse vorn/hinten am Reibkreis; die Handbremse (X) blockiert die Hinterraeder.
+  //   - Luftwiderstand und Rollwiderstand; das Tempo der App (HUD, Motorklang) folgt dem Hinterrad.
+  // Ein Drift ist ein instabiles Gleichgewicht: ohne staendiges Gegenlenken dreht das Auto ein oder faengt sich. Mit
+  // dem Gamepad ist das kaum zu halten; echte RC-Driftautos (auch DR!FT) haben deshalb einen Gyro. Die Hilfe (Optionen >
+  // Virtuell > Drift-Gyro, Faktor f) lenkt um f*1,6 mal den Schraeglaufwinkel der Vorderachse mit (der Stick lenkt dann
+  // relativ zur Fahrtrichtung, Mitte = Raeder in Fahrtrichtung) und um f*0,6 gegen die Gierrate. Bei f = 0 ist es reine
+  // Physik (fuer Lenkraeder). Waehrend die Handbremse zieht, wirkt die Hilfe nur zu 30 %, damit das Auto eindreht.
+  // Pruefstand (Node, je 1/60 s): voller Einschlag + Vollgas ab 8-25 m/s: 15 Grad nach 0,6 s; danach Stick 0,3 / 0,6 / 1
+  // bei Vollgas: Drift bei 5 / 30 / 54 Grad, kein Dreher in 8 s; Handbremse 0,4 s bei 20 m/s: 36 Grad; halbes Gas greift;
+  // Vollbremsung 30 -> 0 m/s in 3,3 s; 5 -> 30 m/s in 5,2 s. Ohne Hilfe dreht Vollgas mit Einschlag das Auto ein.
+  const VF_DRIFT_AUTO = { m: 1250, Iz: 1500, a: 1.2, b: 1.35, h: 0.5, mu: 1.05, B: 9.5, C: 1.5, lastEmpf: 0.1,
+    lenkGrad: 50, leistung: 220000, fMax: 8200, mRad: 110, bremsG: 1.0, bremsVorn: 0.65, hand: 9000, luft: 0.55, roll: 0.012 };
+  const VF_DRIFT_HILFE = 1.6, VF_DRIFT_GYRO_R = 0.6;
+  function vfDriftHilfe() { const f = vfDriftGyro(); return { hilfe: VF_DRIFT_HILFE * f, gyro: VF_DRIFT_GYRO_R * f }; }
+  // Fuer alles, was VF.P liest (Raddarstellung, Quietschen, Kamera): Geometrie und Reifen des Driftautos.
+  const VF_DRIFT_PROFIL = (P) => ({ m: VF_DRIFT_AUTO.m, Iz: VF_DRIFT_AUTO.Iz, a: VF_DRIFT_AUTO.a, b: VF_DRIFT_AUTO.b, h: VF_DRIFT_AUTO.h,
+    muV: VF_DRIFT_AUTO.mu, muH: VF_DRIFT_AUTO.mu, BV: VF_DRIFT_AUTO.B, BH: VF_DRIFT_AUTO.B, C: VF_DRIFT_AUTO.C, lenkGrad: VF_DRIFT_AUTO.lenkGrad,
+    kV: 0, kH: 0, lastEmpf: VF_DRIFT_AUTO.lastEmpf, yawDamp: 0, tc: 1, abs: 1, bremsVorn: VF_DRIFT_AUTO.bremsVorn, antriebMax: (P && P.antriebMax) || 7 });
+  // Ein Schritt (dt in s, intern 2 ms). z: { vx, vy, r, w, ax } in echten m/s, rad/s. e: { lenk -1..1, gas 0..1,
+  // bremse 0..1, hand (bool), hilfe, gyro, mu (Griff-Faktor) }. Schreibt z.d (Einschlag rad), z.aH, z.aV, z.kap, z.nutzung.
+  function vfDriftSchritt(z, e, dt, P) {
+    P = P || VF_DRIFT_AUTO;
+    const g = 9.81, L = P.a + P.b, n = Math.max(1, Math.ceil(dt / 0.002)), h = dt / n, lmax = P.lenkGrad * Math.PI / 180;
+    const spitze = Math.tan(Math.PI / (2 * P.C)) / P.B;
+    for (let i = 0; i < n; i++) {
+      const vxs = Math.max(Math.abs(z.vx), 2);
+      const betaV = Math.atan((z.vy + P.a * z.r) / vxs);
+      const hk = e.hand ? 0.3 : 1;
+      const d = Math.max(-lmax, Math.min(lmax, (e.lenk || 0) * lmax + hk * ((e.hilfe || 0) * betaV - (e.gyro || 0) * z.r)));
+      const dFz = P.m * Math.max(-12, Math.min(8, z.ax || 0)) * P.h / L;
+      const fz0V = P.m * g * P.b / L, fz0H = P.m * g * P.a / L;
+      const fzV = Math.max(300, fz0V - dFz), fzH = Math.max(300, fz0H + dFz);
+      const mu = (e.mu === undefined ? 1 : e.mu) * P.mu;
+      const DV = mu * fzV * (1 - P.lastEmpf * (fzV / fz0V - 1)), DH = mu * fzH * (1 - P.lastEmpf * (fzH / fz0H - 1));
+      // Vorn: rollt frei, bremst (am Reibkreis).
+      const aV = Math.atan((z.vy + P.a * z.r) / vxs) - d;
+      let fyV = -DV * Math.sin(P.C * Math.atan(P.B * aV)), fxV = 0;
+      if (e.bremse > 0 && z.vx > 0.05) {
+        fxV = -Math.min(0.95 * DV, e.bremse * P.bremsG * P.m * g * P.bremsVorn);
+        fyV *= Math.sqrt(Math.max(0, 1 - (fxV / DV) * (fxV / DV)));
+      }
+      // Hinten: kombinierter Schlupf.
+      const kap = (z.w - z.vx) / vxs, tA = (z.vy - P.b * z.r) / vxs, sl = Math.hypot(kap, tA);
+      const F = DH * Math.sin(P.C * Math.atan(P.B * sl));
+      const fxH = sl > 1e-9 ? F * kap / sl : 0, fyH = sl > 1e-9 ? -F * tA / sl : 0;
+      // Hinterrad samt Motor: Antrieb gegen Reifenkraft; Bremse und Handbremse halten es hoechstens an (blockieren).
+      let antrieb = (e.gas || 0) * Math.min(P.fMax, P.leistung / Math.max(z.w, 4));
+      // Anfahrhilfe: unter 6 m/s nimmt sie bei viel Schlupf Gas weg (wie ein Fahrer, der beim Anfahren dosiert),
+      // sonst stuende das Auto mit Vollgas zwei Sekunden lang qualmend auf der Stelle. 0 -> 10 m/s in 1,9 s.
+      if (z.vx < 6 && kap > 0.25) antrieb *= Math.max(0.35, 1 - (kap - 0.25) * 2);
+      z.w += h * (antrieb - fxH) / P.mRad;
+      const bw = ((e.bremse || 0) * P.bremsG * P.m * g * (1 - P.bremsVorn) + (e.hand ? P.hand : 0)) * h / P.mRad;
+      z.w = z.w > bw ? z.w - bw : 0;
+      // Aufbau.
+      const cd = Math.cos(d), sd = Math.sin(d);
+      const fx = fxH + fxV * cd - fyV * sd - P.luft * z.vx * Math.abs(z.vx) - (z.vx > 0.05 ? P.roll * P.m * g : 0);
+      const fy = fyH + fyV * cd + fxV * sd;
+      z.vx += h * (fx / P.m + z.vy * z.r);
+      z.vy += h * (fy / P.m - z.vx * z.r);
+      z.r += h * ((P.a * (fyV * cd + fxV * sd) - P.b * fyH) / P.Iz);
+      z.ax = fx / P.m;
+      if (z.vx < 0) z.vx = 0;
+      if (z.vx < 0.3 && !(e.gas > 0)) { z.vy *= 0.9; z.r *= 0.9; }
+      z.r = Math.max(-6, Math.min(6, z.r));
+      z.d = d; z.aV = aV; z.kap = kap;
+      z.aH = (tA < 0 ? -1 : 1) * sl;
+      z.nutzung = Math.max(Math.abs(aV) / spitze, sl / spitze);
+    }
+    return z;
+  }
+  // v1.6.54: X (Tastatur, Gamepad-Taste fuer Box/Gelb) ist im Drift die Handbremse. true = verbraucht.
+  function vfHandbremse(an) {
+    if (!VF.aktiv || VF.hubschrauber || vfHandling() !== 'drift') { VF.handbremse = false; return false; }
+    VF.handbremse = !!an;
+    return true;
+  }
+  window.addEventListener('blur', () => { try { VF.handbremse = false; } catch (e) { /* egal */ } });
+  // Ein Teilschritt der virtuellen Fahrt im Drift: Eingaben lesen, Modell rechnen, Lage und Anzeige fortschreiben.
+  function vfDriftTeil(sdt, st, lenk) {
+    const tf = VF.tempoFaktor || 1, zuReal = REAL_SCALE / 3.6;
+    // Von aussen auf 0 gesetzt (Zuruecksetzen, Box, Unfall): das Modell beginnt neu.
+    if (VF.dp && st.speedKmh === 0 && VF.dpKmh > 0) VF.dp = null;
+    if (!VF.dp) { const v0 = Math.max(0, (st.speedKmh || 0) * tf * zuReal); VF.dp = { vx: v0, vy: 0, r: 0, w: v0, ax: 0, d: 0 }; }
+    const z = VF.dp;
+    const ty = typeof throttleY === 'number' ? throttleY : 0;
+    let gas = Math.max(0, ty), bremse = Math.max(0, -ty);
+    try { gas = gasKennlinie(gas, physEngine.config.throttleGamma); bremse = gasKennlinie(bremse, physEngine.config.brakeGamma); } catch (e) { /* roh */ }
+    try { if (typeof fuelDamageDerate === 'function' && typeof fuelCut !== 'undefined') gas = fuelDamageDerate(gas, fuelCut); } catch (e) { /* egal */ }
+    if (VF.abseits && typeof OFFTRACK_GAS === 'number') gas = Math.min(gas, OFFTRACK_GAS);
+    const hh = vfDriftHilfe();
+    const mu = (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1);
+    vfDriftSchritt(z, { lenk, gas, bremse, hand: !!VF.handbremse, hilfe: hh.hilfe, gyro: hh.gyro, mu }, sdt, VF_DRIFT_AUTO);
+    VF.ax = z.ax; VF.ay = z.vx * z.r;
+    VF.pitch = Math.max(-0.03, Math.min(0.03, -(VF.ax || 0) * 0.0018));
+    VF.h += z.r * sdt * 180 / Math.PI;
+    const sp = Math.hypot(z.vx, z.vy), rich = VF.h * Math.PI / 180 + Math.atan2(z.vy, Math.max(0.1, z.vx));
+    const vE = sp / REAL_SCALE * 100 * TRACK_UNITS_PER_CM;
+    VF.x += Math.sin(rich) * vE * sdt;
+    VF.y -= Math.cos(rich) * vE * sdt;
+    // Tacho und Motorklang folgen dem Hinterrad (dreht es durch, steigt die Drehzahl); mit gezogener Handbremse
+    // (Kupplung getreten) das Auto selbst.
+    st.speedKmh = (VF.handbremse ? z.vx : z.w) / zuReal / tf;
+    VF.dpKmh = st.speedKmh;
+    if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
+    VF.dyn.vy = z.vy; VF.dyn.r = z.r; VF.dyn.aH = z.aH; VF.dyn.aV = z.aV; VF.dyn.nutzung = z.nutzung;
+    vfRauchSchritt(sdt, sp, true);
+  }
+  // Stoesse von aussen (Wand, Auto) wirken auch auf das Drift-Modell: Faktor aufs Tempo, Zusatz auf vy und r.
+  function vfDriftExtern(faktor, dvy, dr) {
+    const z = VF.dp;
+    if (!z) return;
+    const k = Math.max(0, faktor);
+    z.vx *= k; z.vy = z.vy * k + (dvy || 0); z.w *= k; z.r += dr || 0;
+  }
   // ---- DRIFT-RAUCH (v1.6.27, WIP) ----
   // BESTELLT: "low-poly smoke einfuegen, der ganz am Anfang nur leicht ist und dann mehr wird, wenn die Reifen heisser
   // werden." Rutscht die Hinterachse (Schraeglauf hinten > 0,12 rad, ab 3 m/s), steigen an beiden Hinterraedern Wolken
@@ -3112,16 +3232,20 @@
     // (= traege). Jetzt direkt der Stick (steerX), voller Einschlag in 0,12 s, bei hohem Tempo etwas
     // weniger Einschlag wie ein Spiel-Lenkfilter; den Rest erledigt das Reifenmodell.
     const vVollL = Math.abs(kmh) * REAL_SCALE / 3.6;
-    const lenkZiel = Math.max(-1, Math.min(1, typeof steerX === 'number' ? steerX : 0)) / (1 + (vVollL / 55) * (vVollL / 55));
+    // v1.6.54: im Drift voller Einschlag bei jedem Tempo (Gegenlenken braucht ihn) und etwas schneller.
+    const lenkZiel = Math.max(-1, Math.min(1, typeof steerX === 'number' ? steerX : 0)) / (hand === 'drift' ? 1 : (1 + (vVollL / 55) * (vVollL / 55)));
     // v1.5.101 (H1, nur LibreCorsa): Lenkhilfe fuer Gamepad und Tastatur, siehe vfLenkHilfe.
     const hilfe = hand === 'librecorsa' && Math.abs(kmh) > 0;
     if (hilfe) VF.lenkIst = vfLenkHilfe(lenkZiel, sdt, Math.max(0, kmh * REAL_SCALE / 3.6));
     else {
-      const schritt = sdt / 0.09;
+      const schritt = sdt / (hand === 'drift' ? 0.07 : 0.09);
       VF.lenkIst = (VF.lenkIst || 0) + Math.max(-schritt, Math.min(schritt, lenkZiel - (VF.lenkIst || 0)));
     }
     const lenk = VF.lenkIst;
-    if (kmh < 0) {
+    const driftPhysik = hand === 'drift' && kmh >= 0 && st.driveMode !== 'reverse';
+    if (!driftPhysik) VF.dp = null;
+    if (driftPhysik) vfDriftTeil(sdt, st, lenk);
+    else if (kmh < 0) {
       // Rueckwaerts (Rangieren): rein kinematisch wie bisher.
       const neu = vfSchritt(VF, kmh, lenk, sdt, physEngine.config.gripScale);
       VF.x = neu.x; VF.y = neu.y; VF.h = neu.h;
@@ -3157,10 +3281,11 @@
       const rich = VF.h * Math.PI / 180 + beta;
       VF.x += Math.sin(rich) * vE * sdt;
       VF.y -= Math.cos(rich) * vE * sdt;
-      vfRauchSchritt(sdt, vVoll, hand === 'drift');
+      vfRauchSchritt(sdt, vVoll, false);
     }
     // Raeder drehen mit dem Weg, Federung folgt Laengs- und Querbeschleunigung (neben der Bahn ruettelt es).
-    const wegE = kmh / 3.6 * 100 * TRACK_UNITS_PER_CM * sdt;
+    // v1.6.54: im Drift mit dem Hinterrad (dreht es durch, drehen die Raeder sichtbar schneller).
+    const wegE = (VF.dp ? VF.dp.w / REAL_SCALE * 3.6 : kmh) / 3.6 * 100 * TRACK_UNITS_PER_CM * sdt;
     VF.raddreh = ((VF.raddreh || 0) + wegE / (VF_AUTO.L / 4.64 * 0.335)) % (Math.PI * 2);
     if (VF.modell) {
       if (!VF.feder) VF.feder = { z: 0, vz: 0, th: 0, vth: 0, ph: 0, vph: 0 };
@@ -3703,6 +3828,8 @@
       const spHw = Math.tan(Math.PI / (2 * (Pw.C || 1.5))) / (Pw.BH || 10);
       if (VF.dyn && Math.abs(VF.dyn.aH || 0) > spHw) VF.lenkWinkel = Math.max(-1, Math.min(1, lenk)) * lenkGradW;
     }
+    // v1.6.54: im Drift zeigen die Vorderraeder den gerechneten Einschlag (Stick plus Gegenlenk-Hilfe).
+    if (VF.dp && kmh > 0) VF.lenkWinkel = VF.dp.d || 0;
     // v1.5.155: Reifenausnutzung fuer das Quietschen (siehe vfDynamik). In der virtuellen Fahrt
     // treibt der echte Schraeglauf das Quietschen ueber physEngine.state.vfNutzung; der
     // Eingabe-basierte latUse des Einspurmodells faengt Unter-/Uebersteuern nicht.
@@ -3727,9 +3854,11 @@
           VF.wandSeit = rennZeitJetzt(); padRumble(0.6, 0.4, 90, 'kerb', 1);
         }
         st.speedKmh *= Math.exp(-2.5 * dt);
+        vfDriftExtern(Math.exp(-2.5 * dt), 0, 0);
       }
     }
     if (Hb.p) st.speedKmh -= 9.81 * Math.sin(Hb.p) * 3.6 * dt / REAL_SCALE;
+    if (Hb.p && VF.dp) VF.dp.vx = Math.max(0, VF.dp.vx - 9.81 * Math.sin(Hb.p) * dt);
     // v1.5.84: in der Boxenbucht ist die Fahrbahn auf der Boxenseite breiter. VF.boxSeite ist die Boxenseite in
     // Fahrtrichtung (in der Gegenrichtung die andere Seite der Mittellinie).
     const bucht = (VF.boxBucht && o.quer * (VF.boxSeite || VF_BOX_SEITE) > 0) ? VF.boxBucht.b[o.idx] : 0;
@@ -3952,9 +4081,12 @@
       if (neuerKontakt && physEngine.state.speedKmh > 0) {
         const st = vfStossRechnen(physEngine.state.speedKmh, VF.h, npc.kmh || 0, npc.h, k.nx, k.ny, long > 0);
         if (st.vnMs > 0) {
+          const kmhAlt = physEngine.state.speedKmh;
           physEngine.state.speedKmh = Math.max(0, st.kmhNeu);
           if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
           VF.dyn.vy += st.dvy; VF.dyn.r += st.dr;
+          vfDriftExtern(kmhAlt > 0 ? Math.max(0, st.kmhNeu) / kmhAlt : 1, st.dvy, st.dr);
+          if (VF.dp) VF.dpKmh = physEngine.state.speedKmh;
           if (npc.motor && npc.motor.state) npc.motor.state.speedKmh = Math.max(0, (npc.motor.state.speedKmh || 0) * (1 - Math.min(0.3, st.vnMs * 0.012)));
           padRumble(Math.min(1, 0.2 + st.vnMs * 0.03), Math.min(1, 0.2 + st.vnMs * 0.03), 40, 'crash', 1);
           npc.stossMs = st.vnMs;
@@ -4024,6 +4156,7 @@
     physEngine.state.speedKmh = 0;
     VF.abseits = false;
     VF.dyn = { vy: 0, r: 0 };
+    VF.dp = null; VF.handbremse = false;   // v1.6.54 Drift
     VF.feder = null;
     if (VF.modus === 'knockout') {
       VF.koLeben = Math.max(0, VF.koLeben - 1);
@@ -4895,6 +5028,8 @@
   }
   const vfFlagPad = { seit: null, gefeuert: false };
   function vfFlagTaste(an) {
+    // v1.6.54: im Drift ist die Taste die Handbremse (kein Boxenstopp, keine Gelbe Flagge).
+    if (vfHandbremse(an)) { vfFlagPad.seit = null; return; }
     const jetzt = performance.now();
     if (an && vfFlagPad.seit === null) { vfFlagPad.seit = jetzt; vfFlagPad.gefeuert = false; }
     if (an && !vfFlagPad.gefeuert && jetzt - vfFlagPad.seit >= 1000) { vfFlagPad.gefeuert = true; vfKnopf('flag'); }
@@ -5271,7 +5406,7 @@
     const el = vfTouchElement(), m = vfTouchModus(), heli = !!VF.hubschrauber;
     // v1.6.37 BESTELLT: "The rc helicopter must get its own dual stick virtual control on mobile (if no gamepad is
     // connected)". Im Hubschrauber zwei Sticks statt Lenkung und Pedal; Neigen gilt dort nicht (zaehlt als Touch).
-    if (el) { el.hidden = !an; el.classList.toggle('vf-touch-neigen', m === 'neigen' && !heli); el.classList.toggle('vf-touch-heli-an', heli); }
+    if (el) { el.hidden = !an; el.classList.toggle('vf-touch-neigen', m === 'neigen' && !heli); el.classList.toggle('vf-touch-heli-an', heli); el.classList.toggle('vf-touch-drift', !heli && vfHandling() === 'drift'); }
     const kn = VF.schicht ? VF.schicht.querySelector('[data-vf="touch"]') : null;
     if (kn) {
       kn.classList.toggle('vf-an', an);
@@ -5326,6 +5461,15 @@
       st.addEventListener('pointerup', los);
       st.addEventListener('pointercancel', los);
     });
+    // v1.6.54: Handbremse im Drift (gedrueckt halten).
+    const hb = el.querySelector('.vf-touch-hb');
+    if (hb) {
+      const an = (e) => { vfHandbremse(true); hb.classList.add('vf-an'); try { hb.setPointerCapture(e.pointerId); } catch (err) { /* egal */ } e.preventDefault(); };
+      const aus = () => { vfHandbremse(false); hb.classList.remove('vf-an'); };
+      hb.addEventListener('pointerdown', an);
+      hb.addEventListener('pointerup', aus);
+      hb.addEventListener('pointercancel', aus);
+    }
     const lenk = el.querySelector('.vf-touch-lenk');
     const gas = el.querySelector('.vf-touch-gas');
     if (lenk) {
@@ -5692,6 +5836,7 @@
       + '<span class="vf-wip">' + t('Virtuell') + ' <span class="wip-tag">WIP</span></span>'
       + '<div class="vf-touch" hidden><div class="vf-touch-lenk"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Lenken') + '</span></div>'
       + '<div class="vf-touch-gas"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis vf-touch-gas-oben">' + t('Gas') + '</span><span class="vf-touch-hinweis vf-touch-gas-unten">' + t('Bremse') + '</span></div>'
+      + '<button type="button" class="vf-touch-hb" aria-label="' + t('Handbremse') + '">' + t('Handbremse') + '</button>'
       + '<div class="vf-touch-heli vf-touch-heli-l"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Steigen / Drehen') + '</span></div>'
       + '<div class="vf-touch-heli vf-touch-heli-r"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Neigen / Rollen') + '</span></div></div>'
       + vfLadebildHtml((() => { try { return vfLadeKarteDrehen(vfLadeKarteSvg(tiles, frei ? frei.pts : null), window.innerWidth, window.innerHeight); } catch (e) { return ''; } })());
@@ -5840,6 +5985,7 @@
     VF.texOffen = 0; VF.texGesamt = 0;   // Ladebild: Bilder der Modelle dieser Fahrt
     VF.tyreTemp = 0;   // v1.3.5: jede Fahrt beginnt mit kalten Reifen (vorher blieb die alte Temperatur stehen)
     VF.rauch = []; VF.rauchPuffer = null; VF.driftHitze = 0; VF.rauchSoll = 0;   // v1.6.27 Drift-Rauch
+    VF.dp = null; VF.dpKmh = 0; VF.handbremse = false;   // v1.6.54 Drift mit Physik
     VF.tempoFaktor = vfTempoFaktor();
     VF.z = 0; VF.roll = 0; VF.pitch = 0; VF.rotor = 0; VF.flug = null; VF.hubTasten = {};   // Flugzustand
     VF.hubLuft = false; VF.hubLast = 0; VF.hubSpeed = 0;   // Copter: Bodenflag + Werte fuer den Rotor-Ton
@@ -6264,7 +6410,7 @@
       const v = VF_DRIFT_GYRO_WERTE[jg];
       const z = garWertZeile(t('Drift-Gyro'), v === 0 ? t('Aus') : Math.round(v * 100) + ' %' + (v === 1 ? ' (' + t('Vorgabe') + ')' : ''), () => gw(-1), () => gw(1));
       const l = z.querySelector('.gk-l'); l.classList.add('opt-label');
-      l.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Nur im Fahrgefühl Drift: wie stark der Gyro gegenlenkt. Weniger: größere Driftwinkel, bei Aus dreht sich das Auto unter Vollgas ein. Mehr: der Drift bleibt kleiner und ruhiger. Gilt ab der nächsten Fahrt.') + '</small>');
+      l.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Nur im Fahrgefühl Drift: Gegenlenk-Hilfe wie der Gyro eines RC-Driftautos. Mit Hilfe lenkt der Stick relativ zur Fahrtrichtung (Mitte = Räder in Fahrtrichtung) und der Gyro fängt das Eindrehen ab. Aus = reine Physik, für Lenkräder. X ist im Drift die Handbremse.') + '</small>');
       rechts.appendChild(z);
       const amb = vfAmbienceAn();
       const aw = () => { try { localStorage.setItem(VF_AMBIENCE_STORE, amb ? 'aus' : 'an'); } catch (e) { /* egal */ } if (VF.aktiv) vfAmbienceAnwenden(); vfGarageNeu(); };

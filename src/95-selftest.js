@@ -14728,15 +14728,8 @@
       if (rueck < -Math.PI) f.push('dreht nach dem Loslassen zurueck: ' + (rueck * 180 / Math.PI).toFixed(0) + ' Grad');
       weg = rueck * 180 / Math.PI;
     } finally { vfHubGyro = merkG; Object.assign(VF, merk); }
-    // Drift-Gyro: Faktor auf 0,15.
     const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
-    const merkDg = lies(VF_DRIFT_GYRO_STORE), merkH = vfHandling();
-    try {
-      localStorage.setItem(VF_DRIFT_GYRO_STORE, '2'); vfHandlingSetzen('drift');
-      if (Math.abs(vfHandlingProfil(Object.assign({}, VF_GT3)).gyro - 0.3) > 1e-9) f.push('Drift-Gyro 200 % wirkt nicht');
-      localStorage.removeItem(VF_DRIFT_GYRO_STORE);
-      if (Math.abs(vfHandlingProfil(Object.assign({}, VF_GT3)).gyro - 0.15) > 1e-9) f.push('Drift-Gyro Vorgabe nicht 0,15');
-    } finally { try { if (merkDg === null) localStorage.removeItem(VF_DRIFT_GYRO_STORE); else localStorage.setItem(VF_DRIFT_GYRO_STORE, merkDg); } catch (e) { /* egal */ } vfHandlingSetzen(merkH); }
+    // Drift-Gyro: seit v1.6.54 im Test 'Drift mit Physik' geprueft.
     // Ambience: virtuell eigener Schalter (ab Werk aus).
     const merkA = lies(VF_AMBIENCE_STORE), merkAkt = VF.aktiv;
     try {
@@ -14994,34 +14987,57 @@
     } catch (e) { f.push('laedt nicht: ' + e.message); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
   });
-  stAdd('Virtuell v1.6.25: Fahrgefuehl Drift - Pruefstand: Vollgas driftet stabil um 25 Grad ohne Dreher, halbes Gas greift, GT3 bleibt (Issue #10)', () => {
-    const f = [];
+  stAdd('Virtuell v1.6.54: Drift mit Physik - Pruefstand: Heck kommt mit Gas, Stick haelt den Winkel ohne Dreher, Handbremse dreht ein, halbes Gas greift, ohne Hilfe reine Physik', () => {
+    const f = [], mass = [];
     if (!VF_HANDLING_MODI.some((m) => m.id === 'drift')) f.push('Drift nicht waehlbar');
-    const merk = vfHandling();
-    let P;
-    try { vfHandlingSetzen('drift'); P = vfHandlingProfil(Object.assign({}, VF_GT3)); } finally { vfHandlingSetzen(merk); }
-    const lauf = (Q, vx, lenk, gas) => {
-      const z = { vy: 0, r: 0 }, b = [];
-      for (let t = 0; t < 6; t += 1 / 60) { vfDynamik(z, vx, gas > 0 ? 1 : 0, gas, lenk, 1 / 60, 1, Q); b.push(Math.atan2(z.vy, vx) * 180 / Math.PI); }
-      const l = b.slice(-120), m = l.reduce((a, c) => a + c, 0) / l.length;
-      return { beta: Math.abs(m), sd: Math.sqrt(l.reduce((a, c) => a + (c - m) * (c - m), 0) / l.length), r: Math.abs(z.r) };
+    const beta = (z) => Math.atan2(z.vy, Math.max(0.1, z.vx)) * 180 / Math.PI;
+    const H = { hilfe: VF_DRIFT_HILFE, gyro: VF_DRIFT_GYRO_R };
+    const lauf = (v0, plan, T, hilfe) => {
+      const z = { vx: v0, vy: 0, r: 0, w: v0, ax: 0 }, b = [];
+      for (let t = 0; t < T; t += 1 / 60) { vfDriftSchritt(z, Object.assign({ mu: 1 }, hilfe || H, plan(t)), 1 / 60); b.push([t, beta(z), z.vx]); }
+      return b;
     };
-    const mass = [];
-    for (const v of [15, 25, 40]) {
-      const d = lauf(P, v, 0.5, 1);
-      mass.push(v + ' m/s ' + d.beta.toFixed(0) + ' Grad');
-      if (!(d.beta >= 15 && d.beta <= 40)) f.push('Vollgas ' + v + ' m/s: ' + d.beta.toFixed(1) + ' Grad');
-      if (!(d.sd < 3.5)) f.push('unruhig ' + v + ' m/s: ' + d.sd.toFixed(2));
-      if (!(d.r < 4.5)) f.push('dreht ein ' + v + ' m/s');
-      const h = lauf(P, v, 0.5, 0.5);
-      if (!(h.beta < 14)) f.push('halbes Gas ' + v + ' m/s: ' + h.beta.toFixed(1) + ' Grad');
+    // Einleiten: voller Einschlag und Vollgas, 15 Grad in hoechstens 0,8 s.
+    for (const v of [8, 15, 25]) {
+      const b = lauf(v, () => ({ lenk: 1, gas: 1 }), 2), x = b.find((q) => Math.abs(q[1]) >= 15);
+      if (!x || x[0] > 0.8) f.push('Heck kommt bei ' + v + ' m/s erst nach ' + (x ? x[0].toFixed(2) : '> 2') + ' s');
     }
-    // v1.6.27: Lenken + Vollgas - das Heck kommt sofort (15 Grad in hoechstens 0,45 s, bei 8 bis 25 m/s).
-    for (const v of [8, 12, 25]) {
-      const z = { vy: 0, r: 0 };
-      let tt = null;
-      for (let t = 0; t < 2 && tt === null; t += 1 / 60) { vfDynamik(z, v, 1, 1, 1, 1 / 60, 1, P); if (Math.abs(Math.atan2(z.vy, v)) * 180 / Math.PI >= 15) tt = t; }
-      if (tt === null || tt > 0.45) f.push('Heck kommt bei ' + v + ' m/s erst nach ' + (tt === null ? '> 2' : tt.toFixed(2)) + ' s');
+    // Halten: nach dem Einleiten Stick 0,6 / 1 bei Vollgas, 8 s - Drift, kein Dreher.
+    for (const st of [0.6, 1]) {
+      const b = lauf(15, (t) => ({ lenk: t < 0.5 ? 1 : st, gas: 1 }), 8), end = b[b.length - 1], maxB = Math.max(...b.map((q) => Math.abs(q[1])));
+      mass.push('Stick ' + st + ': ' + Math.abs(end[1]).toFixed(0) + ' Grad');
+      if (!(Math.abs(end[1]) >= 20 && maxB < 70 && end[2] > 5)) f.push('Stick ' + st + ': ' + end[1].toFixed(0) + ' Grad, max ' + maxB.toFixed(0) + ', ' + end[2].toFixed(1) + ' m/s');
+    }
+    // Stick in die Mitte: das Auto faengt sich.
+    { const b = lauf(15, (t) => ({ lenk: t < 0.6 ? 1 : 0, gas: t < 0.6 ? 1 : 0.6 }), 4); if (!(Math.abs(b[b.length - 1][1]) < 5)) f.push('faengt sich nicht: ' + b[b.length - 1][1].toFixed(0)); }
+    // Handbremse: 0,4 s bei 20 m/s mit halbem Einschlag dreht das Auto auf mindestens 25 Grad.
+    { const b = lauf(20, (t) => ({ lenk: 0.5, gas: t > 0.4 ? 0.7 : 0, hand: t < 0.4 }), 1), x = b.find((q) => q[0] >= 0.6);
+      mass.push('Handbremse ' + Math.abs(x[1]).toFixed(0) + ' Grad'); if (!(Math.abs(x[1]) >= 25)) f.push('Handbremse nur ' + x[1].toFixed(0) + ' Grad'); }
+    // Halbes Gas greift.
+    { const b = lauf(20, () => ({ lenk: 0.3, gas: 0.4 }), 4); if (!(Math.abs(b[b.length - 1][1]) < 10)) f.push('halbes Gas driftet: ' + b[b.length - 1][1].toFixed(0)); }
+    // Ohne Hilfe (Drift-Gyro Aus): reine Physik - Vollgas mit vollem Einschlag dreht ein.
+    { const b = lauf(15, () => ({ lenk: 0.4, gas: 1 }), 3, { hilfe: 0, gyro: 0 }); if (!(Math.max(...b.map((q) => Math.abs(q[1]))) > 70)) f.push('ohne Hilfe kein Dreher'); }
+    // Bremsen und Antritt.
+    { const b = lauf(30, () => ({ lenk: 0, bremse: 1 }), 6), x = b.find((q) => q[2] <= 0.01); if (!x || x[0] > 4.5) f.push('Bremsweg zu lang'); }
+    { const b = lauf(5, () => ({ lenk: 0, gas: 1 }), 10), x = b.find((q) => q[2] >= 30); if (!x || x[0] > 7) f.push('Antritt 5-30 m/s ' + (x ? x[0].toFixed(1) : '> 10') + ' s'); }
+    { const b = lauf(0, () => ({ lenk: 0, gas: 1 }), 5), x = b.find((q) => q[2] >= 10); if (!x || x[0] > 2.5) f.push('Anfahren 0-10 m/s ' + (x ? x[0].toFixed(1) : '> 5') + ' s'); }
+    // Drift-Gyro skaliert die Hilfe; X ist nur im Drift die Handbremse.
+    const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merkDg = lies(VF_DRIFT_GYRO_STORE), merkH = vfHandling(), merkA = VF.aktiv, merkHb = VF.handbremse, merkHeli = VF.hubschrauber;
+    try {
+      localStorage.setItem(VF_DRIFT_GYRO_STORE, '2');
+      if (Math.abs(vfDriftHilfe().hilfe - 2 * VF_DRIFT_HILFE) > 1e-9) f.push('Drift-Gyro 200 % wirkt nicht');
+      localStorage.setItem(VF_DRIFT_GYRO_STORE, '0');
+      if (vfDriftHilfe().gyro !== 0) f.push('Drift-Gyro Aus wirkt nicht');
+      VF.aktiv = true; VF.hubschrauber = false;
+      vfHandlingSetzen('drift');
+      if (!vfHandbremse(true) || !VF.handbremse) f.push('X ist im Drift keine Handbremse');
+      vfHandbremse(false);
+      vfHandlingSetzen('gt3');
+      if (vfHandbremse(true) || VF.handbremse) f.push('X ist ausserhalb des Drifts Handbremse');
+    } finally {
+      VF.aktiv = merkA; VF.handbremse = merkHb; VF.hubschrauber = merkHeli; vfHandlingSetzen(merkH);
+      try { if (merkDg === null) localStorage.removeItem(VF_DRIFT_GYRO_STORE); else localStorage.setItem(VF_DRIFT_GYRO_STORE, merkDg); } catch (e) { /* egal */ }
     }
     // Rauch: leicht am Anfang, mehr mit heissen Reifen.
     const merkV = { rauch: VF.rauch, driftHitze: VF.driftHitze, rauchSoll: VF.rauchSoll, dyn: VF.dyn, x: VF.x, y: VF.y, h: VF.h };
@@ -15036,25 +15052,9 @@
       if (n2 > VF_RAUCH_MAX) f.push('zu viele Wolken ' + n2);
       Object.assign(VF, { rauch: [], driftHitze: 0, dyn: { vy: 0, r: 0, aH: 0.4 } });
       vfRauchSchritt(0.5, 20, false);
-      if (VF.rauch.length) f.push('Rauch ohne Drift-Fahrgefuehl');
+      if (VF.rauch.length) f.push('Rauch ohne Drift');
     } finally { Object.assign(VF, merkV); }
-    // v1.6.37: ohne Gas schnappt der Drift nicht zurueck - 0,5 s nach dem Gaswegnehmen noch >= 20 Grad, nach 3 s wieder gerade.
-    for (const v of [12, 20]) {
-      const z = { vy: 0, r: 0 }, w = {};
-      for (let t = 0; t < 5; t += 1 / 60) {
-        const gas = t < 1.5 ? 1 : 0;
-        vfDynamik(z, v, gas, gas, 0.5, 1 / 60, 1, P);
-        const be = Math.abs(Math.atan2(z.vy, v)) * 180 / Math.PI;
-        if (Math.abs(t - 2.0) < 1 / 120) w.a = be;
-        if (Math.abs(t - 4.5) < 1 / 120) w.b = be;
-      }
-      if (!(w.a >= 20)) f.push('ohne Gas bei ' + v + ' m/s nach 0,5 s nur ' + (w.a || 0).toFixed(0) + ' Grad');
-      if (!(w.b < 18)) f.push('faengt sich bei ' + v + ' m/s nicht: ' + (w.b || 0).toFixed(0) + ' Grad');
-    }
-    const g = lauf(Object.assign({}, VF_GT3), 25, 0.5, 1);
-    if (!(g.beta < 8)) f.push('GT3 driftet: ' + g.beta.toFixed(1));
-    if (VF_GT3.gyro || VF_GT3.driftGrenze) f.push('GT3 hat Gyro');
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vollgas: ' + mass.join(', ') + '; halbes Gas greift; GT3 ' + g.beta.toFixed(1) + ' Grad' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass.join(', ') };
   });
   stAdd('Virtuell v1.6.23: Steuerung Neigen - Winkel aus der Schwerkraft je Bildschirmlage, Lenkwert, Knopf schaltet reihum (Issue #11)', () => {
     const f = [], nah = (a, b, e) => a !== null && Math.abs(a - b) <= (e || 0.5);
