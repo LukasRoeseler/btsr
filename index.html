@@ -6069,7 +6069,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.57</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.59</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7395,6 +7395,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell: Drift rutscht nach der Handbremse weiter, statt pl&#246;tzlich zu stehen, und rollt nach einer Drehung &#252;ber 90 Grad r&#252;ckw&#228;rts weiter; im Drift kein Spritverbrauch. Boxenstopp: es gen&#252;gt jetzt, mit dem Auto in die Boxenbucht zu ragen (vorher musste es tief darin stehen), der Hinweis sagt &#8222;in der Boxenbucht anhalten&#8220;. RC Heli: der Heckrotor dreht sich, am Boden l&#228;sst er sich nicht mehr neigen, die Tore sind deutlich h&#246;her, jedes Tor macht &#8222;bling&#8220;, und die Runde z&#228;hlt direkt beim Flug durch das Start/Ziel-Tor nach allen Toren. Audi RS5 DTM: der K&#252;hlergrill unter dem Logo ist wieder schwarz statt wei&#223;.</li>
         <li>Challenges virtuell (WIP): Oben auf der Challenge-Seite schaltet Echt | Virtuell um (derselbe Fahrmodus wie auf FAHREN, im Modus Virtuell rote Akzente). Virtuell f&#228;hrst du w&#246;chentliche Challenges, Dauerrennen und Community Challenges mit dem virtuellen Auto, mit Ampel, Teilepr&#252;fung und Wertung wie echt; die Zeiten stehen in eigenen virtuellen Bestenlisten (selbes Backend, klar als virtuell markiert, mit Fahrgef&#252;hl), Medaillenzeiten virtuell vorl&#228;ufig &#215;1,75. Auch Karriere und andere Rennen, die von FAHREN aus starten, fahren im Modus Virtuell das virtuelle Auto. Automatische Sektoren: etwa ein Sektor je 4 Teile (Balkonia 6, Homington 3, mindestens 2). Virtuelle Garage: Vorschau mit durchsichtigem Hintergrund und Bild f&#252;r den RC Heli, Motorsound- und Fahrtrichtungs-Zeile entfernt (Richtung steht in der Streckenkachel), Strecke und Boden ohne WIP, Handling hei&#223;t jetzt &#8222;Pacejka (wie echte CH Autos, WIP)&#8220;.</li>
         <li>Virtuelles Fahren, Prototyp zum Testen: Das Fahrgef&#252;hl Drift ist neu und physikbasiert (WIP). Eigenes Fahrzeugmodell (Hecktriebler): durchdrehende Hinterr&#228;der mit kombiniertem Schlupf, Gewichtsverlagerung, Luft- und Rollwiderstand; mehr Gas = mehr Driftwinkel. X ist im Drift die Handbremse (Tastatur, Gamepad, am Handy ein Knopf links neben dem Gaspedal). Optionen &gt; Virtuell &gt; Drift-Gyro stellt die Gegenlenk-Hilfe ein (wie der Gyro eines RC-Driftautos), Aus = reine Physik.</li>
         <li>Virtuelles Fahren: Reifenwahl in der virtuellen Garage (weich, mittel, hart, Regen), dieselben Mischungen wie beim echten Fahren, damit du im Regen auf Regenreifen fahren kannst. Neue Option &#8222;Rauch-Aufl&#246;sung&#8220; unter Optionen &gt; Virtuell (Automatisch: wie bisher in Performance, etwas feiner in Quality; von Hand bis 8&#215;). Der Ladebalken sitzt jetzt unten links statt mitten &#252;ber der Strecke. Die Motorhaubenkamera des Audi RS5 DTM sitzt weiter vorn, der Scheibenwischer ist nicht mehr im Bild.</li>
@@ -17921,6 +17922,9 @@
     "Echte oder virtuelle Zeiten und Fahrten (wie der Fahrmodus auf FAHREN).": "Real or virtual times and runs (like the driving mode on DRIVE).",
     "die Online-Bestenliste kennt virtuelle Zeiten noch nicht (Apps Script neu bereitstellen)": "the online leaderboard does not know virtual times yet (redeploy the Apps Script)",
     "Challenges virtuell (WIP): Oben auf der Challenge-Seite schaltet Echt | Virtuell um (derselbe Fahrmodus wie auf FAHREN, im Modus Virtuell rote Akzente). Virtuell fährst du wöchentliche Challenges, Dauerrennen und Community Challenges mit dem virtuellen Auto, mit Ampel, Teileprüfung und Wertung wie echt; die Zeiten stehen in eigenen virtuellen Bestenlisten (selbes Backend, klar als virtuell markiert, mit Fahrgefühl), Medaillenzeiten virtuell vorläufig ×1,75. Auch Karriere und andere Rennen, die von FAHREN aus starten, fahren im Modus Virtuell das virtuelle Auto. Automatische Sektoren: etwa ein Sektor je 4 Teile (Balkonia 6, Homington 3, mindestens 2). Virtuelle Garage: Vorschau mit durchsichtigem Hintergrund und Bild für den RC Heli, Motorsound- und Fahrtrichtungs-Zeile entfernt (Richtung steht in der Streckenkachel), Strecke und Boden ohne WIP, Handling heißt jetzt „Pacejka (wie echte CH Autos, WIP)“.": "Virtual challenges (WIP): at the top of the Challenges page, Real | Virtual switches (the same driving mode as on DRIVE, red accents in Virtual mode). In Virtual you drive weekly challenges, endurance races and community challenges with the virtual car, with start lights, piece check and scoring as in real driving; the times go into separate virtual leaderboards (same backend, clearly marked as virtual, with driving feel), medal times for virtual provisionally ×1.75. Career and other races started from DRIVE also use the virtual car in Virtual mode. Automatic sectors: about one sector per 4 pieces (Balkonia 6, Homington 3, at least 2). Virtual garage: preview with a transparent background and an image for the RC heli, engine sound and direction rows removed (direction is on the track tile), track and floor without WIP, handling now called “Pacejka (like real CH cars, WIP)”.",
+    "Boxenstopp: in der Boxenbucht anhalten": "Pit stop: stop in the pit bay",
+    "fehlt": "missing",
+    "Virtuell: Drift rutscht nach der Handbremse weiter, statt plötzlich zu stehen, und rollt nach einer Drehung über 90 Grad rückwärts weiter; im Drift kein Spritverbrauch. Boxenstopp: es genügt jetzt, mit dem Auto in die Boxenbucht zu ragen (vorher musste es tief darin stehen), der Hinweis sagt „in der Boxenbucht anhalten“. RC Heli: der Heckrotor dreht sich, am Boden lässt er sich nicht mehr neigen, die Tore sind deutlich höher, jedes Tor macht „bling“, und die Runde zählt direkt beim Flug durch das Start/Ziel-Tor nach allen Toren. Audi RS5 DTM: der Kühlergrill unter dem Logo ist wieder schwarz statt weiß.": "Virtual: drift keeps sliding after the handbrake instead of stopping suddenly, and keeps rolling backwards after a spin past 90 degrees; no fuel use in drift. Pit stop: it is now enough to reach into the pit bay with the car (before it had to stand deep inside), the hint says “stop in the pit bay”. RC heli: the tail rotor spins, it can no longer be tilted on the ground, the gates are much taller, every gate goes “bling”, and the lap counts right when flying through the start/finish gate after all gates. Audi RS5 DTM: the grille under the logo is black again instead of white.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20798,6 +20802,8 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Boxenstopp: in der Boxenbucht anhalten": "Parada en boxes: detente en el box",
+    "fehlt": "falta",
     "Echt oder virtuell": "Real o virtual",
     "Echte oder virtuelle Zeiten und Fahrten (wie der Fahrmodus auf FAHREN).": "Tiempos y carreras reales o virtuales (como el modo de conducción en CONDUCIR).",
     "die Online-Bestenliste kennt virtuelle Zeiten noch nicht (Apps Script neu bereitstellen)": "la clasificación online aún no conoce los tiempos virtuales (volver a implementar el Apps Script)",
@@ -44925,7 +44931,17 @@
         const bodyF = new Float32Array(bin, 8, bodyEcken * 6);
         const rotorF = new Float32Array(bin, 8 + bodyEcken * 24, rotorEcken * 6);
         if (!VF.aktiv || VF.gl !== gl) return;
-        VF.auto = vfPuffer(gl, bodyF);
+        // v1.6.58 GEMELDET: "Beim RC Heli dreht sich der Heckrotor nicht." Er steckt im Rumpf (hub.bin hat nur Rumpf und
+        // Hauptrotor). Seine Blaetter liegen seitlich am Heckende (Dreiecksmitte x > 0,17, z < -3,25, Modelleinheiten):
+        // die kommen in einen eigenen Puffer und drehen um die Querachse durch die Nabe (VF_HUB_HECK_NABE).
+        const rumpf = [], heck = [];
+        for (let i = 0; i < bodyF.length; i += 18) {
+          const cx = (bodyF[i] + bodyF[i + 6] + bodyF[i + 12]) / 3, cz = (bodyF[i + 2] + bodyF[i + 8] + bodyF[i + 14]) / 3;
+          const ziel = cx > 0.17 && cz < -3.25 ? heck : rumpf;
+          for (let k = 0; k < 18; k++) ziel.push(bodyF[i + k]);
+        }
+        VF.auto = vfPuffer(gl, heck.length ? rumpf : bodyF);
+        VF.hubHeck = heck.length ? vfPuffer(gl, heck) : null;
         VF.hubRotor = vfPuffer(gl, rotorF);
         VF.hubTrex = true;
       }).catch(() => { /* Kasten bleibt */ });
@@ -45220,7 +45236,11 @@
   // Einzelpunkte: bei hohem Tempo springt der Index mehrere Punkte je Bild.
   function vfBoxDurchfahrt(o, zus) {
     if (!VF.boxN) return;
-    const drin = zus > VF.boxMax * 0.3 && Math.abs(o.quer) > TRACK_HALF_W + zus * 0.5;
+    // v1.6.58 GEMELDET: "Der Pit Button funktioniert nicht ... sodass ich irgendwann einen leeren Tank habe". Der Service
+    // beginnt nur in der Bucht, und "in der Bucht" hiess: mehr als halb so tief drin wie die Bucht breit ist. Wer neben der
+    // Bucht am Fahrbahnrand hielt, bekam nur "In die Boxengasse fahren". Jetzt genuegt es, mit dem Auto in die Bucht zu
+    // ragen (ueber den Fahrbahnrand hinaus, auf Hoehe der Bucht).
+    const drin = zus > VF.boxMax * 0.3 && Math.abs(o.quer) > TRACK_HALF_W * 0.85;
     VF.inBox = drin;
     if (drin) { if (!VF.boxBesucht) VF.boxBesucht = { von: o.idx, bis: o.idx }; else VF.boxBesucht.bis = o.idx; return; }
     if (!VF.boxBesucht) return;
@@ -45786,11 +45806,13 @@
       const fzV = Math.max(300, fz0V - dFz), fzH = Math.max(300, fz0H + dFz);
       const mu = (e.mu === undefined ? 1 : e.mu) * P.mu;
       const DV = mu * fzV * (1 - P.lastEmpf * (fzV / fz0V - 1)), DH = mu * fzH * (1 - P.lastEmpf * (fzH / fz0H - 1));
-      // Vorn: rollt frei, bremst (am Reibkreis).
-      const aV = Math.atan((z.vy + P.a * z.r) / vxs) - d;
+      // Vorn: rollt frei, bremst (am Reibkreis). v1.6.58: Schraeglauf im Radsystem (vorwaerts wie rueckwaerts richtig):
+      // Laengs u und quer q der Radmitte im gelenkten Rad, Winkel atan(q / |u|).
+      const vyV = z.vy + P.a * z.r, uV = z.vx * Math.cos(d) + vyV * Math.sin(d), qV = -z.vx * Math.sin(d) + vyV * Math.cos(d);
+      const aV = Math.atan(qV / Math.max(Math.abs(uV), 2));
       let fyV = -DV * Math.sin(P.C * Math.atan(P.B * aV)), fxV = 0;
-      if (e.bremse > 0 && z.vx > 0.05) {
-        fxV = -Math.min(0.95 * DV, e.bremse * P.bremsG * P.m * g * P.bremsVorn);
+      if (e.bremse > 0 && Math.abs(uV) > 0.05) {
+        fxV = -Math.sign(uV) * Math.min(0.95 * DV, e.bremse * P.bremsG * P.m * g * P.bremsVorn);
         fyV *= Math.sqrt(Math.max(0, 1 - (fxV / DV) * (fxV / DV)));
       }
       // Hinten: kombinierter Schlupf.
@@ -45804,17 +45826,21 @@
       if (z.vx < 6 && kap > 0.25) antrieb *= Math.max(0.35, 1 - (kap - 0.25) * 2);
       z.w += h * (antrieb - fxH) / P.mRad;
       const bw = ((e.bremse || 0) * P.bremsG * P.m * g * (1 - P.bremsVorn) + (e.hand ? P.hand : 0)) * h / P.mRad;
-      z.w = z.w > bw ? z.w - bw : 0;
+      z.w = Math.abs(z.w) > bw ? z.w - Math.sign(z.w) * bw : 0;   // haelt das Rad an, in beide Richtungen
       // Aufbau.
       const cd = Math.cos(d), sd = Math.sin(d);
-      const fx = fxH + fxV * cd - fyV * sd - P.luft * z.vx * Math.abs(z.vx) - (z.vx > 0.05 ? P.roll * P.m * g : 0);
+      const fx = fxH + fxV * cd - fyV * sd - P.luft * z.vx * Math.abs(z.vx) - (Math.abs(z.vx) > 0.05 ? Math.sign(z.vx) * P.roll * P.m * g : 0);
       const fy = fyH + fyV * cd + fxV * sd;
       z.vx += h * (fx / P.m + z.vy * z.r);
       z.vy += h * (fy / P.m - z.vx * z.r);
       z.r += h * ((P.a * (fyV * cd + fxV * sd) - P.b * fyH) / P.Iz);
       z.ax = fx / P.m;
-      if (z.vx < 0) z.vx = 0;
-      if (z.vx < 0.3 && !(e.gas > 0)) { z.vy *= 0.9; z.r *= 0.9; }
+      // v1.6.58 GEMELDET: "Wenn ich ca. 0,5 s die Handbremse druecke, stoppt das Auto ploetzlich, sollte aber weitersliden.
+      // Ebenso, wenn ich ohne Gyro eine ~120-Grad-Drehung mache - das Auto sollte dann rueckwaerts weiterrollen/rutschen."
+      // Hier stand "vx < 0 -> 0" und "vx < 0,3 m/s -> quer und Gieren daempfen": quer zur Fahrt (vx ~ 0) hielt das
+      // das rutschende Auto an, und rueckwaerts gab es nicht. Jetzt rollt es in jede Richtung; zur Ruhe kommt es erst,
+      // wenn das ganze Tempo klein ist.
+      if (Math.hypot(z.vx, z.vy) < 0.3 && !(e.gas > 0)) { z.vx *= 0.9; z.vy *= 0.9; z.r *= 0.9; }
       z.r = Math.max(-6, Math.min(6, z.r));
       z.d = d; z.aV = aV; z.kap = kap;
       z.aH = (tA < 0 ? -1 : 1) * sl;
@@ -45822,6 +45848,8 @@
     }
     return z;
   }
+  // v1.6.58: im Drift braucht das virtuelle Auto keinen Sprit (kein Boxenstopp, X ist die Handbremse).
+  function vfDriftOhneSprit() { try { return !!(VF.aktiv && !VF.hubschrauber && vfHandling() === 'drift'); } catch (e) { return false; } }
   // v1.6.54: X (Tastatur, Gamepad-Taste fuer Box/Gelb) ist im Drift die Handbremse. true = verbraucht.
   function vfHandbremse(an) {
     if (!VF.aktiv || VF.hubschrauber || vfHandling() !== 'drift') { VF.handbremse = false; return false; }
@@ -45833,7 +45861,8 @@
   function vfDriftTeil(sdt, st, lenk) {
     const tf = VF.tempoFaktor || 1, zuReal = REAL_SCALE / 3.6;
     // Von aussen auf 0 gesetzt (Zuruecksetzen, Box, Unfall): das Modell beginnt neu.
-    if (VF.dp && st.speedKmh === 0 && VF.dpKmh > 0) VF.dp = null;
+    // v1.6.58: kein Neustart mehr, wenn der Tacho 0 zeigt (das blockierte Hinterrad zeigte 0 und hielt das Auto an);
+    // wer das Auto anhaelt (Zuruecksetzen, Derby), setzt VF.dp selbst zurueck.
     if (!VF.dp) { const v0 = Math.max(0, (st.speedKmh || 0) * tf * zuReal); VF.dp = { vx: v0, vy: 0, r: 0, w: v0, ax: 0, d: 0 }; }
     const z = VF.dp;
     const ty = typeof throttleY === 'number' ? throttleY : 0;
@@ -45847,13 +45876,15 @@
     VF.ax = z.ax; VF.ay = z.vx * z.r;
     VF.pitch = Math.max(-0.03, Math.min(0.03, -(VF.ax || 0) * 0.0018));
     VF.h += z.r * sdt * 180 / Math.PI;
-    const sp = Math.hypot(z.vx, z.vy), rich = VF.h * Math.PI / 180 + Math.atan2(z.vy, Math.max(0.1, z.vx));
+    const sp = Math.hypot(z.vx, z.vy), rich = VF.h * Math.PI / 180 + (sp > 0.05 ? Math.atan2(z.vy, z.vx) : 0);   // v1.6.58: auch rueckwaerts
     const vE = sp / REAL_SCALE * 100 * TRACK_UNITS_PER_CM;
     VF.x += Math.sin(rich) * vE * sdt;
     VF.y -= Math.cos(rich) * vE * sdt;
     // Tacho und Motorklang folgen dem Hinterrad (dreht es durch, steigt die Drehzahl); mit gezogener Handbremse
     // (Kupplung getreten) das Auto selbst.
-    st.speedKmh = (VF.handbremse ? z.vx : z.w) / zuReal / tf;
+    // v1.6.58: Tacho und Drehzahl = das Groessere aus Hinterrad und Tempo ueber Grund (rutscht das Auto quer oder rueckwaerts
+    // bei stehendem Rad, zeigt er trotzdem die Fahrt; dreht das Rad durch, steigt die Drehzahl).
+    st.speedKmh = Math.max(Math.abs(z.w), sp) / zuReal / tf;
     VF.dpKmh = st.speedKmh;
     if (!VF.dyn) VF.dyn = { vy: 0, r: 0 };
     VF.dyn.vy = z.vy; VF.dyn.r = z.r; VF.dyn.aH = z.aH; VF.dyn.aV = z.aV; VF.dyn.nutzung = z.nutzung;
@@ -46478,10 +46509,9 @@
     const genugWeg = VF.rundeAb ? VF.fort > VF.pts.length * 0.75 : VF.fort >= 0;
     if (ueber < 0) VF.zielRueck = (VF.zielRueck || 0) + 1;          // rueckwaerts ueber die Linie: die naechste zaehlt nicht
     else if (ueber > 0 && VF.zielRueck) VF.zielRueck--;
-    else if (ueber > 0 && !VF.abseits && genugWeg && (!VF.hubschrauber || vfHubRundeErlaubt(jetzt))) {
+    else if (ueber > 0 && !VF.abseits && genugWeg && !VF.hubschrauber) {   // der Heli zaehlt an den Toren (vfHubToreSchritt)
       VF.zielAt = jetzt;
       VF.fort = 0;
-      if (VF.hubschrauber) vfHubRundeGezaehlt();
       vfRundeAnLinie(jetzt);
     }
     const b = new Uint8Array(19);
@@ -46800,10 +46830,11 @@
       VF.pitch = (VF.pitch || 0) + F.angPitch * dt;
       VF.roll = (VF.roll || 0) + F.angRoll * dt;
     }
-    // Am Boden legt er sich flach (wie das Vorbild: euler.x/z werden gedämpft).
+    // Am Boden steht er flach auf den Kufen. v1.6.58 GEMELDET: "ich kann ihn neigen, waehrend er auf dem Boden steht" -
+    // bisher nur gedaempft (der Gyro zog ihn schneller zum Stick, als der Boden ihn aufrichtete). Jetzt: am Boden keine
+    // Schraeglage und keine Drehrate; geneigt wird erst in der Luft.
     if (!inLuft) {
-      VF.pitch = (VF.pitch || 0) * Math.max(0, 1 - dt * 5);
-      VF.roll = (VF.roll || 0) * Math.max(0, 1 - dt * 5);
+      VF.pitch = 0; VF.roll = 0; F.angPitch = 0; F.angRoll = 0;
     }
 
     // --- Drehen (yaw): die Nase dreht weich zur Eingabe (Grad/s).
@@ -46851,6 +46882,7 @@
 
     // --- Rotor-Optik & Werte fuer den Ton.
     VF.rotor = ((VF.rotor || 0) + (F.rpm || 0) * VF_HUB_ROTOR_DREH * dt) % (Math.PI * 2);
+    VF.heckRotor = ((VF.heckRotor || 0) + (F.rpm || 0) * VF_HUB_ROTOR_DREH * 4.6 * dt) % (Math.PI * 2);   // Heckrotor ~4,6-mal schneller
     VF.hubLast = Math.abs(coll) + Math.hypot(pitch, roll) * 0.45;
     VF.hubSpeed = Math.hypot(F.vx || 0, F.vy || 0);
   }
@@ -47042,7 +47074,19 @@
   // jenseits des Randsteins, VF_HUB_TOR_H hoch. Durchflogen = die Strecke vom letzten zum jetzigen Flugort schneidet die
   // Linie zwischen den Stangen, unterhalb der Spitze. Die Runde (vfPaket) zaehlt beim Heli nur, wenn er eben durch das
   // Start/Ziel-Tor geflogen ist und vorher alle anderen Tore der Reihe nach (die erste Ueberfahrt startet nur die Uhr).
-  const VF_HUB_TOR_H = 40, VF_HUB_TOR_B = 0.9;
+  // v1.6.58 BESTELLT: "mach sie hoeher und spiele ein 'bling' ab, wenn ich durch eins geflogen bin" - 100 statt 40.
+  const VF_HUB_TOR_H = 100, VF_HUB_TOR_B = 0.9;
+  const VF_HUB_HECK_NABE = [0.815, -3.36];   // Heckrotor-Nabe: Hoehe y und Laenge z im Modell (hub.bin)
+  function vfHubBling(hoch) {
+    if (typeof playTone !== 'function') return;
+    playTone(hoch ? 1760 : 1320, 0.07, 'sine', 0.16);
+    setTimeout(() => playTone(hoch ? 2637 : 1976, 0.12, 'sine', 0.13), 70);
+  }
+  // In Fahrtrichtung durch das Tor? (Flugrichtung gegen die Richtung der Mittellinie an diesem Punkt)
+  function vfHubVorwaerts(g, a, b) {
+    const n = VF.pts.length, p = VF.pts[g.i], q = VF.pts[(g.i + 1) % n];
+    return (b[0] - a[0]) * (q.x - p.x) + (b[1] - a[1]) * (q.y - p.y) > 0;
+  }
   function vfHubToreBauen() {
     const pts = VF.pts, nrm = VF.nrm, n = pts.length;
     let idx = [];
@@ -47072,12 +47116,27 @@
     if (!T) return;
     const a = [vorX, vorY], b = [VF.x, VF.y], hoch = (VF.z || 0) <= VF_HUB_TOR_H;
     const sf = T.liste[T.liste.length - 1];
-    if (hoch && vfStreckenSchnitt(a, b, sf.l, sf.r)) T.sfAt = rennZeitJetzt();
     const g = T.liste[T.naechstes];
     if (g && !g.sf && hoch && vfStreckenSchnitt(a, b, g.l, g.r)) {
       T.naechstes++;
       VF.hubTorPuffer = null;   // neu zeichnen: durchflogene Tore werden gruen
       showHudToast(t('Tor') + ' ' + T.naechstes + '/' + (T.liste.length - 1));
+      vfHubBling(false);
+    }
+    // v1.6.58 GEMELDET: "die Rundenzaehlung funktioniert nicht so gut, wenn ich durch die Tore geflogen bin". Die Runde
+    // kam bisher aus der Linie der Mittellinie (vfPaket, Punkt-Index) und zaehlte nur, wenn das Start/Ziel-Tor in den
+    // 1,5 s davor durchflogen war; ueber dem Innenfeld springt der naechste Mittellinienpunkt, und eine scheinbar
+    // rueckwaerts ueberflogene Linie sperrte die naechste Runde. Jetzt zaehlt die Runde genau beim Flug durch das
+    // Start/Ziel-Tor (vorwaerts), wenn vorher alle Tore der Reihe nach durchflogen sind; der erste Durchflug startet die Uhr.
+    if (hoch && vfStreckenSchnitt(a, b, sf.l, sf.r) && vfHubVorwaerts(sf, a, b)) {
+      const jetzt = rennZeitJetzt();
+      T.sfAt = jetzt;
+      if (vfHubRundeErlaubt(jetzt)) {
+        VF.zielAt = jetzt;
+        vfHubRundeGezaehlt();
+        vfRundeAnLinie(jetzt);
+        vfHubBling(true);
+      } else if (VF.rundeAb) showHudToast(t('Tor') + ' ' + (T.naechstes + 1) + ' ' + t('fehlt'));
     }
   }
   // Fuer vfPaket: darf diese Ueberfahrt der Linie eine Runde sein?
@@ -47514,7 +47573,7 @@
       padRumble(0.6, 0.6, 60, 'kill', 1);
     } else if (VF.derbyHealth <= 0 && !VF.derbyTot) {
       VF.derbyTot = true;
-      physEngine.state.speedKmh = 0;
+      physEngine.state.speedKmh = 0; VF.dp = null;
       showHudToast(t('Dein Auto ist aus'));
     }
     vfDerbyPruefen();
@@ -47707,6 +47766,8 @@
       const welt = vfHubLage(VF.x, VF.y, VF.h, VF.z || 0, VF.roll || 0, VF.pitch || 0);
       zeichne(VF.auto, welt);
       if (VF.hubRotor) zeichne(VF.hubRotor, vfMal(welt, vfRy(VF.rotor || 0)));
+      if (VF.hubHeck) zeichne(VF.hubHeck, vfKette(welt, vfT(0, VF_HUB_HECK_NABE[0], VF_HUB_HECK_NABE[1]), vfRx(VF.heckRotor || 0),
+        vfT(0, -VF_HUB_HECK_NABE[0], -VF_HUB_HECK_NABE[1])));
       if (VF.hubTore) { if (!VF.hubTorPuffer) VF.hubTorPuffer = vfHubTorPufferBauen(gl); zeichne(VF.hubTorPuffer, vfT(0, 0, 0)); }
       gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
     } else if (VF.modell && VF.tprog) vfModellMalen(gl, pv, blick, k.auge);
@@ -49432,7 +49493,10 @@
       else if (b.dataset.vf === 'touch') vfTouchUmschalten();
       else if (b.dataset.vf === 'box') {
         if (VF.modus === 'derby') showHudToast(t('Derby: kein Boxenstopp'));
-        else if (typeof requestPitStop === 'function') { requestPitStop(); if (typeof pitState !== 'undefined' && pitState === 'limited') showHudToast(t('Boxenstopp: anhalten')); }
+        else if (typeof requestPitStop === 'function') {
+          requestPitStop();
+          if (typeof pitState !== 'undefined' && pitState === 'limited') showHudToast(VF.boxN ? t('Boxenstopp: in der Boxenbucht anhalten') : t('Boxenstopp: anhalten'));
+        }
       }
       else if (b.dataset.vf === 'flag') {
         if (typeof flagState !== 'undefined' && flagState === 'green') { if (typeof setFlag === 'function') setFlag('yellow'); }
@@ -57171,7 +57235,9 @@
       // v1.4.54: setupVerbrauch = Motorkennfeld aus dem Setup (98i-setup.js), sonst 1.
       // v1.5: Karriere-Upgrade Spritverbrauch (98l-karriere.js), ausserhalb der Karriere 1.
       fuel = Math.max(0, fuel - Math.abs(throttle) * dt * fuelDrainPerSec * zevVerbrauch[1] * (physEngine.state.setupVerbrauch || 1)
-        * (typeof karriereUpgrade === 'function' ? karriereUpgrade('sprit') : 1));
+        * (typeof karriereUpgrade === 'function' ? karriereUpgrade('sprit') : 1)
+        // v1.6.58 BESTELLT: im virtuellen Drift (X ist die Handbremse, kein Boxenstopp) kein Spritverbrauch.
+        * (typeof vfDriftOhneSprit === 'function' && vfDriftOhneSprit() ? 0 : 1));
       // Edge-triggered: without this it would rumble again on every 45ms heartbeat.
       if (fuelBefore > 0 && fuel <= 0) {
         padRumble(0.2, 0.12, 160, 'meldung');
@@ -111788,7 +111854,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (rm && merkRm !== null) rm.value = merkRm;
     }
     // Tore: Oval mit n Sektoren (seit v1.6.56: 8) -> n-1 Sektortore + Start/Ziel.
-    const merkVF = { pts: VF.pts, nrm: VF.nrm, tiles: VF.tiles, frei: VF.frei, zielIdx: VF.zielIdx, x: VF.x, y: VF.y, z: VF.z, rundeAb: VF.rundeAb, hubTore: VF.hubTore };
+    const merkVF = { pts: VF.pts, nrm: VF.nrm, tiles: VF.tiles, frei: VF.frei, zielIdx: VF.zielIdx, x: VF.x, y: VF.y, z: VF.z, rundeAb: VF.rundeAb, hubTore: VF.hubTore,
+      zielAt: VF.zielAt, letzte: VF.letzte, beste: VF.beste, runden: VF.runden, splits: VF.splits, geist: VF.geist, modus: VF.modus };
     let mass = '';
     try {
       const tiles = codeToTrack(ST_SEK_OVAL).tiles;
@@ -111806,14 +111873,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (T.naechstes !== 1) f.push('Tor 1 nicht gezaehlt');
       durch(T.liste[1], VF_HUB_TOR_H + 20);
       if (T.naechstes !== 1) f.push('ueber Tor 2 hinweg gezaehlt');
-      VF.rundeAb = 1000;
+      // v1.6.58: die Runde zaehlt beim Flug durch das Start/Ziel-Tor selbst (nicht mehr an der Mittellinie).
+      VF.geist = null; VF.modus = 'practice'; VF.rundeAb = 1000; VF.beste = null;
       durch(T.liste[T.liste.length - 1], 10);
-      if (vfHubRundeErlaubt(rennZeitJetzt())) f.push('Runde ohne alle Tore erlaubt');
+      if (VF.rundeAb !== 1000) f.push('Runde ohne alle Tore gezaehlt');
       for (let k = 1; k < T.liste.length - 1; k++) durch(T.liste[k], 10);
+      if (T.naechstes !== T.liste.length - 1) f.push('nicht alle Tore gezaehlt: ' + T.naechstes);
       durch(T.liste[T.liste.length - 1], 10);
-      if (!vfHubRundeErlaubt(rennZeitJetzt())) f.push('Runde nach allen Toren nicht erlaubt');
-      vfHubRundeGezaehlt();
+      if (VF.rundeAb === 1000 || !VF.zielAt) f.push('Runde nach allen Toren nicht gezaehlt');
       if (T.naechstes !== 0) f.push('nach der Runde nicht zurueckgesetzt');
+      if (VF_HUB_TOR_H < 100) f.push('Tore zu niedrig: ' + VF_HUB_TOR_H);
       mass = T.liste.length + ' Tore (' + (T.liste.length - 1) + ' Sektoren + Start/Ziel)';
     } finally { Object.assign(VF, merkVF); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'nur im Training waehlbar; ' + mass + '; drueber fliegen zaehlt nicht; Runde erst nach allen Toren' };
@@ -111866,6 +111935,16 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     // Handbremse: 0,4 s bei 20 m/s mit halbem Einschlag dreht das Auto auf mindestens 25 Grad.
     { const b = lauf(20, (t) => ({ lenk: 0.5, gas: t > 0.4 ? 0.7 : 0, hand: t < 0.4 }), 1), x = b.find((q) => q[0] >= 0.6);
       mass.push('Handbremse ' + Math.abs(x[1]).toFixed(0) + ' Grad'); if (!(Math.abs(x[1]) >= 25)) f.push('Handbremse nur ' + x[1].toFixed(0) + ' Grad'); }
+    // v1.6.58 GEMELDET: nach 0,5 s Handbremse stoppte das Auto ploetzlich; nach einer Drehung ueber 90 Grad rollte es nicht
+    // rueckwaerts weiter. Jetzt: 1 s nach dem Loslassen rutscht es noch (> 5 m/s), rueckwaerts rollt es weiter.
+    { const z = { vx: 20, vy: 0, r: 0, w: 20, ax: 0 };
+      for (let t = 0; t < 1.5; t += 1 / 60) vfDriftSchritt(z, Object.assign({ mu: 1 }, H, { lenk: t < 0.5 ? 0.6 : 0, hand: t < 0.5 }), 1 / 60);
+      const sp = Math.hypot(z.vx, z.vy);
+      mass.push('nach Handbremse ' + sp.toFixed(1) + ' m/s');
+      if (!(sp > 5)) f.push('Handbremse haelt das Auto an: ' + sp.toFixed(1) + ' m/s'); }
+    { const z = { vx: -8, vy: 3, r: 0.5, w: 0, ax: 0 };
+      for (let t = 0; t < 0.6; t += 1 / 60) vfDriftSchritt(z, Object.assign({ mu: 1 }, { hilfe: 0, gyro: 0 }, { lenk: 0 }), 1 / 60);
+      if (!(z.vx < -2 && Math.hypot(z.vx, z.vy) > 3)) f.push('rollt nicht rueckwaerts weiter: vx ' + z.vx.toFixed(1)); }
     // Halbes Gas greift.
     { const b = lauf(20, () => ({ lenk: 0.3, gas: 0.4 }), 4); if (!(Math.abs(b[b.length - 1][1]) < 10)) f.push('halbes Gas driftet: ' + b[b.length - 1][1].toFixed(0)); }
     // Ohne Hilfe (Drift-Gyro Aus): reine Physik - Vollgas mit vollem Einschlag dreht ein.
