@@ -4347,6 +4347,12 @@
     .vg-vorschau { position: static; }
     .vg-vorschau .vf-vorschau { max-height: 28vh; }
   }
+  /* v1.6.50: Wisch-Animationen beim Wechsel der Seiten und Unterseiten (kWischen, 10-ble-explorer.js). */
+  @keyframes kWischVor { from { transform: translateX(7%); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes kWischZurueck { from { transform: translateX(-7%); opacity: 0; } to { transform: none; opacity: 1; } }
+  .k-wisch-vor { animation: kWischVor .3s cubic-bezier(.2,.7,.2,1); }
+  .k-wisch-zurueck { animation: kWischZurueck .3s cubic-bezier(.2,.7,.2,1); }
+  @media (prefers-reduced-motion: reduce) { .k-wisch-vor, .k-wisch-zurueck { animation: none; } }
   .lade-traeger { position: relative; }
   .lade-ueber { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 12px; background: rgba(0,0,0,.78); }
@@ -7380,6 +7386,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Men&#252;s: Wisch-Animationen beim Wechsel der Seiten (vom Startbildschirm zu FAHREN, zwischen den Reitern je nach Richtung) und beim &#214;ffnen und Schlie&#223;en der Unterseiten; nicht ins Cockpit, und aus, wenn das Ger&#228;t reduzierte Bewegung w&#252;nscht.</li>
         <li>Virtuell fahren, Grafikmodus Performance fl&#252;ssiger: leichte Modellfassungen f&#252;r den Audi RS5 DTM und den K&#228;fer (gut halb so viele Dreiecke, Werkzeug tools/modell_perf.py nach Gnen54), der Geist ist in Performance eine einfache Kiste statt eines zweiten vollen Modells, das verdeckte Cockpit unter der virtuellen Fahrt zeichnet seltener und das Regenradar gar nicht.</li>
         <li>Optionen: &#8222;Virtuell&#8220; und &#8222;RC Heli&#8220; stehen in einem eigenen Abschnitt unter den Einstellungen. Neu unter Virtuell: Gyro-St&#228;rke f&#252;r das Fahrgef&#252;hl Drift und ein eigener Schalter f&#252;r die Strecken-Ambience (ab Werk aus). Neue Startansage &#8222;Gentlemen, start your engines&#8220; (aus Gnen54s Startampel) beim Start aus dem Fenster &#8222;Autos in Position&#8220; und an der virtuellen Startampel. Im Modus Virtuell sind die Akzente auf FAHREN rot. Der Heli ohne Gyro stabilisiert sich nach einem &#220;berschlag, statt zur&#252;ckzudrehen. Der Schatten unter den Autos ist im Performance-Modus jetzt dunkel (das Bild war an halbdurchsichtigen Stellen durchscheinend), die Farbkreise in der Garage sind auch am Handy rund.</li>
         <li>Virtuell fahren, aus Gnen54s Pull Requests nachgeholt: Startampel im Rennen (f&#252;nf rote Lichter, dann los), Onboard-Kamera des VW Caravelle wie im echten Modell (seitlich auf dem Fahrersitz, 100 Grad Blickwinkel, Scheibe nur als Hauch), neue Kamera &#8222;Seitennah&#8220; zwischen naher Verfolgerkamera und Motorhaube, im Auto federt der Blick nach dem Umsehen zur&#252;ck nach vorn, Knopfleiste blendet nach 4 Sekunden Ruhe aus, neuer Boden &#8222;Stein grau marmoriert&#8220;, leichte Modelle f&#252;r Spider und Caravelle im Grafikmodus Performance (fl&#252;ssiger auf Tablets), Startfehler auch in der Garage sichtbar und der Streckencode in der Pad-Diagnose.</li>

@@ -14622,6 +14622,30 @@
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Menue v1.6.50: Wisch-Animation beim Wechsel der Seiten (Richtung nach Reiterfolge) und Unterseiten, nicht ins Cockpit', () => {
+    const f = [], merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : '', merkAus = window.kWischAus;
+    window.kWischAus = false;
+    try {
+      showTab('home'); showTab('fahren');
+      if (!$('tab-fahren').classList.contains('k-wisch-vor')) f.push('Start -> Fahren ohne Wischen nach vorn');
+      showTab('options'); showTab('fahren');
+      if (!$('tab-fahren').classList.contains('k-wisch-zurueck')) f.push('Optionen -> Fahren nicht zurueck');
+      showTab('options'); showSubpage('opt-general');
+      if (!$('sub-opt-general').classList.contains('k-wisch-vor')) f.push('Unterseite ohne Wischen');
+      showSubpage('');
+      const h = document.querySelector('#tab-options .subpage-home');
+      if (h && !h.classList.contains('k-wisch-zurueck')) f.push('zurueck zur Kachelseite ohne Wischen');
+      kWischen($('tab-race'), 1);
+      if ($('tab-race').classList.contains('k-wisch-vor')) f.push('Cockpit wischt');
+      const an = getComputedStyle($('tab-fahren')).animationName;
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches ? an !== 'none' : false) f.push('reduzierte Bewegung nicht beachtet');
+    } finally {
+      window.kWischAus = merkAus;
+      document.querySelectorAll('.k-wisch-vor, .k-wisch-zurueck').forEach((el) => el.classList.remove('k-wisch-vor', 'k-wisch-zurueck'));
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'vor/zurueck nach Reiterfolge, Unterseiten, Cockpit ausgenommen' };
+  });
   stAdd('Virtuell v1.6.48: Performance - leichte Modelle fuer Audi und Kaefer, Geist ohne zweites Modell, Cockpit darunter gedrosselt', async () => {
     const f = [], mass = [];
     for (const m of ['audirs5', 'kaefer']) {
@@ -27003,6 +27027,8 @@
   async function runSelfTest() {
     const rows = $('st-rows');
     $('st-run').disabled = true;
+    // v1.6.50: waehrend des Selbsttests kein Wischen - viele Tests messen Lagen direkt nach dem Seitenwechsel.
+    window.kWischAus = true;
     $('st-status').textContent = 'laeuft …';
     // ?st=Teilstring laesst nur passende Tests laufen (v0.9.43, zum gezielten Nachpruefen).
     let nur = null;
@@ -27073,6 +27099,7 @@
       else localStorage.setItem('omegasim-lang', sprachGespeichert);
     } catch (e) { /* privat */ }
     $('st-run').disabled = false;
+    window.kWischAus = false;
     $('st-status').textContent = gut + ' ok, ' + schlecht + ' Fehler'
                                 + (offen ? ', ' + offen + ' nicht prüfbar' : '');
     log('Selbsttest: ' + gut + ' ok, ' + schlecht + ' Fehler'

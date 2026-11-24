@@ -2294,6 +2294,7 @@
     "Beim Start im Fenster „Bringe die Autos in Position“ und an der Startampel der virtuellen Fahrt: „Gentlemen, start your engines“ (immer englisch). Der Countdown beginnt, wenn der Satz gesprochen ist. Aus der Startampel von Gnen54.": "When starting from the “Bring the cars into position” window and at the start lights of virtual driving: “Gentlemen, start your engines” (always English). The countdown begins once the sentence has been spoken. From Gnen54's start lights.",
     "Optionen: „Virtuell“ und „RC Heli“ stehen in einem eigenen Abschnitt unter den Einstellungen. Neu unter Virtuell: Gyro-Stärke für das Fahrgefühl Drift und ein eigener Schalter für die Strecken-Ambience (ab Werk aus). Neue Startansage „Gentlemen, start your engines“ (aus Gnen54s Startampel) beim Start aus dem Fenster „Autos in Position“ und an der virtuellen Startampel. Im Modus Virtuell sind die Akzente auf FAHREN rot. Der Heli ohne Gyro stabilisiert sich nach einem Überschlag, statt zurückzudrehen. Der Schatten unter den Autos ist im Performance-Modus jetzt dunkel (das Bild war an halbdurchsichtigen Stellen durchscheinend), die Farbkreise in der Garage sind auch am Handy rund.": "Options: “Virtual” and “RC heli” are in their own section below the settings. New under Virtual: gyro strength for the Drift handling and a separate switch for the track ambience (off by default). New start announcement “Gentlemen, start your engines” (from Gnen54's start lights) when starting from the “Cars in position” window and at the virtual start lights. In virtual mode the accents on DRIVE are red. The heli without gyro stabilises after a flip instead of turning back. The shadow under the cars is now dark in Performance mode (the picture was see-through at translucent spots), the paint circles in the garage are round on phones too.",
     "Virtuell fahren, Grafikmodus Performance flüssiger: leichte Modellfassungen für den Audi RS5 DTM und den Käfer (gut halb so viele Dreiecke, Werkzeug tools/modell_perf.py nach Gnen54), der Geist ist in Performance eine einfache Kiste statt eines zweiten vollen Modells, das verdeckte Cockpit unter der virtuellen Fahrt zeichnet seltener und das Regenradar gar nicht.": "Virtual driving, smoother Performance graphics: light model versions for the Audi RS5 DTM and the Beetle (just over half the triangles, tool tools/modell_perf.py after Gnen54), the ghost is a simple box in Performance instead of a second full model, the hidden cockpit under the virtual drive redraws less often and the rain radar not at all.",
+    "Menüs: Wisch-Animationen beim Wechsel der Seiten (vom Startbildschirm zu FAHREN, zwischen den Reitern je nach Richtung) und beim Öffnen und Schließen der Unterseiten; nicht ins Cockpit, und aus, wenn das Gerät reduzierte Bewegung wünscht.": "Menus: swipe animations when changing pages (from the start screen to DRIVE, between tabs depending on direction) and when opening and closing subpages; not into the cockpit, and off when the device asks for reduced motion.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -7167,12 +7168,30 @@
   // ---- Unterseiten innerhalb eines Tabs ----
   // Eine Kachelseite plus je Kachel eine Karte. Der Tab selbst bleibt EIN Tab, damit
   // showTab, die Tastenkuerzel und die Kopfzeile unberuehrt bleiben.
+  // v1.6.50: Wisch-Animation (CSS .k-wisch-vor / .k-wisch-zurueck), einmal je Wechsel, danach wieder weg.
+  function kTabReihe(tab) {
+    const alle = [...document.querySelectorAll('.tab-btn')].map((b) => b.dataset.tab);
+    const b = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
+    const ziel = b && b.dataset.parent ? b.dataset.parent : tab;
+    const i = alle.indexOf(ziel);
+    return i < 0 ? 0 : i + (ziel !== tab ? 0.5 : 0);
+  }
+  function kWischen(el, richtung) {
+    if (!el || window.kWischAus || el.id === 'tab-race' || document.body.classList.contains('race-fs')) return;
+    el.classList.remove('k-wisch-vor', 'k-wisch-zurueck');
+    void el.offsetWidth;   // Animation neu beginnen
+    el.classList.add(richtung < 0 ? 'k-wisch-zurueck' : 'k-wisch-vor');
+    clearTimeout(el._kWisch);
+    el._kWisch = setTimeout(() => el.classList.remove('k-wisch-vor', 'k-wisch-zurueck'), 450);
+  }
   function showSubpage(key) {
+    const warOffen = document.querySelector('.tabpage.active .subpage.on');
     document.querySelectorAll('.subpage').forEach(p => p.classList.remove('on'));
     document.querySelectorAll('.subpage-home').forEach(h => { h.style.display = key ? 'none' : ''; });
+    if (!key && warOffen) { const h = document.querySelector('.tabpage.active .subpage-home'); if (h) kWischen(h, -1); }
     if (key) {
       const p = $('sub-' + key);
-      if (p) p.classList.add('on');
+      if (p) { p.classList.add('on'); if (p.closest('.tabpage.active')) kWischen(p, 1); }
       // v1.6.41: Optionen > Virtuell / RC Heli werden beim Oeffnen aus den Zeilen der virtuellen Fahrt gebaut.
       if ((key === 'opt-virtuell' || key === 'opt-heli') && typeof vfOptionenSeite === 'function') vfOptionenSeite(key);
     }
@@ -7238,6 +7257,9 @@
         if (p) p.classList.add('active');
       }
       $('tab-' + btn.dataset.tab).classList.add('active');
+      // v1.6.50 BESTELLT: "Wisch-Animationen zwischen den Menues und vom Startbildschirm zum Fahren-Menue". Richtung aus der
+      // Reihenfolge der Reiter (weiter rechts = von rechts herein); nicht ins Cockpit (Vollbild, Latenz).
+      if (vorher && vorher.id !== 'tab-' + btn.dataset.tab) kWischen($('tab-' + btn.dataset.tab), kTabReihe(btn.dataset.tab) >= kTabReihe(vorher.id.replace(/^tab-/, '')) ? 1 : -1);
       // Only hold the screen awake while the racing screen is actually the one on show.
       keepScreenAwake(btn.dataset.tab === 'race');
       document.body.classList.toggle('race-mode', btn.dataset.tab === 'race');
