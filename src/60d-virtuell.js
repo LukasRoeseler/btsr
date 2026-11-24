@@ -1438,8 +1438,8 @@
     // er schreibt selbst keine Tiefe. Glanz je Flaeche wie 1.3.92, der Boden nach seiner Art.
     zeichne(F.strasse, F.txBahn, 0.16, VF_BUMP_BAHN);
     zeichne(F.rand, F.txRand, 0.10, 0);
-    // v1.6.60: in AR kein Boden - dort ist der echte Fussboden zu sehen.
-    if (!VF.ar) {
+    // v1.6.60: in AR kein Boden - dort ist der echte Fussboden zu sehen (v1.6.67: auch in der Marker-AR).
+    if (!VF.ar && !VF.marker) {
       gl.depthMask(false);
       gl.enable(gl.POLYGON_OFFSET_FILL);
       gl.polygonOffset(2, 16);
@@ -4360,7 +4360,7 @@
       gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
     }
     // v1.5: Baeume (nur auf Rasen), vor den Autos. v1.6.60: in AR keine (die echte Umgebung ist zu sehen).
-    if (VF.ar) { /* ohne Baeume */ }
+    if (VF.ar || VF.marker) { /* ohne Baeume */ }
     else if (VF.weh && VF.weh.prog) vfWehenMalen(gl, pv);
     else if (VF.baeume) {
       zeichne(VF.baeume, VF_EINS);
@@ -4425,6 +4425,8 @@
   function vfMalen() {
     const gl = VF.gl, cv = VF.cv;
     if (gl.isContextLost()) return;   // webglcontextlost beendet die Fahrt (virtuellStarten)
+    // v1.6.67: Marker-AR (60f-ar-marker.js): Kamerabild dahinter, Pose aus dem Marker.
+    if (VF.marker) { if (typeof vfMkMalen === 'function') vfMkMalen(); return; }
     // v1.6.60: Augmented Reality zeichnet in die Ebene der AR-Sitzung (60e-ar.js), nicht in die Leinwand.
     if (VF.ar) { if (VF.ar.frame && typeof vfArMalen === 'function') vfArMalen(VF.ar.frame); return; }
     // Handy (Touch): hoechstens 1,25-fache Aufloesung - die Pixelzahl ist auf dem Handy der teuerste Teil.
@@ -6002,8 +6004,10 @@
     schicht.classList.add('vf-laedt');
     // v1.6.60: in AR liegt die Schicht im Wurzelelement der AR-Ueberlagerung (dom-overlay), durchsichtig.
     VF.ar = opts.ar || null;
+    VF.marker = opts.marker || null;   // v1.6.67: Marker-AR (60f-ar-marker.js) - Kamerabild hinter durchsichtiger Leinwand
     if (VF.ar) { schicht.classList.add('vf-ar'); (VF.ar.wurzel || document.body).appendChild(schicht); }
     else document.body.appendChild(schicht);
+    if (VF.marker) schicht.classList.add('vf-ar', 'vf-mk');
     // v1.6.44 aus gnen54s testversion (aba1968): die Knopfleiste blendet sich nach 4 s Ruhe aus und kommt bei Mausbewegung,
     // Tippen oder Klick zurueck (Lenken auf den Touch-Flaechen zaehlt nicht). Der Knopf zum dauerhaften Ausblenden bleibt.
     { const kn = schicht.querySelector('.vf-knoepfe');
@@ -6026,7 +6030,7 @@
     // v1.6.46 GEMELDET: "der Schatten unter den virtuellen Autos im Performance-Modus ist heller als die Strasse". Mit dem
     // Alphakanal der Leinwand (Vorgabe) senkte jede halbdurchsichtige Flaeche (Schatten, Geist, Rauch) die Deckkraft des
     // Bildes, und der helle Seitenhintergrund schien durch. alpha: false = undurchsichtige Leinwand.
-    const gl = cv.getContext('webgl', { antialias: true, alpha: false, xrCompatible: !!opts.ar }) || cv.getContext('experimental-webgl', { alpha: false });
+    const gl = cv.getContext('webgl', { antialias: true, alpha: !!opts.marker, xrCompatible: !!opts.ar }) || cv.getContext('experimental-webgl', { alpha: !!opts.marker });
     if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
     if (VF.ar) cv.style.visibility = 'hidden';   // v1.6.60: in AR zeichnet die Sitzung, die Leinwand bleibt unsichtbar
     // v1.5.154: OES_standard_derivatives (fwidth) fuer den bildschirm-adaptiven Schatten-PCF des Autos.
@@ -6612,7 +6616,8 @@
       ar.innerHTML = 'AR <span class="wip-tag">WIP</span>';
       ar.title = t('Augmented Reality: die Strecke im Zimmer (Chrome auf Android mit ARCore)');
       ar.onclick = (e) => { e.stopPropagation(); if (typeof vfArStarten === 'function') vfArStarten(); };
-      ar.hidden = !(typeof vfArMoeglich === 'function' && vfArMoeglich());
+      // v1.6.67: auch ohne WebXR-AR (Marker-AR mit der Kamera, 60f-ar-marker.js) - also ueberall, wo es eine Kamera gibt.
+      ar.hidden = !((typeof vfArMoeglich === 'function' && vfArMoeglich()) || !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
       z.appendChild(ar);
     }
     // v1.6.60 (aus Gnen54s Fork): Bestzeiten je Strecke und Auto, zugeklappt unter den Optionen der Garage.
@@ -6778,6 +6783,7 @@
   function virtuellBeenden() {
     if (VF.aktiv) vfZeitenAbschluss();
     if (VF.ar) { const ar = VF.ar; VF.ar = null; try { if (typeof vfArAufraeumen === 'function') vfArAufraeumen(ar); } catch (e) { /* egal */ } }
+    if (VF.marker) { const mk = VF.marker; VF.marker = null; try { if (typeof vfMkAufraeumen === 'function') vfMkAufraeumen(mk); } catch (e) { /* egal */ } }
     VF.frei = undefined;
     VF.freiId = '';
     VF_BOX_SEITE = -1;   // zurueck auf die Editor-Boxenseite (rechts)

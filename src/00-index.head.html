@@ -4031,6 +4031,13 @@
   /* v1.6.60: Augmented Reality - die Schicht ist durchsichtig, das Kamerabild kommt von der AR-Sitzung. */
   .vf-schicht.vf-ar { background: transparent; }
   .vf-ar-wurzel { position: fixed; inset: 0; z-index: 300; background: transparent; pointer-events: none; }
+  /* v1.6.67 Marker-AR: Kamerabild unten, die durchsichtige Leinwand darueber. */
+  .vf-schicht.vf-mk { background: #000; }
+  .vf-mk-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; pointer-events: none; }
+  .vf-schicht.vf-mk > canvas { position: absolute; inset: 0; z-index: 1; }
+  .vf-mk-leiste { position: absolute; right: max(12px, env(safe-area-inset-right)); top: 22%; z-index: 5; display: flex; flex-direction: column; gap: 8px; }
+  .vf-mk-leiste > * { padding: .45em .8em; border-radius: 8px; background: rgba(8,10,14,.72); color: #fff; border: 1px solid var(--vf-linie);
+    font: inherit; font-size: calc(var(--vf-s) * .7); text-decoration: none; text-align: center; cursor: pointer; }
   .vf-ar-wurzel > * { pointer-events: auto; }
   .vf-ar-hinweis { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); max-width: min(86vw, 520px); padding: .6em 1em;
     border-radius: 10px; background: rgba(8,10,14,.72); color: #fff; text-align: center; font-weight: 700; pointer-events: none; z-index: 5; }
@@ -7407,6 +7414,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Neu, Prototyp: Marker-AR ohne ARCore, f&#252;r Handys, die kein Google-AR k&#246;nnen (z. B. Galaxy A16/A41), in der App und im Browser. Den Marker (Optionen in der AR-Ansicht: &#8222;Marker drucken&#8220;, Datei ar-marker-a4.svg) in Originalgr&#246;&#223;e auf A4 drucken und auf den Boden legen, dann in der virtuellen Garage &#8222;AR&#8220; tippen: Das Kamerabild ist der Hintergrund, die Strecke liegt mittig auf dem Marker, und du kannst um sie herumgehen, solange der Marker im Bild ist. Ma&#223;stab 1:1, 1:2 oder 1:4 umschaltbar. Erkennung mit js-aruco2 (Open Source, MIT/BSD/LGPL-3, liegt unter lib/js-aruco2).</li>
         <li>AR: Ein Tipp auf AR gibt jetzt immer eine R&#252;ckmeldung. Der Knopf zeigt &#8222;AR startet &#8230;&#8220;; lehnt Chrome die Sitzung ab oder antwortet 12 s lang nicht, erscheint ein Fenster mit dem Grund, Hinweisen (Chrome aktualisieren, &#8222;Google Play-Dienste f&#252;r AR&#8220; installieren, Kamera erlauben) und dem Protokoll. Vorher stand der Fehler nur als unsichtbarer Hinweis da, und eine h&#228;ngende Anfrage blockierte weitere Tipps.</li>
         <li>AR (Chrome auf Android): Die Sitzung beendete sich nach dem Erlauben der Kamera wieder (kurzes eingefrorenes Kamerabild), weil die Seite erst die ganze virtuelle Fahrt aufbaute, bevor sie das erste AR-Bild lieferte. Jetzt laufen AR-Ebene und Bodensuche ab dem ersten Bild, die Fahrt wird danach in dieselbe Leinwand aufgebaut; kein doppelter Start; endet die Sitzung trotzdem fr&#252;h, zeigt ein Fenster das Protokoll und &#8222;Nochmal&#8220;. Ohne Bodensuche setzt ein Tipp die Strecke 1,2 m vor dich. Virtuelle Garage: Losfahren und ? in einer Zeile, AR darunter &#252;ber die ganze Breite (vorher war Losfahren unlesbar und ? lag auf den Optionen).</li>
         <li>Virtuell: Rundenzeiten auf eigenen und freien Strecken (T&#246;rnerschleife, Heckenhoim, auch Gegenrichtung und RC Heli) werden je Fahrgef&#252;hl gespeichert und mit &#8222;Zeiten online synchronisieren&#8220; in eigene virtuelle Online-Listen geschickt; in den Challenges zeigt der Modus Virtuell diese Strecken. Aus Gnen54s Fork: gefahrene Zeiten je Strecke und Auto (Bestzeit und Zwischenzeiten gelten beim Start, Bestenliste in der virtuellen Garage), die Ansage &#8222;Akku kritisch&#8220; bei 6 % (Optionen &gt; Ton, ab Werk an), die echte Startampel am Tisch (Optionen &gt; Startampel, Bluetooth, Raspberry Pi / Pico) und seine Werkzeuge f&#252;r die freien Strecken (tools/strecken). Neu, Prototyp: AR in Chrome auf Android (Knopf &#8222;AR&#8220; in der virtuellen Garage): Strecke in Originalgr&#246;&#223;e auf dem Fu&#223;boden platzieren, dann f&#228;hrt das Auto bzw. fliegt der Heli im Zimmer.</li>

@@ -14644,13 +14644,44 @@
       const kn = document.createElement('div'); vfGarageOptionen(kn);
       const ar = kn.querySelector('[data-vf="ar"]');
       if (!ar) f.push('kein AR-Knopf');
-      else if (ar.hidden !== !vfArMoeglich()) f.push('AR-Knopf sichtbar ohne AR');
+      // v1.6.67: Sichtbarkeit des AR-Knopfs (auch Marker-AR) prueft der Test 'Virtuell v1.6.67'.
       if (!kn.querySelector('[data-vf="bestenliste"]')) f.push('Bestenliste fehlt in der Garage');
     } finally {
       Object.assign(VF, merkVF);
       try { if (merk === null) localStorage.removeItem(VF_ZEITEN_STORE); else localStorage.setItem(VF_ZEITEN_STORE, merk); } catch (e) { /* egal */ }
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bestzeit 29,000 s mit Zwischenzeiten, Gegenrichtung getrennt, Bestenliste, AR-Knopf ' + (vfArMoeglich() ? 'sichtbar' : 'verborgen (kein WebXR-AR)') };
+  });
+  stAdd('Virtuell v1.6.67: Marker-AR - Weltabbildung (Hoehe = aus dem Papier), Kameraort, Glaettung orthonormal, AR-Knopf mit Kamera, Marker-Blatt', async () => {
+    const f = [];
+    // Welt -> Marker: Welt-Hoehe (y) wird Marker-z (aus dem Papier), Welt-x bleibt x, Welt-z wird -Marker-y; Massstab mm.
+    const merkPts = VF.pts;
+    try {
+      VF.pts = [{ x: 0, y: 0 }];
+      const W = vfMkWelt(), s = 10 / TRACK_UNITS_PER_CM * vfMkMassstab();
+      const ab = (v) => [W[0] * v[0] + W[4] * v[1] + W[8] * v[2] + W[12], W[1] * v[0] + W[5] * v[1] + W[9] * v[2] + W[13], W[2] * v[0] + W[6] * v[1] + W[10] * v[2] + W[14]];
+      const oben = ab([0, 1, 0]), vorn = ab([0, 0, 1]);
+      if (Math.abs(oben[2] - s) > 1e-6 || Math.abs(oben[0]) > 1e-6 || Math.abs(oben[1]) > 1e-6) f.push('Hoehe nicht aus dem Papier: ' + oben);
+      if (Math.abs(vorn[1] + s) > 1e-6) f.push('Welt-z nicht -Marker-y: ' + vorn);
+    } finally { VF.pts = merkPts; }
+    // Kameraort: Blick = Verschiebung (0,0,-500) -> Auge bei (0,0,500).
+    const auge = vfMkAuge([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, -500, 1]);
+    if (Math.abs(auge[2] - 500) > 1e-6) f.push('Auge ' + auge);
+    // Glaettung: nach Mischen wieder orthonormal.
+    const M = [0.9, 0.1, 0, 0, -0.2, 1.1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    vfMkOrtho(M);
+    const d = M[0] * M[4] + M[1] * M[5] + M[2] * M[6], l = Math.hypot(M[4], M[5], M[6]);
+    if (Math.abs(d) > 1e-6 || Math.abs(l - 1) > 1e-6) f.push('nicht orthonormal');
+    // AR-Knopf auch ohne WebXR-AR, sobald es eine Kamera gibt.
+    const box = document.createElement('div'); vfGarageOptionen(box);
+    const k = box.querySelector('[data-vf="ar"]');
+    const kamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    if (!k || k.hidden !== !(vfArMoeglich() || kamera)) f.push('AR-Knopf ' + (k ? (k.hidden ? 'verborgen' : 'sichtbar') : 'fehlt'));
+    // Marker-Blatt und Bibliothek liegen bei.
+    for (const u of ['ar-marker-a4.svg', 'lib/js-aruco2/aruco.js', 'lib/js-aruco2/posit1.js', 'lib/js-aruco2/LICENSE.txt']) {
+      try { const r = await fetch(u, { method: 'HEAD', cache: 'no-store' }); if (!r.ok) f.push(u + ' ' + r.status); } catch (e) { f.push(u + ' nicht erreichbar'); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Hoehe aus dem Papier, Kameraort, orthonormal, AR-Knopf ' + (k && !k.hidden ? 'sichtbar' : 'verborgen') + ', Marker-Blatt und js-aruco2 da' };
   });
   stAdd('Startampel v1.6.60: Befehle fuer Start, Toene, Gruen, Gelb, Fruehstart und Ende (Attrappe)', async () => {
     const f = [], gesendet = [];

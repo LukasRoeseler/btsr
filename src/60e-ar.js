@@ -30,7 +30,7 @@
         navigator.xr.isSessionSupported('immersive-ar').then((ja) => {
           vfArUnterstuetzt = !!ja;
           const k = document.querySelector('[data-vf="ar"]');
-          if (k) k.hidden = !ja;
+          if (k) k.hidden = !(ja || (navigator.mediaDevices && navigator.mediaDevices.getUserMedia));
         }).catch(() => { vfArUnterstuetzt = false; });
       }
     } catch (e) { vfArUnterstuetzt = false; }
@@ -60,7 +60,8 @@
   // Ueberlagerung faengt keine Tipps (pointer-events), sofortige Rueckmeldung am Knopf, Waechter nach 12 s.
   function vfArMeldung(titel, text, ar) {
     const prot = ar && ar.protokoll && ar.protokoll.length ? '\n\n' + t('Protokoll:') + '\n' + ar.protokoll.slice(-12).join('\n') : '';
-    if (typeof konsoleFrage === 'function') konsoleFrage(titel, text + prot, [[t('Nochmal'), () => vfArStarten()], [t('Schließen'), null]], true);
+    if (typeof konsoleFrage === 'function') konsoleFrage(titel, text + prot, [[t('Nochmal'), () => vfArStarten()],
+      [t('Marker-AR (ohne ARCore)'), () => vfMarkerStarten()], [t('Schließen'), null]], true);
     else showHudToast(titel + ': ' + text);
   }
   function vfArKnopf(text) {
@@ -80,10 +81,8 @@
       if (!vfArLaeuft.session && performance.now() - vfArLaeuft.t0 > 12000) { vfArAufraeumen(vfArLaeuft); vfArLaeuft = null; }
       else return;
     }
-    if (!(navigator.xr && navigator.xr.requestSession)) {
-      vfArMeldung(t('AR konnte nicht starten'), t('AR geht hier nicht: sie braucht Chrome auf einem Android-Handy mit ARCore (nicht in der App, nicht am PC).'));
-      return;
-    }
+    // v1.6.67: ohne WebXR-AR (App, Handys ohne ARCore wie Galaxy A16/A41) die Marker-AR mit der Kamera.
+    if (!(navigator.xr && navigator.xr.requestSession) || !vfArMoeglich()) { vfMarkerStarten(); return; }
     vfArKnopf(t('AR startet …'));
     const wurzel = document.createElement('div');
     wurzel.className = 'vf-ar-wurzel';
