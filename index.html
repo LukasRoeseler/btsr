@@ -6092,7 +6092,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.76</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.78</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7418,6 +7418,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Marker-AR: Die Strecke kippt nicht mehr &#8222;wie ein Necker-W&#252;rfel&#8220; in die andere Neigung. Ein flacher Marker l&#228;sst zwei fast gleich gute Neigungen zu; gew&#228;hlt wird jetzt die, bei der das Papier im Bild nach oben zeigt (der Marker liegt am Boden), die zur bisherigen passt (auch &#252;ber kurze Aussetzer) und den kleineren Fehler hat, mit Hysterese gegen st&#228;ndiges Wechseln.</li>
         <li>Marker-AR ruhiger: Die Ecken des Markers werden jetzt auf Bruchteile eines Pixels genau vermessen (Kanten im Graubild, angepasste Geraden) und mit einem One-Euro-Filter gegl&#228;ttet; die Erkennung l&#228;uft mit einer festen Breite von 960 Pixeln statt abwechselnd 640/400. Neigung und Abstand werden bei ruhiger Kamera st&#228;rker gegl&#228;ttet, bei Bewegung folgt das Bild sofort. Gemessen bei 1,3 m Abstand: Zittern 2- bis 5-mal kleiner, Erkennung in 98 % statt 38 % der Bilder.</li>
         <li>Marker-AR: Die Lage aus der Markererkennung war manchmal gespiegelt. Dann war die Welt &#8222;von innen&#8220; gezeichnet: Auto kaum sichtbar, Licht verkehrt, und der Wechsel lie&#223; die Strecke zittern. Jetzt ist die Lage immer eine echte Drehung. In AR gibt es keinen Dunst mehr (er begann schon 67 cm vor der Kamera und machte alles zu hell). Falscherkennungen werden verworfen (h&#246;chstens 2 falsche Bits, unplausible Lagen), die Erkennung l&#228;uft abwechselnd mit 640 und 400 Pixeln, die Gl&#228;ttung ist ruhiger. Neu: eine Diagnosezeile und gr&#252;ne Punkte an den erkannten Ecken.</li>
         <li>Marker-AR &#252;berarbeitet: Der Marker ist jetzt Start/Ziel, das Auto steht beim Start auf dem Marker und f&#228;hrt Richtung Blatt-Oberkante los (vorher lag die Streckenmitte auf dem Marker, das Auto oft au&#223;erhalb des Bildes). Die Erkennung l&#228;uft in einem eigenen Thread mit h&#246;herer Aufl&#246;sung, das Bild ruckelt nicht mehr, wenn sie rechnet. Das Kamerabild ist jetzt Teil des 3D-Bilds, die Strecke wird nicht mehr wei&#223;lich. Die Lage springt nicht mehr zwischen zwei Neigungen, die Gl&#228;ttung passt sich der Bewegung an, kurze Aussetzer (bis 1,5 s) werden &#252;berbr&#252;ckt.</li>
@@ -18033,6 +18034,7 @@
     "Marker-AR: Die Lage aus der Markererkennung war manchmal gespiegelt. Dann war die Welt „von innen“ gezeichnet: Auto kaum sichtbar, Licht verkehrt, und der Wechsel ließ die Strecke zittern. Jetzt ist die Lage immer eine echte Drehung. In AR gibt es keinen Dunst mehr (er begann schon 67 cm vor der Kamera und machte alles zu hell). Falscherkennungen werden verworfen (höchstens 2 falsche Bits, unplausible Lagen), die Erkennung läuft abwechselnd mit 640 und 400 Pixeln, die Glättung ist ruhiger. Neu: eine Diagnosezeile und grüne Punkte an den erkannten Ecken.": "Marker AR: the pose from marker detection was sometimes mirrored. The world was then drawn “inside out”: car barely visible, lighting reversed, and the switching made the track jitter. The pose is now always a proper rotation. In AR there is no more haze (it started just 67 cm in front of the camera and made everything too bright). False detections are discarded (at most 2 wrong bits, implausible poses), detection alternates between 640 and 400 pixels, smoothing is calmer. New: a diagnostics line and green dots on the detected corners.",
     "fein": "subpixel",
     "Marker-AR ruhiger: Die Ecken des Markers werden jetzt auf Bruchteile eines Pixels genau vermessen (Kanten im Graubild, angepasste Geraden) und mit einem One-Euro-Filter geglättet; die Erkennung läuft mit einer festen Breite von 960 Pixeln statt abwechselnd 640/400. Neigung und Abstand werden bei ruhiger Kamera stärker geglättet, bei Bewegung folgt das Bild sofort. Gemessen bei 1,3 m Abstand: Zittern 2- bis 5-mal kleiner, Erkennung in 98 % statt 38 % der Bilder.": "Marker AR calmer: the marker corners are now measured to a fraction of a pixel (edges in the greyscale image, fitted lines) and smoothed with a One Euro filter; detection runs at a fixed width of 960 pixels instead of alternating 640/400. Tilt and distance are smoothed more while the camera is still, and the image follows immediately when you move. Measured at 1.3 m: jitter 2 to 5 times smaller, detection in 98 % instead of 38 % of frames.",
+    "Marker-AR: Die Strecke kippt nicht mehr „wie ein Necker-Würfel“ in die andere Neigung. Ein flacher Marker lässt zwei fast gleich gute Neigungen zu; gewählt wird jetzt die, bei der das Papier im Bild nach oben zeigt (der Marker liegt am Boden), die zur bisherigen passt (auch über kurze Aussetzer) und den kleineren Fehler hat, mit Hysterese gegen ständiges Wechseln.": "Marker AR: the track no longer flips “like a Necker cube” to the other tilt. A flat marker allows two almost equally good tilts; the app now picks the one where the paper points upward in the image (the marker lies on the floor), that matches the previous one (also across short dropouts) and has the smaller error, with hysteresis against constant switching.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -51007,26 +51009,53 @@
     const z = [x[1] * y[2] - x[2] * y[1], x[2] * y[0] - x[0] * y[2], x[0] * y[1] - x[1] * y[0]];
     return [x[0], x[1], x[2], 0, y[0], y[1], y[2], 0, z[0], z[1], z[2], 0, T[0], T[1], -T[2], 1];
   }
+  // v1.6.77 GEMELDET: "Ab und zu glitcht sie auch noch in die andere Richtung wie ein Neckarwuerfel/Kippbild." Ein ebener
+  // Marker hat aus vier Ecken zwei fast gleich gute Neigungen (gespiegelt um die Blickrichtung); die Bibliothek nimmt die
+  // mit dem kleineren Fehler, und im Rauschen wechselte das - vor allem nach einem Aussetzer, wenn es keine vorige Lage
+  // zum Vergleich gab. Jetzt hat jede plausible Loesung eine Wertung:
+  //   + Normale des Papiers zeigt im Bild nach oben (der Marker liegt am Boden, die Kamera ist darueber),
+  //   + passt zur zuletzt gewaehlten Normalen (auch ueber Aussetzer hinweg: der Marker liegt fest),
+  //   - groesserer Rueckprojektionsfehler (Pixel),
+  // und ein Wechsel gegen die bisherige Wahl braucht einen Vorsprung (Hysterese).
+  function vfMkWaehlen(mk, r, jetzt) {
+    // Plausibel? Vor der Kamera (GL z negativ), 5 cm bis 8 m, Papier zur Kamera gewandt (Normale mit +z-Anteil).
+    const plausibel = (Q) => Q[14] < -50 && Q[14] > -8000 && Q[10] > 0.08;
+    const kand = [];
+    const M1 = vfMkGl(r.r1, r.t1);
+    if (plausibel(M1)) kand.push({ M: M1, e: isFinite(r.e1) && r.e1 >= 0 ? r.e1 : 0 });
+    if (r.r2 && r.t2 && isFinite(r.e2) && r.e2 >= 0) { const M2 = vfMkGl(r.r2, r.t2); if (plausibel(M2)) kand.push({ M: M2, e: r.e2 }); }
+    if (!kand.length) return null;
+    if (kand.length === 1) { mk.wahlN = [kand[0].M[8], kand[0].M[9], kand[0].M[10]]; return kand[0].M; }
+    const eMin = Math.min(kand[0].e, kand[1].e);
+    const N = mk.wahlN;
+    const wert = (k) => {
+      let w = 1.2 * k.M[9];                                      // Normale nach oben im Bild
+      if (N) w += 1.0 * (k.M[8] * N[0] + k.M[9] * N[1] + k.M[10] * N[2]);   // wie zuletzt (schwaecher als oben: kommt aus falscher Wahl heraus)
+      w -= 0.25 * Math.max(0, k.e - eMin);                       // Fehler in Pixeln
+      return w;
+    };
+    const w0 = wert(kand[0]), w1 = wert(kand[1]);
+    let b = w1 > w0 ? 1 : 0;
+    // Hysterese: gegen die bisherige Wahl nur mit 0,3 Vorsprung wechseln.
+    if (N) {
+      const nah = (k) => k.M[8] * N[0] + k.M[9] * N[1] + k.M[10] * N[2];
+      const bisher = nah(kand[0]) >= nah(kand[1]) ? 0 : 1;
+      if (b !== bisher && Math.abs(w1 - w0) < 0.3) b = bisher;
+    }
+    const M = kand[b].M;
+    mk.wahlN = [M[8], M[9], M[10]];
+    return M;
+  }
   function vfMkAntwort(mk, r) {
     const S = mk.stat || (mk.stat = { gesendet: 0, erkannt: 0, verworfen: 0, ms: 0, dist: 0, w: 0, h: 0, kand: 0 });
     if (r) { if (r.ms !== undefined) S.ms = r.ms; if (r.w) { S.w = r.w; S.h = r.h; } if (r.kand !== undefined) S.kand = r.kand; if (r.ok) { S.fein = (S.fein || 0) + (r.fein ? 1 : 0); } }
     if (!r || !r.ok || !r.r1 || !r.t1) { if (r && r.fehler && !mk.fehler) { mk.fehler = r.fehler; log('Marker-AR: ' + r.fehler, 'warn'); } return; }
     const jetzt = performance.now();
-    let M = vfMkGl(r.r1, r.t1);
-    // Plausibel? Vor der Kamera (GL z negativ), 5 cm bis 8 m, Papier zur Kamera gewandt (Normale mit +z-Anteil).
-    const plausibel = (Q) => Q[14] < -50 && Q[14] > -8000 && Q[10] > 0.08;
-    if (!plausibel(M) && r.r2 && r.t2) { const M2 = vfMkGl(r.r2, r.t2); if (plausibel(M2)) M = M2; }
-    if (!plausibel(M)) { S.verworfen++; S.zuletztVerworfen = [M[10], M[14]].map((x) => Math.round(x * 1000) / 1000); return; }
+    const M = vfMkWaehlen(mk, r, jetzt);
+    if (!M) { S.verworfen++; return; }
     S.erkannt++; S.dist = Math.round(-M[14]);
     mk.ecken = r.ecken || null; mk.eckenAt = jetzt;
-    // Kippmehrdeutigkeit: passt die zweite Loesung besser zur vorigen Lage (Normale), und ist ihr Fehler nicht viel
-    // groesser, die zweite nehmen - sonst springt die Strecke zwischen zwei Neigungen.
     const vor = mk.pose && jetzt - mk.zuletzt < VF_MK.verlorenMs ? mk.pose : null;
-    if (vor && r.r2 && r.t2 && isFinite(r.e2) && r.e2 >= 0 && r.e2 < Math.max(3, (r.e1 || 0) * 3)) {
-      const M2 = vfMkGl(r.r2, r.t2);
-      const d1 = M[8] * vor[8] + M[9] * vor[9] + M[10] * vor[10], d2 = M2[8] * vor[8] + M2[9] * vor[9] + M2[10] * vor[10];
-      if (d2 > d1 + 0.05) M = M2;
-    }
     // Glaettung je nach Bewegung: kleine Aenderung stark glaetten (Zittern), grosse fast sofort uebernehmen.
     if (vor) {
       const dt = Math.hypot(M[12] - vor[12], M[13] - vor[13], M[14] - vor[14]);
@@ -112866,6 +112895,32 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       try { if (merk === null) localStorage.removeItem(VF_ZEITEN_STORE); else localStorage.setItem(VF_ZEITEN_STORE, merk); } catch (e) { /* egal */ }
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bestzeit 29,000 s mit Zwischenzeiten, Gegenrichtung getrennt, Bestenliste, AR-Knopf ' + (vfArMoeglich() ? 'sichtbar' : 'verborgen (kein WebXR-AR)') };
+  });
+  stAdd('Virtuell v1.6.77: Marker-AR waehlt die Neigung mit Normale nach oben, haelt sie ueber Aussetzer, kommt aus einer falschen Wahl heraus', () => {
+    const f = [];
+    // POSIT-Zeilen: richtig = Blatt-oben (0, 0,643, -0,766) in GL, Normale (0, 0,766, 0,643); gekippt = Normale (0, -0,766, 0,643).
+    const richtig = [[1, 0, 0], [0, 0.643, 0.766], [0, 0.766, -0.643]], gekippt = [[1, 0, 0], [0, 0.643, -0.766], [0, -0.766, -0.643]];
+    const T = [0, -100, 1200];
+    const ny = (M) => M && M[9];
+    let mk = {};
+    // 1. Nach einem Aussetzer (keine vorige Wahl): die Bibliothek bevorzugt die gekippte (kleinerer Fehler) - gewaehlt wird die richtige.
+    let M = vfMkWaehlen(mk, { r1: gekippt, t1: T, e1: 0.5, r2: richtig, t2: T, e2: 0.6 }, 0);
+    if (!(ny(M) > 0.5)) f.push('ohne Vorgeschichte gekippt gewaehlt: ' + ny(M));
+    // 2. Bisherige Wahl richtig, Bibliothek liefert gekippt zuerst: bleibt richtig.
+    M = vfMkWaehlen(mk, { r1: gekippt, t1: T, e1: 0.4, r2: richtig, t2: T, e2: 0.5 }, 30);
+    if (!(ny(M) > 0.5)) f.push('springt auf gekippt: ' + ny(M));
+    // 3. Falsch eingerastet (vorige Wahl gekippt): kommt zur richtigen zurueck.
+    mk = { wahlN: [0, -0.766, 0.643] };
+    M = vfMkWaehlen(mk, { r1: gekippt, t1: T, e1: 0.5, r2: richtig, t2: T, e2: 0.5 }, 60);
+    if (!(ny(M) > 0.5)) f.push('bleibt falsch eingerastet: ' + ny(M));
+    // 4. Viel groesserer Fehler der Alternative (deutlich falsche Loesung): die bessere bleibt.
+    mk = {};
+    M = vfMkWaehlen(mk, { r1: richtig, t1: T, e1: 0.5, r2: gekippt, t2: T, e2: 9 }, 0);
+    if (!(ny(M) > 0.5)) f.push('Fehler nicht beachtet');
+    // Die gewaehlte Lage ist eine Drehung (keine Spiegelung).
+    const d = M[0] * (M[5] * M[10] - M[6] * M[9]) - M[4] * (M[1] * M[10] - M[2] * M[9]) + M[8] * (M[1] * M[6] - M[2] * M[5]);
+    if (Math.abs(d - 1) > 0.01) f.push('Determinante ' + d.toFixed(3));
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'richtige Neigung nach Aussetzer, kein Springen, aus falscher Wahl zurueck, Drehung' };
   });
   stAdd('Virtuell v1.6.69: Zuruecksetzen neben der Bahn abschaltbar (Optionen > Virtuell, ab Werk an)', () => {
     const f = [];
