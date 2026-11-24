@@ -1,5 +1,5 @@
-{"version":"1.6.55","apk":2,"dateien":[
-{"p":"index.html","h":"813f9a0a54416fcb15b4d8a4be32bf2aa09ac19fa4a2671bd97afa2c6dbafbf2","g":9090124},
+{"version":"1.6.57","apk":2,"dateien":[
+{"p":"index.html","h":"f2257ff97752fbf216dd35a6b45954ec267f7253e0c428e503288754499dd9ec","g":9102519},
 {"p":"mp-overview.html","h":"61388dad99cb805de167fe9a10b9ffdb1d4655c450f175f4eeb9ede3a24d04aa","g":9956},
 {"p":"manifest.webmanifest","h":"868416fe2c9d41ebed0b5d479f07bbd16679dd4835e9c526da9eae8046e1e36a","g":639},
 {"p":"favicon.svg","h":"bc804f771d409b0efff2f2a78238a91d843d8d02efc2c614c6bdc544763de931","g":5456},
@@ -1228,6 +1228,7 @@
 {"p":"img/vf/LIZENZ.txt","h":"1dd29e4f7735d198f631365b997e800be65abbab591510ce83d417aeb99947cc","g":519},
 {"p":"img/vf/hub.bin","h":"2dd2e3f1c464669b4ca09b9be099cceae09dda09d177f0e48d55804510d9b1c9","g":2399552},
 {"p":"img/vf/hub.json","h":"d830a8f1b863354711ec6882cf0eeff02dba23bf5fa36a533fff4bd3bd1bf74e","g":338},
+{"p":"img/vf/vorschau.png","h":"6ebc0f09b13d85f92dfa4df2e67ad441ddbb2edc93d22fb2bc4a2a6f47f2b478","g":57264},
 {"p":"img/virtuell-fahren-start.jpg","h":"d73be9c30335b03599dbe32b559d481243b6df6d497424e0dceea03f6bf5cc59","g":108738},
 {"p":"img/virtuell-fahren.jpg","h":"61a3d4070d6c1b3a1ac5e594a1879bd362620b802d41474d66d5ee9f000e840e","g":30974},
 {"p":"muster-gerade-a4.svg","h":"e919c88d525372efe3b6fc53a269da7bb645122ede31b691b4b4b86cf35799f8","g":2976},
