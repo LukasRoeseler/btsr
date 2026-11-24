@@ -6088,7 +6088,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.68</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.70</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7414,6 +7414,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell: Neue Option &#8222;Zur&#252;cksetzen neben der Bahn&#8220; unter Optionen &gt; Virtuell (ab Werk an). Aus: Das Auto wird nach 2,5 s neben der Bahn nicht mehr zur&#252;ck auf die Strecke gesetzt, du f&#228;hrst weiter; zur&#252;ck nur mit dem Knopf &#8222;Zur&#252;cksetzen&#8220;.</li>
         <li>Neu, Prototyp: Marker-AR ohne ARCore, f&#252;r Handys, die kein Google-AR k&#246;nnen (z. B. Galaxy A16/A41), in der App und im Browser. Den Marker (Optionen in der AR-Ansicht: &#8222;Marker drucken&#8220;, Datei ar-marker-a4.svg) in Originalgr&#246;&#223;e auf A4 drucken und auf den Boden legen, dann in der virtuellen Garage &#8222;AR&#8220; tippen: Das Kamerabild ist der Hintergrund, die Strecke liegt mittig auf dem Marker, und du kannst um sie herumgehen, solange der Marker im Bild ist. Ma&#223;stab 1:1, 1:2 oder 1:4 umschaltbar. Erkennung mit js-aruco2 (Open Source, MIT/BSD/LGPL-3, liegt unter lib/js-aruco2).</li>
         <li>AR: Ein Tipp auf AR gibt jetzt immer eine R&#252;ckmeldung. Der Knopf zeigt &#8222;AR startet &#8230;&#8220;; lehnt Chrome die Sitzung ab oder antwortet 12 s lang nicht, erscheint ein Fenster mit dem Grund, Hinweisen (Chrome aktualisieren, &#8222;Google Play-Dienste f&#252;r AR&#8220; installieren, Kamera erlauben) und dem Protokoll. Vorher stand der Fehler nur als unsichtbarer Hinweis da, und eine h&#228;ngende Anfrage blockierte weitere Tipps.</li>
         <li>AR (Chrome auf Android): Die Sitzung beendete sich nach dem Erlauben der Kamera wieder (kurzes eingefrorenes Kamerabild), weil die Seite erst die ganze virtuelle Fahrt aufbaute, bevor sie das erste AR-Bild lieferte. Jetzt laufen AR-Ebene und Bodensuche ab dem ersten Bild, die Fahrt wird danach in dieselbe Leinwand aufgebaut; kein doppelter Start; endet die Sitzung trotzdem fr&#252;h, zeigt ein Fenster das Protokoll und &#8222;Nochmal&#8220;. Ohne Bodensuche setzt ein Tipp die Strecke 1,2 m vor dich. Virtuelle Garage: Losfahren und ? in einer Zeile, AR darunter &#252;ber die ganze Breite (vorher war Losfahren unlesbar und ? lag auf den Optionen).</li>
@@ -18015,6 +18016,9 @@
     "Maßstab": "Scale",
     "Marker drucken": "Print marker",
     "Neu, Prototyp: Marker-AR ohne ARCore, für Handys, die kein Google-AR können (z. B. Galaxy A16/A41), in der App und im Browser. Den Marker (Optionen in der AR-Ansicht: „Marker drucken“, Datei ar-marker-a4.svg) in Originalgröße auf A4 drucken und auf den Boden legen, dann in der virtuellen Garage „AR“ tippen: Das Kamerabild ist der Hintergrund, die Strecke liegt mittig auf dem Marker, und du kannst um sie herumgehen, solange der Marker im Bild ist. Maßstab 1:1, 1:2 oder 1:4 umschaltbar. Erkennung mit js-aruco2 (Open Source, MIT/BSD/LGPL-3, liegt unter lib/js-aruco2).": "New, prototype: marker AR without ARCore, for phones that cannot do Google AR (e.g. Galaxy A16/A41), in the app and in the browser. Print the marker (in the AR view: “Print marker”, file ar-marker-a4.svg) at original size on A4 and lay it on the floor, then tap “AR” in the virtual garage: the camera image is the background, the track sits centred on the marker, and you can walk around it as long as the marker stays in view. Scale 1:1, 1:2 or 1:4 switchable. Detection with js-aruco2 (open source, MIT/BSD/LGPL-3, in lib/js-aruco2).",
+    "Zurücksetzen neben der Bahn": "Reset when off track",
+    "An (Vorgabe): steht das Auto 2,5 s neben der Bahn, kommt es zurück auf die Strecke. Aus: du fährst neben der Bahn weiter, zurück nur mit dem Knopf „Zurücksetzen“.": "On (default): if the car is off the track for 2.5 s, it is put back on the track. Off: you keep driving off the track; back only with the “Reset” button.",
+    "Virtuell: Neue Option „Zurücksetzen neben der Bahn“ unter Optionen > Virtuell (ab Werk an). Aus: Das Auto wird nach 2,5 s neben der Bahn nicht mehr zurück auf die Strecke gesetzt, du fährst weiter; zurück nur mit dem Knopf „Zurücksetzen“.": "Virtual: new option “Reset when off track” under Options > Virtual (on by default). Off: the car is no longer put back on the track after 2.5 s off it, you keep driving; back only with the “Reset” button.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20892,6 +20896,8 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Zurücksetzen neben der Bahn": "Reiniciar fuera de la pista",
+    "An (Vorgabe): steht das Auto 2,5 s neben der Bahn, kommt es zurück auf die Strecke. Aus: du fährst neben der Bahn weiter, zurück nur mit dem Knopf „Zurücksetzen“.": "Activado (por defecto): si el coche está 2,5 s fuera de la pista, vuelve a la pista. Desactivado: sigues conduciendo fuera; solo vuelves con el botón «Reiniciar».",
     "Marker-AR (ohne ARCore)": "RA con marcador (sin ARCore)",
     "Dieses Gerät gibt kein Kamerabild an die Seite.": "Este dispositivo no da imagen de cámara a la página.",
     "Die Kamera muss für OmegaSim erlaubt sein (Android-Einstellungen > Apps > OmegaSim bzw. Chrome > Berechtigungen > Kamera).": "La cámara debe estar permitida para OmegaSim (Ajustes de Android > Aplicaciones > OmegaSim o Chrome > Permisos > Cámara).",
@@ -43554,6 +43560,10 @@
   const VF_MU = 1.0;                // Haftbeiwert auf trockener Bahn (mal gripScale fuer Regen)
   const VF_ABSEITS_BREMSE = 3.0;    // Tempoverlust neben der Bahn je Sekunde (exponentiell)
   const VF_ABSEITS_ZURUECK_MS = 2500;
+  // v1.6.69 BESTELLT: "Mach eine Option, die mir erlaubt, im virtuellen Fahren abzuschalten, dass das Auto zurueck auf die
+  // Strecke gesetzt wird." Ab Werk an (wie bisher); aus = neben der Bahn weiterfahren, zurueck nur ueber den Knopf.
+  const VF_ZURUECK_STORE = 'omegasim-vf-zuruecksetzen';
+  function vfZuruecksetzenAn() { try { return localStorage.getItem(VF_ZURUECK_STORE) !== 'aus'; } catch (e) { return true; } }
   // v1.3.125: Option "Kein Tempoverlust neben der Bahn" (Vorgabe Aus = das Auto bremst wie bisher).
   // 'aus' schaltet den Tempoverlust ab, das Auto faehrt neben der Bahn ungebremst weiter.
   const VF_ABSEITS_BREMSE_STORE = 'omegasim-vf-abseits-bremse';
@@ -47557,7 +47567,7 @@
     vfRandsteinTon(kerb, q, kmh);   // v1.3.39: dumpfes Rumpeln, je Bild (billig), blendet selbst aus
     if (ab) {
       if (vfAbseitsBremseAn()) st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
-      if (rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
+      if (vfZuruecksetzenAn() && rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
     }
     // NPCs: folgen ihrer Spur mit Stufe-1-Tempo und bremsen vor Kurven (vfNpcSteuern).
     // DIAGNOSE (temporaer, Latenz): Zeit fuer NPC-Steuerung + Kollision (vfVerkehr).
@@ -49848,7 +49858,7 @@
   // Optionen > Virtuell die Einstellungen der Fahrt (VF_OPT_FAHRT), Optionen > RC Heli die des Hubschraubers (VF_OPT_HELI),
   // die virtuelle Garage den Rest (Auto, Lack, Boden, Strecke, Richtung, Handling, NPCs, Losfahren).
   const VF_OPT_FAHRT = ['Schaltung', 'Grafik', 'Tageszeit', 'Sichtfeld mit Tempo', 'Geist folgt meiner Linie', 'Rückspiegel (Motorhaube)',
-    'Kein Tempoverlust neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar', 'Drift-Gyro', 'Rauch-Auflösung', 'Strecken-Ambience'];
+    'Kein Tempoverlust neben der Bahn', 'Zurücksetzen neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar', 'Drift-Gyro', 'Rauch-Auflösung', 'Strecken-Ambience'];
   // v1.6.46 BESTELLT: "fuer Strecken Ambience extra Option im virtuellen Fahren" (aus gnen54s 817c361: ab Werk aus).
   // Waehrend einer virtuellen Fahrt gilt dieser Schalter statt Optionen > Ton (ambienceAktiv, 80-sound.js).
   const VF_AMBIENCE_STORE = 'omegasim-vf-ambience';
@@ -50102,6 +50112,16 @@
     const abseitsZeile = garWertZeile(t('Kein Tempoverlust neben der Bahn'), abseitsBremse ? t('Aus') : t('An'), abseitsWahl, abseitsWahl);
     abseitsZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(abseitsZeile);
+    // v1.6.69: automatisches Zuruecksetzen neben der Bahn abschaltbar.
+    {
+      const an = vfZuruecksetzenAn();
+      const w = () => { try { localStorage.setItem(VF_ZURUECK_STORE, an ? 'aus' : 'an'); } catch (e) { /* egal */ } vfGarageNeu(); };
+      const z = garWertZeile(t('Zurücksetzen neben der Bahn'), an ? t('An') : t('Aus'), w, w);
+      const l = z.querySelector('.gk-l'); l.classList.add('opt-label');
+      l.insertAdjacentHTML('beforeend', '<small>' + t('An (Vorgabe): steht das Auto 2,5 s neben der Bahn, kommt es zurück auf die Strecke. Aus: du fährst neben der Bahn weiter, zurück nur mit dem Knopf „Zurücksetzen“.') + '</small>');
+      z.dataset.vfZurueck = '1';
+      rechts.appendChild(z);
+    }
     // NPCs: wie viele andere Autos mitfahren (0-3), zufaellige Skins aus den echten Modellen.
     const nNpc = vfNpcAnzahl();
     const npcWahl = (dd) => {
@@ -112587,6 +112607,22 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       try { if (merk === null) localStorage.removeItem(VF_ZEITEN_STORE); else localStorage.setItem(VF_ZEITEN_STORE, merk); } catch (e) { /* egal */ }
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bestzeit 29,000 s mit Zwischenzeiten, Gegenrichtung getrennt, Bestenliste, AR-Knopf ' + (vfArMoeglich() ? 'sichtbar' : 'verborgen (kein WebXR-AR)') };
+  });
+  stAdd('Virtuell v1.6.69: Zuruecksetzen neben der Bahn abschaltbar (Optionen > Virtuell, ab Werk an)', () => {
+    const f = [];
+    const merk = (() => { try { return localStorage.getItem(VF_ZURUECK_STORE); } catch (e) { return null; } })();
+    try {
+      localStorage.removeItem(VF_ZURUECK_STORE);
+      if (!vfZuruecksetzenAn()) f.push('ab Werk aus');
+      const box = document.createElement('div'); vfGarageOptionen(box);
+      const z = box.querySelector('[data-vf-zurueck]');
+      if (!z) f.push('keine Zeile');
+      else { z.querySelector('[data-d="1"]').click(); if (vfZuruecksetzenAn()) f.push('Knopf schaltet nicht aus'); }
+      if (VF_OPT_FAHRT.indexOf('Zurücksetzen neben der Bahn') < 0) f.push('nicht unter Optionen > Virtuell');
+      const quelle = String(vfBild);
+      if (quelle.indexOf('vfZuruecksetzenAn()') < 0) f.push('vfBild fragt die Option nicht');
+    } finally { try { if (merk === null) localStorage.removeItem(VF_ZURUECK_STORE); else localStorage.setItem(VF_ZURUECK_STORE, merk); } catch (e) { /* egal */ } }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'ab Werk an, Zeile schaltet aus, unter Optionen > Virtuell' };
   });
   stAdd('Virtuell v1.6.67: Marker-AR - Weltabbildung (Hoehe = aus dem Papier), Kameraort, Glaettung orthonormal, AR-Knopf mit Kamera, Marker-Blatt', async () => {
     const f = [];
