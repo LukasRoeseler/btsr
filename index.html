@@ -4122,6 +4122,16 @@
   .vf-ikon .vf-ikon-fuell { fill: currentColor; fill-opacity: .35; }
   .vf-ikon[data-vf="flag"] .vf-ikon-fuell { fill: #f5c400; fill-opacity: 1; stroke: #f5c400; }
   .vf-knoepfe.vf-knoepfe-zu > button:not([data-vf="leiste"]) { display: none; }
+  /* v1.6.44 (gnen54): nach 4 s Ruhe ausgeblendet, bei Bewegung/Tippen wieder da. */
+  .vf-knoepfe { transition: opacity .35s; }
+  .vf-knoepfe.vf-knoepfe-ruht { opacity: 0; pointer-events: none; }
+  /* v1.6.44 (gnen54): Startampel im virtuellen Rennen und Start-Hinweis ausserhalb der Fahrt. */
+  .vf-ampel { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); z-index: 3; pointer-events: none; display: flex; gap: 12px;
+    background: rgba(10,12,16,.88); padding: 12px 16px; border-radius: 12px; }
+  .vf-ampel > span { width: 38px; height: 38px; border-radius: 50%; background: #3a1010; box-shadow: inset 0 0 6px #000; }
+  .vf-ampel > span.an { background: #ff2a1a; box-shadow: 0 0 14px #ff3a20; }
+  .vf-start-hinweis { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 99999; max-width: 90vw;
+    background: #b8860b; color: #100c02; padding: 10px 16px; border-radius: 6px; font-weight: 600; text-align: center; }
   .vf-knoepfe.vf-knoepfe-zu > [data-vf="leiste"] { opacity: .75; }
   /* Ladebild der virtuellen Fahrt: deckt das Bild ab, kein HUD (alles ausser Leinwand und Ladebild unsichtbar).
      v1.6.20: die Strecke von oben fuellt das Bild, in der Mitte das drehende Teil, Titel und Fortschrittsbalken. */
@@ -6039,7 +6049,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.43</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.45</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7364,6 +7374,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren, aus Gnen54s Pull Requests nachgeholt: Startampel im Rennen (f&#252;nf rote Lichter, dann los), Onboard-Kamera des VW Caravelle wie im echten Modell (seitlich auf dem Fahrersitz, 100 Grad Blickwinkel, Scheibe nur als Hauch), neue Kamera &#8222;Seitennah&#8220; zwischen naher Verfolgerkamera und Motorhaube, im Auto federt der Blick nach dem Umsehen zur&#252;ck nach vorn, Knopfleiste blendet nach 4 Sekunden Ruhe aus, neuer Boden &#8222;Stein grau marmoriert&#8220;, leichte Modelle f&#252;r Spider und Caravelle im Grafikmodus Performance (fl&#252;ssiger auf Tablets), Startfehler auch in der Garage sichtbar und der Streckencode in der Pad-Diagnose.</li>
         <li>Optionen: neue Kacheln &#8222;Virtuell&#8220; (Schaltung, Grafik, Tageszeit, Sichtfeld, Geist, R&#252;ckspiegel, Tempoverlust neben der Bahn, Pflicht-Boxendurchfahrt, sichtbare Neigung) und &#8222;RC Heli&#8220; (Gyro-Stabilisierung, Rollen und Nicken umkehren). Die virtuelle Garage beh&#228;lt die Auswahl von Auto, Lack, Boden, Strecke, Fahrtrichtung, Handling und NPCs und hat einen Knopf zu den Optionen.</li>
         <li>Virtuell fahren: Der RC Stunt Copter driftet nicht mehr zur Seite. Ein Vorzeichenfehler im Schubvektor lie&#223; ihn beim Rollen in die falsche Richtung und beim Neigen je nach Kurs schr&#228;g fliegen; jetzt fliegt er dorthin, wohin er geneigt ist. Jedes virtuelle Auto hat seinen festen, passenden Motorklang: Vulture V5.R Corvette C5-R, FMC GT4 Ford GT40, Boxer 96 Porsche 911 GT3, Lynx 220 V6 (Ferrari 296 GT3), Audi RS5 DTM sein Reihen-4-Turbo; K&#228;fer, Spider und Caravelle wie bisher.</li>
         <li>Virtuell fahren: Der RC Stunt Copter hat am Handy ohne Gamepad zwei eigene Touch-Sticks (links Steigen und Drehen, rechts Neigen und Rollen) und reagiert beim Neigen so kr&#228;ftig wie im Vorbild (Schub und Schwerkraft auf seine Gr&#246;&#223;e umgerechnet). Drift: nimmt man das Gas weg, gleitet das Heck weiter und f&#228;ngt sich erst nach und nach. Vorschaubilder neu (transparent, gegl&#228;ttet, mit Bodenschatten, auch die Caravelle ohne Flecken); in der virtuellen Garage steht das Auto auf dem gew&#228;hlten Boden (Rasen mit Himmel, Holz vor einer Wand). FAHREN: der Umschalter Echt | Virtuell ist die ganze Kachel (ein Tipp schaltet um) mit Radbild; im Modus Virtuell neue Bilder f&#252;r Garage und Start.</li>
@@ -17853,6 +17864,10 @@
     "Gyro-Stabilisierung, Rollen und Nicken umkehren.": "Gyro stabilisation, invert roll and pitch.",
     "Optionen Virtuell": "Virtual options",
     "Optionen: neue Kacheln „Virtuell“ (Schaltung, Grafik, Tageszeit, Sichtfeld, Geist, Rückspiegel, Tempoverlust neben der Bahn, Pflicht-Boxendurchfahrt, sichtbare Neigung) und „RC Heli“ (Gyro-Stabilisierung, Rollen und Nicken umkehren). Die virtuelle Garage behält die Auswahl von Auto, Lack, Boden, Strecke, Fahrtrichtung, Handling und NPCs und hat einen Knopf zu den Optionen.": "Options: new tiles “Virtual” (gearbox, graphics, time of day, field of view, ghost, mirror, speed loss off track, mandatory pit drive-through, visible body roll) and “RC heli” (gyro stabilisation, invert roll and pitch). The virtual garage keeps the choice of car, paint, floor, track, direction, handling and NPCs and has a button to the options.",
+    "Seitennahe Kamera": "Close side camera",
+    "Stein grau marmoriert": "Grey marbled stone",
+    "Los!": "Go!",
+    "Virtuell fahren, aus Gnen54s Pull Requests nachgeholt: Startampel im Rennen (fünf rote Lichter, dann los), Onboard-Kamera des VW Caravelle wie im echten Modell (seitlich auf dem Fahrersitz, 100 Grad Blickwinkel, Scheibe nur als Hauch), neue Kamera „Seitennah“ zwischen naher Verfolgerkamera und Motorhaube, im Auto federt der Blick nach dem Umsehen zurück nach vorn, Knopfleiste blendet nach 4 Sekunden Ruhe aus, neuer Boden „Stein grau marmoriert“, leichte Modelle für Spider und Caravelle im Grafikmodus Performance (flüssiger auf Tablets), Startfehler auch in der Garage sichtbar und der Streckencode in der Pad-Diagnose.": "Virtual driving, caught up from Gnen54's pull requests: start lights in races (five red lights, then go), VW Caravelle onboard camera as in the real model (on the driver's seat, 100 degree field of view, windscreen only a hint), new camera “Close side” between close chase camera and bonnet, inside the car the view springs back forward after looking around, the button bar fades out after 4 seconds of rest, new floor “Grey marbled stone”, light models for Spider and Caravelle in Performance graphics (smoother on tablets), start errors also visible in the garage and the track code in the pad diagnostics.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20730,6 +20745,9 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Seitennahe Kamera": "Cámara lateral cercana",
+    "Stein grau marmoriert": "Piedra gris jaspeada",
+    "Los!": "¡Ya!",
     "RC Heli": "Helicóptero RC",
     "Grafik, Tageszeit, Sicht, Geist, Spiegel, Schaltung, Boxendurchfahrt.": "Gráficos, hora del día, vista, espíritu, retrovisor, cambio, paso por boxes.",
     "Gyro-Stabilisierung, Rollen und Nicken umkehren.": "Estabilización giroscópica, invertir alabeo y cabeceo.",
@@ -43460,6 +43478,10 @@
     // v1.5 BESTELLT: "als weitere Bodenart (Standard) den Rasen ... mit Baeumen in der Ferne, damit der Horizont nicht so
     // kahl aussieht". Eigener Rasen (kein Code aus uno-com-escada, das ist PolyForm Noncommercial): nahtlose Fliesen aus
     // Rauschen in drei Lagen und kurzen Halmen, im Dielenraster ohne Fugen gelegt. Baeume: vfBaeumeBauen.
+    // v1.6.44 aus gnen54s PR 4 (ee49684, 0796adc): "ein neutraler Boden ohne Dielen, nicht komplett eintoenig, so ein bisschen
+    // wie marmoriert, nicht schwarz". Nahtlos kachelbare Flaeche 120 x 60 cm, ohne Fugen.
+    { id: 'stein', name: 'Stein grau marmoriert', art: 'flaeche', breiteCm: 60, laengeCm: 120, spalten: 1, zeilen: 1,
+      ton: [[104, 104, 107]], hell: [130, 130, 133], ader: [70, 70, 75], glanz: 0.34 },
     { id: 'rasen', name: 'Rasen', art: 'rasen', breiteCm: 120, laengeCm: 120, spalten: 2, zeilen: 1,
       ton: [[46, 78, 32], [72, 106, 44], [104, 116, 58]], maser: [0, 0, 0], kontrast: 0, ringCm: 1, poren: 0, ast: 0, glanz: 0.0 },
   ];
@@ -43645,11 +43667,50 @@
     vfTexLauf.boden = null;
     return vfTexDaten.boden;
   }
+  // Marmorierter Stein (gnen54), NAHTLOS kachelbar: periodisches Wertrauschen in mehreren Oktaven, Adern als |sin| mit
+  // ganzzahliger Frequenz je Kachel, verzerrt vom Rauschen. Zeilen y0..y1 (in Schritten fuer die Garage im Leerlauf).
+  function vfSteinRauschen(u, v, n, m, s) {
+    const x = u * n, y = v * m, i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j;
+    const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    const g = (a, b) => vfHash(((a % n) + n) % n + s, ((b % m) + m) % m + 7 * s);
+    const a0 = g(i, j), a1 = g(i + 1, j), b0 = g(i, j + 1), b1 = g(i + 1, j + 1);
+    return (a0 + (a1 - a0) * sx + (b0 - a0 + (b1 - b0 - a1 + a0) * sx) * sy) * 2 - 1;
+  }
+  function vfSteinTurb(u, v) {
+    let t = 0, a = 0.5;
+    for (let o = 0, n = 4, m = 2; o < 5; o++, n *= 2, m *= 2, a *= 0.5) t += a * vfSteinRauschen(u, v, n, m, 101 * (o + 1));
+    return t;
+  }
+  function vfSteinZeilen(d, AW, AH, y0, y1, P) {
+    const [t0, t1, t2] = P.ton[0], [h0, h1, h2] = P.hell, [a0, a1, a2] = P.ader;
+    for (let y = y0; y < y1; y++) {
+      const v = y / AH;
+      for (let x = 0; x < AW; x++) {
+        const u = x / AW, tb = vfSteinTurb(u, v);
+        const wolke = 0.5 + 0.6 * vfSteinRauschen(u, v, 3, 2, 909) + 0.35 * tb;
+        const a1s = Math.abs(Math.sin(Math.PI * (3 * u + 2 * v) + 5.5 * tb));
+        const a2s = Math.abs(Math.sin(Math.PI * (5 * u - 3 * v) + 7.0 * vfSteinTurb(v, u)));
+        const ader = Math.pow(1 - a1s, 10) * 0.6 + Math.pow(1 - a2s, 14) * 0.35;
+        const hw = Math.max(0, Math.min(1, wolke));
+        let r = t0 + (h0 - t0) * hw, g = t1 + (h1 - t1) * hw, b = t2 + (h2 - t2) * hw;
+        const k = Math.min(1, ader);
+        r += (a0 - r) * k; g += (a1 - g) * k; b += (a2 - b) * k;
+        const korn = 1 + (vfHash(x, y) - 0.5) * 0.05;
+        const i = (y * AW + x) * 4;
+        d[i] = r * korn; d[i + 1] = g * korn; d[i + 2] = b * korn;
+        d[i + 3] = P.glanz * (0.85 + 0.3 * hw) * 255;
+      }
+    }
+  }
   function* vfBodenBau(P) {
     const AW = VF_ATLAS_B, AH = VF_ATLAS_H, d = new Uint8ClampedArray(AW * AH * 4);
-    const rnd = vfZufall(P.id === 'eiche' ? 1911 : P.id === 'grau' ? 2701 : P.id === 'rasen' ? 5150 : 3307);
+    const rnd = vfZufall(P.id === 'eiche' ? 1911 : P.id === 'grau' ? 2701 : P.id === 'rasen' ? 5150 : P.id === 'stein' ? 4409 : 3307);
     const w = AW / P.spalten, h = AH / P.zeilen, stuecke = [];
-    for (let r = 0; r < P.zeilen; r++) {
+    if (P.art === 'flaeche') {
+      for (let y = 0; y < AH; y += 64) { vfSteinZeilen(d, AW, AH, y, Math.min(AH, y + 64), P); yield; }
+      stuecke.push([0, 0, 1, 1]);
+    }
+    for (let r = 0; P.art !== 'flaeche' && r < P.zeilen; r++) {
       for (let s = 0; s < P.spalten; s++) {
         if (P.art === 'rasen') yield* vfGrasStueck(d, AW, s * w, r * h, w, h, P, rnd);
         else vfHolzStueck(d, AW, s * w, r * h, w, h, P, rnd);
@@ -44302,7 +44363,15 @@
     const B = art.breiteCm * cm, L = art.laengeCm * cm, rnd = vfZufall(9001 + pts.length);
     const reihen = [];
     let stuecke = 0;
-    if (art.art === 'fischgraet') {
+    if (art.art === 'flaeche') {
+      // Nahtlose Kacheln im Raster, gleiche Lage und Farbe (sonst saehe man die Kanten).
+      const c = [VF_BODEN_HELL, VF_BODEN_HELL, VF_BODEN_HELL];
+      for (let z = z0; z < z1; z += B) {
+        for (let x = x0; x < x1; x += L) {
+          vfViereck(a, [x, y, z, 0, 0], [x + L, y, z, 1, 0], [x + L, y, z + B, 1, 1], [x, y, z + B, 0, 1], c); stuecke++;
+        }
+      }
+    } else if (art.art === 'fischgraet') {
       const r = Math.SQRT1_2, d1 = [r, r], d2 = [-r, r];
       const W = (A, Bb) => [A * d1[0] + Bb * d2[0], A * d1[1] + Bb * d2[1]];
       // Rahmen-Koordinaten der Bodenecken: A = (x + z) r, B = (z - x) r
@@ -45993,18 +46062,29 @@
   }
   // Daten einmal je Sitzung und Auto holen (fetch: ueber file:// nicht ladbar, dann bleibt der Kasten).
   let vfModellLaden = {};
+  // v1.6.44 aus gnen54s testversion (296240d, GEMELDET am Android-Tablet: Spider und Bulli "furchtbar zu fahren"): im
+  // Grafikmodus Performance die leichte Fassung, die auto.json unter "perf" nennt (auto_perf.json/.bin, Quadrik-Vereinfachung,
+  // 0,1-0,2 Mio. statt bis 1,7 Mio. Dreiecke). Sie bringt NUR die Geometrie; alles andere bleibt aus auto.json. Fehlt sie,
+  // faehrt das Auto mit der vollen.
   function vfModellDaten(pfad) {
     pfad = pfad || vfModellPfad();
-    if (!vfModellLaden[pfad]) {
-      vfModellLaden[pfad] = Promise.all([
-        fetch(pfad + 'auto.json').then((r) => { if (!r.ok) throw new Error('auto.json ' + r.status); return r.json(); }),
-        fetch(pfad + 'auto.bin').then((r) => { if (!r.ok) throw new Error('auto.bin ' + r.status); return r.arrayBuffer(); }),
-      ]).then(([meta, bin]) => {
-        if (bin.byteLength < meta.indexAb + meta.indizes * 2) throw new Error('auto.bin zu kurz');
-        return { meta, ecken: new Float32Array(bin, 0, meta.ecken * 8), indizes: new Uint16Array(bin, meta.indexAb, meta.indizes) };
-      }).catch((e) => { vfModellLaden[pfad] = null; throw e; });
+    const perf = vfGrafik() === 'perf', schl = pfad + (perf ? '|perf' : '');
+    if (!vfModellLaden[schl]) {
+      vfModellLaden[schl] = fetch(pfad + 'auto.json').then((r) => { if (!r.ok) throw new Error('auto.json ' + r.status); return r.json(); })
+        .then((meta) => {
+          if (!perf || !meta.perf) return [meta, 'auto'];
+          return fetch(pfad + meta.perf + '.json').then((r) => (r.ok ? r.json() : null))
+            .then((g) => (g && g.teile ? [Object.assign({}, meta, { teile: g.teile, ecken: g.ecken, indizes: g.indizes, indexAb: g.indexAb, lod: g.lod }), meta.perf] : [meta, 'auto']))
+            .catch(() => [meta, 'auto']);
+        })
+        .then(([meta, datei]) => fetch(pfad + datei + '.bin').then((r) => { if (!r.ok) throw new Error(datei + '.bin ' + r.status); return r.arrayBuffer(); })
+          .then((bin) => {
+            if (bin.byteLength < meta.indexAb + meta.indizes * 2) throw new Error(datei + '.bin zu kurz');
+            return { meta, ecken: new Float32Array(bin, 0, meta.ecken * 8), indizes: new Uint16Array(bin, meta.indexAb, meta.indizes) };
+          }))
+        .catch((e) => { vfModellLaden[schl] = null; throw e; });
     }
-    return vfModellLaden[pfad];
+    return vfModellLaden[schl];
   }
   // Gemeinsamer Rad-Modell-Fallback: die echten Rad-Teile der Vulture V5.R (mit Texturen),
   // damit auch Modelle ohne eigene Rad-Geometrie die gleichen Raeder zeigen.
@@ -46786,6 +46866,10 @@
       if (physEngine && physEngine.state) physEngine.state.speedKmh = 0;
       return;
     }
+    if (VF.ampel && vfAmpelSchritt(now)) {
+      VF.letzt = now; VF.letztRoh = now; VF.dtBild = 0; vfMalen(); vfHud();
+      return;
+    }
     vfWacheMessen(VF.letztRoh ? now - VF.letztRoh : 0, now);
     VF.letztRoh = now;
     if (rennPauseAktiv()) {
@@ -47241,6 +47325,9 @@
     // Himmel: Vollbild-Quad, Farbverlauf im WELTRAUM (horizontfolgend beim Umsehen). Ganz hinten.
     if (!VF.himmelProg) { VF.himmelProg = vfProgrammHimmel(gl); VF.himmel = vfHimmel(gl); }
     let k = vfKamera(VF.dtBild || 0.016);
+    // v1.6.44 (gnen54, bb07959): waagerechter Bildwinkel (auto.json "haube": fovH) in den senkrechten fuer das aktuelle
+    // Seitenverhaeltnis - so bleibt die Breite des Blicks auf jedem Schirm gleich.
+    if (k.fovH && VF.cv) k.fov = 2 * Math.atan(Math.tan(k.fovH * Math.PI / 360) / Math.max(0.2, VF.cv.width / Math.max(1, VF.cv.height))) * 180 / Math.PI;
     // v1.3.124 Studienmodus: festes Sichtfeld aus Bildschirmgroesse und Sitzabstand.
     if (VF_STUDIE) { const sf = vfStudieFov(); if (sf) k.fov = sf; }
     else k = vfKameraEffekt(k, VF.dtBild || 0.016);
@@ -47695,7 +47782,9 @@
   // Motorhaube oder nahe Verfolgerkamera." R3 (bzw. die Lichthupen-Belegung) oder C schaltet weiter:
   // Verfolger -> nah -> Motorhaube -> Verfolger. Nachgefuehrt nach der ZEIT (nicht je Bild): auf einem
   // langsamen Handy lief die Kamera vorher bei weniger Bildern spuerbar hinterher.
-  const VF_KAMERAS = [{ id: 'verfolger', name: 'Verfolgerkamera' }, { id: 'nah', name: 'Nahe Verfolgerkamera' }, { id: 'haube', name: 'Motorhaube' },
+  // v1.6.44 aus gnen54s PR 4 (b9d8853, 42ab1c6): "Seitennahe Kamera" zwischen naher Verfolgerkamera und Motorhaube.
+  const VF_KAMERAS = [{ id: 'verfolger', name: 'Verfolgerkamera' }, { id: 'nah', name: 'Nahe Verfolgerkamera' },
+                      { id: 'naeher', name: 'Seitennahe Kamera' }, { id: 'haube', name: 'Motorhaube' },
                       { id: 'oben', name: 'Von oben (Start/Ziel)' },
                       { id: 'fahrer', name: 'Fahrer am Rand', wip: true },
                       { id: 'tv', name: 'TV-Kamera', wip: true }];
@@ -47729,7 +47818,7 @@
   // Der Pad-Stick gilt nur fuer Achsen, die keine Belegung in Optionen -> Controller traegt, und nur
   // bei Standard-Belegung des Pads (sonst koennten Achse 2/3 die Trigger sein und dauernd drehen).
   const VF_DREH_GIER = 200 * Math.PI / 180, VF_DREH_NICK = 100 * Math.PI / 180, VF_DREH_TAU = 0.12;
-  const VF_DREH_TOT = 0.16, VF_DREH_SCHWELLE = 2 * Math.PI / 180, VF_DREH_PAD_MS = 250;
+  const VF_DREH_TOT = 0.25, VF_DREH_SCHWELLE = 2 * Math.PI / 180, VF_DREH_PAD_MS = 250;
   const VF_DREH_TASTEN = { t: 'hoch', f: 'links', g: 'runter', h: 'rechts' };
   function vfDreh() {
     if (!VF.dreh) VF.dreh = { g: 0, n: 0, vg: 0, vn: 0 };
@@ -47950,6 +48039,12 @@
     // Rechter Stick / T-F-G-H: die Drehung laeuft nach der Zeit (in der Pause ist dt 0).
     const art = vfDrehArt(id), D = vfDreh(), ein = vfDrehEingabe();
     vfDrehSchritt(D, ein[0], ein[1], dt, vfDrehGrenzen(art));
+    // v1.6.44 aus gnen54s testversion (03c2823): im Auto (Haube, Fahrer, TV) federt der Blick 0,5 s nach dem Loslassen
+    // zurueck nach vorn (Zeitkonstante 0,25 s); Totzone des Kamera-Sticks 0,25 (VF_DREH_TOT).
+    if (art === 'umsehen') {
+      if (ein[0] || ein[1]) VF.drehLos = 0; else VF.drehLos = (VF.drehLos || 0) + dt;
+      if (VF.drehLos > 0.5 && !D.vg && !D.vn) { const f = Math.exp(-dt / 0.25); D.g *= f; D.n *= f; if (Math.abs(D.g) < 1e-3) D.g = 0; if (Math.abs(D.n) < 1e-3) D.n = 0; }
+    }
     const k0 = vfKameraBasis(id, fx, fz, dt, art, D);
     // Der Hubschrauber fliegt in der Hoehe: auch der Dreh-Mittelpunkt liegt dann auf der Flughoehe,
     // sonst schwenkt die Kamera beim Umsehen/Oben um den Boden (nur sichtbar, wenn VF.z > 0).
@@ -47975,9 +48070,13 @@
       const hb = VF.modell && VF.modell.meta && VF.modell.meta.haube;
       const vor = (hb ? hb.vor : 0.75) * s, hoch = (hb ? hb.hoch : 0.95 + (VF.modell ? 0.07 : 0.25)) * s;
       const hubH = VF.hubschrauber ? (VF.z || 0) : 0;
-      const auge = [VF.x + fx * vor, hoch + hubH, VF.y + fz * vor];
+      // v1.6.44 aus gnen54s PR 4 (bb07959): ein Modell darf die Kamera ganz setzen - "seite" in m (+ links), "neigung" in
+      // Grad nach unten, "fov" senkrecht, "fovH" waagerecht (hat Vorrang; VW Caravelle: Onboard-Kamera mit 100 Grad).
+      const seite = (hb && hb.seite || 0) * s;
+      const auge = [VF.x + fx * vor + fz * seite, hoch + hubH, VF.y + fz * vor - fx * seite];
+      const sinkt = hb && typeof hb.neigung === 'number' ? Math.tan(hb.neigung * Math.PI / 180) * 30 : 1.2;
       VF.kam = auge;
-      return { auge, ziel: [auge[0] + fx * 30, hoch + hubH - 1.2, auge[2] + fz * 30], fov: 70, nah: 0.3 };
+      return { auge, ziel: [auge[0] + fx * 30, hoch + hubH - sinkt, auge[2] + fz * 30], fov: (hb && hb.fov) || 70, fovH: (hb && hb.fovH) || 0, nah: 0.3 };
     }
     if (id === 'oben') {
       // Von oben, parallel zur Start/Ziel-Geraden: die Kamera schwebt mit dem Auto mit (x/y) und
@@ -47988,18 +48087,23 @@
       VF.kam = null;
       return { auge, ziel: [VF.x, hubH, VF.y], oben, fov: 62, nah: 0.5 };
     }
-    const nah = id === 'nah';
-    const hinten = nah ? 9 : 15, hoehe = nah ? 3.8 : 8, tau = nah ? 0.08 : 0.15;
+    const nah = id === 'nah', naeher = id === 'naeher';
+    const hinten = naeher ? 6.5 : (nah ? 9 : 15), hoehe = naeher ? 2.8 : (nah ? 3.8 : 8), tau = naeher ? 0.06 : (nah ? 0.08 : 0.15);
     // Gedreht kreist der SOLL-Ort um das Auto; die Nachfuehrung (tau) bleibt dieselbe.
-    const zh = nah ? 2.0 : 1.4, vor = nah ? 8 : 12;
+    const zh = naeher ? 1.6 : (nah ? 2.0 : 1.4), vor = naeher ? 7 : (nah ? 8 : 12);
     // Der Hubschrauber fliegt in der Hoehe (VF.z): Kamera und Ziel folgen mit, der Kreis dreht um den Flugort.
     const hubH = VF.hubschrauber ? (VF.z || 0) : 0;
     const k = vfDrehAnwenden({ auge: [VF.x - fx * hinten, hoehe + hubH, VF.y - fz * hinten], ziel: [VF.x + fx * vor, zh + hubH, VF.y + fz * vor] },
       art, D, VF.x, zh + hubH, VF.y);
+    // Seitennah: zur Seite oder nach vorn geschwenkt bis zu 25 % naeher am Auto (gnen54, 42ab1c6).
+    if (naeher && D && D.g) {
+      const g = Math.abs(Math.atan2(Math.sin(D.g), Math.cos(D.g))), f = 1 - 0.25 * Math.min(1, g / (Math.PI / 2));
+      k.auge = [VF.x + (k.auge[0] - VF.x) * f, zh + hubH + (k.auge[1] - zh - hubH) * f, VF.y + (k.auge[2] - VF.y) * f];
+    }
     const soll = k.auge;
     const a = 1 - Math.exp(-Math.max(0, dt) / tau);
     VF.kam = VF.kam ? VF.kam.map((q, i) => q + (soll[i] - q) * a) : soll;
-    return { auge: VF.kam, ziel: k.ziel, fov: nah ? 58 : 54, nah: 0.5 };
+    return { auge: VF.kam, ziel: k.ziel, fov: naeher ? 62 : (nah ? 58 : 54), nah: naeher ? 0.3 : 0.5 };
   }
   // v1.5.84 BESTELLT: "Ghostcar sollte wie das ausgewählte Auto aussehen". Dasselbe Modell mit derselben Lackfarbe,
   // durchscheinend (VF_GEIST_ALPHA), ohne Licht, Bodenschatten und Federung. Zwei Durchgaenge: erst nur die Tiefe, dann
@@ -48200,8 +48304,11 @@
     });
     // 4. Scheiben und Scheinwerferglas (durchscheinend, getoent)
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+    // v1.6.44 (gnen54, 59a9f1a): sitzt die Kamera IM Auto (Caravelle: hinter der Frontscheibe), nur ein Hauch Glas -
+    // sonst waere das Bild durch die Toenung fast schwarz.
+    const innen = auge && Math.hypot(auge[0] - x, auge[2] - y) < d.laenge * s * 0.45 && auge[1] < (d.hoehe || 1.4) * s;
     for (const t of M.glasTeile) {
-      if (t.rolle === 'glas') { setze(aufbau, VF_GLAS_TINT, 0, 0.86, 0, 1, 0, 1); teil(t); }
+      if (t.rolle === 'glas') { setze(aufbau, VF_GLAS_TINT, 0, innen ? 0.12 : 0.86, 0, 1, 0, innen ? 0.2 : 1); teil(t); }
       else { setze(aufbau, VF_WEISS, licht ? 0.6 : 0, 0.9, 1, 1, 0, 0.5); teil(t); }
     }
     // 5. Leuchten: Lichtpunkte (zur Kamera gedreht) und vorn der Lichtkegel auf der Bahn
@@ -48558,7 +48665,8 @@
     document.body.appendChild(el);
     const zeichne = () => {
       if (!el.isConnected || !VF.aktiv) { el.remove(); clearInterval(vfPadDiagIv); return; }
-      el.textContent = t('Pad-Diagnose (F8 oder Knopf schließt)') + '\n' + (typeof padDiagText === 'function' ? padDiagText() : '-');
+      el.textContent = t('Pad-Diagnose (F8 oder Knopf schließt)') + '\n' + (typeof padDiagText === 'function' ? padDiagText() : '-')
+        + '\n' + t('Strecke') + ': ' + (() => { try { return VF.frei ? vfFreiWahl() : trackToCode(VF.tiles || currentTrackTiles); } catch (e) { return '-'; } })();   // v1.6.44 (gnen54, 899d27a)
     };
     zeichne();
     vfPadDiagIv = setInterval(zeichne, 200);
@@ -48692,8 +48800,35 @@
     }
     return true;
   }
+  // v1.6.44 aus gnen54s PR 4 (cc0dae3): im Rennen (alles ausser Training) nach dem Laden die Startampel - fuenf rote
+  // Lichter, jede Sekunde eins mehr, nach 5 s plus 0,3 bis 1,5 s alle aus = Start. Bis dahin steht das Auto am Start.
+  function vfAmpelSchritt(now) {
+    const A = VF.ampel, schicht = VF.schicht;
+    let el = schicht ? schicht.querySelector('.vf-ampel') : null;
+    if (!A) { if (el) el.remove(); return false; }
+    const dt = now - A.t0;
+    if (dt >= A.aus) {
+      VF.ampel = null; VF.letzt = 0;
+      if (el) el.remove();
+      try { showHudToast(t('Los!')); } catch (e) { /* ohne */ }
+      return false;
+    }
+    if (!el && schicht) {
+      el = document.createElement('div');
+      el.className = 'vf-ampel';
+      el.setAttribute('aria-hidden', 'true');
+      for (let i = 0; i < 5; i++) el.appendChild(document.createElement('span'));
+      schicht.appendChild(el);
+    }
+    const an = Math.min(5, Math.floor(dt / 1000) + 1);
+    if (el) [...el.children].forEach((l, i) => l.classList.toggle('an', i < an));
+    if (physEngine && physEngine.state) physEngine.state.speedKmh = 0;
+    VF.x = VF.startX; VF.y = VF.startY; VF.h = VF.startH;
+    return true;
+  }
   function vfLadenEnde() {
     VF.laedt = false;
+    if (VF.modus && VF.modus !== 'practice' && !VF.studie && !VF.hubschrauber) VF.ampel = { t0: performance.now(), aus: 5300 + Math.random() * 1200 };
     if (VF.schicht) {
       VF.schicht.classList.remove('vf-laedt');
       const el = VF.schicht.querySelector('.vf-laden');
@@ -48740,12 +48875,24 @@
     vfModellLaden = {}; vfRadModell = null;
     log('Virtuell: Texturen und Automodelle aus dem Speicher freigegeben.', 'info');
   }
+  // v1.6.44 aus gnen54s PR 4 (2c46531): Hinweise beim Start auch dort sichtbar, wo der HUD-Toast nicht steht (Garage).
+  function vfStartHinweis(msg) {
+    showHudToast(msg);
+    const el = $('hud-toast');
+    if (el && el.offsetParent) return;
+    const d = document.createElement('div');
+    d.setAttribute('role', 'status');
+    d.className = 'vf-start-hinweis';
+    d.textContent = msg;
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), 4000);
+  }
   function virtuellStarten(opts) {
     clearTimeout(vfFreigabeTimer);
     opts = opts || {};
     if (VF.aktiv) return false;
     vfHandlingCache = null;   // einmal frisch lesen (z. B. in einem anderen Tab geaendert)
-    if (!physicsEnabled) { showHudToast(t('Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)')); return false; }
+    if (!physicsEnabled) { vfStartHinweis(t('Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)')); return false; }
     // Rundenuhr der vorigen Fahrt nicht mitnehmen (aus PR 4 von gnen54: "Zeitansage sofort beim Start nach
     // Ueberfahren von Start/Ziel"): die erste Ueberfahrt startet die Uhr, angesagt wird erst die erste ganze Runde.
     try { dashLapTimes = []; dashLapStart = null; } catch (e) { /* ohne */ }
@@ -48756,14 +48903,14 @@
     // v1.5.150: freie Strecke (nur virtuell) statt der gebauten Bahn - erst laden, dann neu starten.
     const freiK = !(opts.tiles && opts.tiles.length >= 3) && !opts.studie ? vfFreiWahl() : '';
     if (freiK && !vfFreiCache[freiK]) {
-      vfFreiLaden(freiK).then(() => virtuellStarten(opts), () => showHudToast(t('Strecke konnte nicht geladen werden')));
+      vfFreiLaden(freiK).then(() => virtuellStarten(opts), () => vfStartHinweis(t('Strecke konnte nicht geladen werden')));
       return true;
     }
     const frei = freiK ? vfFreiCache[freiK] : null;
     VF.frei = frei;
     VF_BOX_SEITE = frei ? frei.seite : -1;   // freie Strecken: Box auf der Seite der DXF (boxSeite)
     const tiles = frei ? frei.tiles : (opts.tiles && opts.tiles.length >= 3 ? opts.tiles : vfTilesWaehlen());
-    if (!tiles) { showHudToast(t('Erst eine Strecke bauen')); return false; }
+    if (!tiles) { vfStartHinweis(t('Erst eine Strecke bauen')); return false; }
     VF.studie = !!opts.studie;
     const schicht = document.createElement('div');
     schicht.className = 'vf-schicht';
@@ -48797,6 +48944,20 @@
       + vfLadebildHtml((() => { try { return vfLadeKarteDrehen(vfLadeKarteSvg(tiles, frei ? frei.pts : null), window.innerWidth, window.innerHeight); } catch (e) { return ''; } })());
     schicht.classList.add('vf-laedt');
     document.body.appendChild(schicht);
+    // v1.6.44 aus gnen54s testversion (aba1968): die Knopfleiste blendet sich nach 4 s Ruhe aus und kommt bei Mausbewegung,
+    // Tippen oder Klick zurueck (Lenken auf den Touch-Flaechen zaehlt nicht). Der Knopf zum dauerhaften Ausblenden bleibt.
+    { const kn = schicht.querySelector('.vf-knoepfe');
+      if (kn) {
+        let uhr = 0;
+        const zeigen = () => {
+          kn.classList.remove('vf-knoepfe-ruht');
+          clearTimeout(uhr);
+          uhr = setTimeout(() => { if (!kn.matches(':hover') && !kn.contains(document.activeElement)) kn.classList.add('vf-knoepfe-ruht'); else zeigen(); }, 4000);
+        };
+        const wecken = (e) => { if (!(e.target && e.target.closest && e.target.closest('.vf-touch'))) zeigen(); };
+        ['mousemove', 'pointerdown', 'touchstart'].forEach((ev) => schicht.addEventListener(ev, wecken, { passive: true }));
+        zeigen();
+      } }
     const cv = schicht.querySelector('canvas');
     const gl = cv.getContext('webgl', { antialias: true }) || cv.getContext('experimental-webgl');
     if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
@@ -48959,7 +49120,7 @@
     try { vfTouchAktualisieren(); } catch (e) { /* egal */ }   // v1.6.37: Heli-Sticks erst jetzt bekannt (VF.hubschrauber)
     physEngine.state.speedKmh = 0;
     // Ladebild (siehe vfLadeSchritt): ab hier zaehlt die Ladezeit.
-    VF.laedt = true; VF.ladeAb = performance.now();
+    VF.laedt = true; VF.ladeAb = performance.now(); VF.ampel = null;
     schicht.addEventListener('click', (e) => {
       const b = e.target.closest('[data-vf]');
       if (!b) return;
@@ -110846,6 +111007,54 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } finally { sectorHistory = merkH; ansagenEinreihen = merkE; }
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
+  });
+  stAdd('Virtuell v1.6.44: aus gnen54s PRs - Startampel im Rennen, Bulli-Kamera (seitlich, 100 Grad, durchsichtige Scheibe), seitennahe Kamera, Blick federt zurueck, Steinboden, leichte Modelle', async () => {
+    const f = [];
+    // Startampel: Rennen ja, Training nein; Lichter je Sekunde; danach frei.
+    const merk = { modus: VF.modus, studie: VF.studie, hub: VF.hubschrauber, schicht: VF.schicht, ampel: VF.ampel, laedt: VF.laedt, x: VF.x, y: VF.y, h: VF.h,
+      startX: VF.startX, startY: VF.startY, startH: VF.startH, letzt: VF.letzt, kam: VF.kam };
+    const sch = document.createElement('div');
+    try {
+      Object.assign(VF, { schicht: sch, studie: false, hubschrauber: false, modus: 'practice', startX: 1, startY: 2, startH: 3 });
+      vfLadenEnde();
+      if (VF.ampel) f.push('Ampel im Training');
+      VF.modus = 'laps'; vfLadenEnde();
+      const A = VF.ampel;
+      if (!A || !(A.aus >= 5300 && A.aus <= 6500)) f.push('keine Ampel im Rennen');
+      else {
+        VF.x = 50;
+        if (!vfAmpelSchritt(A.t0 + 2500) || sch.querySelectorAll('.vf-ampel > span.an').length !== 3) f.push('nach 2,5 s nicht 3 Lichter');
+        if (VF.x !== 1) f.push('Auto nicht am Start gehalten');
+        if (vfAmpelSchritt(A.t0 + A.aus + 1) || VF.ampel || sch.querySelector('.vf-ampel')) f.push('Ampel geht nicht aus');
+      }
+    } finally { Object.assign(VF, merk); }
+    // Kameras
+    if (!VF_KAMERAS.some((k) => k.id === 'naeher')) f.push('keine seitennahe Kamera');
+    if (VF_DREH_TOT !== 0.25) f.push('Totzone ' + VF_DREH_TOT);
+    // Steinboden: kachelbar (linker = rechter Rand, oben = unten).
+    const P = VF_BOEDEN.find((b) => b.id === 'stein');
+    if (!P || P.art !== 'flaeche') f.push('kein Steinboden');
+    else {
+      const AW = 64, AH = 32, d = new Uint8ClampedArray(AW * AH * 4);
+      vfSteinZeilen(d, AW, AH, 0, AH, P);
+      const n = (x, y) => vfSteinTurb(x, y);
+      if (Math.abs(n(0, 0.3) - n(1, 0.3)) > 1e-9 || Math.abs(n(0.4, 0) - n(0.4, 1)) > 1e-9) f.push('Stein nicht nahtlos');
+      const g = [...Array(AW * AH).keys()].map((i) => d[i * 4]);
+      if (!(Math.max(...g) - Math.min(...g) > 10)) f.push('Stein eintoenig');
+    }
+    // Leichte Modelle: Caravelle und Spider nennen ihre Performance-Fassung, und sie laedt.
+    for (const m of ['caravelle', 'spider']) {
+      try {
+        const meta = await (await fetch(VF_MODELL_PFADE[m] + 'auto.json', { cache: 'no-store' })).json();
+        if (meta.perf !== 'auto_perf') { f.push(m + ' ohne perf'); continue; }
+        const g = await (await fetch(VF_MODELL_PFADE[m] + 'auto_perf.json', { cache: 'no-store' })).json();
+        if (!(g.indizes < meta.indizes / 1.8)) f.push(m + ': leicht nicht leichter');
+        const r = await fetch(VF_MODELL_PFADE[m] + 'auto_perf.bin', { method: 'HEAD', cache: 'no-store' });
+        if (!r.ok) f.push(m + ': auto_perf.bin fehlt');
+        if (m === 'caravelle' && !(meta.haube && meta.haube.fovH === 100 && meta.haube.seite > 0)) f.push('Bulli-Kamera ohne fovH/seite');
+      } catch (e) { f.push(m + ': ' + e.message); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Ampel nur im Rennen, 3 Lichter nach 2,5 s, dann frei; Kameras, Stein nahtlos, leichte Modelle fuer Caravelle/Spider' };
   });
   stAdd('Optionen v1.6.41: Kacheln Virtuell und RC Heli mit den Einstellungen der virtuellen Fahrt, die Garage behaelt die Auswahl', () => {
     const f = [], merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : '';
