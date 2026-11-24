@@ -26,7 +26,82 @@
   // Randsteine und Linien ganz nah, kein Auto). Jetzt hoechstens 2 falsche Bits (hamming), unplausible Lagen verworfen
   // (Marker hinter der Kamera, von hinten/kantig, naeher als 5 cm oder weiter als 8 m), Erkennung abwechselnd mit 640
   // und 400 Pixeln Breite (breiten), und eine Diagnosezeile im Bild mit gruenen Punkten an den erkannten Ecken.
-  const VF_MK = { id: 0, mm: 160, bildwinkel: 63, breiten: [640, 400], hamming: 3, verlorenMs: 1500 };
+  // v1.6.75 GEMELDET: "Die Strecke sieht jetzt gut aus, sie zittert aber immer noch, obwohl ich die Kamera ganz ruhig
+  // halte" (1280x720, erkannt 532/1000, 130 cm). Bei 130 cm ist der Marker nur ~10 % der Bildbreite; die Ecken der
+  // Bibliothek sind ganze Pixel aus einer Umrissnaeherung, und die Wechselbreiten 640/400 lieferten abwechselnd leicht
+  // andere Ecken. Jetzt: eine feste Breite (960), Subpixel-Ecken (vfMkVerfeinern: Kanten im Graubild vermessen, Geraden
+  // anpassen, schneiden) und ein One-Euro-Filter auf den acht Eckwerten (vfMkEinEuro: still = stark geglaettet, Bewegung
+  // = folgt sofort) - beides im Worker, vor POSIT.
+  const VF_MK = { id: 0, mm: 160, bildwinkel: 63, breiten: [960], hamming: 3, verlorenMs: 1500 };
+  // Subpixel-Ecken: je Kante 15 Proben, je Probe die staerkste Helligkeitskante quer zur Kante (+-4 px, Parabel), Gerade
+  // durch die Proben (Hauptachse), Ecke = Schnitt der Nachbarkanten. Faellt eine Ecke mehr als 3 px vom Original weg,
+  // bleibt das Original. g: Graubild { width, height, data }, cs: [{x, y}] x4 im Uhrzeigersinn.
+  function vfMkVerfeinern(g, cs) {
+    var W = g.width, H = g.height, D = g.data;
+    function I(x, y) {
+      if (x < 0 || y < 0 || x >= W - 1 || y >= H - 1) return -1;
+      var x0 = Math.floor(x), y0 = Math.floor(y), fx = x - x0, fy = y - y0, o = y0 * W + x0;
+      return (D[o] * (1 - fx) + D[o + 1] * fx) * (1 - fy) + (D[o + W] * (1 - fx) + D[o + W + 1] * fx) * fy;
+    }
+    var linien = [];
+    for (var i = 0; i < 4; i++) {
+      var a = cs[i], b = cs[(i + 1) % 4], dx = b.x - a.x, dy = b.y - a.y, L = Math.sqrt(dx * dx + dy * dy);
+      if (L < 10) return cs;
+      var nx = -dy / L, ny = dx / L, pts = [];
+      for (var k = 1; k < 16; k++) {
+        var tt = 0.1 + 0.8 * k / 16, px = a.x + dx * tt, py = a.y + dy * tt, gr = [], ok = true;
+        for (var o = -5; o <= 5; o++) {
+          var v1 = I(px + nx * (o + 0.5), py + ny * (o + 0.5)), v0 = I(px + nx * (o - 0.5), py + ny * (o - 0.5));
+          if (v1 < 0 || v0 < 0) { ok = false; break; }
+          gr.push(Math.abs(v1 - v0));
+        }
+        if (!ok) continue;
+        var bi = 1;
+        for (var j = 1; j < gr.length - 1; j++) if (gr[j] > gr[bi]) bi = j;
+        if (gr[bi] < 12) continue;
+        var den = gr[bi - 1] - 2 * gr[bi] + gr[bi + 1], off = den !== 0 ? 0.5 * (gr[bi - 1] - gr[bi + 1]) / den : 0;
+        var s = (bi - 5) + Math.max(-0.5, Math.min(0.5, off));
+        pts.push([px + nx * s, py + ny * s]);
+      }
+      if (pts.length < 6) return cs;
+      var mx = 0, my = 0;
+      for (var q = 0; q < pts.length; q++) { mx += pts[q][0]; my += pts[q][1]; }
+      mx /= pts.length; my /= pts.length;
+      var sxx = 0, sxy = 0, syy = 0;
+      for (q = 0; q < pts.length; q++) { var ux = pts[q][0] - mx, uy = pts[q][1] - my; sxx += ux * ux; sxy += ux * uy; syy += uy * uy; }
+      var th = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+      linien.push({ x: mx, y: my, dx: Math.cos(th), dy: Math.sin(th) });
+    }
+    var neu = [];
+    for (i = 0; i < 4; i++) {
+      var l1 = linien[(i + 3) % 4], l2 = linien[i];
+      var det = l1.dx * (-l2.dy) - l1.dy * (-l2.dx);
+      if (Math.abs(det) < 1e-6) return cs;
+      var rx = l2.x - l1.x, ry = l2.y - l1.y, t1 = (rx * (-l2.dy) - ry * (-l2.dx)) / det;
+      var p = { x: l1.x + l1.dx * t1, y: l1.y + l1.dy * t1 };
+      if (Math.abs(p.x - cs[i].x) > 3 || Math.abs(p.y - cs[i].y) > 3) return cs;
+      neu.push(p);
+    }
+    return neu;
+  }
+  // One-Euro-Filter (Casiez et al. 2012) auf mehreren Werten: Grenzfrequenz = min + beta * |Geschwindigkeit|. Zustand f
+  // (Objekt), t in ms. Nach einer Pause (> 500 ms) beginnt er neu.
+  function vfMkEinEuro(f, werte, t) {
+    var MIN = 0.8, BETA = 0.04, DC = 1.0;
+    if (!f.x || t - f.t > 500) { f.x = werte.slice(); f.dx = werte.map(function () { return 0; }); f.t = t; return werte.slice(); }
+    var dt = Math.max(0.001, (t - f.t) / 1000);
+    f.t = t;
+    var al = function (fc) { var tau = 1 / (2 * Math.PI * fc); return 1 / (1 + tau / dt); };
+    var raus = [];
+    for (var i = 0; i < werte.length; i++) {
+      var d = (werte[i] - f.x[i]) / dt;
+      f.dx[i] = f.dx[i] + al(DC) * (d - f.dx[i]);
+      var fc = MIN + BETA * Math.abs(f.dx[i]);
+      f.x[i] = f.x[i] + al(fc) * (werte[i] - f.x[i]);
+      raus.push(f.x[i]);
+    }
+    return raus;
+  }
   const VF_MK_MASSSTAB_STORE = 'omegasim-vf-ar-massstab';
   const VF_MK_MASSSTAEBE = [1, 0.5, 0.25];
   function vfMkMassstab() { try { const v = +localStorage.getItem(VF_MK_MASSSTAB_STORE); return VF_MK_MASSSTAEBE.indexOf(v) >= 0 ? v : 0.5; } catch (e) { return 0.5; } }
@@ -130,13 +205,17 @@
     try {
       const u = (f) => new URL('lib/js-aruco2/' + f, location.href).href;
       const code = 'importScripts(' + ['cv.js', 'aruco.js', 'svd.js', 'posit1.js'].map((f) => JSON.stringify(u(f))).join(',') + ');\n'
-        + 'var det = new AR.Detector({ dictionaryName: "ARUCO_MIP_36h12", maxHammingDistance: ' + VF_MK.hamming + ' }), pos = null, pf = 0;\n'
+        + 'var det = new AR.Detector({ dictionaryName: "ARUCO_MIP_36h12", maxHammingDistance: ' + VF_MK.hamming + ' }), pos = null, pf = 0, filt = {};\n'
+        + 'var vfMkVerfeinern = ' + vfMkVerfeinern.toString() + ';\nvar vfMkEinEuro = ' + vfMkEinEuro.toString() + ';\n'
         + 'onmessage = function (e) { var d = e.data, r = { n: d.n, ok: false, buf: d.buf, w: d.w, h: d.h }, t0 = Date.now();\n'
         + '  try { if (!pos || pf !== d.f) { pos = new POS.Posit(d.mm, d.f); pf = d.f; }\n'
         + '    var ms = det.detect({ width: d.w, height: d.h, data: new Uint8ClampedArray(d.buf) }) || [], m = null;\n'
         + '    for (var i = 0; i < ms.length; i++) if (ms[i].id === d.id) m = ms[i];\n'
         + '    r.kand = ms.length; r.ms = Date.now() - t0;\n'
-        + '    if (m) { r.ecken = m.corners.map(function (c) { return [c.x / d.w, c.y / d.h]; }); var ec = m.corners.map(function (c) { return { x: c.x - d.w / 2, y: d.h / 2 - c.y }; }); var p = pos.pose(ec);\n'
+        + '    if (m) { var cs = vfMkVerfeinern(det.grey, m.corners); r.fein = cs !== m.corners;\n'
+        + '      var w8 = vfMkEinEuro(filt, [cs[0].x, cs[0].y, cs[1].x, cs[1].y, cs[2].x, cs[2].y, cs[3].x, cs[3].y], d.t);\n'
+        + '      cs = [{ x: w8[0], y: w8[1] }, { x: w8[2], y: w8[3] }, { x: w8[4], y: w8[5] }, { x: w8[6], y: w8[7] }];\n'
+        + '      r.ecken = cs.map(function (c) { return [c.x / d.w, c.y / d.h]; }); var ec = cs.map(function (c) { return { x: c.x - d.w / 2, y: d.h / 2 - c.y }; }); var p = pos.pose(ec);\n'
         + '      r.ok = true; r.r1 = p.bestRotation; r.t1 = p.bestTranslation; r.e1 = p.bestError; r.r2 = p.alternativeRotation; r.t2 = p.alternativeTranslation; r.e2 = p.alternativeError; }\n'
         + '  } catch (err) { r.fehler = String(err); }\n'
         + '  postMessage(r, [r.buf]); };\n';
@@ -157,7 +236,7 @@
   }
   function vfMkAntwort(mk, r) {
     const S = mk.stat || (mk.stat = { gesendet: 0, erkannt: 0, verworfen: 0, ms: 0, dist: 0, w: 0, h: 0, kand: 0 });
-    if (r) { if (r.ms !== undefined) S.ms = r.ms; if (r.w) { S.w = r.w; S.h = r.h; } if (r.kand !== undefined) S.kand = r.kand; }
+    if (r) { if (r.ms !== undefined) S.ms = r.ms; if (r.w) { S.w = r.w; S.h = r.h; } if (r.kand !== undefined) S.kand = r.kand; if (r.ok) { S.fein = (S.fein || 0) + (r.fein ? 1 : 0); } }
     if (!r || !r.ok || !r.r1 || !r.t1) { if (r && r.fehler && !mk.fehler) { mk.fehler = r.fehler; log('Marker-AR: ' + r.fehler, 'warn'); } return; }
     const jetzt = performance.now();
     let M = vfMkGl(r.r1, r.t1);
@@ -179,8 +258,12 @@
     if (vor) {
       const dt = Math.hypot(M[12] - vor[12], M[13] - vor[13], M[14] - vor[14]);
       const dr = 1 - (M[8] * vor[8] + M[9] * vor[9] + M[10] * vor[10]);
-      const a = Math.max(0.15, Math.min(1, 0.15 + dt / 60 + dr * 15));   // v1.6.73: ruhiger (vorher 0,25 + dt/40)
-      for (let i = 0; i < 16; i++) mk.pose[i] += (M[i] - mk.pose[i]) * a;
+      // v1.6.75: die Ecken sind schon gefiltert (One-Euro im Worker) - hier nur noch leicht, damit es nicht nachzieht.
+      // Neigung getrennt und langsamer: sie haengt an der Verkuerzung des kleinen Markers und rauscht am staerksten.
+      // Still (kleine Aenderung) nur 15 % je Erkennung, bei Bewegung (Weg oder Drehung) schnell bis ganz.
+      const bew = Math.min(1, dt / 80 + dr * 40);   // Abstandsrauschen (~1 cm bei 1,3 m) zaehlt nicht als Bewegung
+      const aT = Math.max(0.5, Math.min(1, 0.5 + bew)), aR = Math.max(0.15, Math.min(1, 0.15 + bew));
+      for (let i = 0; i < 16; i++) mk.pose[i] += (M[i] - mk.pose[i]) * (i === 12 || i === 13 ? aT : aR);   // Abstand (14) ruhig wie die Neigung
       vfMkOrtho(mk.pose);
     } else mk.pose = M;
     mk.zuletzt = jetzt;
@@ -201,7 +284,7 @@
       mk.ctx.drawImage(v, 0, 0, dw, dh);
       const bild = mk.ctx.getImageData(0, 0, dw, dh);
       mk.wartet = true; mk.bilder++;
-      mk.worker.postMessage({ n: ++mk.n, w: dw, h: dh, f, mm: VF_MK.mm, id: VF_MK.id, buf: bild.data.buffer }, [bild.data.buffer]);
+      mk.worker.postMessage({ n: ++mk.n, t: performance.now(), w: dw, h: dh, f, mm: VF_MK.mm, id: VF_MK.id, buf: bild.data.buffer }, [bild.data.buffer]);
       return;
     }
     // Rueckfall ohne Worker
@@ -213,8 +296,11 @@
     mk.bilder++;
     const m = liste.find((x) => x.id === VF_MK.id);
     if (!m) return;
-    const p = mk.posit.pose(m.corners.map((c) => ({ x: c.x - dw / 2, y: dh / 2 - c.y })));
-    vfMkAntwort(mk, { ok: true, w: dw, h: dh, ecken: m.corners.map((c) => [c.x / dw, c.y / dh]), r1: p.bestRotation, t1: p.bestTranslation, e1: p.bestError, r2: p.alternativeRotation, t2: p.alternativeTranslation, e2: p.alternativeError });
+    let cs = vfMkVerfeinern(mk.det.grey, m.corners);
+    const w8 = vfMkEinEuro(mk.filt || (mk.filt = {}), [cs[0].x, cs[0].y, cs[1].x, cs[1].y, cs[2].x, cs[2].y, cs[3].x, cs[3].y], performance.now());
+    cs = [0, 1, 2, 3].map((i) => ({ x: w8[2 * i], y: w8[2 * i + 1] }));
+    const p = mk.posit.pose(cs.map((c) => ({ x: c.x - dw / 2, y: dh / 2 - c.y })));
+    vfMkAntwort(mk, { ok: true, w: dw, h: dh, ecken: cs.map((c) => [c.x / dw, c.y / dh]), r1: p.bestRotation, t1: p.bestTranslation, e1: p.bestError, r2: p.alternativeRotation, t2: p.alternativeTranslation, e2: p.alternativeError });
   }
   // Drehteil wieder orthonormal machen (Gram-Schmidt auf den Spalten).
   function vfMkOrtho(M) {
@@ -317,7 +403,7 @@
       const S = mk.stat || {}, v = mk.video;
       d.textContent = t('Kamera') + ' ' + (v.videoWidth || 0) + '×' + (v.videoHeight || 0) + ' · ' + t('erkannt') + ' ' + (S.erkannt || 0) + '/' + (S.gesendet || mk.bilder || 0)
         + ' · ' + t('verworfen') + ' ' + (S.verworfen || 0) + ' · ' + t('Kandidaten') + ' ' + (S.kand || 0) + ' · ' + (S.ms || 0) + ' ms · '
-        + (S.dist ? Math.round(S.dist / 10) + ' cm' : '–') + ' · ' + (mk.worker ? 'Worker' : t('Hauptthread')) + (mk.fehler ? ' · ⚠ ' + String(mk.fehler).slice(0, 60) : '');
+        + (S.dist ? Math.round(S.dist / 10) + ' cm' : '–') + ' · ' + t('fein') + ' ' + (S.fein || 0) + ' · ' + (mk.worker ? 'Worker' : t('Hauptthread')) + (mk.fehler ? ' · ⚠ ' + String(mk.fehler).slice(0, 60) : '');
     }
     // Ecken: aus Bildanteilen (0..1 des Videos) in Schirmpixel (Ausschnitt wie object-fit: cover).
     let punkte = sch.querySelectorAll('.vf-mk-punkt');
