@@ -14671,15 +14671,19 @@
   stAdd('Virtuell v1.6.67: Marker-AR - Weltabbildung (Hoehe = aus dem Papier), Kameraort, Glaettung orthonormal, AR-Knopf mit Kamera, Marker-Blatt', async () => {
     const f = [];
     // Welt -> Marker: Welt-Hoehe (y) wird Marker-z (aus dem Papier), Welt-x bleibt x, Welt-z wird -Marker-y; Massstab mm.
-    const merkPts = VF.pts;
+    const merkPts = VF.pts, merkS = [VF.startX, VF.startY, VF.startH];
     try {
-      VF.pts = [{ x: 0, y: 0 }];
+      VF.pts = [{ x: 0, y: 0 }]; VF.startX = 0; VF.startY = 0; VF.startH = 0;   // v1.6.71: Start/Ziel auf dem Marker
       const W = vfMkWelt(), s = 10 / TRACK_UNITS_PER_CM * vfMkMassstab();
       const ab = (v) => [W[0] * v[0] + W[4] * v[1] + W[8] * v[2] + W[12], W[1] * v[0] + W[5] * v[1] + W[9] * v[2] + W[13], W[2] * v[0] + W[6] * v[1] + W[10] * v[2] + W[14]];
       const oben = ab([0, 1, 0]), vorn = ab([0, 0, 1]);
       if (Math.abs(oben[2] - s) > 1e-6 || Math.abs(oben[0]) > 1e-6 || Math.abs(oben[1]) > 1e-6) f.push('Hoehe nicht aus dem Papier: ' + oben);
       if (Math.abs(vorn[1] + s) > 1e-6) f.push('Welt-z nicht -Marker-y: ' + vorn);
-    } finally { VF.pts = merkPts; }
+      // Startrichtung (Kurs 90 Grad = nach +x) zeigt zur Oberkante des Blatts (Marker +y).
+      VF.startH = 90; const W2 = vfMkWelt();
+      const r2 = [W2[0] + W2[12], W2[1] + W2[13]], r0 = [W2[12], W2[13]];
+      if (!(r2[1] - r0[1] > 0.9 * s && Math.abs(r2[0] - r0[0]) < 0.1 * s)) f.push('Startrichtung nicht Blatt-oben: ' + [r2[0] - r0[0], r2[1] - r0[1]]);
+    } finally { VF.pts = merkPts; VF.startX = merkS[0]; VF.startY = merkS[1]; VF.startH = merkS[2]; }
     // Kameraort: Blick = Verschiebung (0,0,-500) -> Auge bei (0,0,500).
     const auge = vfMkAuge([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, -500, 1]);
     if (Math.abs(auge[2] - 500) > 1e-6) f.push('Auge ' + auge);
