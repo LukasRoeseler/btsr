@@ -14622,6 +14622,54 @@
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Virtuell v1.6.44: aus gnen54s PRs - Startampel im Rennen, Bulli-Kamera (seitlich, 100 Grad, durchsichtige Scheibe), seitennahe Kamera, Blick federt zurueck, Steinboden, leichte Modelle', async () => {
+    const f = [];
+    // Startampel: Rennen ja, Training nein; Lichter je Sekunde; danach frei.
+    const merk = { modus: VF.modus, studie: VF.studie, hub: VF.hubschrauber, schicht: VF.schicht, ampel: VF.ampel, laedt: VF.laedt, x: VF.x, y: VF.y, h: VF.h,
+      startX: VF.startX, startY: VF.startY, startH: VF.startH, letzt: VF.letzt, kam: VF.kam };
+    const sch = document.createElement('div');
+    try {
+      Object.assign(VF, { schicht: sch, studie: false, hubschrauber: false, modus: 'practice', startX: 1, startY: 2, startH: 3 });
+      vfLadenEnde();
+      if (VF.ampel) f.push('Ampel im Training');
+      VF.modus = 'laps'; vfLadenEnde();
+      const A = VF.ampel;
+      if (!A || !(A.aus >= 5300 && A.aus <= 6500)) f.push('keine Ampel im Rennen');
+      else {
+        VF.x = 50;
+        if (!vfAmpelSchritt(A.t0 + 2500) || sch.querySelectorAll('.vf-ampel > span.an').length !== 3) f.push('nach 2,5 s nicht 3 Lichter');
+        if (VF.x !== 1) f.push('Auto nicht am Start gehalten');
+        if (vfAmpelSchritt(A.t0 + A.aus + 1) || VF.ampel || sch.querySelector('.vf-ampel')) f.push('Ampel geht nicht aus');
+      }
+    } finally { Object.assign(VF, merk); }
+    // Kameras
+    if (!VF_KAMERAS.some((k) => k.id === 'naeher')) f.push('keine seitennahe Kamera');
+    if (VF_DREH_TOT !== 0.25) f.push('Totzone ' + VF_DREH_TOT);
+    // Steinboden: kachelbar (linker = rechter Rand, oben = unten).
+    const P = VF_BOEDEN.find((b) => b.id === 'stein');
+    if (!P || P.art !== 'flaeche') f.push('kein Steinboden');
+    else {
+      const AW = 64, AH = 32, d = new Uint8ClampedArray(AW * AH * 4);
+      vfSteinZeilen(d, AW, AH, 0, AH, P);
+      const n = (x, y) => vfSteinTurb(x, y);
+      if (Math.abs(n(0, 0.3) - n(1, 0.3)) > 1e-9 || Math.abs(n(0.4, 0) - n(0.4, 1)) > 1e-9) f.push('Stein nicht nahtlos');
+      const g = [...Array(AW * AH).keys()].map((i) => d[i * 4]);
+      if (!(Math.max(...g) - Math.min(...g) > 10)) f.push('Stein eintoenig');
+    }
+    // Leichte Modelle: Caravelle und Spider nennen ihre Performance-Fassung, und sie laedt.
+    for (const m of ['caravelle', 'spider']) {
+      try {
+        const meta = await (await fetch(VF_MODELL_PFADE[m] + 'auto.json', { cache: 'no-store' })).json();
+        if (meta.perf !== 'auto_perf') { f.push(m + ' ohne perf'); continue; }
+        const g = await (await fetch(VF_MODELL_PFADE[m] + 'auto_perf.json', { cache: 'no-store' })).json();
+        if (!(g.indizes < meta.indizes / 1.8)) f.push(m + ': leicht nicht leichter');
+        const r = await fetch(VF_MODELL_PFADE[m] + 'auto_perf.bin', { method: 'HEAD', cache: 'no-store' });
+        if (!r.ok) f.push(m + ': auto_perf.bin fehlt');
+        if (m === 'caravelle' && !(meta.haube && meta.haube.fovH === 100 && meta.haube.seite > 0)) f.push('Bulli-Kamera ohne fovH/seite');
+      } catch (e) { f.push(m + ': ' + e.message); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Ampel nur im Rennen, 3 Lichter nach 2,5 s, dann frei; Kameras, Stein nahtlos, leichte Modelle fuer Caravelle/Spider' };
+  });
   stAdd('Optionen v1.6.41: Kacheln Virtuell und RC Heli mit den Einstellungen der virtuellen Fahrt, die Garage behaelt die Auswahl', () => {
     const f = [], merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : '';
     const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };

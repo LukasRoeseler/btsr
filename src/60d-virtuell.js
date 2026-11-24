@@ -188,6 +188,10 @@
     // v1.5 BESTELLT: "als weitere Bodenart (Standard) den Rasen ... mit Baeumen in der Ferne, damit der Horizont nicht so
     // kahl aussieht". Eigener Rasen (kein Code aus uno-com-escada, das ist PolyForm Noncommercial): nahtlose Fliesen aus
     // Rauschen in drei Lagen und kurzen Halmen, im Dielenraster ohne Fugen gelegt. Baeume: vfBaeumeBauen.
+    // v1.6.44 aus gnen54s PR 4 (ee49684, 0796adc): "ein neutraler Boden ohne Dielen, nicht komplett eintoenig, so ein bisschen
+    // wie marmoriert, nicht schwarz". Nahtlos kachelbare Flaeche 120 x 60 cm, ohne Fugen.
+    { id: 'stein', name: 'Stein grau marmoriert', art: 'flaeche', breiteCm: 60, laengeCm: 120, spalten: 1, zeilen: 1,
+      ton: [[104, 104, 107]], hell: [130, 130, 133], ader: [70, 70, 75], glanz: 0.34 },
     { id: 'rasen', name: 'Rasen', art: 'rasen', breiteCm: 120, laengeCm: 120, spalten: 2, zeilen: 1,
       ton: [[46, 78, 32], [72, 106, 44], [104, 116, 58]], maser: [0, 0, 0], kontrast: 0, ringCm: 1, poren: 0, ast: 0, glanz: 0.0 },
   ];
@@ -373,11 +377,50 @@
     vfTexLauf.boden = null;
     return vfTexDaten.boden;
   }
+  // Marmorierter Stein (gnen54), NAHTLOS kachelbar: periodisches Wertrauschen in mehreren Oktaven, Adern als |sin| mit
+  // ganzzahliger Frequenz je Kachel, verzerrt vom Rauschen. Zeilen y0..y1 (in Schritten fuer die Garage im Leerlauf).
+  function vfSteinRauschen(u, v, n, m, s) {
+    const x = u * n, y = v * m, i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j;
+    const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    const g = (a, b) => vfHash(((a % n) + n) % n + s, ((b % m) + m) % m + 7 * s);
+    const a0 = g(i, j), a1 = g(i + 1, j), b0 = g(i, j + 1), b1 = g(i + 1, j + 1);
+    return (a0 + (a1 - a0) * sx + (b0 - a0 + (b1 - b0 - a1 + a0) * sx) * sy) * 2 - 1;
+  }
+  function vfSteinTurb(u, v) {
+    let t = 0, a = 0.5;
+    for (let o = 0, n = 4, m = 2; o < 5; o++, n *= 2, m *= 2, a *= 0.5) t += a * vfSteinRauschen(u, v, n, m, 101 * (o + 1));
+    return t;
+  }
+  function vfSteinZeilen(d, AW, AH, y0, y1, P) {
+    const [t0, t1, t2] = P.ton[0], [h0, h1, h2] = P.hell, [a0, a1, a2] = P.ader;
+    for (let y = y0; y < y1; y++) {
+      const v = y / AH;
+      for (let x = 0; x < AW; x++) {
+        const u = x / AW, tb = vfSteinTurb(u, v);
+        const wolke = 0.5 + 0.6 * vfSteinRauschen(u, v, 3, 2, 909) + 0.35 * tb;
+        const a1s = Math.abs(Math.sin(Math.PI * (3 * u + 2 * v) + 5.5 * tb));
+        const a2s = Math.abs(Math.sin(Math.PI * (5 * u - 3 * v) + 7.0 * vfSteinTurb(v, u)));
+        const ader = Math.pow(1 - a1s, 10) * 0.6 + Math.pow(1 - a2s, 14) * 0.35;
+        const hw = Math.max(0, Math.min(1, wolke));
+        let r = t0 + (h0 - t0) * hw, g = t1 + (h1 - t1) * hw, b = t2 + (h2 - t2) * hw;
+        const k = Math.min(1, ader);
+        r += (a0 - r) * k; g += (a1 - g) * k; b += (a2 - b) * k;
+        const korn = 1 + (vfHash(x, y) - 0.5) * 0.05;
+        const i = (y * AW + x) * 4;
+        d[i] = r * korn; d[i + 1] = g * korn; d[i + 2] = b * korn;
+        d[i + 3] = P.glanz * (0.85 + 0.3 * hw) * 255;
+      }
+    }
+  }
   function* vfBodenBau(P) {
     const AW = VF_ATLAS_B, AH = VF_ATLAS_H, d = new Uint8ClampedArray(AW * AH * 4);
-    const rnd = vfZufall(P.id === 'eiche' ? 1911 : P.id === 'grau' ? 2701 : P.id === 'rasen' ? 5150 : 3307);
+    const rnd = vfZufall(P.id === 'eiche' ? 1911 : P.id === 'grau' ? 2701 : P.id === 'rasen' ? 5150 : P.id === 'stein' ? 4409 : 3307);
     const w = AW / P.spalten, h = AH / P.zeilen, stuecke = [];
-    for (let r = 0; r < P.zeilen; r++) {
+    if (P.art === 'flaeche') {
+      for (let y = 0; y < AH; y += 64) { vfSteinZeilen(d, AW, AH, y, Math.min(AH, y + 64), P); yield; }
+      stuecke.push([0, 0, 1, 1]);
+    }
+    for (let r = 0; P.art !== 'flaeche' && r < P.zeilen; r++) {
       for (let s = 0; s < P.spalten; s++) {
         if (P.art === 'rasen') yield* vfGrasStueck(d, AW, s * w, r * h, w, h, P, rnd);
         else vfHolzStueck(d, AW, s * w, r * h, w, h, P, rnd);
@@ -1030,7 +1073,15 @@
     const B = art.breiteCm * cm, L = art.laengeCm * cm, rnd = vfZufall(9001 + pts.length);
     const reihen = [];
     let stuecke = 0;
-    if (art.art === 'fischgraet') {
+    if (art.art === 'flaeche') {
+      // Nahtlose Kacheln im Raster, gleiche Lage und Farbe (sonst saehe man die Kanten).
+      const c = [VF_BODEN_HELL, VF_BODEN_HELL, VF_BODEN_HELL];
+      for (let z = z0; z < z1; z += B) {
+        for (let x = x0; x < x1; x += L) {
+          vfViereck(a, [x, y, z, 0, 0], [x + L, y, z, 1, 0], [x + L, y, z + B, 1, 1], [x, y, z + B, 0, 1], c); stuecke++;
+        }
+      }
+    } else if (art.art === 'fischgraet') {
       const r = Math.SQRT1_2, d1 = [r, r], d2 = [-r, r];
       const W = (A, Bb) => [A * d1[0] + Bb * d2[0], A * d1[1] + Bb * d2[1]];
       // Rahmen-Koordinaten der Bodenecken: A = (x + z) r, B = (z - x) r
@@ -2721,18 +2772,29 @@
   }
   // Daten einmal je Sitzung und Auto holen (fetch: ueber file:// nicht ladbar, dann bleibt der Kasten).
   let vfModellLaden = {};
+  // v1.6.44 aus gnen54s testversion (296240d, GEMELDET am Android-Tablet: Spider und Bulli "furchtbar zu fahren"): im
+  // Grafikmodus Performance die leichte Fassung, die auto.json unter "perf" nennt (auto_perf.json/.bin, Quadrik-Vereinfachung,
+  // 0,1-0,2 Mio. statt bis 1,7 Mio. Dreiecke). Sie bringt NUR die Geometrie; alles andere bleibt aus auto.json. Fehlt sie,
+  // faehrt das Auto mit der vollen.
   function vfModellDaten(pfad) {
     pfad = pfad || vfModellPfad();
-    if (!vfModellLaden[pfad]) {
-      vfModellLaden[pfad] = Promise.all([
-        fetch(pfad + 'auto.json').then((r) => { if (!r.ok) throw new Error('auto.json ' + r.status); return r.json(); }),
-        fetch(pfad + 'auto.bin').then((r) => { if (!r.ok) throw new Error('auto.bin ' + r.status); return r.arrayBuffer(); }),
-      ]).then(([meta, bin]) => {
-        if (bin.byteLength < meta.indexAb + meta.indizes * 2) throw new Error('auto.bin zu kurz');
-        return { meta, ecken: new Float32Array(bin, 0, meta.ecken * 8), indizes: new Uint16Array(bin, meta.indexAb, meta.indizes) };
-      }).catch((e) => { vfModellLaden[pfad] = null; throw e; });
+    const perf = vfGrafik() === 'perf', schl = pfad + (perf ? '|perf' : '');
+    if (!vfModellLaden[schl]) {
+      vfModellLaden[schl] = fetch(pfad + 'auto.json').then((r) => { if (!r.ok) throw new Error('auto.json ' + r.status); return r.json(); })
+        .then((meta) => {
+          if (!perf || !meta.perf) return [meta, 'auto'];
+          return fetch(pfad + meta.perf + '.json').then((r) => (r.ok ? r.json() : null))
+            .then((g) => (g && g.teile ? [Object.assign({}, meta, { teile: g.teile, ecken: g.ecken, indizes: g.indizes, indexAb: g.indexAb, lod: g.lod }), meta.perf] : [meta, 'auto']))
+            .catch(() => [meta, 'auto']);
+        })
+        .then(([meta, datei]) => fetch(pfad + datei + '.bin').then((r) => { if (!r.ok) throw new Error(datei + '.bin ' + r.status); return r.arrayBuffer(); })
+          .then((bin) => {
+            if (bin.byteLength < meta.indexAb + meta.indizes * 2) throw new Error(datei + '.bin zu kurz');
+            return { meta, ecken: new Float32Array(bin, 0, meta.ecken * 8), indizes: new Uint16Array(bin, meta.indexAb, meta.indizes) };
+          }))
+        .catch((e) => { vfModellLaden[schl] = null; throw e; });
     }
-    return vfModellLaden[pfad];
+    return vfModellLaden[schl];
   }
   // Gemeinsamer Rad-Modell-Fallback: die echten Rad-Teile der Vulture V5.R (mit Texturen),
   // damit auch Modelle ohne eigene Rad-Geometrie die gleichen Raeder zeigen.
@@ -3514,6 +3576,10 @@
       if (physEngine && physEngine.state) physEngine.state.speedKmh = 0;
       return;
     }
+    if (VF.ampel && vfAmpelSchritt(now)) {
+      VF.letzt = now; VF.letztRoh = now; VF.dtBild = 0; vfMalen(); vfHud();
+      return;
+    }
     vfWacheMessen(VF.letztRoh ? now - VF.letztRoh : 0, now);
     VF.letztRoh = now;
     if (rennPauseAktiv()) {
@@ -3969,6 +4035,9 @@
     // Himmel: Vollbild-Quad, Farbverlauf im WELTRAUM (horizontfolgend beim Umsehen). Ganz hinten.
     if (!VF.himmelProg) { VF.himmelProg = vfProgrammHimmel(gl); VF.himmel = vfHimmel(gl); }
     let k = vfKamera(VF.dtBild || 0.016);
+    // v1.6.44 (gnen54, bb07959): waagerechter Bildwinkel (auto.json "haube": fovH) in den senkrechten fuer das aktuelle
+    // Seitenverhaeltnis - so bleibt die Breite des Blicks auf jedem Schirm gleich.
+    if (k.fovH && VF.cv) k.fov = 2 * Math.atan(Math.tan(k.fovH * Math.PI / 360) / Math.max(0.2, VF.cv.width / Math.max(1, VF.cv.height))) * 180 / Math.PI;
     // v1.3.124 Studienmodus: festes Sichtfeld aus Bildschirmgroesse und Sitzabstand.
     if (VF_STUDIE) { const sf = vfStudieFov(); if (sf) k.fov = sf; }
     else k = vfKameraEffekt(k, VF.dtBild || 0.016);
@@ -4423,7 +4492,9 @@
   // Motorhaube oder nahe Verfolgerkamera." R3 (bzw. die Lichthupen-Belegung) oder C schaltet weiter:
   // Verfolger -> nah -> Motorhaube -> Verfolger. Nachgefuehrt nach der ZEIT (nicht je Bild): auf einem
   // langsamen Handy lief die Kamera vorher bei weniger Bildern spuerbar hinterher.
-  const VF_KAMERAS = [{ id: 'verfolger', name: 'Verfolgerkamera' }, { id: 'nah', name: 'Nahe Verfolgerkamera' }, { id: 'haube', name: 'Motorhaube' },
+  // v1.6.44 aus gnen54s PR 4 (b9d8853, 42ab1c6): "Seitennahe Kamera" zwischen naher Verfolgerkamera und Motorhaube.
+  const VF_KAMERAS = [{ id: 'verfolger', name: 'Verfolgerkamera' }, { id: 'nah', name: 'Nahe Verfolgerkamera' },
+                      { id: 'naeher', name: 'Seitennahe Kamera' }, { id: 'haube', name: 'Motorhaube' },
                       { id: 'oben', name: 'Von oben (Start/Ziel)' },
                       { id: 'fahrer', name: 'Fahrer am Rand', wip: true },
                       { id: 'tv', name: 'TV-Kamera', wip: true }];
@@ -4457,7 +4528,7 @@
   // Der Pad-Stick gilt nur fuer Achsen, die keine Belegung in Optionen -> Controller traegt, und nur
   // bei Standard-Belegung des Pads (sonst koennten Achse 2/3 die Trigger sein und dauernd drehen).
   const VF_DREH_GIER = 200 * Math.PI / 180, VF_DREH_NICK = 100 * Math.PI / 180, VF_DREH_TAU = 0.12;
-  const VF_DREH_TOT = 0.16, VF_DREH_SCHWELLE = 2 * Math.PI / 180, VF_DREH_PAD_MS = 250;
+  const VF_DREH_TOT = 0.25, VF_DREH_SCHWELLE = 2 * Math.PI / 180, VF_DREH_PAD_MS = 250;
   const VF_DREH_TASTEN = { t: 'hoch', f: 'links', g: 'runter', h: 'rechts' };
   function vfDreh() {
     if (!VF.dreh) VF.dreh = { g: 0, n: 0, vg: 0, vn: 0 };
@@ -4678,6 +4749,12 @@
     // Rechter Stick / T-F-G-H: die Drehung laeuft nach der Zeit (in der Pause ist dt 0).
     const art = vfDrehArt(id), D = vfDreh(), ein = vfDrehEingabe();
     vfDrehSchritt(D, ein[0], ein[1], dt, vfDrehGrenzen(art));
+    // v1.6.44 aus gnen54s testversion (03c2823): im Auto (Haube, Fahrer, TV) federt der Blick 0,5 s nach dem Loslassen
+    // zurueck nach vorn (Zeitkonstante 0,25 s); Totzone des Kamera-Sticks 0,25 (VF_DREH_TOT).
+    if (art === 'umsehen') {
+      if (ein[0] || ein[1]) VF.drehLos = 0; else VF.drehLos = (VF.drehLos || 0) + dt;
+      if (VF.drehLos > 0.5 && !D.vg && !D.vn) { const f = Math.exp(-dt / 0.25); D.g *= f; D.n *= f; if (Math.abs(D.g) < 1e-3) D.g = 0; if (Math.abs(D.n) < 1e-3) D.n = 0; }
+    }
     const k0 = vfKameraBasis(id, fx, fz, dt, art, D);
     // Der Hubschrauber fliegt in der Hoehe: auch der Dreh-Mittelpunkt liegt dann auf der Flughoehe,
     // sonst schwenkt die Kamera beim Umsehen/Oben um den Boden (nur sichtbar, wenn VF.z > 0).
@@ -4703,9 +4780,13 @@
       const hb = VF.modell && VF.modell.meta && VF.modell.meta.haube;
       const vor = (hb ? hb.vor : 0.75) * s, hoch = (hb ? hb.hoch : 0.95 + (VF.modell ? 0.07 : 0.25)) * s;
       const hubH = VF.hubschrauber ? (VF.z || 0) : 0;
-      const auge = [VF.x + fx * vor, hoch + hubH, VF.y + fz * vor];
+      // v1.6.44 aus gnen54s PR 4 (bb07959): ein Modell darf die Kamera ganz setzen - "seite" in m (+ links), "neigung" in
+      // Grad nach unten, "fov" senkrecht, "fovH" waagerecht (hat Vorrang; VW Caravelle: Onboard-Kamera mit 100 Grad).
+      const seite = (hb && hb.seite || 0) * s;
+      const auge = [VF.x + fx * vor + fz * seite, hoch + hubH, VF.y + fz * vor - fx * seite];
+      const sinkt = hb && typeof hb.neigung === 'number' ? Math.tan(hb.neigung * Math.PI / 180) * 30 : 1.2;
       VF.kam = auge;
-      return { auge, ziel: [auge[0] + fx * 30, hoch + hubH - 1.2, auge[2] + fz * 30], fov: 70, nah: 0.3 };
+      return { auge, ziel: [auge[0] + fx * 30, hoch + hubH - sinkt, auge[2] + fz * 30], fov: (hb && hb.fov) || 70, fovH: (hb && hb.fovH) || 0, nah: 0.3 };
     }
     if (id === 'oben') {
       // Von oben, parallel zur Start/Ziel-Geraden: die Kamera schwebt mit dem Auto mit (x/y) und
@@ -4716,18 +4797,23 @@
       VF.kam = null;
       return { auge, ziel: [VF.x, hubH, VF.y], oben, fov: 62, nah: 0.5 };
     }
-    const nah = id === 'nah';
-    const hinten = nah ? 9 : 15, hoehe = nah ? 3.8 : 8, tau = nah ? 0.08 : 0.15;
+    const nah = id === 'nah', naeher = id === 'naeher';
+    const hinten = naeher ? 6.5 : (nah ? 9 : 15), hoehe = naeher ? 2.8 : (nah ? 3.8 : 8), tau = naeher ? 0.06 : (nah ? 0.08 : 0.15);
     // Gedreht kreist der SOLL-Ort um das Auto; die Nachfuehrung (tau) bleibt dieselbe.
-    const zh = nah ? 2.0 : 1.4, vor = nah ? 8 : 12;
+    const zh = naeher ? 1.6 : (nah ? 2.0 : 1.4), vor = naeher ? 7 : (nah ? 8 : 12);
     // Der Hubschrauber fliegt in der Hoehe (VF.z): Kamera und Ziel folgen mit, der Kreis dreht um den Flugort.
     const hubH = VF.hubschrauber ? (VF.z || 0) : 0;
     const k = vfDrehAnwenden({ auge: [VF.x - fx * hinten, hoehe + hubH, VF.y - fz * hinten], ziel: [VF.x + fx * vor, zh + hubH, VF.y + fz * vor] },
       art, D, VF.x, zh + hubH, VF.y);
+    // Seitennah: zur Seite oder nach vorn geschwenkt bis zu 25 % naeher am Auto (gnen54, 42ab1c6).
+    if (naeher && D && D.g) {
+      const g = Math.abs(Math.atan2(Math.sin(D.g), Math.cos(D.g))), f = 1 - 0.25 * Math.min(1, g / (Math.PI / 2));
+      k.auge = [VF.x + (k.auge[0] - VF.x) * f, zh + hubH + (k.auge[1] - zh - hubH) * f, VF.y + (k.auge[2] - VF.y) * f];
+    }
     const soll = k.auge;
     const a = 1 - Math.exp(-Math.max(0, dt) / tau);
     VF.kam = VF.kam ? VF.kam.map((q, i) => q + (soll[i] - q) * a) : soll;
-    return { auge: VF.kam, ziel: k.ziel, fov: nah ? 58 : 54, nah: 0.5 };
+    return { auge: VF.kam, ziel: k.ziel, fov: naeher ? 62 : (nah ? 58 : 54), nah: naeher ? 0.3 : 0.5 };
   }
   // v1.5.84 BESTELLT: "Ghostcar sollte wie das ausgewählte Auto aussehen". Dasselbe Modell mit derselben Lackfarbe,
   // durchscheinend (VF_GEIST_ALPHA), ohne Licht, Bodenschatten und Federung. Zwei Durchgaenge: erst nur die Tiefe, dann
@@ -4928,8 +5014,11 @@
     });
     // 4. Scheiben und Scheinwerferglas (durchscheinend, getoent)
     gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+    // v1.6.44 (gnen54, 59a9f1a): sitzt die Kamera IM Auto (Caravelle: hinter der Frontscheibe), nur ein Hauch Glas -
+    // sonst waere das Bild durch die Toenung fast schwarz.
+    const innen = auge && Math.hypot(auge[0] - x, auge[2] - y) < d.laenge * s * 0.45 && auge[1] < (d.hoehe || 1.4) * s;
     for (const t of M.glasTeile) {
-      if (t.rolle === 'glas') { setze(aufbau, VF_GLAS_TINT, 0, 0.86, 0, 1, 0, 1); teil(t); }
+      if (t.rolle === 'glas') { setze(aufbau, VF_GLAS_TINT, 0, innen ? 0.12 : 0.86, 0, 1, 0, innen ? 0.2 : 1); teil(t); }
       else { setze(aufbau, VF_WEISS, licht ? 0.6 : 0, 0.9, 1, 1, 0, 0.5); teil(t); }
     }
     // 5. Leuchten: Lichtpunkte (zur Kamera gedreht) und vorn der Lichtkegel auf der Bahn
@@ -5286,7 +5375,8 @@
     document.body.appendChild(el);
     const zeichne = () => {
       if (!el.isConnected || !VF.aktiv) { el.remove(); clearInterval(vfPadDiagIv); return; }
-      el.textContent = t('Pad-Diagnose (F8 oder Knopf schließt)') + '\n' + (typeof padDiagText === 'function' ? padDiagText() : '-');
+      el.textContent = t('Pad-Diagnose (F8 oder Knopf schließt)') + '\n' + (typeof padDiagText === 'function' ? padDiagText() : '-')
+        + '\n' + t('Strecke') + ': ' + (() => { try { return VF.frei ? vfFreiWahl() : trackToCode(VF.tiles || currentTrackTiles); } catch (e) { return '-'; } })();   // v1.6.44 (gnen54, 899d27a)
     };
     zeichne();
     vfPadDiagIv = setInterval(zeichne, 200);
@@ -5420,8 +5510,35 @@
     }
     return true;
   }
+  // v1.6.44 aus gnen54s PR 4 (cc0dae3): im Rennen (alles ausser Training) nach dem Laden die Startampel - fuenf rote
+  // Lichter, jede Sekunde eins mehr, nach 5 s plus 0,3 bis 1,5 s alle aus = Start. Bis dahin steht das Auto am Start.
+  function vfAmpelSchritt(now) {
+    const A = VF.ampel, schicht = VF.schicht;
+    let el = schicht ? schicht.querySelector('.vf-ampel') : null;
+    if (!A) { if (el) el.remove(); return false; }
+    const dt = now - A.t0;
+    if (dt >= A.aus) {
+      VF.ampel = null; VF.letzt = 0;
+      if (el) el.remove();
+      try { showHudToast(t('Los!')); } catch (e) { /* ohne */ }
+      return false;
+    }
+    if (!el && schicht) {
+      el = document.createElement('div');
+      el.className = 'vf-ampel';
+      el.setAttribute('aria-hidden', 'true');
+      for (let i = 0; i < 5; i++) el.appendChild(document.createElement('span'));
+      schicht.appendChild(el);
+    }
+    const an = Math.min(5, Math.floor(dt / 1000) + 1);
+    if (el) [...el.children].forEach((l, i) => l.classList.toggle('an', i < an));
+    if (physEngine && physEngine.state) physEngine.state.speedKmh = 0;
+    VF.x = VF.startX; VF.y = VF.startY; VF.h = VF.startH;
+    return true;
+  }
   function vfLadenEnde() {
     VF.laedt = false;
+    if (VF.modus && VF.modus !== 'practice' && !VF.studie && !VF.hubschrauber) VF.ampel = { t0: performance.now(), aus: 5300 + Math.random() * 1200 };
     if (VF.schicht) {
       VF.schicht.classList.remove('vf-laedt');
       const el = VF.schicht.querySelector('.vf-laden');
@@ -5468,12 +5585,24 @@
     vfModellLaden = {}; vfRadModell = null;
     log('Virtuell: Texturen und Automodelle aus dem Speicher freigegeben.', 'info');
   }
+  // v1.6.44 aus gnen54s PR 4 (2c46531): Hinweise beim Start auch dort sichtbar, wo der HUD-Toast nicht steht (Garage).
+  function vfStartHinweis(msg) {
+    showHudToast(msg);
+    const el = $('hud-toast');
+    if (el && el.offsetParent) return;
+    const d = document.createElement('div');
+    d.setAttribute('role', 'status');
+    d.className = 'vf-start-hinweis';
+    d.textContent = msg;
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), 4000);
+  }
   function virtuellStarten(opts) {
     clearTimeout(vfFreigabeTimer);
     opts = opts || {};
     if (VF.aktiv) return false;
     vfHandlingCache = null;   // einmal frisch lesen (z. B. in einem anderen Tab geaendert)
-    if (!physicsEnabled) { showHudToast(t('Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)')); return false; }
+    if (!physicsEnabled) { vfStartHinweis(t('Virtuell braucht ein Fahrgefühl mit Physik (nicht RC)')); return false; }
     // Rundenuhr der vorigen Fahrt nicht mitnehmen (aus PR 4 von gnen54: "Zeitansage sofort beim Start nach
     // Ueberfahren von Start/Ziel"): die erste Ueberfahrt startet die Uhr, angesagt wird erst die erste ganze Runde.
     try { dashLapTimes = []; dashLapStart = null; } catch (e) { /* ohne */ }
@@ -5484,14 +5613,14 @@
     // v1.5.150: freie Strecke (nur virtuell) statt der gebauten Bahn - erst laden, dann neu starten.
     const freiK = !(opts.tiles && opts.tiles.length >= 3) && !opts.studie ? vfFreiWahl() : '';
     if (freiK && !vfFreiCache[freiK]) {
-      vfFreiLaden(freiK).then(() => virtuellStarten(opts), () => showHudToast(t('Strecke konnte nicht geladen werden')));
+      vfFreiLaden(freiK).then(() => virtuellStarten(opts), () => vfStartHinweis(t('Strecke konnte nicht geladen werden')));
       return true;
     }
     const frei = freiK ? vfFreiCache[freiK] : null;
     VF.frei = frei;
     VF_BOX_SEITE = frei ? frei.seite : -1;   // freie Strecken: Box auf der Seite der DXF (boxSeite)
     const tiles = frei ? frei.tiles : (opts.tiles && opts.tiles.length >= 3 ? opts.tiles : vfTilesWaehlen());
-    if (!tiles) { showHudToast(t('Erst eine Strecke bauen')); return false; }
+    if (!tiles) { vfStartHinweis(t('Erst eine Strecke bauen')); return false; }
     VF.studie = !!opts.studie;
     const schicht = document.createElement('div');
     schicht.className = 'vf-schicht';
@@ -5525,6 +5654,20 @@
       + vfLadebildHtml((() => { try { return vfLadeKarteDrehen(vfLadeKarteSvg(tiles, frei ? frei.pts : null), window.innerWidth, window.innerHeight); } catch (e) { return ''; } })());
     schicht.classList.add('vf-laedt');
     document.body.appendChild(schicht);
+    // v1.6.44 aus gnen54s testversion (aba1968): die Knopfleiste blendet sich nach 4 s Ruhe aus und kommt bei Mausbewegung,
+    // Tippen oder Klick zurueck (Lenken auf den Touch-Flaechen zaehlt nicht). Der Knopf zum dauerhaften Ausblenden bleibt.
+    { const kn = schicht.querySelector('.vf-knoepfe');
+      if (kn) {
+        let uhr = 0;
+        const zeigen = () => {
+          kn.classList.remove('vf-knoepfe-ruht');
+          clearTimeout(uhr);
+          uhr = setTimeout(() => { if (!kn.matches(':hover') && !kn.contains(document.activeElement)) kn.classList.add('vf-knoepfe-ruht'); else zeigen(); }, 4000);
+        };
+        const wecken = (e) => { if (!(e.target && e.target.closest && e.target.closest('.vf-touch'))) zeigen(); };
+        ['mousemove', 'pointerdown', 'touchstart'].forEach((ev) => schicht.addEventListener(ev, wecken, { passive: true }));
+        zeigen();
+      } }
     const cv = schicht.querySelector('canvas');
     const gl = cv.getContext('webgl', { antialias: true }) || cv.getContext('experimental-webgl');
     if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
@@ -5687,7 +5830,7 @@
     try { vfTouchAktualisieren(); } catch (e) { /* egal */ }   // v1.6.37: Heli-Sticks erst jetzt bekannt (VF.hubschrauber)
     physEngine.state.speedKmh = 0;
     // Ladebild (siehe vfLadeSchritt): ab hier zaehlt die Ladezeit.
-    VF.laedt = true; VF.ladeAb = performance.now();
+    VF.laedt = true; VF.ladeAb = performance.now(); VF.ampel = null;
     schicht.addEventListener('click', (e) => {
       const b = e.target.closest('[data-vf]');
       if (!b) return;
