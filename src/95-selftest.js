@@ -14622,6 +14622,48 @@
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Virtuell v1.6.52: Reifenwahl in der Garage (Griff im Regen), Rauch-Aufloesung, Ladebalken unten links, Audi-Kamera vor dem Wischer', () => {
+    const f = [];
+    const merkTab = kAktiverTab(), merkT = tyres, merkModus = (() => { try { return localStorage.getItem(FAHR_MODUS_STORE); } catch (e) { return null; } })();
+    try {
+      vfGarageZeigen();
+      const z = $('vg-optionen').querySelector('[data-vf-reifen]');
+      if (!z) f.push('keine Reifenzeile');
+      else {
+        // trocken: die Zeile stellt die Mischung um, der Griff folgt (weich > hart)
+        tyres = 'weich'; applySurface(); const gW = physEngine.config.gripScale;
+        tyres = 'hart'; applySurface(); const gH = physEngine.config.gripScale;
+        if (!(gW > gH)) f.push('Mischung wirkt nicht auf den Griff: ' + gW + ' / ' + gH);
+        // nass (voller Regen): Regenreifen greifen besser als Slicks
+        const m1 = { config: {} }, m2 = { config: {} };
+        mischungAnwenden(m1, 'mittel', 1); mischungAnwenden(m2, 'regen', 1);
+        if (!(m2.config.gripScale > m1.config.gripScale + 0.2)) f.push('Regenreifen im Nassen nicht besser: ' + m2.config.gripScale + ' / ' + m1.config.gripScale);
+        tyres = 'hart'; vfGarageSeite(); $('vg-optionen').querySelector('[data-vf-reifen] [data-d="1"]').click();
+        if (tyres !== 'regen') f.push('Zeile schaltet nicht auf Regen: ' + tyres);
+        if ($('vg-optionen').querySelector('[data-vf-reifen]').textContent.indexOf(mischungName('regen')) < 0) f.push('Zeile zeigt nicht Regen');
+      }
+    } finally {
+      tyres = merkT; try { applySurface(); } catch (e) { /* egal */ }
+      try { if (merkModus === null) localStorage.removeItem(FAHR_MODUS_STORE); else localStorage.setItem(FAHR_MODUS_STORE, merkModus); } catch (e) { /* egal */ }
+      if (typeof konsoleFahrenZeichnen === 'function') konsoleFahrenZeichnen();
+      if (merkTab) showTab(merkTab);
+    }
+    const merkR = (() => { try { return localStorage.getItem(VF_RAUCH_STORE); } catch (e) { return null; } })(), merkG = VF.grafik;
+    try {
+      localStorage.removeItem(VF_RAUCH_STORE); VF.grafik = false;
+      if (vfRauchStufe() !== 1) f.push('Auto Performance nicht 1');
+      VF.grafik = true;
+      if (vfRauchStufe() !== 1.5) f.push('Auto Quality nicht 1,5');
+      localStorage.setItem(VF_RAUCH_STORE, '8');
+      if (vfRauchStufe() !== 8) f.push('8x nicht gesetzt');
+    } finally { VF.grafik = merkG; try { if (merkR === null) localStorage.removeItem(VF_RAUCH_STORE); else localStorage.setItem(VF_RAUCH_STORE, merkR); } catch (e) { /* egal */ } }
+    const lb = document.createElement('div'); lb.className = 'vf-laden'; lb.innerHTML = '<div class="vf-laden-mitte"></div>'; document.body.appendChild(lb);
+    try {
+      const r = lb.querySelector('.vf-laden-mitte').getBoundingClientRect();
+      if (!(r.left < innerWidth * 0.2 && r.bottom > innerHeight * 0.8)) f.push('Ladebalken nicht unten links: ' + Math.round(r.left) + ',' + Math.round(r.bottom));
+    } finally { lb.remove(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reifen nass besser, Rauchstufen, Ladebalken unten links' };
+  });
   stAdd('Menue v1.6.50: Wisch-Animation beim Wechsel der Seiten (Richtung nach Reiterfolge) und Unterseiten, nicht ins Cockpit', () => {
     const f = [], merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : '', merkAus = window.kWischAus;
     window.kWischAus = false;

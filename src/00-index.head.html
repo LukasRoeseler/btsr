@@ -4145,9 +4145,11 @@
   .vf-laden-karte { position: absolute; inset: 0; display: grid; place-items: center;
     padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
   .vf-laden-karte .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; background: none; border: 0; }
-  .vf-laden-mitte { position: relative; display: grid; gap: .7em; width: min(64vw, 420px); text-align: center;
+  /* v1.6.52 BESTELLT: "Ladebalken auf dem Ladebildschirm fuer virtuelles Fahren sollte unten links sein, nicht mitten ueber der Strecke". */
+  .vf-laden-mitte { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom)); display: grid; gap: .5em;
+    width: min(42vw, 320px); text-align: left; font-size: .9em;
     padding: .9em 1.3em 1em; background: rgba(8,11,17,.6); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; }
-  .vf-laden-mitte .lade-dreh { width: calc(var(--vf-s) * 4.6); height: calc(var(--vf-s) * 4.6); margin: 0 auto; }
+  .vf-laden-mitte .lade-dreh { width: calc(var(--vf-s) * 2.8); height: calc(var(--vf-s) * 2.8); margin: 0; }
   .vf-laden-titel { font-size: calc(var(--vf-s) * 1.05); font-weight: 700; text-transform: uppercase; letter-spacing: .14em; }
   .vf-laden-was { color: var(--vf-dim); font-size: calc(var(--vf-s) * .78); min-height: 1.3em; }
   .vf-laden-balken { position: relative; display: block; height: 8px; background: rgba(255,255,255,.12); overflow: hidden; }
@@ -7386,6 +7388,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuelles Fahren: Reifenwahl in der virtuellen Garage (weich, mittel, hart, Regen), dieselben Mischungen wie beim echten Fahren, damit du im Regen auf Regenreifen fahren kannst. Neue Option &#8222;Rauch-Aufl&#246;sung&#8220; unter Optionen &gt; Virtuell (Automatisch: wie bisher in Performance, etwas feiner in Quality; von Hand bis 8&#215;). Der Ladebalken sitzt jetzt unten links statt mitten &#252;ber der Strecke. Die Motorhaubenkamera des Audi RS5 DTM sitzt weiter vorn, der Scheibenwischer ist nicht mehr im Bild.</li>
         <li>Men&#252;s: Wisch-Animationen beim Wechsel der Seiten (vom Startbildschirm zu FAHREN, zwischen den Reitern je nach Richtung) und beim &#214;ffnen und Schlie&#223;en der Unterseiten; nicht ins Cockpit, und aus, wenn das Ger&#228;t reduzierte Bewegung w&#252;nscht.</li>
         <li>Virtuell fahren, Grafikmodus Performance fl&#252;ssiger: leichte Modellfassungen f&#252;r den Audi RS5 DTM und den K&#228;fer (gut halb so viele Dreiecke, Werkzeug tools/modell_perf.py nach Gnen54), der Geist ist in Performance eine einfache Kiste statt eines zweiten vollen Modells, das verdeckte Cockpit unter der virtuellen Fahrt zeichnet seltener und das Regenradar gar nicht.</li>
         <li>Optionen: &#8222;Virtuell&#8220; und &#8222;RC Heli&#8220; stehen in einem eigenen Abschnitt unter den Einstellungen. Neu unter Virtuell: Gyro-St&#228;rke f&#252;r das Fahrgef&#252;hl Drift und ein eigener Schalter f&#252;r die Strecken-Ambience (ab Werk aus). Neue Startansage &#8222;Gentlemen, start your engines&#8220; (aus Gnen54s Startampel) beim Start aus dem Fenster &#8222;Autos in Position&#8220; und an der virtuellen Startampel. Im Modus Virtuell sind die Akzente auf FAHREN rot. Der Heli ohne Gyro stabilisiert sich nach einem &#220;berschlag, statt zur&#252;ckzudrehen. Der Schatten unter den Autos ist im Performance-Modus jetzt dunkel (das Bild war an halbdurchsichtigen Stellen durchscheinend), die Farbkreise in der Garage sind auch am Handy rund.</li>

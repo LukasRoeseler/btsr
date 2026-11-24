@@ -2358,6 +2358,11 @@
   // (0..1) heizt mit Schlupf mal Tempo (Zeitkonstante 3 s) und kuehlt ohne Rutschen (6 s); von ihr haengen Menge
   // (4 bis 34 Wolken/s), Deckkraft (0,10 bis 0,55) und Groesse ab. Hoechstens VF_RAUCH_MAX Wolken, je eine Zeichnung.
   const VF_RAUCH_MAX = 70;
+  // v1.6.52: Aufloesung des Rauchs - Faktor auf Menge und Hoechstzahl der Wolken, ab 2x ein feineres Ikosaeder (80 Flaechen),
+  // ab 4x ein noch feineres (320). 'auto' = 1x in Performance, 1,5x in Quality.
+  const VF_RAUCH_STORE = 'omegasim-vf-rauch', VF_RAUCH_STUFEN = ['auto', 1, 1.5, 2, 4, 8];
+  function vfRauchStufeWahl() { try { const v = localStorage.getItem(VF_RAUCH_STORE); if (v === null || v === 'auto') return 'auto'; const n = +v; return VF_RAUCH_STUFEN.indexOf(n) >= 0 ? n : 'auto'; } catch (e) { return 'auto'; } }
+  function vfRauchStufe() { const w = vfRauchStufeWahl(); return w === 'auto' ? (VF.grafik ? 1.5 : 1) : w; }
   function vfRauchHitze(H, schlupf, vMs, dt) {
     const arbeit = Math.min(1.2, Math.max(0, (Math.abs(schlupf) - 0.08) / 0.35) * Math.min(1, vMs / 15));
     const tau = arbeit > H ? 3 : 6;
@@ -2375,16 +2380,17 @@
     VF.driftHitze = drift ? vfRauchHitze(VF.driftHitze || 0, aH, vMs, dt) : Math.max(0, (VF.driftHitze || 0) - dt / 6);
     if (!drift || Math.abs(aH) < 0.12 || vMs < 3) return;
     const H = VF.driftHitze || 0;
-    VF.rauchSoll = (VF.rauchSoll || 0) + (4 + 30 * H) * dt;
+    const L = vfRauchStufe();
+    VF.rauchSoll = (VF.rauchSoll || 0) + (4 + 30 * H) * dt * L;
     const h = VF.h * Math.PI / 180, fx = Math.sin(h), fz = -Math.cos(h), rx = Math.cos(h), rz = Math.sin(h);
     while (VF.rauchSoll >= 1) {
       VF.rauchSoll -= 1;
-      if (R.length >= VF_RAUCH_MAX) R.shift();
+      if (R.length >= VF_RAUCH_MAX * L) R.shift();
       const seite = Math.random() < 0.5 ? -1 : 1, hinten = VF_AUTO.L * 0.32, quer = VF_AUTO.B * 0.42 * seite;
       R.push({ x: VF.x - fx * hinten + rx * quer, y: 0.6, z: VF.y - fz * hinten + rz * quer, t: 0,
         leben: 1.2 + 0.9 * H + Math.random() * 0.4, steig: 1.2 + Math.random() * 0.8,
         vx: -fx * 1.5 + (Math.random() - 0.5) * 1.2, vz: -fz * 1.5 + (Math.random() - 0.5) * 1.2,
-        s0: 0.7 + Math.random() * 0.3, s1: 2.6 + 3.2 * H, a0: 0.10 + 0.45 * H, dreh: Math.random() * 6.3 });
+        s0: (0.7 + Math.random() * 0.3) / Math.sqrt(L), s1: (2.6 + 3.2 * H) / Math.pow(L, 0.25), a0: Math.min(0.6, (0.10 + 0.45 * H) * Math.pow(L, 0.15)), dreh: Math.random() * 6.3 });
     }
   }
   // Ein Ikosaeder mit Radius 1, Flaechen grau abgestuft (oben heller), 6 Zahlen je Ecke wie die Farbmodelle.
@@ -2398,7 +2404,25 @@
       const ny = (e[tr[0]][1] + e[tr[1]][1] + e[tr[2]][1]) / 3, k = 0.62 + 0.3 * (ny + 1) / 2;
       tr.forEach((i) => a.push(e[i][0], e[i][1], e[i][2], k, k, k * 1.02));
     });
-    return vfPuffer(gl, a);
+    // v1.6.52: feinere Kugel bei hoeherer Aufloesung - jedes Dreieck in vier, die neuen Ecken auf die Kugel geschoben.
+    const stufen = vfRauchStufe() >= 4 ? 2 : vfRauchStufe() >= 2 ? 1 : 0;
+    let D = a;
+    for (let st = 0; st < stufen; st++) {
+      const n = [];
+      const auf = (p) => { const l = Math.hypot(p[0], p[1], p[2]); return [p[0] / l, p[1] / l, p[2] / l]; };
+      for (let i = 0; i < D.length; i += 18) {
+        const p = [0, 1, 2].map((j) => [D[i + j * 6], D[i + j * 6 + 1], D[i + j * 6 + 2]]), c = [D[i + 3], D[i + 4], D[i + 5]];
+        const m = [auf([(p[0][0] + p[1][0]) / 2, (p[0][1] + p[1][1]) / 2, (p[0][2] + p[1][2]) / 2]), auf([(p[1][0] + p[2][0]) / 2, (p[1][1] + p[2][1]) / 2, (p[1][2] + p[2][2]) / 2]),
+          auf([(p[2][0] + p[0][0]) / 2, (p[2][1] + p[0][1]) / 2, (p[2][2] + p[0][2]) / 2])];
+        [[p[0], m[0], m[2]], [m[0], p[1], m[1]], [m[2], m[1], p[2]], [m[0], m[1], m[2]]].forEach((tr) => {
+          const ny = (tr[0][1] + tr[1][1] + tr[2][1]) / 3, k = 0.62 + 0.3 * (ny + 1) / 2;
+          tr.forEach((q) => n.push(q[0], q[1], q[2], k, k, k * 1.02));
+        });
+        void c;
+      }
+      D = n;
+    }
+    return vfPuffer(gl, D);
   }
   function vfHandlingProfil(P) {
     if (!P) return P;
@@ -5980,7 +6004,7 @@
   // Optionen > Virtuell die Einstellungen der Fahrt (VF_OPT_FAHRT), Optionen > RC Heli die des Hubschraubers (VF_OPT_HELI),
   // die virtuelle Garage den Rest (Auto, Lack, Boden, Strecke, Richtung, Handling, NPCs, Losfahren).
   const VF_OPT_FAHRT = ['Schaltung', 'Grafik', 'Tageszeit', 'Sichtfeld mit Tempo', 'Geist folgt meiner Linie', 'Rückspiegel (Motorhaube)',
-    'Kein Tempoverlust neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar', 'Drift-Gyro', 'Strecken-Ambience'];
+    'Kein Tempoverlust neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar', 'Drift-Gyro', 'Rauch-Auflösung', 'Strecken-Ambience'];
   // v1.6.46 BESTELLT: "fuer Strecken Ambience extra Option im virtuellen Fahren" (aus gnen54s 817c361: ab Werk aus).
   // Waehrend einer virtuellen Fahrt gilt dieser Schalter statt Optionen > Ton (ambienceAktiv, 80-sound.js).
   const VF_AMBIENCE_STORE = 'omegasim-vf-ambience';
@@ -6211,6 +6235,28 @@
     const grafikZeile = garWertZeile(t('Grafik'), t(vfGrafik() === 'perf' ? 'Performance' : 'Quality'), gWahl, gWahl);
     grafikZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(grafikZeile);
+    // v1.6.52 BESTELLT: "Reifenwahl einbauen, damit ich bei Regen fahren kann". Dieselbe Mischung wie beim echten Fahren (tyres,
+    // TYRE_MIX in 70-race.js): applySurface() rechnet daraus mit dem Wetter den Griff (gripScale), den die virtuelle Fahrt nutzt -
+    // Slicks im Nassen langsam und rutschig, Regenreifen im Trockenen etwas langsamer.
+    if (typeof tyres !== 'undefined' && typeof TYRE_MIX !== 'undefined') {
+      const mixe = Object.keys(TYRE_MIX), jm = Math.max(0, mixe.indexOf(tyres));
+      const mw = (dd) => { tyres = mixe[(jm + dd + mixe.length) % mixe.length]; try { applySurface(); } catch (e) { /* egal */ } vfGarageNeu(); };
+      const z = garWertZeile(t('Reifen'), mischungName(mixe[jm]), () => mw(-1), () => mw(1));
+      const l = z.querySelector('.gk-l'); l.classList.add('opt-label');
+      l.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Mischung wie beim echten Fahren: Slicks (weich, mittel, hart) greifen im Trockenen, im Regen rutschen sie; Regenreifen greifen im Nassen und sind im Trockenen etwas langsamer. Regen schaltest du mit dem Wetter-Knopf in der Fahrt.') + '</small>');
+      z.dataset.vfReifen = '1';
+      rechts.appendChild(z);
+    }
+    // v1.6.52 BESTELLT: "Slider fuer die Rauch-Aufloesung (Performance: so wie jetzt, Quality: etwas hoeher; noch viel hoeher moeglich)".
+    {
+      const ws = VF_RAUCH_STUFEN, js = Math.max(0, ws.indexOf(vfRauchStufeWahl()));
+      const rw = (dd) => { try { localStorage.setItem(VF_RAUCH_STORE, String(ws[(js + dd + ws.length) % ws.length])); } catch (e) { /* egal */ } VF.rauchPuffer = null; vfGarageNeu(); };
+      const v = ws[js];
+      const z = garWertZeile(t('Rauch-Auflösung'), v === 'auto' ? t('Automatisch') + ' (' + vfRauchStufe() + '×)' : v + '×', () => rw(-1), () => rw(1));
+      const l = z.querySelector('.gk-l'); l.classList.add('opt-label');
+      l.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Drift-Rauch: Automatisch = 1× in Performance, 1,5× in Quality. Höher: mehr, feinere und rundere Wolken, kostet Bildrate.') + '</small>');
+      rechts.appendChild(z);
+    }
     // v1.6.46: Gyro-Staerke des Drift-Fahrgefuehls und die Strecken-Ambience der virtuellen Fahrt (stehen unter Optionen > Virtuell).
     {
       const jg = Math.max(0, VF_DRIFT_GYRO_WERTE.indexOf(vfDriftGyro()));
