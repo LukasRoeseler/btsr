@@ -4145,9 +4145,11 @@
   .vf-laden-karte { position: absolute; inset: 0; display: grid; place-items: center;
     padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
   .vf-laden-karte .tp-karte { width: 100%; height: 100%; max-width: none; max-height: none; background: none; border: 0; }
-  .vf-laden-mitte { position: relative; display: grid; gap: .7em; width: min(64vw, 420px); text-align: center;
+  /* v1.6.52 BESTELLT: "Ladebalken auf dem Ladebildschirm fuer virtuelles Fahren sollte unten links sein, nicht mitten ueber der Strecke". */
+  .vf-laden-mitte { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom)); display: grid; gap: .5em;
+    width: min(42vw, 320px); text-align: left; font-size: .9em;
     padding: .9em 1.3em 1em; background: rgba(8,11,17,.6); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; }
-  .vf-laden-mitte .lade-dreh { width: calc(var(--vf-s) * 4.6); height: calc(var(--vf-s) * 4.6); margin: 0 auto; }
+  .vf-laden-mitte .lade-dreh { width: calc(var(--vf-s) * 2.8); height: calc(var(--vf-s) * 2.8); margin: 0; }
   .vf-laden-titel { font-size: calc(var(--vf-s) * 1.05); font-weight: 700; text-transform: uppercase; letter-spacing: .14em; }
   .vf-laden-was { color: var(--vf-dim); font-size: calc(var(--vf-s) * .78); min-height: 1.3em; }
   .vf-laden-balken { position: relative; display: block; height: 8px; background: rgba(255,255,255,.12); overflow: hidden; }
@@ -6061,7 +6063,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.51</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.53</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7386,6 +7388,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuelles Fahren: Reifenwahl in der virtuellen Garage (weich, mittel, hart, Regen), dieselben Mischungen wie beim echten Fahren, damit du im Regen auf Regenreifen fahren kannst. Neue Option &#8222;Rauch-Aufl&#246;sung&#8220; unter Optionen &gt; Virtuell (Automatisch: wie bisher in Performance, etwas feiner in Quality; von Hand bis 8&#215;). Der Ladebalken sitzt jetzt unten links statt mitten &#252;ber der Strecke. Die Motorhaubenkamera des Audi RS5 DTM sitzt weiter vorn, der Scheibenwischer ist nicht mehr im Bild.</li>
         <li>Men&#252;s: Wisch-Animationen beim Wechsel der Seiten (vom Startbildschirm zu FAHREN, zwischen den Reitern je nach Richtung) und beim &#214;ffnen und Schlie&#223;en der Unterseiten; nicht ins Cockpit, und aus, wenn das Ger&#228;t reduzierte Bewegung w&#252;nscht.</li>
         <li>Virtuell fahren, Grafikmodus Performance fl&#252;ssiger: leichte Modellfassungen f&#252;r den Audi RS5 DTM und den K&#228;fer (gut halb so viele Dreiecke, Werkzeug tools/modell_perf.py nach Gnen54), der Geist ist in Performance eine einfache Kiste statt eines zweiten vollen Modells, das verdeckte Cockpit unter der virtuellen Fahrt zeichnet seltener und das Regenradar gar nicht.</li>
         <li>Optionen: &#8222;Virtuell&#8220; und &#8222;RC Heli&#8220; stehen in einem eigenen Abschnitt unter den Einstellungen. Neu unter Virtuell: Gyro-St&#228;rke f&#252;r das Fahrgef&#252;hl Drift und ein eigener Schalter f&#252;r die Strecken-Ambience (ab Werk aus). Neue Startansage &#8222;Gentlemen, start your engines&#8220; (aus Gnen54s Startampel) beim Start aus dem Fenster &#8222;Autos in Position&#8220; und an der virtuellen Startampel. Im Modus Virtuell sind die Akzente auf FAHREN rot. Der Heli ohne Gyro stabilisiert sich nach einem &#220;berschlag, statt zur&#252;ckzudrehen. Der Schatten unter den Autos ist im Performance-Modus jetzt dunkel (das Bild war an halbdurchsichtigen Stellen durchscheinend), die Farbkreise in der Garage sind auch am Handy rund.</li>
@@ -17898,6 +17901,10 @@
     "Optionen: „Virtuell“ und „RC Heli“ stehen in einem eigenen Abschnitt unter den Einstellungen. Neu unter Virtuell: Gyro-Stärke für das Fahrgefühl Drift und ein eigener Schalter für die Strecken-Ambience (ab Werk aus). Neue Startansage „Gentlemen, start your engines“ (aus Gnen54s Startampel) beim Start aus dem Fenster „Autos in Position“ und an der virtuellen Startampel. Im Modus Virtuell sind die Akzente auf FAHREN rot. Der Heli ohne Gyro stabilisiert sich nach einem Überschlag, statt zurückzudrehen. Der Schatten unter den Autos ist im Performance-Modus jetzt dunkel (das Bild war an halbdurchsichtigen Stellen durchscheinend), die Farbkreise in der Garage sind auch am Handy rund.": "Options: “Virtual” and “RC heli” are in their own section below the settings. New under Virtual: gyro strength for the Drift handling and a separate switch for the track ambience (off by default). New start announcement “Gentlemen, start your engines” (from Gnen54's start lights) when starting from the “Cars in position” window and at the virtual start lights. In virtual mode the accents on DRIVE are red. The heli without gyro stabilises after a flip instead of turning back. The shadow under the cars is now dark in Performance mode (the picture was see-through at translucent spots), the paint circles in the garage are round on phones too.",
     "Virtuell fahren, Grafikmodus Performance flüssiger: leichte Modellfassungen für den Audi RS5 DTM und den Käfer (gut halb so viele Dreiecke, Werkzeug tools/modell_perf.py nach Gnen54), der Geist ist in Performance eine einfache Kiste statt eines zweiten vollen Modells, das verdeckte Cockpit unter der virtuellen Fahrt zeichnet seltener und das Regenradar gar nicht.": "Virtual driving, smoother Performance graphics: light model versions for the Audi RS5 DTM and the Beetle (just over half the triangles, tool tools/modell_perf.py after Gnen54), the ghost is a simple box in Performance instead of a second full model, the hidden cockpit under the virtual drive redraws less often and the rain radar not at all.",
     "Menüs: Wisch-Animationen beim Wechsel der Seiten (vom Startbildschirm zu FAHREN, zwischen den Reitern je nach Richtung) und beim Öffnen und Schließen der Unterseiten; nicht ins Cockpit, und aus, wenn das Gerät reduzierte Bewegung wünscht.": "Menus: swipe animations when changing pages (from the start screen to DRIVE, between tabs depending on direction) and when opening and closing subpages; not into the cockpit, and off when the device asks for reduced motion.",
+    "Mischung wie beim echten Fahren: Slicks (weich, mittel, hart) greifen im Trockenen, im Regen rutschen sie; Regenreifen greifen im Nassen und sind im Trockenen etwas langsamer. Regen schaltest du mit dem Wetter-Knopf in der Fahrt.": "Compound as in real driving: slicks (soft, medium, hard) grip in the dry and slide in the rain; rain tyres grip in the wet and are a little slower in the dry. Switch rain on with the weather button while driving.",
+    "Rauch-Auflösung": "Smoke resolution",
+    "Drift-Rauch: Automatisch = 1× in Performance, 1,5× in Quality. Höher: mehr, feinere und rundere Wolken, kostet Bildrate.": "Drift smoke: Automatic = 1× in Performance, 1.5× in Quality. Higher: more, finer and rounder clouds, costs frame rate.",
+    "Virtuelles Fahren: Reifenwahl in der virtuellen Garage (weich, mittel, hart, Regen), dieselben Mischungen wie beim echten Fahren, damit du im Regen auf Regenreifen fahren kannst. Neue Option „Rauch-Auflösung“ unter Optionen > Virtuell (Automatisch: wie bisher in Performance, etwas feiner in Quality; von Hand bis 8×). Der Ladebalken sitzt jetzt unten links statt mitten über der Strecke. Die Motorhaubenkamera des Audi RS5 DTM sitzt weiter vorn, der Scheibenwischer ist nicht mehr im Bild.": "Virtual driving: tyre choice in the virtual garage (soft, medium, hard, wet), the same compounds as in real driving, so you can drive on rain tyres in the rain. New option “Smoke resolution” under Options > Virtual (Automatic: as before in Performance, a bit finer in Quality; manually up to 8×). The loading bar now sits bottom left instead of in the middle of the track. The bonnet camera of the Audi RS5 DTM sits further forward, the wiper is no longer in view.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20775,6 +20782,9 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Mischung wie beim echten Fahren: Slicks (weich, mittel, hart) greifen im Trockenen, im Regen rutschen sie; Regenreifen greifen im Nassen und sind im Trockenen etwas langsamer. Regen schaltest du mit dem Wetter-Knopf in der Fahrt.": "Mezcla como en la conducción real: los slicks (blando, medio, duro) agarran en seco y deslizan con lluvia; los de lluvia agarran en mojado y son algo más lentos en seco. La lluvia se activa con el botón de tiempo durante la conducción.",
+    "Rauch-Auflösung": "Resolución del humo",
+    "Drift-Rauch: Automatisch = 1× in Performance, 1,5× in Quality. Höher: mehr, feinere und rundere Wolken, kostet Bildrate.": "Humo de drift: Automático = 1× en Performance, 1,5× en Quality. Más alto: más nubes, más finas y redondas, cuesta fotogramas.",
     "Drift-Gyro": "Giroscopio de drift",
     "Nur im Fahrgefühl Drift: wie stark der Gyro gegenlenkt. Weniger: größere Driftwinkel, bei Aus dreht sich das Auto unter Vollgas ein. Mehr: der Drift bleibt kleiner und ruhiger. Gilt ab der nächsten Fahrt.": "Solo con el manejo Drift: cuánto contravolantea el giroscopio. Menos: ángulos mayores, con Apagado el coche trompea a fondo. Más: el drift es menor y más tranquilo. Se aplica desde la próxima conducción.",
     "Strecken-Ambience": "Ambiente de pista",
@@ -45706,6 +45716,11 @@
   // (0..1) heizt mit Schlupf mal Tempo (Zeitkonstante 3 s) und kuehlt ohne Rutschen (6 s); von ihr haengen Menge
   // (4 bis 34 Wolken/s), Deckkraft (0,10 bis 0,55) und Groesse ab. Hoechstens VF_RAUCH_MAX Wolken, je eine Zeichnung.
   const VF_RAUCH_MAX = 70;
+  // v1.6.52: Aufloesung des Rauchs - Faktor auf Menge und Hoechstzahl der Wolken, ab 2x ein feineres Ikosaeder (80 Flaechen),
+  // ab 4x ein noch feineres (320). 'auto' = 1x in Performance, 1,5x in Quality.
+  const VF_RAUCH_STORE = 'omegasim-vf-rauch', VF_RAUCH_STUFEN = ['auto', 1, 1.5, 2, 4, 8];
+  function vfRauchStufeWahl() { try { const v = localStorage.getItem(VF_RAUCH_STORE); if (v === null || v === 'auto') return 'auto'; const n = +v; return VF_RAUCH_STUFEN.indexOf(n) >= 0 ? n : 'auto'; } catch (e) { return 'auto'; } }
+  function vfRauchStufe() { const w = vfRauchStufeWahl(); return w === 'auto' ? (VF.grafik ? 1.5 : 1) : w; }
   function vfRauchHitze(H, schlupf, vMs, dt) {
     const arbeit = Math.min(1.2, Math.max(0, (Math.abs(schlupf) - 0.08) / 0.35) * Math.min(1, vMs / 15));
     const tau = arbeit > H ? 3 : 6;
@@ -45723,16 +45738,17 @@
     VF.driftHitze = drift ? vfRauchHitze(VF.driftHitze || 0, aH, vMs, dt) : Math.max(0, (VF.driftHitze || 0) - dt / 6);
     if (!drift || Math.abs(aH) < 0.12 || vMs < 3) return;
     const H = VF.driftHitze || 0;
-    VF.rauchSoll = (VF.rauchSoll || 0) + (4 + 30 * H) * dt;
+    const L = vfRauchStufe();
+    VF.rauchSoll = (VF.rauchSoll || 0) + (4 + 30 * H) * dt * L;
     const h = VF.h * Math.PI / 180, fx = Math.sin(h), fz = -Math.cos(h), rx = Math.cos(h), rz = Math.sin(h);
     while (VF.rauchSoll >= 1) {
       VF.rauchSoll -= 1;
-      if (R.length >= VF_RAUCH_MAX) R.shift();
+      if (R.length >= VF_RAUCH_MAX * L) R.shift();
       const seite = Math.random() < 0.5 ? -1 : 1, hinten = VF_AUTO.L * 0.32, quer = VF_AUTO.B * 0.42 * seite;
       R.push({ x: VF.x - fx * hinten + rx * quer, y: 0.6, z: VF.y - fz * hinten + rz * quer, t: 0,
         leben: 1.2 + 0.9 * H + Math.random() * 0.4, steig: 1.2 + Math.random() * 0.8,
         vx: -fx * 1.5 + (Math.random() - 0.5) * 1.2, vz: -fz * 1.5 + (Math.random() - 0.5) * 1.2,
-        s0: 0.7 + Math.random() * 0.3, s1: 2.6 + 3.2 * H, a0: 0.10 + 0.45 * H, dreh: Math.random() * 6.3 });
+        s0: (0.7 + Math.random() * 0.3) / Math.sqrt(L), s1: (2.6 + 3.2 * H) / Math.pow(L, 0.25), a0: Math.min(0.6, (0.10 + 0.45 * H) * Math.pow(L, 0.15)), dreh: Math.random() * 6.3 });
     }
   }
   // Ein Ikosaeder mit Radius 1, Flaechen grau abgestuft (oben heller), 6 Zahlen je Ecke wie die Farbmodelle.
@@ -45746,7 +45762,25 @@
       const ny = (e[tr[0]][1] + e[tr[1]][1] + e[tr[2]][1]) / 3, k = 0.62 + 0.3 * (ny + 1) / 2;
       tr.forEach((i) => a.push(e[i][0], e[i][1], e[i][2], k, k, k * 1.02));
     });
-    return vfPuffer(gl, a);
+    // v1.6.52: feinere Kugel bei hoeherer Aufloesung - jedes Dreieck in vier, die neuen Ecken auf die Kugel geschoben.
+    const stufen = vfRauchStufe() >= 4 ? 2 : vfRauchStufe() >= 2 ? 1 : 0;
+    let D = a;
+    for (let st = 0; st < stufen; st++) {
+      const n = [];
+      const auf = (p) => { const l = Math.hypot(p[0], p[1], p[2]); return [p[0] / l, p[1] / l, p[2] / l]; };
+      for (let i = 0; i < D.length; i += 18) {
+        const p = [0, 1, 2].map((j) => [D[i + j * 6], D[i + j * 6 + 1], D[i + j * 6 + 2]]), c = [D[i + 3], D[i + 4], D[i + 5]];
+        const m = [auf([(p[0][0] + p[1][0]) / 2, (p[0][1] + p[1][1]) / 2, (p[0][2] + p[1][2]) / 2]), auf([(p[1][0] + p[2][0]) / 2, (p[1][1] + p[2][1]) / 2, (p[1][2] + p[2][2]) / 2]),
+          auf([(p[2][0] + p[0][0]) / 2, (p[2][1] + p[0][1]) / 2, (p[2][2] + p[0][2]) / 2])];
+        [[p[0], m[0], m[2]], [m[0], p[1], m[1]], [m[2], m[1], p[2]], [m[0], m[1], m[2]]].forEach((tr) => {
+          const ny = (tr[0][1] + tr[1][1] + tr[2][1]) / 3, k = 0.62 + 0.3 * (ny + 1) / 2;
+          tr.forEach((q) => n.push(q[0], q[1], q[2], k, k, k * 1.02));
+        });
+        void c;
+      }
+      D = n;
+    }
+    return vfPuffer(gl, D);
   }
   function vfHandlingProfil(P) {
     if (!P) return P;
@@ -49328,7 +49362,7 @@
   // Optionen > Virtuell die Einstellungen der Fahrt (VF_OPT_FAHRT), Optionen > RC Heli die des Hubschraubers (VF_OPT_HELI),
   // die virtuelle Garage den Rest (Auto, Lack, Boden, Strecke, Richtung, Handling, NPCs, Losfahren).
   const VF_OPT_FAHRT = ['Schaltung', 'Grafik', 'Tageszeit', 'Sichtfeld mit Tempo', 'Geist folgt meiner Linie', 'Rückspiegel (Motorhaube)',
-    'Kein Tempoverlust neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar', 'Drift-Gyro', 'Strecken-Ambience'];
+    'Kein Tempoverlust neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar', 'Drift-Gyro', 'Rauch-Auflösung', 'Strecken-Ambience'];
   // v1.6.46 BESTELLT: "fuer Strecken Ambience extra Option im virtuellen Fahren" (aus gnen54s 817c361: ab Werk aus).
   // Waehrend einer virtuellen Fahrt gilt dieser Schalter statt Optionen > Ton (ambienceAktiv, 80-sound.js).
   const VF_AMBIENCE_STORE = 'omegasim-vf-ambience';
@@ -49559,6 +49593,28 @@
     const grafikZeile = garWertZeile(t('Grafik'), t(vfGrafik() === 'perf' ? 'Performance' : 'Quality'), gWahl, gWahl);
     grafikZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(grafikZeile);
+    // v1.6.52 BESTELLT: "Reifenwahl einbauen, damit ich bei Regen fahren kann". Dieselbe Mischung wie beim echten Fahren (tyres,
+    // TYRE_MIX in 70-race.js): applySurface() rechnet daraus mit dem Wetter den Griff (gripScale), den die virtuelle Fahrt nutzt -
+    // Slicks im Nassen langsam und rutschig, Regenreifen im Trockenen etwas langsamer.
+    if (typeof tyres !== 'undefined' && typeof TYRE_MIX !== 'undefined') {
+      const mixe = Object.keys(TYRE_MIX), jm = Math.max(0, mixe.indexOf(tyres));
+      const mw = (dd) => { tyres = mixe[(jm + dd + mixe.length) % mixe.length]; try { applySurface(); } catch (e) { /* egal */ } vfGarageNeu(); };
+      const z = garWertZeile(t('Reifen'), mischungName(mixe[jm]), () => mw(-1), () => mw(1));
+      const l = z.querySelector('.gk-l'); l.classList.add('opt-label');
+      l.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Mischung wie beim echten Fahren: Slicks (weich, mittel, hart) greifen im Trockenen, im Regen rutschen sie; Regenreifen greifen im Nassen und sind im Trockenen etwas langsamer. Regen schaltest du mit dem Wetter-Knopf in der Fahrt.') + '</small>');
+      z.dataset.vfReifen = '1';
+      rechts.appendChild(z);
+    }
+    // v1.6.52 BESTELLT: "Slider fuer die Rauch-Aufloesung (Performance: so wie jetzt, Quality: etwas hoeher; noch viel hoeher moeglich)".
+    {
+      const ws = VF_RAUCH_STUFEN, js = Math.max(0, ws.indexOf(vfRauchStufeWahl()));
+      const rw = (dd) => { try { localStorage.setItem(VF_RAUCH_STORE, String(ws[(js + dd + ws.length) % ws.length])); } catch (e) { /* egal */ } VF.rauchPuffer = null; vfGarageNeu(); };
+      const v = ws[js];
+      const z = garWertZeile(t('Rauch-Auflösung'), v === 'auto' ? t('Automatisch') + ' (' + vfRauchStufe() + '×)' : v + '×', () => rw(-1), () => rw(1));
+      const l = z.querySelector('.gk-l'); l.classList.add('opt-label');
+      l.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Drift-Rauch: Automatisch = 1× in Performance, 1,5× in Quality. Höher: mehr, feinere und rundere Wolken, kostet Bildrate.') + '</small>');
+      rechts.appendChild(z);
+    }
     // v1.6.46: Gyro-Staerke des Drift-Fahrgefuehls und die Strecken-Ambience der virtuellen Fahrt (stehen unter Optionen > Virtuell).
     {
       const jg = Math.max(0, VF_DRIFT_GYRO_WERTE.indexOf(vfDriftGyro()));
@@ -111167,6 +111223,48 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     } finally { sectorHistory = merkH; ansagenEinreihen = merkE; }
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
+  });
+  stAdd('Virtuell v1.6.52: Reifenwahl in der Garage (Griff im Regen), Rauch-Aufloesung, Ladebalken unten links, Audi-Kamera vor dem Wischer', () => {
+    const f = [];
+    const merkTab = kAktiverTab(), merkT = tyres, merkModus = (() => { try { return localStorage.getItem(FAHR_MODUS_STORE); } catch (e) { return null; } })();
+    try {
+      vfGarageZeigen();
+      const z = $('vg-optionen').querySelector('[data-vf-reifen]');
+      if (!z) f.push('keine Reifenzeile');
+      else {
+        // trocken: die Zeile stellt die Mischung um, der Griff folgt (weich > hart)
+        tyres = 'weich'; applySurface(); const gW = physEngine.config.gripScale;
+        tyres = 'hart'; applySurface(); const gH = physEngine.config.gripScale;
+        if (!(gW > gH)) f.push('Mischung wirkt nicht auf den Griff: ' + gW + ' / ' + gH);
+        // nass (voller Regen): Regenreifen greifen besser als Slicks
+        const m1 = { config: {} }, m2 = { config: {} };
+        mischungAnwenden(m1, 'mittel', 1); mischungAnwenden(m2, 'regen', 1);
+        if (!(m2.config.gripScale > m1.config.gripScale + 0.2)) f.push('Regenreifen im Nassen nicht besser: ' + m2.config.gripScale + ' / ' + m1.config.gripScale);
+        tyres = 'hart'; vfGarageSeite(); $('vg-optionen').querySelector('[data-vf-reifen] [data-d="1"]').click();
+        if (tyres !== 'regen') f.push('Zeile schaltet nicht auf Regen: ' + tyres);
+        if ($('vg-optionen').querySelector('[data-vf-reifen]').textContent.indexOf(mischungName('regen')) < 0) f.push('Zeile zeigt nicht Regen');
+      }
+    } finally {
+      tyres = merkT; try { applySurface(); } catch (e) { /* egal */ }
+      try { if (merkModus === null) localStorage.removeItem(FAHR_MODUS_STORE); else localStorage.setItem(FAHR_MODUS_STORE, merkModus); } catch (e) { /* egal */ }
+      if (typeof konsoleFahrenZeichnen === 'function') konsoleFahrenZeichnen();
+      if (merkTab) showTab(merkTab);
+    }
+    const merkR = (() => { try { return localStorage.getItem(VF_RAUCH_STORE); } catch (e) { return null; } })(), merkG = VF.grafik;
+    try {
+      localStorage.removeItem(VF_RAUCH_STORE); VF.grafik = false;
+      if (vfRauchStufe() !== 1) f.push('Auto Performance nicht 1');
+      VF.grafik = true;
+      if (vfRauchStufe() !== 1.5) f.push('Auto Quality nicht 1,5');
+      localStorage.setItem(VF_RAUCH_STORE, '8');
+      if (vfRauchStufe() !== 8) f.push('8x nicht gesetzt');
+    } finally { VF.grafik = merkG; try { if (merkR === null) localStorage.removeItem(VF_RAUCH_STORE); else localStorage.setItem(VF_RAUCH_STORE, merkR); } catch (e) { /* egal */ } }
+    const lb = document.createElement('div'); lb.className = 'vf-laden'; lb.innerHTML = '<div class="vf-laden-mitte"></div>'; document.body.appendChild(lb);
+    try {
+      const r = lb.querySelector('.vf-laden-mitte').getBoundingClientRect();
+      if (!(r.left < innerWidth * 0.2 && r.bottom > innerHeight * 0.8)) f.push('Ladebalken nicht unten links: ' + Math.round(r.left) + ',' + Math.round(r.bottom));
+    } finally { lb.remove(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Reifen nass besser, Rauchstufen, Ladebalken unten links' };
   });
   stAdd('Menue v1.6.50: Wisch-Animation beim Wechsel der Seiten (Richtung nach Reiterfolge) und Unterseiten, nicht ins Cockpit', () => {
     const f = [], merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : '', merkAus = window.kWischAus;
