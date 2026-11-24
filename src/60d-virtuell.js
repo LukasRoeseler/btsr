@@ -1767,11 +1767,9 @@
   const VF_STRECKE_STORE = 'omegasim-vf-strecke';
   // Aus PR 4 von gnen54: dieselbe Strecke auch mit Bruecke (die Bahn kreuzt sich, Hoehe z je Punkt).
   const VF_FREIE = { indeq: { name: 'Törnerschleife 2.0', pfad: 'img/strecken/indeq-ring.json' },
-    indeqBruecke: { name: 'Törnerschleife 2.0 mit Brücke', pfad: 'img/strecken/indeq-bruecke.json' },
-    // v1.6.23: Renn-Rollstrecke Heckenhoim (3 x 2 m) aus gnen54s Fork, siehe img/strecken/LIZENZ.txt.
-    heckenhoim: { name: 'Heckenhoim', pfad: 'img/strecken/heckenhoim.json' } };
+    indeqBruecke: { name: 'Törnerschleife 2.0 mit Brücke', pfad: 'img/strecken/indeq-bruecke.json' } };
   // v1.6.23 BESTELLT: "Wenn ich auf virtuell geschaltet habe, moechte ich bei der Streckenwahl auch die Rollrennstrecken
-  // auswaehlen koennen (Toernerring, Toernerring mit Bruecke, Heckenhoim; jeweils mit Fahrtrichtungsoption)."
+  // auswaehlen koennen (Toernerring, Toernerring mit Bruecke; jeweils mit Fahrtrichtungsoption)."
   // Die Strecken-Kachel auf FAHREN blaettert im Modus Virtuell durch: gebaute Bahn, dann die freien Strecken.
   function vfStreckenListe() { return ['', ...Object.keys(VF_FREIE)]; }
   function vfStreckeWechseln(dir) {
@@ -3196,7 +3194,10 @@
     const alle = vfZeitenAlle();
     let jetztBahn = '';
     try { if (currentTrackTiles && currentTrackTiles.length >= 3) jetztBahn = trackToCode(currentTrackTiles); } catch (e) { /* ohne */ }
-    const zeilen = Object.keys(alle).filter((k) => alle[k] && alle[k].beste > 0).map((k) => {
+    // v1.6.79: nur freie Strecken, die es (noch) gibt - Zeiten entfernter Strecken bleiben unsichtbar.
+    const freiNamen = Object.keys(VF_FREIE).map((id) => VF_FREIE[id].name);
+    const zeilen = Object.keys(alle).filter((k) => alle[k] && alle[k].beste > 0)
+      .filter((k) => k.indexOf('frei:') !== 0 || freiNamen.indexOf(k.slice(5).split('|')[0]) >= 0).map((k) => {
       const e = alle[k], tr = k.lastIndexOf('|'), auto = k.slice(tr + 1);
       let ort = k.slice(0, tr);
       const gegen = /\|gegen$/.test(ort);

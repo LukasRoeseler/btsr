@@ -14539,7 +14539,7 @@
     if (!$('fa-modus').classList.contains('k-start') || $('fa-modus').querySelector('.k-kk, .k-kopf')) f.push('Umschalter nicht im Stil der Startkachel');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Meisterschaft | Echt/Virtuell (1/3 der alten Startbreite) | Start (2/3)' };
   });
-  stAdd('Fahren v1.6.23: virtuell waehlt die Strecken-Kachel gebaute Bahn und Rollrennstrecken (Toernerschleife, Bruecke, Heckenhoim) mit Fahrtrichtung', async () => {
+  stAdd('Fahren v1.6.23: virtuell waehlt die Strecken-Kachel gebaute Bahn und Rollrennstrecken (Toernerschleife, Bruecke) mit Fahrtrichtung', async () => {
     const f = [], lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
     const merk = { m: lies(FAHR_MODUS_STORE), s: lies(VF_STRECKE_STORE), r: lies(VF_RICHTUNG_STORE) };
     const merkTab = typeof kAktiverTab === 'function' ? kAktiverTab() : '';
@@ -14550,11 +14550,11 @@
       try { localStorage.setItem(VF_STRECKE_STORE, ''); localStorage.setItem(VF_RICHTUNG_STORE, 'normal'); } catch (e) { /* egal */ }
       konsoleFahrenZeichnen();
       const l = vfStreckenListe();
-      if (l.join(',') !== ',indeq,indeqBruecke,heckenhoim') f.push('Liste ' + l.join(','));
-      if (kQuadPunkte('bahn').anzahl !== 4) f.push('Punkte ' + kQuadPunkte('bahn').anzahl);
+      if (l.join(',') !== ',indeq,indeqBruecke') f.push('Liste ' + l.join(','));
+      if (kQuadPunkte('bahn').anzahl !== 3) f.push('Punkte ' + kQuadPunkte('bahn').anzahl);
       if ($('fa-strecke-titel').textContent !== t('Gebaute Bahn')) f.push('Titel ' + $('fa-strecke-titel').textContent);
       if ($('fa-scan').hidden !== true || $('fa-richtung').hidden) f.push('Knoepfe: Scan ' + !$('fa-scan').hidden + ', Richtung ' + !$('fa-richtung').hidden);
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 2; i++) {
         konsoleQuadWechsel('bahn', 1);
         const k = vfFreiWahl();
         await vfFreiLaden(k);
@@ -14565,13 +14565,11 @@
         if (!$('fa-editor').hidden) f.push(k + ': Editor sichtbar');
         if (kQuadPunkte('bahn').index !== i + 1) f.push(k + ': Punkt ' + kQuadPunkte('bahn').index);
       }
-      const hh = vfFreiCache.heckenhoim;
-      if (!hh || hh.pts.length < 100 || hh.tiles.length < 10) f.push('Heckenhoim laedt nicht richtig');
       // Fahrtrichtung per Knopf, sichtbar in der Info und auf dem Knopf.
       $('fa-richtung').click();
       if (!vfGegenAn() || $('fa-richtung').textContent.indexOf(t('Gegenrichtung')) < 0 || $('fa-strecke-info').textContent.indexOf(t('Gegenrichtung')) < 0) f.push('Richtung: Knopf wirkt nicht');
       konsoleQuadWechsel('bahn', 1);
-      if (vfFreiWahl() !== '') f.push('nach Heckenhoim nicht zurueck zur gebauten Bahn');
+      if (vfFreiWahl() !== '') f.push('nach der letzten Rollrennstrecke nicht zurueck zur gebauten Bahn');
       // Echt: wie bisher (Auf der Bahn / Frei), Richtung versteckt.
       fahrModusSetzen('echt');
       if (!$('fa-richtung').hidden) f.push('echt: Richtung sichtbar');
@@ -14628,7 +14626,7 @@
     const merk = lies(VF_ZEITEN_STORE), merkVF = { frei: VF.frei, tiles: VF.tiles, gegen: VF.gegen, beste: VF.beste, besteSplits: VF.besteSplits };
     try {
       localStorage.removeItem(VF_ZEITEN_STORE);
-      Object.assign(VF, { frei: { name: 'Heckenhoim' }, gegen: false });
+      Object.assign(VF, { frei: { name: 'Törnerschleife 2.0' }, gegen: false });
       if (vfZeitMerken(30000, [0, 100]) !== false) f.push('erste Runde als neue Bestzeit gemeldet');
       if (vfZeitMerken(29000, [0, 90]) !== true) f.push('schnellere Runde nicht gemeldet');
       vfZeitMerken(31000, null);
@@ -14640,7 +14638,7 @@
       vfZeitenLaden();
       if (VF.beste !== 29000 || !VF.besteSplits) f.push('Laden: ' + VF.beste);
       const box = vfBestenliste(vfAutoListe());
-      if (!box.querySelector('table') || box.textContent.indexOf('Heckenhoim') < 0) f.push('Bestenliste ohne Eintrag');
+      if (!box.querySelector('table') || box.textContent.indexOf('Törnerschleife 2.0') < 0) f.push('Bestenliste ohne Eintrag');
       const kn = document.createElement('div'); vfGarageOptionen(kn);
       const ar = kn.querySelector('[data-vf="ar"]');
       if (!ar) f.push('kein AR-Knopf');

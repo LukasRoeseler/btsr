@@ -4,9 +4,3 @@ Streckenlayout: "Toernerschleife 2.0" von Driftstrecken.de (https://driftstrecke
 Freigabe: schriftlich (E-Mail) von Driftstrecken.de am 18.11.2026, das Streckenlayout unter Nennung
 der Urheberrechte im Open-Source-Projekt OmegaSim (Steuerung - Garage - Virtuell fahren) zu verwenden.
 Umsetzung (DXF, Mittellinie, Start/Ziel, Boxengasse): Gnen54.
-
-Heckenhoim (img/strecken/heckenhoim.json) - Renn-Rollstrecke 3,00 x 2,00 m, nur fuer die virtuelle Fahrt in OmegaSim
-
-Streckenlayout und DXF (Heckenhoim_V2.dxf): Gnen54 und Thorsten. Umsetzung (Mittellinie, Start/Ziel, Boxengasse): Gnen54,
-aus seinem Fork (Commits 766f306, 7a284ac, 22.11.2026). Uebernommen am 23.11.2026 auf Wunsch von Luuke42.
-Freigabe fuer das Hauptprojekt OmegaSim liegt vor (bestaetigt von Luuke42 am 23.11.2026).

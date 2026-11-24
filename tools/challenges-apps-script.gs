@@ -360,7 +360,7 @@ function streckenPost(d) {
   return { ok: true };
 }
 // ---- VIRTUELLE STRECKENZEITEN (v1.6.60) --------------------------------------------------------
-// BESTELLT: "Virtual online times for your own tracks and the free virtual tracks (Toernerschleife, Heckenhoim)."
+// BESTELLT: "Virtual online times for your own tracks and the free virtual tracks (Toernerschleife)."
 // Eigenes Blatt "StreckenVirtuell" (eine Zeile je virtueller Fahrt), damit die echten Listen unberuehrt bleiben.
 // Schluessel: gebaute Bahn = derselbe wie bei echten Zeiten (stSchluessel), freie Strecke = "frei:<kennung>";
 // in Gegenrichtung "|gegen" dahinter. Fahrgefuehl = "vf-<handling>" (vf-gt3, vf-schnell, vf-librecorsa, vf-drift,

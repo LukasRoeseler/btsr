@@ -42,6 +42,8 @@
     const lokal = skVLokalAlle();
     Object.keys(lokal).forEach((k) => {
       if (on.some((s) => s.strecke === k + '|v')) return;
+      // v1.6.79: nur freie Strecken, die es (noch) gibt.
+      if (k.indexOf('frei:') === 0 && typeof VF_FREIE !== 'undefined' && !VF_FREIE[k.slice(5).split('|')[0]]) return;
       const l = lokal[k] || [];
       if (!l.length) return;
       const je = {};
