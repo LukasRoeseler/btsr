@@ -5544,16 +5544,24 @@
   // gehalten (Schwerkraft fast nur senkrecht zum Bild) gibt es keinen Wert. iOS meldet die Beschleunigung mit
   // umgekehrtem Vorzeichen.
   const VF_NEIGEN_VOLL = 35, VF_NEIGEN_TOT = 2.5;
+  // v1.6.85 BESTELLT: "Introduce a dead-zone setting for the #11 tilting ... Setting should live in the virtual driving
+  // options." Totzone in Grad (Vorgabe 2,5 wie bisher), gespeichert unter VF_NEIGEN_TOT_STORE.
+  const VF_NEIGEN_TOT_STORE = 'omegasim-vf-neigen-totzone';
+  const VF_NEIGEN_TOT_WERTE = [0, 2.5, 5, 7.5, 10, 15];
+  function vfNeigenTot() {
+    try { const v = parseFloat(localStorage.getItem(VF_NEIGEN_TOT_STORE)); return VF_NEIGEN_TOT_WERTE.indexOf(v) >= 0 ? v : VF_NEIGEN_TOT; } catch (e) { return VF_NEIGEN_TOT; }
+  }
   function vfNeigungWinkel(x, y, winkelGrad, ios) {
     const a = (winkelGrad || 0) * Math.PI / 180, s = ios ? -1 : 1;
     const sx = s * (x * Math.cos(a) - y * Math.sin(a)), sy = s * (x * Math.sin(a) + y * Math.cos(a));
     if (!(Math.hypot(sx, sy) >= 2)) return null;
     return Math.atan2(-sx, sy) * 180 / Math.PI;
   }
-  function vfNeigungLenkwert(grad, mitte) {
+  function vfNeigungLenkwert(grad, mitte, tot) {
+    const tz = tot === undefined ? vfNeigenTot() : tot;
     const d = ((grad - (mitte || 0) + 540) % 360) - 180, b = Math.abs(d);
-    if (b < VF_NEIGEN_TOT) return 0;
-    return Math.sign(d) * Math.min(1, (b - VF_NEIGEN_TOT) / (VF_NEIGEN_VOLL - VF_NEIGEN_TOT));
+    if (b < tz) return 0;
+    return Math.sign(d) * Math.min(1, (b - tz) / (VF_NEIGEN_VOLL - tz));
   }
   let vfNeigMitte = null;
   const vfIstIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -6335,7 +6343,7 @@
   // Optionen > Virtuell die Einstellungen der Fahrt (VF_OPT_FAHRT), Optionen > RC Heli die des Hubschraubers (VF_OPT_HELI),
   // die virtuelle Garage den Rest (Auto, Lack, Boden, Strecke, Richtung, Handling, NPCs, Losfahren).
   const VF_OPT_FAHRT = ['Schaltung', 'Grafik', 'Tageszeit', 'Sichtfeld mit Tempo', 'Geist folgt meiner Linie', 'Rückspiegel (Motorhaube)',
-    'Kein Tempoverlust neben der Bahn', 'Zurücksetzen neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar', 'Drift-Gyro', 'Rauch-Auflösung', 'Strecken-Ambience'];
+    'Kein Tempoverlust neben der Bahn', 'Zurücksetzen neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar', 'Drift-Gyro', 'Rauch-Auflösung', 'Strecken-Ambience', 'Totzone Neigen'];
   // v1.6.46 BESTELLT: "fuer Strecken Ambience extra Option im virtuellen Fahren" (aus gnen54s 817c361: ab Werk aus).
   // Waehrend einer virtuellen Fahrt gilt dieser Schalter statt Optionen > Ton (ambienceAktiv, 80-sound.js).
   const VF_AMBIENCE_STORE = 'omegasim-vf-ambience';
@@ -6597,6 +6605,21 @@
       const l = z.querySelector('.gk-l'); l.classList.add('opt-label');
       l.insertAdjacentHTML('beforeend', '<small>' + t('An (Vorgabe): steht das Auto 2,5 s neben der Bahn, kommt es zurück auf die Strecke. Aus: du fährst neben der Bahn weiter, zurück nur mit dem Knopf „Zurücksetzen“.') + '</small>');
       z.dataset.vfZurueck = '1';
+      rechts.appendChild(z);
+    }
+    // v1.6.85: Totzone der Steuerung Neigen (Issue #11), WIP.
+    {
+      const tz = vfNeigenTot(), i = Math.max(0, VF_NEIGEN_TOT_WERTE.indexOf(tz));
+      const w = (dd) => {
+        const n = VF_NEIGEN_TOT_WERTE[(i + dd + VF_NEIGEN_TOT_WERTE.length) % VF_NEIGEN_TOT_WERTE.length];
+        try { localStorage.setItem(VF_NEIGEN_TOT_STORE, String(n)); } catch (e) { /* egal */ }
+        vfGarageNeu();
+      };
+      const fmt = (g) => String(g).replace('.', lang === 'en' ? '.' : ',') + '°';
+      const z = garWertZeile(t('Totzone Neigen'), fmt(tz), () => w(-1), () => w(1));
+      const l = z.querySelector('.gk-l'); l.classList.add('opt-label');
+      l.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Steuerung „Neigen“: so viele Grad um die Mitte lenkt das Auto noch nicht. Größer = ruhiger geradeaus, kleiner = feiner. Voller Einschlag bleibt bei 35°.') + '</small>');
+      z.dataset.vfNeigenTot = '1';
       rechts.appendChild(z);
     }
     // NPCs: wie viele andere Autos mitfahren (0-3), zufaellige Skins aus den echten Modellen.

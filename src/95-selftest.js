@@ -7052,6 +7052,28 @@
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Blitz als Schicht, Regen nahtlos, Aufstellen nur auf der Bahn, OmegaLab, trocken beim Start, Verschleiss 2,6/0,4' };
   });
 
+  stAdd('Sound v1.6.83: Reifenquietschen virtuell erst am Scheitel und gehalten, halb so laut, ohne hohen Ton', () => {
+    const f = [];
+    if (TYRE_SQUEAL_DECKEL !== 0.225) f.push('Deckel ' + TYRE_SQUEAL_DECKEL);
+    // Kurzer Lenkstoss (0,2 s auf 1,3) quietscht nicht, gehaltenes Rutschen (1 s auf 1,3) schon.
+    const merk = { g: tyreVfGlatt, at: tyreVfAt };
+    try {
+      tyreVfGlatt = 0; tyreVfAt = 0;
+      let t = 1000, mx = 0;
+      tyreVfNutzung(0, t);
+      for (let i = 0; i < 12; i++) { t += 1000 / 60; mx = Math.max(mx, tyreSquealMenge(tyreVfNutzung(1.3, t), TYRE_SQUEAL_VF.start, TYRE_SQUEAL_VF.voll)); }
+      if (mx > 0.05) f.push('Lenkstoss quietscht (' + mx.toFixed(2) + ')');
+      for (let i = 0; i < 30; i++) { t += 1000 / 60; tyreVfNutzung(0, t); }
+      for (let i = 0; i < 60; i++) { t += 1000 / 60; mx = tyreSquealMenge(tyreVfNutzung(1.3, t), TYRE_SQUEAL_VF.start, TYRE_SQUEAL_VF.voll); }
+      if (!(mx > 0.5)) f.push('gehaltenes Rutschen leise (' + mx.toFixed(2) + ')');
+      // Normale Kurve (Ausnutzung 0,8, wie ruhig gefahren) quietscht nie.
+      for (let i = 0; i < 120; i++) { t += 1000 / 60; mx = tyreSquealMenge(tyreVfNutzung(0.8, t), TYRE_SQUEAL_VF.start, TYRE_SQUEAL_VF.voll); }
+      if (mx > 0) f.push('normale Kurve quietscht');
+    } finally { tyreVfGlatt = merk.g; tyreVfAt = merk.at; }
+    // Echt bleibt die Schwelle 0,6.
+    if (tyreSquealMenge(0.8) <= 0) f.push('echt: Schwelle verschoben');
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Lenkstoss still, Rutschen hoerbar, Deckel 0,225, echt unveraendert' };
+  });
   stAdd('Vibration v1.1.42: eigene Kachel, Quietschen leicht, kein Dauerbrummen vom Gas', () => {
     const f = [];
     const seite = $('sub-opt-vibration');
@@ -15346,6 +15368,34 @@
       if (VF.rauch.length) f.push('Rauch ohne Drift');
     } finally { Object.assign(VF, merkV); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : mass.join(', ') };
+  });
+  stAdd('Virtuell v1.6.85: Totzone Neigen einstellbar (Optionen Virtuell), wirkt auf den Lenkwert', async () => {
+    const f = [];
+    const merk = (() => { try { return localStorage.getItem(VF_NEIGEN_TOT_STORE); } catch (e) { return null; } })();
+    try {
+      localStorage.removeItem(VF_NEIGEN_TOT_STORE);
+      if (vfNeigenTot() !== 2.5) f.push('Vorgabe ' + vfNeigenTot());
+      localStorage.setItem(VF_NEIGEN_TOT_STORE, '10');
+      if (vfNeigungLenkwert(8, 0) !== 0) f.push('8 Grad lenkt trotz 10 Grad Totzone');
+      if (!(vfNeigungLenkwert(20, 0) > 0.35 && vfNeigungLenkwert(20, 0) < 0.45)) f.push('20 Grad: ' + vfNeigungLenkwert(20, 0).toFixed(2));
+      if (vfNeigungLenkwert(-35, 0) !== -1) f.push('voller Einschlag fehlt');
+      localStorage.setItem(VF_NEIGEN_TOT_STORE, '0');
+      if (!(vfNeigungLenkwert(1, 0) > 0)) f.push('Totzone 0 lenkt bei 1 Grad nicht');
+      localStorage.setItem(VF_NEIGEN_TOT_STORE, '3.3');
+      if (vfNeigenTot() !== 2.5) f.push('ungueltiger Wert nicht auf Vorgabe');
+      // Zeile in den Optionen Virtuell, mit WIP und Info.
+      localStorage.setItem(VF_NEIGEN_TOT_STORE, '5');
+      vfOptionenSeite('opt-virtuell');
+      const z = document.querySelector('#opt-virtuell-inhalt [data-vf-neigen-tot]');
+      if (!z) f.push('keine Zeile in Optionen Virtuell');
+      else {
+        if (z.textContent.indexOf('5°') < 0) f.push('Wert ' + z.textContent.slice(0, 60));
+        if (!z.querySelector('.wip-tag') || !z.querySelector('.opt-label small')) f.push('ohne WIP oder Info');
+        const vor = z.querySelectorAll('button'); if (vor.length) vor[vor.length - 1].click();
+        if (vfNeigenTot() !== 7.5) f.push('Weiter-Knopf: ' + vfNeigenTot());
+      }
+    } finally { try { if (merk === null) localStorage.removeItem(VF_NEIGEN_TOT_STORE); else localStorage.setItem(VF_NEIGEN_TOT_STORE, merk); } catch (e) { /* egal */ } }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Vorgabe 2,5 Grad, 0 bis 15 waehlbar, wirkt auf den Lenkwert, Zeile in Optionen Virtuell' };
   });
   stAdd('Virtuell v1.6.23: Steuerung Neigen - Winkel aus der Schwerkraft je Bildschirmlage, Lenkwert, Knopf schaltet reihum (Issue #11)', () => {
     const f = [], nah = (a, b, e) => a !== null && Math.abs(a - b) <= (e || 0.5);

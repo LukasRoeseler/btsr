@@ -1164,25 +1164,47 @@
   // schnelle Kurve nicht. Ein Selbsttest haelt fest, dass die Schwelle ERREICHBAR bleibt -
   // das Fehlen genau dieser Pruefung war der eigentliche Fehler.
   const TYRE_SQUEAL_START = 0.6;
+  const TYRE_SQUEAL_DECKEL = 0.225;   // v1.6.83: Lautstaerke-Deckel, vorher 0,45
   // v1.1.42 BESTELLT: "leichtes Rumbling beim Reifenquietschen". Dieselbe Menge wie der Ton, aber auch ohne
   // Ton (Vibrationsart 'quietschen', Kachel Vibration): leicht und im schwachen Motor, alle 250 ms erneuert.
+  // v1.6.83 GEMELDET: "Im virtuellen Fahren quietschen die Reifen die ganze Zeit bei Pacejka und GT3 (und anderen evtl.
+  // auch). Mach insgesamt die Quietschlautstaerke niedriger (auf 50% des aktuellen Levels), nimm das hohe Quietschen
+  // raus, und mach, dass es nicht bei jedem Lenkvorgang quietscht." Gemessen (Bot, 90 s, Vulture V5.R): die
+  // Reifenausnutzung der virtuellen Fahrt (Schraeglauf / Scheitel-Schraeglauf) liegt schon bei ruhigem Fahren oft ueber
+  // 0,6 - jeder Lenkeinschlag gab ein kurzes Quietschen (GT3: 23 in 90 s). Jetzt in der virtuellen Fahrt:
+  //   - Schwelle 0,95 bis voll bei 1,25 (erst am Scheitel der Reifenkurve, also wenn die Achse wirklich rutscht),
+  //   - die Ausnutzung steigt mit 0,3 s Zeitkonstante (faellt schnell): ein kurzer Lenkstoss quietscht nicht, eine
+  //     gehaltene Rutschphase schon. Ruhig gefahren: 0 Quietscher in 90 s; am Limit 2- bis 5-mal seltener.
+  // Ueberall: Lautstaerke halbiert (Deckel 0,45 -> 0,225), Tonhoehe steigt nicht mehr mit (war bis +18 %), das
+  // Bremsenquietschen (hoher Ton, 2,8 bis 5,6 kHz) ist in der virtuellen Fahrt aus.
+  const TYRE_SQUEAL_VF = { start: 0.95, voll: 1.25, aufS: 0.3, abS: 0.08 };
+  let tyreVfGlatt = 0, tyreVfAt = 0;
+  function tyreVfNutzung(roh, jetzt) {
+    const dt = tyreVfAt ? Math.max(0, Math.min(0.25, (jetzt - tyreVfAt) / 1000)) : 0;
+    tyreVfAt = jetzt;
+    const tau = roh > tyreVfGlatt ? TYRE_SQUEAL_VF.aufS : TYRE_SQUEAL_VF.abS;
+    tyreVfGlatt += (roh - tyreVfGlatt) * (1 - Math.exp(-dt / tau));
+    return tyreVfGlatt;
+  }
+  function tyreSquealMenge(nutzung, start, voll) {
+    const s = start === undefined ? TYRE_SQUEAL_START : start, v = voll === undefined ? 1 : voll;
+    return Math.max(0, Math.min(1, (Math.max(0, Math.min(1.5, nutzung)) - s) / (v - s)));
+  }
   let quietschRuettelnAt = 0;
-  function quietschRuetteln(nutzung) {
-    const menge = Math.max(0, Math.min(1, (Math.max(0, Math.min(1.2, nutzung)) - TYRE_SQUEAL_START) / (1 - TYRE_SQUEAL_START)));
+  function quietschRuetteln(nutzung, start, voll) {
+    const menge = tyreSquealMenge(nutzung, start, voll);
     if (menge <= 0.05 || typeof padRumble !== 'function') return false;
     const jetzt = performance.now();
     if (jetzt - quietschRuettelnAt < 250) return false;
     quietschRuettelnAt = jetzt;
     return padRumble(0, 0.12 + 0.28 * menge, 280, 'quietschen', 1);
   }
-  function setTyreSqueal(nutzung) {
-    quietschRuetteln(nutzung);
+  function setTyreSqueal(nutzung, start, voll) {
+    quietschRuetteln(nutzung, start, voll);
     if (!fxBuffers.tyre || !audioCtx || !soundEnabled) return;
     // Unterhalb der Schwelle auf null abbilden, statt die Schwelle im Nenner zu vergessen:
     // sonst faengt es bei 0 an und ist bei 0,85 schon laut.
-    const roh = (Math.max(0, Math.min(1.2, nutzung)) - TYRE_SQUEAL_START)
-                / (1 - TYRE_SQUEAL_START);
-    const menge = Math.max(0, Math.min(1, roh));
+    const menge = tyreSquealMenge(nutzung, start, voll);
     if (menge > 0.01 && !tyreNode) {
       tyreNode = audioCtx.createBufferSource();
       tyreNode.buffer = fxBuffers.tyre;
@@ -1195,13 +1217,11 @@
     if (!tyreGain) return;
     // LAUTER: Deckel 0,3 -> 0,45. BESTELLT: "nimm die aktuellen, aber mach sie noch etwas
     // hoerbarer; evtl. einfach Lautstaerke etwas hoeher". Gilt in allen Modi.
-    tyreGain.gain.setTargetAtTime(Math.min(0.45, menge * 0.45) * tyreVolume,
+    // v1.6.83: halbiert (0,45 -> 0,225), BESTELLT "Quietschlautstaerke ... auf 50% des aktuellen Levels".
+    tyreGain.gain.setTargetAtTime(Math.min(TYRE_SQUEAL_DECKEL, menge * TYRE_SQUEAL_DECKEL) * tyreVolume,
                                   audioCtx.currentTime, 0.05);
-    // 1,0 bis 1,18: hoerbar, aber ohne dass der Ton nach Bandgeschwindigkeit klingt. Mehr
-    // verschiebt auch die Schleifenlaenge und macht die Naht hoerbar.
-    if (tyreNode) {
-      tyreNode.playbackRate.setTargetAtTime(1 + 0.18 * menge, audioCtx.currentTime, 0.08);
-    }
+    // v1.6.83: keine mitlaufende Tonhoehe mehr (war 1,0 bis 1,18) - BESTELLT "nimm das hohe Quietschen raus".
+    if (tyreNode) tyreNode.playbackRate.setTargetAtTime(1, audioCtx.currentTime, 0.08);
     if (menge <= 0.01 && tyreNode) {
       const node = tyreNode;
       tyreNode = null; tyreGain = null;
@@ -3054,7 +3074,9 @@
     // stays intact as the fallback for the synthetic profiles and for missing audio/.
     // Squeal only under real braking above walking pace, so it does not chirp on every
     // light touch of the trigger.
-    const brakeAmt = (physicsEnabled && st.speedKmh > physEngine.config.topSpeedKmh * 0.12)
+    // v1.6.83: in der virtuellen Fahrt kein Bremsenquietschen (hoher Ton, BESTELLT "nimm das hohe Quietschen raus").
+    const vfFuerBremse = typeof vfAktiv === 'function' && vfAktiv();
+    const brakeAmt = (physicsEnabled && !vfFuerBremse && st.speedKmh > physEngine.config.topSpeedKmh * 0.12)
       ? Math.max(0, Math.min(1, (Math.max(0, -throttleY) - 0.25) / 0.55)) : 0;
     setBrakeSqueal(brakeAmt);
     // Der Reibkreis-Querbedarf treibt es. Er steht im Zustand, weil er hier gebraucht wird.
@@ -3071,7 +3093,8 @@
     // faden quietschen. Ausserhalb der virtuellen Fahrt bleibt alles wie bisher.
     const vfAktivJetzt = typeof vfAktiv === 'function' && vfAktiv();
     const vfNutzung = vfAktivJetzt && pst ? (pst.vfNutzung || 0) : -1;
-    setTyreSqueal(vfNutzung >= 0 ? vfNutzung : Math.max(pst.latUse || 0, pacQuietsch));
+    if (vfNutzung >= 0) setTyreSqueal(tyreVfNutzung(vfNutzung, now), TYRE_SQUEAL_VF.start, TYRE_SQUEAL_VF.voll);
+    else { tyreVfGlatt = 0; tyreVfAt = 0; setTyreSqueal(Math.max(pst.latUse || 0, pacQuietsch)); }
     // Neben der Bahn: nur auf der Bahn messbar (Schiene meldet 0xff), lauter mit dem Tempo.
     const neben = typeof trackMode !== 'undefined' && trackMode === 'on'
       && typeof abseitsJetzt === 'function' && abseitsJetzt();
