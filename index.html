@@ -4028,6 +4028,13 @@
   .grid-row.dragging { opacity: .45; }
   /* v1.1.3: virtuelle Fahrt (60d-virtuell.js), ueber allem ausser der Pause. */
   .vf-schicht { position: fixed; inset: 0; z-index: 300; background: #8ca8c6; }
+  /* v1.6.60: Augmented Reality - die Schicht ist durchsichtig, das Kamerabild kommt von der AR-Sitzung. */
+  .vf-schicht.vf-ar { background: transparent; }
+  .vf-ar-wurzel { position: fixed; inset: 0; z-index: 300; background: transparent; }
+  .vf-ar-hinweis { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); max-width: min(86vw, 520px); padding: .6em 1em;
+    border-radius: 10px; background: rgba(8,10,14,.72); color: #fff; text-align: center; font-weight: 700; pointer-events: none; z-index: 5; }
+  .vf-ar-neu { position: absolute; right: max(12px, env(safe-area-inset-right)); top: 22%; z-index: 5; }
+  .vf-ar-knopf { flex: 0 0 auto; min-height: 44px; padding: 0 12px; }
   /* v1.1.11: Streckenbild gross zeigen (Screenshot oder lange druecken), statt nur herunterzuladen. */
   .sb-schau { position: fixed; inset: 0; z-index: 500; background: rgba(5,7,12,.95); display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 10px; padding: max(10px, env(safe-area-inset-top)) 12px 12px; }
@@ -6069,7 +6076,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.59</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.62</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7395,6 +7402,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell: Rundenzeiten auf eigenen und freien Strecken (T&#246;rnerschleife, Heckenhoim, auch Gegenrichtung und RC Heli) werden je Fahrgef&#252;hl gespeichert und mit &#8222;Zeiten online synchronisieren&#8220; in eigene virtuelle Online-Listen geschickt; in den Challenges zeigt der Modus Virtuell diese Strecken. Aus Gnen54s Fork: gefahrene Zeiten je Strecke und Auto (Bestzeit und Zwischenzeiten gelten beim Start, Bestenliste in der virtuellen Garage), die Ansage &#8222;Akku kritisch&#8220; bei 6 % (Optionen &gt; Ton, ab Werk an), die echte Startampel am Tisch (Optionen &gt; Startampel, Bluetooth, Raspberry Pi / Pico) und seine Werkzeuge f&#252;r die freien Strecken (tools/strecken). Neu, Prototyp: AR in Chrome auf Android (Knopf &#8222;AR&#8220; in der virtuellen Garage): Strecke in Originalgr&#246;&#223;e auf dem Fu&#223;boden platzieren, dann f&#228;hrt das Auto bzw. fliegt der Heli im Zimmer.</li>
         <li>Virtuell: Drift rutscht nach der Handbremse weiter, statt pl&#246;tzlich zu stehen, und rollt nach einer Drehung &#252;ber 90 Grad r&#252;ckw&#228;rts weiter; im Drift kein Spritverbrauch. Boxenstopp: es gen&#252;gt jetzt, mit dem Auto in die Boxenbucht zu ragen (vorher musste es tief darin stehen), der Hinweis sagt &#8222;in der Boxenbucht anhalten&#8220;. RC Heli: der Heckrotor dreht sich, am Boden l&#228;sst er sich nicht mehr neigen, die Tore sind deutlich h&#246;her, jedes Tor macht &#8222;bling&#8220;, und die Runde z&#228;hlt direkt beim Flug durch das Start/Ziel-Tor nach allen Toren. Audi RS5 DTM: der K&#252;hlergrill unter dem Logo ist wieder schwarz statt wei&#223;.</li>
         <li>Challenges virtuell (WIP): Oben auf der Challenge-Seite schaltet Echt | Virtuell um (derselbe Fahrmodus wie auf FAHREN, im Modus Virtuell rote Akzente). Virtuell f&#228;hrst du w&#246;chentliche Challenges, Dauerrennen und Community Challenges mit dem virtuellen Auto, mit Ampel, Teilepr&#252;fung und Wertung wie echt; die Zeiten stehen in eigenen virtuellen Bestenlisten (selbes Backend, klar als virtuell markiert, mit Fahrgef&#252;hl), Medaillenzeiten virtuell vorl&#228;ufig &#215;1,75. Auch Karriere und andere Rennen, die von FAHREN aus starten, fahren im Modus Virtuell das virtuelle Auto. Automatische Sektoren: etwa ein Sektor je 4 Teile (Balkonia 6, Homington 3, mindestens 2). Virtuelle Garage: Vorschau mit durchsichtigem Hintergrund und Bild f&#252;r den RC Heli, Motorsound- und Fahrtrichtungs-Zeile entfernt (Richtung steht in der Streckenkachel), Strecke und Boden ohne WIP, Handling hei&#223;t jetzt &#8222;Pacejka (wie echte CH Autos, WIP)&#8220;.</li>
         <li>Virtuelles Fahren, Prototyp zum Testen: Das Fahrgef&#252;hl Drift ist neu und physikbasiert (WIP). Eigenes Fahrzeugmodell (Hecktriebler): durchdrehende Hinterr&#228;der mit kombiniertem Schlupf, Gewichtsverlagerung, Luft- und Rollwiderstand; mehr Gas = mehr Driftwinkel. X ist im Drift die Handbremse (Tastatur, Gamepad, am Handy ein Knopf links neben dem Gaspedal). Optionen &gt; Virtuell &gt; Drift-Gyro stellt die Gegenlenk-Hilfe ein (wie der Gyro eines RC-Driftautos), Aus = reine Physik.</li>
@@ -11361,6 +11369,15 @@
           <span>Gyro-Stabilisierung, Rollen und Nicken umkehren.</span>
         </button>
       </div>
+      <div class="k-zwischen">Zusatz-Hardware</div>
+      <div class="misc-grid">
+        <!-- v1.6.60 (aus Gnen54s Fork): echte Startampel am Tisch (Raspberry Pi / Pico, Bluetooth LE), 74c-startampel.js. -->
+        <button class="misc-tile subpage-open" data-sub="opt-addon">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="16" y="5" width="16" height="38" rx="4"/><circle cx="24" cy="14" r="3.5" fill="var(--bad)" stroke="var(--bad)"/><circle cx="24" cy="24" r="3.5"/><circle cx="24" cy="34" r="3.5" fill="var(--good)" stroke="var(--good)"/></svg>
+          <b>Startampel</b>
+          <span>Echte Startampel am Tisch (Raspberry Pi / Pico).</span>
+        </button>
+      </div>
       <div class="k-zwischen">Info</div>
       <div class="misc-grid">
         <button class="misc-tile info-open" data-sub="wozu">
@@ -11717,6 +11734,14 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Virtuell <span class="wip-tag">WIP</span></h2>
       <div class="vf-opt-seite" id="opt-virtuell-inhalt"></div>
+    </div>
+    <div class="card subpage" id="sub-opt-addon">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Startampel <span class="wip-tag">WIP</span></h2>
+      <p class="muted">Diese Einstellung braucht eigene Hardware am Tisch (Startampel mit Raspberry Pi oder Pico, Bluetooth LE).</p>
+      <div class="opt-row"><div class="opt-label">Startampel (Raspberry Pi / Pico)<small>Echte Startampel am Tisch: Rot, solange nichts freigegeben ist; Gelb beim Start im Fenster &bdquo;Bringe die Autos in Position&ldquo;; Gr&uuml;n Spalte f&uuml;r Spalte im Takt der Startt&ouml;ne; bei Gr&uuml;n alles aus; Gelb blinkt bei einem Fr&uuml;hstart; Gelb bei Gelber Flagge; nach dem Rennen wieder Rot.</small>
+          <div id="ampel-status" class="muted" style="font-size:12px;margin-top:4px">Nicht verbunden.</div></div>
+        <button type="button" id="ampel-verbinden">Verbinden</button></div>
     </div>
     <div class="card subpage" id="sub-opt-heli">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
@@ -12842,6 +12867,8 @@
         <label class="tgl"><input type="checkbox" id="setting-announce-start" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Akku ansagen<small>Einmal, wenn der Akku unter 25&nbsp;% f&auml;llt. Erst nach dem Laden wieder scharf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-battery"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Akku kritisch ansagen<small>Einmal je Auto, wenn der Akku auf 6&nbsp;% f&auml;llt, die letzte Stufe vor dem Stehenbleiben: &bdquo;Session abbrechen, Box anfahren!&ldquo; Erst nach dem Laden wieder scharf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-battery-crit" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Meisterschaft ansagen <span class="wip-tag">WIP</span>
         <small>Nach jedem Event, welches Event es war und was als N&auml;chstes kommt; nach dem letzten, dass die Meisterschaft vorbei ist und wer gesamt gewonnen hat.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-meister" checked><span></span></label></div>
@@ -15217,6 +15244,13 @@
                                                characteristic: z.characteristic, value: zuHex(daten), timeout: 300 }));
     }
     writeValue(daten) { return this.writeValueWithResponse(daten); }
+    // v1.6.60 (aus Gnen54s Fork): FUER EINZELNE BEFEHLE (Startampel, 74c-startampel.js): ohne Antwort, aber NICHT ueber
+    // OmegaBle - dort gilt "neuester gewinnt", und von "START", "GRUEN 1" kurz hintereinander kaeme nur der letzte an.
+    _befehlSchreiben(daten) {
+      const z = this._ziel;
+      return ruf('writeWithoutResponse', { deviceId: z.deviceId, service: z.service,
+                                           characteristic: z.characteristic, value: zuHex(daten), timeout: 1000 });
+    }
     async readValue() {
       const r = await mitOmegaPause(() => ruf('read', this._ziel));
       this.value = ausHex(r && r.value);
@@ -17925,6 +17959,29 @@
     "Boxenstopp: in der Boxenbucht anhalten": "Pit stop: stop in the pit bay",
     "fehlt": "missing",
     "Virtuell: Drift rutscht nach der Handbremse weiter, statt plötzlich zu stehen, und rollt nach einer Drehung über 90 Grad rückwärts weiter; im Drift kein Spritverbrauch. Boxenstopp: es genügt jetzt, mit dem Auto in die Boxenbucht zu ragen (vorher musste es tief darin stehen), der Hinweis sagt „in der Boxenbucht anhalten“. RC Heli: der Heckrotor dreht sich, am Boden lässt er sich nicht mehr neigen, die Tore sind deutlich höher, jedes Tor macht „bling“, und die Runde zählt direkt beim Flug durch das Start/Ziel-Tor nach allen Toren. Audi RS5 DTM: der Kühlergrill unter dem Logo ist wieder schwarz statt weiß.": "Virtual: drift keeps sliding after the handbrake instead of stopping suddenly, and keeps rolling backwards after a spin past 90 degrees; no fuel use in drift. Pit stop: it is now enough to reach into the pit bay with the car (before it had to stand deep inside), the hint says “stop in the pit bay”. RC heli: the tail rotor spins, it can no longer be tilted on the ground, the gates are much taller, every gate goes “bling”, and the lap counts right when flying through the start/finish gate after all gates. Audi RS5 DTM: the grille under the logo is black again instead of white.",
+    "Augmented Reality: die Strecke im Zimmer (Chrome auf Android mit ARCore)": "Augmented reality: the track in your room (Chrome on Android with ARCore)",
+    "AR geht hier nicht: sie braucht Chrome auf einem Android-Handy mit ARCore (nicht in der App, nicht am PC).": "AR does not work here: it needs Chrome on an Android phone with ARCore (not in the app, not on a PC).",
+    "AR konnte nicht starten": "AR could not start",
+    "Handy langsam über den Boden bewegen, bis der Kreis erscheint, dann tippen: dort steht die Strecke.": "Move the phone slowly over the floor until the circle appears, then tap: the track goes there.",
+    "Neu platzieren": "Place again",
+    "Streckenbestzeit": "Track record",
+    "Neue Streckenbestzeit": "New track record",
+    "Bestzeiten": "Best times",
+    "Noch keine Bestzeiten": "No best times yet",
+    "aktuell": "current",
+    "Datum": "Date",
+    "Akku kritisch ansagen": "Announce critical battery",
+    "Einmal je Auto, wenn der Akku auf 6 % fällt, die letzte Stufe vor dem Stehenbleiben: „Session abbrechen, Box anfahren!“ Erst nach dem Laden wieder scharf.": "Once per car when the battery drops to 6 %, the last step before the car stops: “Abort session, box now!” Armed again only after charging.",
+    "Zusatz-Hardware": "Extra hardware",
+    "Echte Startampel am Tisch (Raspberry Pi / Pico).": "A real start light at the table (Raspberry Pi / Pico).",
+    "Diese Einstellung braucht eigene Hardware am Tisch (Startampel mit Raspberry Pi oder Pico, Bluetooth LE).": "This setting needs your own hardware at the table (start light with Raspberry Pi or Pico, Bluetooth LE).",
+    "Startampel (Raspberry Pi / Pico)": "Start light (Raspberry Pi / Pico)",
+    "Echte Startampel am Tisch: Rot, solange nichts freigegeben ist; Gelb beim Start im Fenster „Bringe die Autos in Position“; Grün Spalte für Spalte im Takt der Starttöne; bei Grün alles aus; Gelb blinkt bei einem Frühstart; Gelb bei Gelber Flagge; nach dem Rennen wieder Rot.": "A real start light at the table: red while nothing is released; yellow on Start in the “Bring the cars into position” window; green column by column with the start beeps; everything off at green; yellow flashes on a jump start; yellow under a yellow flag; red again after the race.",
+    "Verbunden: {n}": "Connected: {n}",
+    "Nicht verbunden.": "Not connected.",
+    "Dieser Browser kann kein Bluetooth.": "This browser has no Bluetooth.",
+    "Verbinde neu …": "Reconnecting …",
+    "Virtuell: Rundenzeiten auf eigenen und freien Strecken (Törnerschleife, Heckenhoim, auch Gegenrichtung und RC Heli) werden je Fahrgefühl gespeichert und mit „Zeiten online synchronisieren“ in eigene virtuelle Online-Listen geschickt; in den Challenges zeigt der Modus Virtuell diese Strecken. Aus Gnen54s Fork: gefahrene Zeiten je Strecke und Auto (Bestzeit und Zwischenzeiten gelten beim Start, Bestenliste in der virtuellen Garage), die Ansage „Akku kritisch“ bei 6 % (Optionen > Ton, ab Werk an), die echte Startampel am Tisch (Optionen > Startampel, Bluetooth, Raspberry Pi / Pico) und seine Werkzeuge für die freien Strecken (tools/strecken). Neu, Prototyp: AR in Chrome auf Android (Knopf „AR“ in der virtuellen Garage): Strecke in Originalgröße auf dem Fußboden platzieren, dann fährt das Auto bzw. fliegt der Heli im Zimmer.": "Virtual: lap times on your own and free tracks (Törnerschleife, Heckenhoim, also reverse direction and RC heli) are saved per driving feel and, with “Sync times online”, sent to separate virtual online lists; in Challenges, Virtual mode shows these tracks. From gnen54's fork: driven times per track and car (best lap and splits apply at the start, best-times list in the virtual garage), the “battery critical” announcement at 6 % (Options > Sound, on by default), the real start light at the table (Options > Start light, Bluetooth, Raspberry Pi / Pico) and his tools for the free tracks (tools/strecken). New, prototype: AR in Chrome on Android (“AR” button in the virtual garage): place the track at real size on the floor, then the car drives or the heli flies in your room.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20802,6 +20859,28 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Zusatz-Hardware": "Hardware adicional",
+    "Echte Startampel am Tisch (Raspberry Pi / Pico).": "Un semáforo de salida real en la mesa (Raspberry Pi / Pico).",
+    "Diese Einstellung braucht eigene Hardware am Tisch (Startampel mit Raspberry Pi oder Pico, Bluetooth LE).": "Este ajuste necesita hardware propio en la mesa (semáforo con Raspberry Pi o Pico, Bluetooth LE).",
+    "Startampel (Raspberry Pi / Pico)": "Semáforo de salida (Raspberry Pi / Pico)",
+    "Echte Startampel am Tisch: Rot, solange nichts freigegeben ist; Gelb beim Start im Fenster „Bringe die Autos in Position“; Grün Spalte für Spalte im Takt der Starttöne; bei Grün alles aus; Gelb blinkt bei einem Frühstart; Gelb bei Gelber Flagge; nach dem Rennen wieder Rot.": "Un semáforo de salida real en la mesa: rojo mientras no hay nada liberado; amarillo al pulsar Salida en la ventana «Coloca los coches»; verde columna a columna con los pitidos de salida; todo apagado en verde; amarillo intermitente en una salida en falso; amarillo con bandera amarilla; rojo de nuevo tras la carrera.",
+    "Verbunden: {n}": "Conectado: {n}",
+    "Nicht verbunden.": "No conectado.",
+    "Dieser Browser kann kein Bluetooth.": "Este navegador no tiene Bluetooth.",
+    "Verbinde neu …": "Reconectando …",
+    "Akku kritisch ansagen": "Anunciar batería crítica",
+    "Einmal je Auto, wenn der Akku auf 6 % fällt, die letzte Stufe vor dem Stehenbleiben: „Session abbrechen, Box anfahren!“ Erst nach dem Laden wieder scharf.": "Una vez por coche cuando la batería baja al 6 %, el último paso antes de que se pare: «¡Abandona la sesión, entra en boxes!» Se rearma solo tras cargar.",
+    "Streckenbestzeit": "Récord del circuito",
+    "Neue Streckenbestzeit": "Nuevo récord del circuito",
+    "Bestzeiten": "Mejores tiempos",
+    "Noch keine Bestzeiten": "Aún no hay mejores tiempos",
+    "aktuell": "actual",
+    "Datum": "Fecha",
+    "Augmented Reality: die Strecke im Zimmer (Chrome auf Android mit ARCore)": "Realidad aumentada: la pista en tu habitación (Chrome en Android con ARCore)",
+    "AR geht hier nicht: sie braucht Chrome auf einem Android-Handy mit ARCore (nicht in der App, nicht am PC).": "La RA no funciona aquí: necesita Chrome en un móvil Android con ARCore (no en la app, no en el PC).",
+    "AR konnte nicht starten": "La RA no pudo iniciarse",
+    "Handy langsam über den Boden bewegen, bis der Kreis erscheint, dann tippen: dort steht die Strecke.": "Mueve el móvil despacio sobre el suelo hasta que aparezca el círculo y toca: ahí va la pista.",
+    "Neu platzieren": "Colocar de nuevo",
     "Boxenstopp: in der Boxenbucht anhalten": "Parada en boxes: detente en el box",
     "fehlt": "falta",
     "Echt oder virtuell": "Real o virtual",
@@ -44839,12 +44918,15 @@
     // er schreibt selbst keine Tiefe. Glanz je Flaeche wie 1.3.92, der Boden nach seiner Art.
     zeichne(F.strasse, F.txBahn, 0.16, VF_BUMP_BAHN);
     zeichne(F.rand, F.txRand, 0.10, 0);
-    gl.depthMask(false);
-    gl.enable(gl.POLYGON_OFFSET_FILL);
-    gl.polygonOffset(2, 16);
-    zeichne(F.boden, F.txBoden, F.art.glanz, F.art.art === 'rasen' ? 0 : VF_BUMP_BODEN);   // v1.5: Rasen ohne Relief (Halme waeren helle Striche)
-    gl.disable(gl.POLYGON_OFFSET_FILL);
-    gl.depthMask(true);
+    // v1.6.60: in AR kein Boden - dort ist der echte Fussboden zu sehen.
+    if (!VF.ar) {
+      gl.depthMask(false);
+      gl.enable(gl.POLYGON_OFFSET_FILL);
+      gl.polygonOffset(2, 16);
+      zeichne(F.boden, F.txBoden, F.art.glanz, F.art.art === 'rasen' ? 0 : VF_BUMP_BODEN);   // v1.5: Rasen ohne Relief (Halme waeren helle Striche)
+      gl.disable(gl.POLYGON_OFFSET_FILL);
+      gl.depthMask(true);
+    }
     gl.disableVertexAttribArray(P.ap); gl.disableVertexAttribArray(P.ac);
     if (P.auv >= 0) gl.disableVertexAttribArray(P.auv);
   }
@@ -46546,13 +46628,97 @@
     return bisZ < zur ? -1 : 0;
   }
   // Was an der Linie fuer die Kopfzeile passiert (die Zeitnahme selbst laeuft in der App, ueber den Puls).
+  // ---- GEFAHRENE ZEITEN JE STRECKE (v1.6.60, aus Gnen54s Fork: "Gefahrene Zeiten pro Strecke speichern") ----
+  // Je Strecke UND Auto: Bestzeit mit Datum und Zwischenzeiten (fuer das Delta), Rundenzahl und die letzten zehn Runden.
+  // Beim Start werden Bestzeit und Zwischenzeiten geladen (Beste/Delta im HUD gelten sofort). Schluessel wie bei Gnen54
+  // ("frei:<Name>" bzw. "bahn:<Code>", dazu "|<Auto>"), hier zusaetzlich "|gegen" fuer die Gegenrichtung (die
+  // Zwischenzeiten haengen an der Fahrtrichtung); der Hubschrauber ist ein eigenes "Auto".
+  const VF_ZEITEN_STORE = 'omegasim-vf-zeiten';
+  function vfZeitenSchluessel() {
+    let s = '-';
+    try { s = VF.frei ? 'frei:' + VF.frei.name : 'bahn:' + trackToCode(VF.tiles); } catch (e) { /* ohne */ }
+    return s + (VF.gegen ? '|gegen' : '') + '|' + vfAutoWahl();
+  }
+  function vfZeitenAlle() {
+    try { return JSON.parse(localStorage.getItem(VF_ZEITEN_STORE) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function vfZeitenLaden() {
+    const e = vfZeitenAlle()[vfZeitenSchluessel()];
+    if (e && e.beste > 0) {
+      VF.beste = e.beste; VF.besteSplits = Array.isArray(e.splits) ? e.splits : null;
+      VF.besteGeladen = true;
+      showHudToast(t('Streckenbestzeit') + ': ' + vfZeitAcc(e.beste, 3));
+    }
+  }
+  function vfZeitMerken(ms, splits) {
+    const alle = vfZeitenAlle(), k = vfZeitenSchluessel();
+    const e = alle[k] || (alle[k] = { beste: null, datum: null, runden: 0, letzte: [] });
+    e.runden += 1;
+    e.letzte = [Math.round(ms)].concat(e.letzte || []).slice(0, 10);
+    const neu = !(e.beste > 0) || ms < e.beste;
+    if (neu) { e.beste = Math.round(ms); e.datum = Date.now(); e.splits = splits || null; }
+    try { localStorage.setItem(VF_ZEITEN_STORE, JSON.stringify(alle)); } catch (err) { /* voll */ }
+    return neu && e.runden > 1;
+  }
+  // Bestenliste in der Garage (aus Gnen54s Fork): je Strecke und Auto die gespeicherte Bestzeit, Rundenzahl und Datum.
+  // Zugeklappt, damit die Garage kurz bleibt.
+  function vfBestenliste(autos) {
+    const box = document.createElement('details');
+    box.className = 'opt-row opt-breit vf-bestenliste';
+    box.dataset.vf = 'bestenliste';
+    const sum = document.createElement('summary');
+    sum.textContent = t('Bestzeiten');
+    box.appendChild(sum);
+    const alle = vfZeitenAlle();
+    let jetztBahn = '';
+    try { if (currentTrackTiles && currentTrackTiles.length >= 3) jetztBahn = trackToCode(currentTrackTiles); } catch (e) { /* ohne */ }
+    const zeilen = Object.keys(alle).filter((k) => alle[k] && alle[k].beste > 0).map((k) => {
+      const e = alle[k], tr = k.lastIndexOf('|'), auto = k.slice(tr + 1);
+      let ort = k.slice(0, tr);
+      const gegen = /\|gegen$/.test(ort);
+      if (gegen) ort = ort.slice(0, -6);
+      let strecke = ort;
+      if (ort.indexOf('frei:') === 0) strecke = ort.slice(5);
+      else if (ort.indexOf('bahn:') === 0) strecke = t('Gebaute Bahn') + (ort.slice(5) === jetztBahn ? ' (' + t('aktuell') + ')' : ' ' + ort.slice(5, 11));
+      if (gegen) strecke += ' (' + t('Gegenrichtung') + ')';
+      const a = autos.find((x) => x.v === auto);
+      return { strecke, auto: a ? a.name : auto, beste: e.beste, runden: e.runden || 0, datum: e.datum };
+    }).sort((x, y) => x.strecke.localeCompare(y.strecke) || x.beste - y.beste);
+    if (!zeilen.length) {
+      const p = document.createElement('p');
+      p.className = 'muted';
+      p.textContent = t('Noch keine Bestzeiten');
+      box.appendChild(p);
+      return box;
+    }
+    const tab = document.createElement('table');
+    tab.className = 'vf-besten-tab';
+    tab.style.cssText = 'width:100%;border-collapse:collapse;font-size:0.9em';
+    const kopf = tab.insertRow();
+    [t('Strecke'), t('Auto'), t('Bestzeit'), t('Runden'), t('Datum')].forEach((h) => {
+      const th = document.createElement('th'); th.textContent = h; th.style.textAlign = 'left'; kopf.appendChild(th);
+    });
+    const spr = (typeof lang === 'string' && lang) || 'de';
+    zeilen.forEach((z) => {
+      const r2 = tab.insertRow();
+      [z.strecke, z.auto, vfZeitAcc(z.beste, 3), String(z.runden), z.datum ? new Date(z.datum).toLocaleDateString(spr) : '–']
+        .forEach((w) => { const c = r2.insertCell(); c.textContent = w; c.style.padding = '2px 6px 2px 0'; });
+    });
+    box.appendChild(tab);
+    return box;
+  }
   function vfRundeAnLinie(jetzt) {
     if (VF.rundeAb) {
       VF.letzte = jetzt - VF.rundeAb;
+      // v1.6.60: jede volle Runde fuer die virtuellen Streckenzeiten (nicht in einer Challenge/Studie/Rennen der App).
+      if (VF.zeitLauf && !VF.extern && !VF.studie && VF.zeitLauf.runden.length < 200) VF.zeitLauf.runden.push(Math.round(VF.letzte));
       // Delta (HUD): die Zwischenzeiten der besten Runde je Punkt der Mittellinie.
       const best = VF.beste === null || VF.letzte < VF.beste;
       if (best) { VF.beste = VF.letzte; VF.besteSplits = VF.splits; }
-      vfGeistRunde(best);
+      // v1.6.60: gespeicherte Zeit (Gnen54). Die Geisterlinie wird nicht gespeichert - nach einer geladenen Bestzeit
+      // nimmt der Geist deshalb die erste Runde dieser Fahrt, bis die Bestzeit faellt.
+      if (!VF.extern && !VF.studie && vfZeitMerken(VF.letzte, VF.splits)) showHudToast(t('Neue Streckenbestzeit') + ': ' + vfZeitAcc(VF.letzte, 3));
+      vfGeistRunde(best || !(VF.geist && VF.geist.beste));
       // Rundenrennen: nach der Ziel-Lap ist Schluss.
       VF.runden = (VF.runden || 0) + 1;
       if (VF.modus === 'laps' && VF.runden >= VF.limit) vfRennenEnde();
@@ -47184,7 +47350,11 @@
   }
   function vfBild(now) {
     if (!VF.aktiv) return;
-    VF.raf = requestAnimationFrame(vfBild);
+    // v1.6.60: in AR treibt die AR-Sitzung die Bilder (vfArBild setzt VF.ar.frame); der Takt des Fensters steht dann.
+    if (VF.ar) {
+      if (!VF.ar.frame) return;
+      VF.raf = VF.ar.session.requestAnimationFrame(vfArBild);
+    } else VF.raf = requestAnimationFrame(vfBild);
     // Ladebild: bis Klaenge, Texturen und Autos da sind, steht alles (kein HUD, keine Physik, keine Uhren).
     if (VF.laedt && vfLadeSchritt(now)) {
       VF.letzt = now; VF.letztRoh = now; VF.dtBild = 0;
@@ -47642,9 +47812,101 @@
     fn();
     P[key] += performance.now() - t0;
   }
+  // v1.6.60: die Szene (Flaechen, Autos, Hubschrauber, Rauch, NPCs, Geist) mit gegebener Projektion und Blick - fuer das
+  // normale Bild (vfMalen) und fuer Augmented Reality (vfArMalen, 60e-ar.js, je Auge die Matrizen der Kamera).
+  function vfSzeneMalen(gl, pv, blick, auge) {
+    // v1.3.39: Boden, Fahrbahn und Randsteine mit Texturen (vorher Eckfarben in VF.bahn).
+    vfFlaechenMalen(gl, pv, auge);
+    gl.useProgram(VF.prog);
+    if (!VF.loc) VF.loc = { m: gl.getUniformLocation(VF.prog, 'm'), w: gl.getUniformLocation(VF.prog, 'w'), nebel: gl.getUniformLocation(VF.prog, 'nebel'), alf: gl.getUniformLocation(VF.prog, 'alf'), sonne: gl.getUniformLocation(VF.prog, 'sonne'),
+                            dunst: gl.getUniformLocation(VF.prog, 'dunst'), aug: gl.getUniformLocation(VF.prog, 'aug'),
+                            p: gl.getAttribLocation(VF.prog, 'p'), c: gl.getAttribLocation(VF.prog, 'c'), pv: new Float32Array(16), w16: new Float32Array(16) };
+    const L = VF.loc;
+    for (let i = 0; i < 16; i++) L.pv[i] = pv[i];
+    gl.uniformMatrix4fv(L.m, false, L.pv);
+    vfTzSetzen(gl, L);
+    gl.uniform1f(L.alf, 1.0);
+    const zeichne = (pu, welt) => {
+      for (let i = 0; i < 16; i++) L.w16[i] = welt[i];
+      gl.uniformMatrix4fv(L.w, false, L.w16);
+      gl.bindBuffer(gl.ARRAY_BUFFER, pu.b);
+      gl.enableVertexAttribArray(L.p); gl.enableVertexAttribArray(L.c);
+      gl.vertexAttribPointer(L.p, 3, gl.FLOAT, false, 24, 0);
+      gl.vertexAttribPointer(L.c, 3, gl.FLOAT, false, 24, 12);
+      gl.drawArrays(gl.TRIANGLES, 0, pu.n);
+    };
+    if (VF.boxStriche) {
+      zeichne(VF.boxStriche, VF_EINS);
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
+    // v1.5: Baeume (nur auf Rasen), vor den Autos. v1.6.60: in AR keine (die echte Umgebung ist zu sehen).
+    if (VF.ar) { /* ohne Baeume */ }
+    else if (VF.weh && VF.weh.prog) vfWehenMalen(gl, pv);
+    else if (VF.baeume) {
+      zeichne(VF.baeume, VF_EINS);
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
+    const geistDa = !!(VF.geist && VF.geist.aktiv && VF.geist.an);
+    // Ohne Modell (Kasten gewaehlt oder Modell noch nicht geladen) bleibt der blaue Kasten als Geist.
+    // v1.6.48 (GEMELDET: Ruckeln im Performance-Modus nach ein paar Runden - ab Runde 2 faehrt der Geist): in Performance ist der
+    // Geist die leichte blaue Kiste statt eines zweiten vollen Modells in zwei Durchgaengen.
+    const geistModell = geistDa && VF.modell && VF.tprog && VF.grafik;
+    if (geistDa && !geistModell) {
+      if (!VF.geistAuto) VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.uniform1f(L.alf, 0.45);
+      zeichne(VF.geistAuto, vfLage(VF.geist.x, VF.geist.y, VF.geist.h));
+      gl.uniform1f(L.alf, 1.0);
+      gl.disable(gl.BLEND);
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
+    if (VF.hubschrauber) {
+      // RC Stunt Copter: Rumpf mit der Fluglage (Hoehe, Schraeglage, Nicken), darueber der drehende Hauptrotor.
+      gl.uniform1f(L.alf, 1.0);
+      const welt = vfHubLage(VF.x, VF.y, VF.h, VF.z || 0, VF.roll || 0, VF.pitch || 0);
+      zeichne(VF.auto, welt);
+      if (VF.hubRotor) zeichne(VF.hubRotor, vfMal(welt, vfRy(VF.rotor || 0)));
+      if (VF.hubHeck) zeichne(VF.hubHeck, vfKette(welt, vfT(0, VF_HUB_HECK_NABE[0], VF_HUB_HECK_NABE[1]), vfRx(VF.heckRotor || 0),
+        vfT(0, -VF_HUB_HECK_NABE[0], -VF_HUB_HECK_NABE[1])));
+      if (VF.hubTore) { if (!VF.hubTorPuffer) VF.hubTorPuffer = vfHubTorPufferBauen(gl); zeichne(VF.hubTorPuffer, vfT(0, 0, 0)); }
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    } else if (VF.modell && VF.tprog) vfModellMalen(gl, pv, blick, auge);
+    else {
+      zeichne(VF.auto, vfLage(VF.x, VF.y, VF.h));
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
+    // v1.6.27: Drift-Rauch (halbdurchsichtig, schreibt keine Tiefe), mit dem Farbprogramm.
+    if (VF.rauch && VF.rauch.length) {
+      gl.useProgram(VF.prog);
+      if (!VF.rauchPuffer) VF.rauchPuffer = vfRauchPufferBauen(gl);
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+      for (const p of VF.rauch) {
+        const u = p.t / p.leben, s = p.s0 + (p.s1 - p.s0) * Math.sqrt(u);
+        gl.uniform1f(L.alf, p.a0 * (1 - u) * Math.min(1, u * 8));
+        zeichne(VF.rauchPuffer, vfKette(vfT(p.x, p.y, p.z), vfRy(p.dreh + u), vfS(s, s * 0.8, s)));
+      }
+      gl.uniform1f(L.alf, 1.0);
+      gl.depthMask(true); gl.disable(gl.BLEND);
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
+    // NPCs: ihre eigenen Modelle an ihren Stellen.
+    if (VF.npcs && VF.tprog) {
+      for (const npc of VF.npcs) {
+        if (!npc.modell) continue;
+        // Neigung 1x: "Neigung sichtbar" gilt nur fuer das eigene Auto (v1.2.32 GEMELDET: "sollte auf
+        // Stufe 1 sein"). Bremslicht, wenn das Fahrzeugmodell des NPC bremst.
+        vfModellZeichnen(gl, pv, blick, npc.modell, VF.tprog, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, true,
+          !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, auge);
+      }
+    }
+    // v1.5.84: der Geist als durchscheinende Kopie des gewaehlten Autos, nach allen undurchsichtigen Autos.
+    if (geistModell) vfGeistMalen(gl, pv, blick, auge);
+  }
   function vfMalen() {
     const gl = VF.gl, cv = VF.cv;
     if (gl.isContextLost()) return;   // webglcontextlost beendet die Fahrt (virtuellStarten)
+    // v1.6.60: Augmented Reality zeichnet in die Ebene der AR-Sitzung (60e-ar.js), nicht in die Leinwand.
+    if (VF.ar) { if (VF.ar.frame && typeof vfArMalen === 'function') vfArMalen(VF.ar.frame); return; }
     // Handy (Touch): hoechstens 1,25-fache Aufloesung - die Pixelzahl ist auf dem Handy der teuerste Teil.
     // Quality (v1.3.113) darf mehr Pixel: bis 1,5 auf Touch, bis 2 auf Desktop.
     const qPix = VF.grafik && vfWacheStufe() < 2;   // v1.5: die Bildraten-Wache nimmt ab Stufe 2 die Quality-Aufloesung
@@ -47716,91 +47978,7 @@
         gl.viewport(0, 0, w, h);
       });
     }
-    // v1.3.39: Boden, Fahrbahn und Randsteine mit Texturen (vorher Eckfarben in VF.bahn).
-    vfFlaechenMalen(gl, pv, k.auge);
-    gl.useProgram(VF.prog);
-    if (!VF.loc) VF.loc = { m: gl.getUniformLocation(VF.prog, 'm'), w: gl.getUniformLocation(VF.prog, 'w'), nebel: gl.getUniformLocation(VF.prog, 'nebel'), alf: gl.getUniformLocation(VF.prog, 'alf'), sonne: gl.getUniformLocation(VF.prog, 'sonne'),
-                            dunst: gl.getUniformLocation(VF.prog, 'dunst'), aug: gl.getUniformLocation(VF.prog, 'aug'),
-                            p: gl.getAttribLocation(VF.prog, 'p'), c: gl.getAttribLocation(VF.prog, 'c'), pv: new Float32Array(16), w16: new Float32Array(16) };
-    const L = VF.loc;
-    for (let i = 0; i < 16; i++) L.pv[i] = pv[i];
-    gl.uniformMatrix4fv(L.m, false, L.pv);
-    vfTzSetzen(gl, L);
-    gl.uniform1f(L.alf, 1.0);
-    const zeichne = (pu, welt) => {
-      for (let i = 0; i < 16; i++) L.w16[i] = welt[i];
-      gl.uniformMatrix4fv(L.w, false, L.w16);
-      gl.bindBuffer(gl.ARRAY_BUFFER, pu.b);
-      gl.enableVertexAttribArray(L.p); gl.enableVertexAttribArray(L.c);
-      gl.vertexAttribPointer(L.p, 3, gl.FLOAT, false, 24, 0);
-      gl.vertexAttribPointer(L.c, 3, gl.FLOAT, false, 24, 12);
-      gl.drawArrays(gl.TRIANGLES, 0, pu.n);
-    };
-    if (VF.boxStriche) {
-      zeichne(VF.boxStriche, VF_EINS);
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
-    }
-    // v1.5: Baeume (nur auf Rasen), vor den Autos.
-    if (VF.weh && VF.weh.prog) vfWehenMalen(gl, pv);
-    else if (VF.baeume) {
-      zeichne(VF.baeume, VF_EINS);
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
-    }
-    const geistDa = !!(VF.geist && VF.geist.aktiv && VF.geist.an);
-    // Ohne Modell (Kasten gewaehlt oder Modell noch nicht geladen) bleibt der blaue Kasten als Geist.
-    // v1.6.48 (GEMELDET: Ruckeln im Performance-Modus nach ein paar Runden - ab Runde 2 faehrt der Geist): in Performance ist der
-    // Geist die leichte blaue Kiste statt eines zweiten vollen Modells in zwei Durchgaengen.
-    const geistModell = geistDa && VF.modell && VF.tprog && VF.grafik;
-    if (geistDa && !geistModell) {
-      if (!VF.geistAuto) VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
-      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      gl.uniform1f(L.alf, 0.45);
-      zeichne(VF.geistAuto, vfLage(VF.geist.x, VF.geist.y, VF.geist.h));
-      gl.uniform1f(L.alf, 1.0);
-      gl.disable(gl.BLEND);
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
-    }
-    if (VF.hubschrauber) {
-      // RC Stunt Copter: Rumpf mit der Fluglage (Hoehe, Schraeglage, Nicken), darueber der drehende Hauptrotor.
-      gl.uniform1f(L.alf, 1.0);
-      const welt = vfHubLage(VF.x, VF.y, VF.h, VF.z || 0, VF.roll || 0, VF.pitch || 0);
-      zeichne(VF.auto, welt);
-      if (VF.hubRotor) zeichne(VF.hubRotor, vfMal(welt, vfRy(VF.rotor || 0)));
-      if (VF.hubHeck) zeichne(VF.hubHeck, vfKette(welt, vfT(0, VF_HUB_HECK_NABE[0], VF_HUB_HECK_NABE[1]), vfRx(VF.heckRotor || 0),
-        vfT(0, -VF_HUB_HECK_NABE[0], -VF_HUB_HECK_NABE[1])));
-      if (VF.hubTore) { if (!VF.hubTorPuffer) VF.hubTorPuffer = vfHubTorPufferBauen(gl); zeichne(VF.hubTorPuffer, vfT(0, 0, 0)); }
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
-    } else if (VF.modell && VF.tprog) vfModellMalen(gl, pv, blick, k.auge);
-    else {
-      zeichne(VF.auto, vfLage(VF.x, VF.y, VF.h));
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
-    }
-    // v1.6.27: Drift-Rauch (halbdurchsichtig, schreibt keine Tiefe), mit dem Farbprogramm.
-    if (VF.rauch && VF.rauch.length) {
-      gl.useProgram(VF.prog);
-      if (!VF.rauchPuffer) VF.rauchPuffer = vfRauchPufferBauen(gl);
-      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
-      for (const p of VF.rauch) {
-        const u = p.t / p.leben, s = p.s0 + (p.s1 - p.s0) * Math.sqrt(u);
-        gl.uniform1f(L.alf, p.a0 * (1 - u) * Math.min(1, u * 8));
-        zeichne(VF.rauchPuffer, vfKette(vfT(p.x, p.y, p.z), vfRy(p.dreh + u), vfS(s, s * 0.8, s)));
-      }
-      gl.uniform1f(L.alf, 1.0);
-      gl.depthMask(true); gl.disable(gl.BLEND);
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
-    }
-    // NPCs: ihre eigenen Modelle an ihren Stellen.
-    if (VF.npcs && VF.tprog) {
-      for (const npc of VF.npcs) {
-        if (!npc.modell) continue;
-        // Neigung 1x: "Neigung sichtbar" gilt nur fuer das eigene Auto (v1.2.32 GEMELDET: "sollte auf
-        // Stufe 1 sein"). Bremslicht, wenn das Fahrzeugmodell des NPC bremst.
-        vfModellZeichnen(gl, pv, blick, npc.modell, VF.tprog, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, true,
-          !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, k.auge);
-      }
-    }
-    // v1.5.84: der Geist als durchscheinende Kopie des gewaehlten Autos, nach allen undurchsichtigen Autos.
-    if (geistModell) vfGeistMalen(gl, pv, blick, k.auge);
+    vfSzeneMalen(gl, pv, blick, k.auge);
     // v1.5 (Quality): Bloom auf das fertige Bild, vor dem Regen. Scheitert er einmal, bleibt er fuer die Fahrt aus.
     if (vfBloomAn()) vfPassZeit('bloom', () => { try { vfBloomMalen(gl, w, h); } catch (e) { VF.bloomKaputt = true; VF.bloom = null; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h); log('Virtuell: Bloom aus (' + e.message + ').', 'info'); } });
     // v1.5.19: Regen zuletzt (durchsichtig, ohne Tiefe zu schreiben).
@@ -49261,6 +49439,8 @@
     }
     const frei = freiK ? vfFreiCache[freiK] : null;
     VF.frei = frei;
+    VF.freiId = freiK || '';   // v1.6.60: Schluessel der virtuellen Streckenzeiten (frei:<id>)
+    VF.zeitLauf = { runden: [] };
     VF_BOX_SEITE = frei ? frei.seite : -1;   // freie Strecken: Box auf der Seite der DXF (boxSeite)
     const tiles = frei ? frei.tiles : (opts.tiles && opts.tiles.length >= 3 ? opts.tiles : vfTilesWaehlen());
     if (!tiles) { vfStartHinweis(t('Erst eine Strecke bauen')); return false; }
@@ -49300,7 +49480,10 @@
       + '<div class="vf-touch-heli vf-touch-heli-r"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Neigen / Rollen') + '</span></div></div>'
       + vfLadebildHtml((() => { try { return vfLadeKarteDrehen(vfLadeKarteSvg(tiles, frei ? frei.pts : null), window.innerWidth, window.innerHeight); } catch (e) { return ''; } })());
     schicht.classList.add('vf-laedt');
-    document.body.appendChild(schicht);
+    // v1.6.60: in AR liegt die Schicht im Wurzelelement der AR-Ueberlagerung (dom-overlay), durchsichtig.
+    VF.ar = opts.ar || null;
+    if (VF.ar) { schicht.classList.add('vf-ar'); (VF.ar.wurzel || document.body).appendChild(schicht); }
+    else document.body.appendChild(schicht);
     // v1.6.44 aus gnen54s testversion (aba1968): die Knopfleiste blendet sich nach 4 s Ruhe aus und kommt bei Mausbewegung,
     // Tippen oder Klick zurueck (Lenken auf den Touch-Flaechen zaehlt nicht). Der Knopf zum dauerhaften Ausblenden bleibt.
     { const kn = schicht.querySelector('.vf-knoepfe');
@@ -49319,8 +49502,9 @@
     // v1.6.46 GEMELDET: "der Schatten unter den virtuellen Autos im Performance-Modus ist heller als die Strasse". Mit dem
     // Alphakanal der Leinwand (Vorgabe) senkte jede halbdurchsichtige Flaeche (Schatten, Geist, Rauch) die Deckkraft des
     // Bildes, und der helle Seitenhintergrund schien durch. alpha: false = undurchsichtige Leinwand.
-    const gl = cv.getContext('webgl', { antialias: true, alpha: false }) || cv.getContext('experimental-webgl', { alpha: false });
+    const gl = cv.getContext('webgl', { antialias: true, alpha: false, xrCompatible: !!opts.ar }) || cv.getContext('experimental-webgl', { alpha: false });
     if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
+    if (VF.ar) cv.style.visibility = 'hidden';   // v1.6.60: in AR zeichnet die Sitzung, die Leinwand bleibt unsichtbar
     // v1.5.154: OES_standard_derivatives (fwidth) fuer den bildschirm-adaptiven Schatten-PCF des Autos.
     // Ohne die Erweiterung bleibt der feste Kern; der Shader prueft das selbst ueber GL_OES_standard_derivatives.
     gl.getExtension('OES_standard_derivatives');
@@ -49474,6 +49658,8 @@
     Object.assign(VF, { x: VF.pts[start].x, y: VF.pts[start].y, h: VF.pts[start].heading, idx: start, zaehler: 0, kachel: -2,
                         abseits: false, letzt: 0, kam: null, rundeAb: 0, letzte: null, beste: null, aktiv: true,
                         startX: VF.pts[start].x, startY: VF.pts[start].y, startH: VF.pts[start].heading });
+    VF.besteGeladen = false;
+    if (!VF.extern && !VF.studie) vfZeitenLaden();   // v1.6.60 (Gnen54): Bestzeit und Zwischenzeiten dieser Strecke
     if (!VF.hubschrauber) vfNpcStarten(gl, start);
     VF.hubTorPuffer = null;
     VF.hubTore = null;
@@ -49559,7 +49745,7 @@
     vfAmbienceAnwenden();   // v1.6.46: Ambience-Schalter der virtuellen Fahrt
     if (typeof showTab === 'function') showTab('race');
     VF.takt = setInterval(vfPaket, VF_TAKT_MS);
-    VF.raf = requestAnimationFrame(vfBild);
+    VF.raf = VF.ar ? VF.ar.session.requestAnimationFrame(vfArBild) : requestAnimationFrame(vfBild);
     showHudToast(t('Virtuelle Fahrt: frei fahren, ✕ beendet'));
     return true;
   }
@@ -49893,6 +50079,20 @@
     los.textContent = t('Losfahren');
     los.onclick = () => virtuellStarten();
     z.appendChild(los);
+    // v1.6.60 (WIP): Augmented Reality (Chrome auf Android mit ARCore): Strecke und Auto bzw. Hubschrauber im Zimmer.
+    {
+      const ar = document.createElement('button');
+      ar.type = 'button';
+      ar.className = 'vf-ar-knopf';
+      ar.dataset.vf = 'ar';
+      ar.innerHTML = 'AR <span class="wip-tag">WIP</span>';
+      ar.title = t('Augmented Reality: die Strecke im Zimmer (Chrome auf Android mit ARCore)');
+      ar.onclick = (e) => { e.stopPropagation(); if (typeof vfArStarten === 'function') vfArStarten(); };
+      ar.hidden = !(typeof vfArMoeglich === 'function' && vfArMoeglich());
+      z.appendChild(ar);
+    }
+    // v1.6.60 (aus Gnen54s Fork): Bestzeiten je Strecke und Auto, zugeklappt unter den Optionen der Garage.
+    try { rechts.appendChild(vfBestenliste(vfAutoListe())); } catch (e) { /* ohne */ }
     // Anleitung zum virtuellen Fahren (aus PR 4 von gnen54): Knopf "?" neben Losfahren, oeffnet
     // hilfe/virtuelles-fahren.html als Fenster ueber der Garage.
     const hilfe = document.createElement('button');
@@ -50020,8 +50220,42 @@
       }
     } catch (e) { /* ohne Ton weiterfahren */ }
   }
+  // v1.6.60: Schluessel und Name der Strecke fuer die virtuellen Zeiten, und das Fahrgefuehl als 'vf-<handling>'.
+  function vfFahrgefuehlId() { return VF.hubschrauber || vfHubschrauber() ? 'vf-heli' : 'vf-' + vfHandling(); }
+  function vfFahrgefuehlName(fg) {
+    const id = String(fg || '').replace(/^vf-/, '');
+    if (id === 'heli') return t('RC Heli');
+    return t('Virtuell') + ' · ' + vfHandlingName(id);
+  }
+  function vfZeitSchluessel() {
+    let key = '';
+    if (VF.freiId) key = 'frei:' + VF.freiId;
+    else if (VF.tiles && VF.tiles.length >= 3 && typeof skSchluessel === 'function') key = skSchluessel(VF.tiles);
+    return key ? key + (VF.gegen ? '|gegen' : '') : '';
+  }
+  function vfZeitName() {
+    if (VF.freiId && VF_FREIE[VF.freiId]) return t(VF_FREIE[VF.freiId].name) + (VF.gegen ? ' (' + t('Gegenrichtung') + ')' : '');
+    const k = VF.tiles && typeof skSchluessel === 'function' ? skSchluessel(VF.tiles) : '';
+    return (k && typeof skStreckenName === 'function' ? skStreckenName(k) : '') + (VF.gegen ? ' (' + t('Gegenrichtung') + ')' : '');
+  }
+  function vfZeitenAbschluss() {
+    const lauf = VF.zeitLauf;
+    VF.zeitLauf = null;
+    if (!lauf || !lauf.runden.length || VF.extern || VF.studie || typeof skVirtuellFahrtEnde !== 'function') return;
+    const key = vfZeitSchluessel();
+    if (!key) return;
+    let minMs = 1000;
+    try { if (!VF.freiId) minMs = chMinRundeMs({ code: key.split('|')[0], runden: 1 }); } catch (e) { /* 1 s */ }
+    try {
+      skVirtuellFahrtEnde({ key, name: vfZeitName(), runden: lauf.runden, fahrgefuehl: vfFahrgefuehlId(),
+        auto: VF.hubschrauber ? t('RC Stunt Copter') : vfAutoName(vfAutoWahl()), minMs });
+    } catch (e) { if (typeof log === 'function') log('Virtuelle Streckenzeiten: ' + e.message, 'warn'); }
+  }
   function virtuellBeenden() {
+    if (VF.aktiv) vfZeitenAbschluss();
+    if (VF.ar) { const ar = VF.ar; VF.ar = null; try { if (typeof vfArAufraeumen === 'function') vfArAufraeumen(ar); } catch (e) { /* egal */ } }
     VF.frei = undefined;
+    VF.freiId = '';
     VF_BOX_SEITE = -1;   // zurueck auf die Editor-Boxenseite (rechts)
     VF.hoehe = null;
     rennPauseBeenden();
@@ -50116,6 +50350,231 @@
     VF.studie = false; VF.extern = null;
   }
   window.addEventListener('keydown', (e) => { if (VF.aktiv && e.key === 'Escape') { e.stopImmediatePropagation(); virtuellBeenden(); } }, true);
+  // ==================================================================================================
+  // AUGMENTED REALITY (v1.6.60, WIP, Prototyp)
+  // ==================================================================================================
+  // BESTELLT: "For the chrome version, build an AR prototype that can be launched through the virtual garage. The aim
+  // is for the virtual car to drive in my home and for the helicopter to fly in my home."
+  //
+  // WebXR "immersive-ar" (Chrome auf Android mit ARCore, ueber https - die GitHub-Pages-Fassung). In der App (Android-
+  // WebView) gibt es WebXR nicht; der Knopf "AR" in der virtuellen Garage erscheint nur, wo der Browser es anbietet.
+  //
+  // Ablauf:
+  //   1. Tipp auf "AR" (Nutzergeste): die AR-Sitzung wird SOFORT angefragt (hit-test, local; dom-overlay fuer HUD und
+  //      Touch-Steuerung), dann startet die normale virtuelle Fahrt mit opts.ar (virtuellStarten): ihre Schicht liegt im
+  //      Wurzelelement der Ueberlagerung, durchsichtig, die Leinwand unsichtbar; gezeichnet wird in die Ebene der Sitzung.
+  //   2. Bodensuche: ein Kreis zeigt, wo der Strahl aus der Bildmitte den Boden trifft (hit-test). Ein Tipp setzt die
+  //      Strecke dorthin, gedreht so, dass sie vom Betrachter wegfuehrt. "Neu platzieren" setzt sie wieder zurueck.
+  //   3. Danach laeuft alles wie sonst (Fahren, Fliegen, Tore, Runden, HUD). Je Bild der Sitzung: Physik (vfBild) und
+  //      je Auge die Szene (vfSzeneMalen) mit der Projektion der Kamera und Welt = Anker * Drehung * Massstab.
+  //
+  // MASSSTAB: Die Welt der virtuellen Fahrt ist die echte Carrera-Bahn (TRACK_UNITS_PER_CM Einheiten je cm), in AR also
+  // 1:1 - die Strecke liegt in Originalgroesse auf dem Boden, Auto und Hubschrauber passen dazu (Hubschrauber ~5 cm,
+  // Flughoehe bis ~2,8 m). VF_AR_MASSSTAB vergroessert bei Bedarf (z. B. 2 = doppelt so gross).
+  const VF_AR_MASSSTAB = 1;
+  let vfArUnterstuetzt = null;   // null = noch nicht geprueft
+  function vfArMoeglich() { return vfArUnterstuetzt === true; }
+  function vfArPruefen() {
+    if (vfArUnterstuetzt !== null) return;
+    vfArUnterstuetzt = false;
+    try {
+      if (navigator.xr && navigator.xr.isSessionSupported) {
+        navigator.xr.isSessionSupported('immersive-ar').then((ja) => {
+          vfArUnterstuetzt = !!ja;
+          const k = document.querySelector('[data-vf="ar"]');
+          if (k) k.hidden = !ja;
+        }).catch(() => { vfArUnterstuetzt = false; });
+      }
+    } catch (e) { vfArUnterstuetzt = false; }
+  }
+  setTimeout(vfArPruefen, 0);
+
+  function vfArStarten() {
+    if (VF.aktiv) return;
+    if (!(navigator.xr && navigator.xr.requestSession)) {
+      showHudToast(t('AR geht hier nicht: sie braucht Chrome auf einem Android-Handy mit ARCore (nicht in der App, nicht am PC).'));
+      return;
+    }
+    const wurzel = document.createElement('div');
+    wurzel.className = 'vf-ar-wurzel';
+    document.body.appendChild(wurzel);
+    const ar = { session: null, wurzel, frame: null, ref: null, hitSrc: null, treffer: null, platz: null, kamera: null, layerOk: false };
+    // Sofort anfragen (Nutzergeste), alles andere danach.
+    navigator.xr.requestSession('immersive-ar', {
+      requiredFeatures: ['hit-test', 'local'],
+      optionalFeatures: ['dom-overlay'],
+      domOverlay: { root: wurzel },
+    }).then((session) => {
+      ar.session = session;
+      session.addEventListener('end', () => {
+        ar.beendet = true;
+        if (VF.aktiv && VF.ar === ar) virtuellBeenden();
+        else vfArAufraeumen(ar);
+      });
+      // Tipps auf Knoepfe der Ueberlagerung sind keine AR-Auswahl (Steuerung, Knopfleiste).
+      wurzel.addEventListener('beforexrselect', (e) => { if (e.target && e.target.closest && e.target.closest('button, .vf-touch, .vf-knoepfe, input, select')) e.preventDefault(); });
+      session.addEventListener('select', () => vfArPlatzieren(ar));
+      if (!virtuellStarten({ ar })) { session.end().catch(() => {}); return; }
+      vfArEbene(ar);
+      session.requestReferenceSpace('local').then((ref) => {
+        ar.ref = ref;
+        return session.requestReferenceSpace('viewer');
+      }).then((viewer) => session.requestHitTestSource({ space: viewer })).then((src) => { ar.hitSrc = src; })
+        .catch((e) => { log('AR: Bodensuche nicht moeglich (' + e.message + ')', 'warn'); });
+      vfArHinweis(ar);
+    }).catch((e) => {
+      wurzel.remove();
+      showHudToast(t('AR konnte nicht starten') + ': ' + (e && e.message ? e.message : e));
+      log('AR: Sitzung nicht gestartet (' + (e && e.message) + ')', 'warn');
+    });
+  }
+  // Die AR-Ebene braucht den Grafikkontext der virtuellen Fahrt; bei einer freien Strecke entsteht er erst nach dem Laden.
+  function vfArEbene(ar) {
+    if (ar.beendet || ar.layerOk) return;
+    if (!VF.gl || VF.ar !== ar) { setTimeout(() => vfArEbene(ar), 120); return; }
+    const gl = VF.gl;
+    const fertig = () => {
+      if (ar.beendet) return;
+      ar.session.updateRenderState({ baseLayer: new XRWebGLLayer(ar.session, gl) });
+      ar.layerOk = true;
+      VF.raf = ar.session.requestAnimationFrame(vfArBild);
+    };
+    (gl.makeXRCompatible ? gl.makeXRCompatible() : Promise.resolve()).then(fertig, (e) => {
+      showHudToast(t('AR konnte nicht starten') + ': ' + e.message);
+      ar.session.end().catch(() => {});
+    });
+  }
+  // Ein Bild der AR-Sitzung: Physik und Anzeige wie sonst (vfBild), gezeichnet in vfArMalen.
+  function vfArBild(zeit, frame) {
+    const ar = VF.ar;
+    if (!ar || !VF.aktiv) return;
+    // Doppelte Anmeldungen (Start der Fahrt und Ebene fertig) im selben Bild: nur eine rechnet, die andere endet hier.
+    if (ar.letzteZeit === zeit) return;
+    ar.letzteZeit = zeit;
+    ar.frame = frame;
+    try { vfBild(zeit); } finally { ar.frame = null; }
+    // Waehrend des Ladebilds zeichnet vfBild nichts: dann wenigstens die Bodensuche.
+    if (VF.laedt && ar.layerOk) { ar.frame = frame; try { vfArMalen(frame); } finally { ar.frame = null; } }
+  }
+
+  // Strecke an die Trefferstelle setzen, gedreht vom Betrachter weg.
+  function vfArPlatzieren(ar) {
+    if (!ar.treffer || ar.platz) return;
+    const m = ar.treffer;
+    let yaw = 0;
+    if (ar.kamera) { const f = [-ar.kamera[8], -ar.kamera[10]]; yaw = Math.atan2(-f[0], -f[1]); }
+    // Mitte der Strecke (Mittellinie) in den Anker.
+    let cx = 0, cy = 0;
+    if (VF.pts && VF.pts.length) { VF.pts.forEach((p) => { cx += p.x; cy += p.y; }); cx /= VF.pts.length; cy /= VF.pts.length; }
+    ar.platz = { x: m[12], y: m[13], z: m[14], yaw, cx, cy, s: VF_AR_MASSSTAB / (TRACK_UNITS_PER_CM * 100) };
+    vfArHinweis(ar);
+  }
+  // Welt der virtuellen Fahrt -> Raum der AR-Sitzung (Meter): T(Anker) * Ry(yaw) * S(s) * T(-Mitte).
+  function vfArWelt(p) {
+    return vfKette(vfT(p.x, p.y, p.z), vfRy(p.yaw), vfS(p.s, p.s, p.s), vfT(-p.cx, 0, -p.cy));
+  }
+  // Ein Punkt der AR-Sitzung zurueck in die Welt der Fahrt (fuer Licht und Ton: das Auge).
+  function vfArZurueck(p, q) {
+    const dx = q[0] - p.x, dy = q[1] - p.y, dz = q[2] - p.z;
+    const c = Math.cos(-p.yaw), s = Math.sin(-p.yaw);
+    const rx = c * dx + s * dz, rz = -s * dx + c * dz;
+    return [rx / p.s + p.cx, dy / p.s, rz / p.s + p.cy];
+  }
+
+  // Zielkreis fuer die Bodensuche (Ring in der x-z-Ebene, Radius 1, 6 Zahlen je Ecke wie die Farbmodelle).
+  function vfArRingBauen(gl) {
+    const a = [], n = 40, r0 = 0.8, r1 = 1;
+    for (let i = 0; i < n; i++) {
+      const w0 = i / n * Math.PI * 2, w1 = (i + 1) / n * Math.PI * 2;
+      const p = (r, w) => [Math.cos(w) * r, 0.002, Math.sin(w) * r];
+      const q = [p(r0, w0), p(r1, w0), p(r1, w1), p(r0, w0), p(r1, w1), p(r0, w1)];
+      q.forEach((v) => a.push(v[0], v[1], v[2], 0.4, 1.6, 1.8));
+    }
+    return vfPuffer(gl, a);
+  }
+  function vfArFarbeMalen(gl, pv, pu, welt) {
+    gl.useProgram(VF.prog);
+    if (!VF.loc) VF.loc = { m: gl.getUniformLocation(VF.prog, 'm'), w: gl.getUniformLocation(VF.prog, 'w'), nebel: gl.getUniformLocation(VF.prog, 'nebel'), alf: gl.getUniformLocation(VF.prog, 'alf'), sonne: gl.getUniformLocation(VF.prog, 'sonne'),
+                            dunst: gl.getUniformLocation(VF.prog, 'dunst'), aug: gl.getUniformLocation(VF.prog, 'aug'),
+                            p: gl.getAttribLocation(VF.prog, 'p'), c: gl.getAttribLocation(VF.prog, 'c'), pv: new Float32Array(16), w16: new Float32Array(16) };
+    const L = VF.loc;
+    for (let i = 0; i < 16; i++) { L.pv[i] = pv[i]; L.w16[i] = welt[i]; }
+    gl.uniformMatrix4fv(L.m, false, L.pv);
+    gl.uniformMatrix4fv(L.w, false, L.w16);
+    vfTzSetzen(gl, L);
+    gl.uniform1f(L.alf, 1.0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, pu.b);
+    gl.enableVertexAttribArray(L.p); gl.enableVertexAttribArray(L.c);
+    gl.vertexAttribPointer(L.p, 3, gl.FLOAT, false, 24, 0);
+    gl.vertexAttribPointer(L.c, 3, gl.FLOAT, false, 24, 12);
+    gl.drawArrays(gl.TRIANGLES, 0, pu.n);
+    gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+  }
+
+  // Ein Bild in die AR-Ebene: Kamerabild kommt vom System (durchsichtig loeschen), darueber je Auge die Szene.
+  function vfArMalen(frame) {
+    const ar = VF.ar, gl = VF.gl;
+    if (!ar || !ar.ref || !ar.layerOk || !gl) return;
+    const pose = frame.getViewerPose(ar.ref);
+    if (!pose) return;
+    ar.kamera = pose.transform.matrix;
+    if (!ar.platz && ar.hitSrc) {
+      const h = frame.getHitTestResults(ar.hitSrc);
+      const p = h.length ? h[0].getPose(ar.ref) : null;
+      ar.treffer = p ? p.transform.matrix : null;
+    }
+    const layer = ar.session.renderState.baseLayer;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, layer.framebuffer);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.enable(gl.DEPTH_TEST);
+    for (const view of pose.views) {
+      const vp = layer.getViewport(view);
+      gl.viewport(vp.x, vp.y, vp.width, vp.height);
+      const proj = Array.from(view.projectionMatrix), sicht = Array.from(view.transform.inverse.matrix);
+      if (!ar.platz) {
+        if (ar.treffer) {
+          if (!ar.ring) ar.ring = vfArRingBauen(gl);
+          // Ring mit 15 cm Radius flach auf dem Treffer.
+          const m = ar.treffer;
+          vfArFarbeMalen(gl, vfMal(proj, sicht), ar.ring, vfKette(vfT(m[12], m[13], m[14]), vfS(0.15, 0.15, 0.15)));
+        }
+        continue;
+      }
+      const welt = vfArWelt(ar.platz);
+      const blick = vfMal(sicht, welt);
+      const pv = vfMal(proj, blick);
+      const pos = view.transform.position;
+      const auge = vfArZurueck(ar.platz, [pos.x, pos.y, pos.z]);
+      VF.augeJetzt = auge;
+      vfSzeneMalen(gl, pv, blick, auge);
+    }
+  }
+
+  // Hinweis und Knopf "Neu platzieren" in der Ueberlagerung.
+  function vfArHinweis(ar) {
+    const sch = VF.schicht;
+    if (!sch) return;
+    let h = sch.querySelector('.vf-ar-hinweis');
+    if (!h) { h = document.createElement('div'); h.className = 'vf-ar-hinweis'; sch.appendChild(h); }
+    h.textContent = t('Handy langsam über den Boden bewegen, bis der Kreis erscheint, dann tippen: dort steht die Strecke.');
+    h.hidden = !!ar.platz;
+    let k = sch.querySelector('.vf-ar-neu');
+    if (!k) {
+      k = document.createElement('button');
+      k.type = 'button'; k.className = 'vf-ar-neu';
+      k.textContent = t('Neu platzieren');
+      k.onclick = (e) => { e.stopPropagation(); ar.platz = null; vfArHinweis(ar); };
+      sch.appendChild(k);
+    }
+    k.hidden = !ar.platz;
+  }
+  function vfArAufraeumen(ar) {
+    if (!ar) return;
+    try { if (ar.hitSrc) ar.hitSrc.cancel(); } catch (e) { /* egal */ }
+    if (ar.session && !ar.beendet) { ar.beendet = true; ar.session.end().catch(() => {}); }
+    if (ar.wurzel) ar.wurzel.remove();
+  }
   // ============================== SIMULATOR-LINIE (v1.0.14, WIP) ==============================
   //
   // BESTELLT: "SIMULATOR-Linie: begrenzte Suche ueber glatte Linien und Tempoplaene; jeder
@@ -51191,6 +51650,7 @@
           fruehstart[w].frueh = true;
           fruehstartAnwenden(w);
           showHudToast(w >= 2 ? t('Frühstart Spieler {n}!').replace('{n}', w) : t('Frühstart!'));
+          if (typeof ampelFruehstartMelden === 'function') ampelFruehstartMelden();   // v1.6.60: Startampel blinkt gelb
         }
       });
     }, 100);
@@ -52521,6 +52981,7 @@
     if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
     syncRaceGridOrder();
     const w = raceGridWeiter; raceGridWeiter = null;
+    if (typeof ampelStartKnopf === 'function') ampelStartKnopf();   // v1.6.60: echte Startampel auf Gelb
     // v1.6.46 (gnen54): "Gentlemen, start your engines" sofort, der Countdown erst, wenn der Satz gesprochen ist
     // (ab Beginn der Ansage 2,4 s, spaetestens 4,5 s nach dem Knopf - eine haengende Stimme blockiert den Start nicht).
     if (!w) return;
@@ -52538,6 +52999,7 @@
   function raceGridAbbrechen() {
     const gs = $('race-gridscreen');
     if (gs) gs.hidden = true;
+    if (typeof ampelStartAbgebrochen === 'function') ampelStartAbgebrochen();   // v1.6.60: Startampel Rot
     if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
     // v1.1.23 GEMELDET: "Genauso, wenn ich abbreche, nachdem ich auf automatische Aufstellung gedrueckt
     // habe - es klappt einfach gar nicht." Abbrechen haelt jetzt ALLE fahrenden NPCs und das Safety Car an,
@@ -52920,6 +53382,7 @@
       finishSeitenZaehlerZuruecksetzen();
     }
     raceState = 'countdown';
+    if (typeof ampelCountdown === 'function') ampelCountdown();   // v1.6.60: Startampel Gelb, falls noch nicht
     // Fruehstart-Erkennung ab HIER, auch waehrend eines Rennintros: raceState ist schon
     // 'countdown', und wer waehrend der Ansage losfaehrt, faehrt genauso zu frueh wie
     // waehrend der Ampel (PR #8 startete die Erkennung erst mit der Ampel, man konnte das
@@ -52956,6 +53419,7 @@
         if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
         if (stufe > 0) {
           setRaceLights(stufe);
+          if (typeof startampelLicht === 'function') startampelLicht(stufe);   // v1.6.60: je Ton eine gruene Spalte mehr
           ampelTon(440 + (stufe - 1) * 60, 0.18, 'square', 0.18);
           schritt(k + 1);
           return;
@@ -53014,6 +53478,7 @@
     // and no laps count until the field crosses the line.
     raceFormationLap = raceFlying;
     raceGreenAt = raceFlying ? null : rennZeitJetzt();
+    if (typeof ampelLos === 'function') ampelLos();   // v1.6.60: Startampel aus
     zevGruen();
     fruehstartGruen();
     rammReset();
@@ -53168,6 +53633,7 @@
     // setFlag('green') - das zeigt "GRUEN" und schickt das Safety Car heim; es steht hier
     // ohnehin gleich. Ein laufender Neustart-Countdown prueft flagState und verfaellt.
     gelbBeenden();
+    if (typeof ampelRennende === 'function') ampelRennende();   // v1.6.60: Startampel wieder Rot
     // Das Safety Car steht beim Rennende - es hat in keinem Ergebnis etwas zu suchen.
     garage.forEach((c) => {
       if ((c.role === 'safetycar' || c.role === 'reinig') && c.ghost && c.ghost.running) {
@@ -60479,7 +60945,7 @@
       chUploadInfo = { ok: true };
       log((strecke ? 'Strecke' : 'Challenge') + ': Zeit hochgeladen (' + (strecke ? eintrag.strecke : eintrag.challenge) + ').', 'info');
       chAusgangZeichnen();
-      if (strecke) { if (typeof skNachUpload === 'function') skNachUpload(eintrag.strecke); }
+      if (strecke) { if (typeof skNachUpload === 'function') skNachUpload(eintrag.strecke + (eintrag.fahrt === 'virtuell' ? '|v' : '')); }
       else setTimeout(() => chAuffrischen(true), 2500);
       return true;
     }, (e) => {
@@ -61671,6 +62137,7 @@
     try { chKachelnZeichnen(); } catch (e) { /* noch nicht da */ }
     try { if (typeof chDauerKachelnZeichnen === 'function') chDauerKachelnZeichnen(); } catch (e) { /* egal */ }
     try { if (typeof chVorschauZeichnen === 'function') chVorschauZeichnen(); } catch (e) { /* egal */ }
+    try { if (typeof skListeHolen === 'function') skListeHolen(false).then(() => { if (typeof chVorschauZeichnen === 'function') chVorschauZeichnen(); }); } catch (e) { /* egal */ }
     if (chSeiteOffen()) { chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset)); }
     if (chCommunitySeiteOffen()) chZeichneListe();
   }
@@ -61865,15 +62332,22 @@
   }
 
   // ---- Fahrgefuehl ----
-  function skFgGueltig(fg) { return SK_FAHRGEFUEHLE.indexOf(fg) >= 0 ? fg : 'unbekannt'; }
+  // v1.6.60: virtuelle Fahrgefuehle 'vf-<handling>' (vf-gt3, vf-schnell, vf-librecorsa, vf-drift, vf-heli).
+  function skFgGueltig(fg) { return SK_FAHRGEFUEHLE.indexOf(fg) >= 0 || /^vf-[a-z0-9]{2,16}$/.test(String(fg)) ? fg : 'unbekannt'; }
+  function skVirtuellAn() { return typeof chVirtuell === 'function' && chVirtuell(); }
+  // Virtuelle Listen tragen in der App '|v' hinter dem Schluessel (wie die Challenges); der Code-Teil davor.
+  function skIstV(key) { return /\|v$/.test(String(key || '')); }
+  function skCodeTeil(key) { return String(key || '').split('|')[0]; }
   // Das aktuelle Fahrgefuehl des Spielers. presetRead() liest alle Regler - nur nach dem Rennen
   // und beim Zeichnen einer Ansicht rufen, nie im Fahrtakt.
   function skFgAktuell() {
+    if (skVirtuellAn() && typeof vfFahrgefuehlId === 'function') return vfFahrgefuehlId();
     let k = null;
     try { k = typeof presetAktiv === 'function' ? presetAktiv() : null; } catch (e) { k = null; }
     return k && SK_FAHRGEFUEHLE.indexOf(k) >= 0 ? k : 'eigen';
   }
   function skFgName(fg) {
+    if (/^vf-/.test(String(fg))) return typeof vfFahrgefuehlName === 'function' ? vfFahrgefuehlName(fg) : fg;
     if (fg === 'eigen') return t('Eigene Abstimmung');
     if (fg === 'unbekannt') return t('unbekannt');
     return typeof window.__presetLabel === 'function' ? t(window.__presetLabel(fg)) : fg;
@@ -62008,7 +62482,23 @@
   }
   // Eigene Zeiten dieser Strecke: die neue Ablage plus die Time-Attack-Bestzeiten
   // (omegasim-bestzeiten), deren gespeicherter Code auf denselben Schluessel fuehrt.
+  // v1.6.60: virtuelle Zeiten liegen getrennt (SK_V_STORE), Schluessel ohne '|v'.
+  const SK_V_STORE = 'omegasim-vf-strecken-zeiten';
+  function skVLokalAlle() { const d = chLesen(SK_V_STORE, {}); return d && typeof d === 'object' && !Array.isArray(d) ? d : {}; }
+  function skVLokalSpeichern(key, e) {
+    const alle = skVLokalAlle();
+    alle[key] = (Array.isArray(alle[key]) ? alle[key] : []).concat([e]).sort((a, b) => a.zeit - b.zeit).slice(0, 30);
+    const keys = Object.keys(alle);
+    if (keys.length > 100) keys.sort((a, b) => Math.max(0, ...alle[b].map((x) => x.datum || 0)) - Math.max(0, ...alle[a].map((x) => x.datum || 0)))
+      .slice(100).forEach((k) => { delete alle[k]; });
+    chSchreiben(SK_V_STORE, alle);
+  }
   function skLokal(key) {
+    if (skIstV(key)) {
+      return (skVLokalAlle()[key.slice(0, -2)] || []).map((z) => ({ zeit_ms: +z.zeit, fahrer: z.fahrer || '', auto: z.auto || '',
+        geraet: z.geraet || chGeraet(), runden_ms: Array.isArray(z.runden) ? z.runden.map(Number) : [], quelle: 'lokal',
+        fahrgefuehl: skFgGueltig(z.fahrgefuehl) }));
+    }
     const eig = (skLokalAlle()[key] || []).map((z) => ({ zeit_ms: +z.zeit, fahrer: z.fahrer || '', auto: z.auto || '',
       geraet: z.geraet || chGeraet(), runden_ms: Array.isArray(z.runden) ? z.runden.map(Number) : [], quelle: 'lokal',
       fahrgefuehl: skFgGueltig(z.fahrgefuehl) }));
@@ -62049,6 +62539,33 @@
     chAusgangSenden();
   }
   // Aus chEintragSenden, wenn das Sheet eine Streckenzeit bestaetigt hat.
+  // ---- v1.6.60: VIRTUELLE ZEITEN EINER FAHRT -------------------------------------------------------
+  // Aus virtuellBeenden (60d-virtuell.js): alle vollen Runden der virtuellen Fahrt (nicht Challenge/Studie, die haben
+  // eigene Listen). Lokal immer; online nur mit "Zeiten online synchronisieren" (wie echte Streckenzeiten) und nur, wenn
+  // das Apps Script virtuelle Zeiten kennt (chEintragSenden prueft das an fahrt 'virtuell').
+  // lauf: { key (ohne '|v'), name, runden: [ms], fahrgefuehl, auto, minMs }
+  function skVirtuellFahrtEnde(lauf) {
+    if (!lauf || !Array.isArray(lauf.runden)) return null;
+    const runden = lauf.runden.map((ms) => (ms >= (lauf.minMs || 1000) ? Math.round(ms) : 0));
+    const gueltig = runden.filter((x) => x > 0);
+    if (!gueltig.length) return null;
+    const o = chOnline();
+    const teilen = skSyncAn() && !!o.url;
+    const e = { zeit: Math.min(...gueltig), runden, datum: Date.now(), fahrer: o.fahrer || '', auto: String(lauf.auto || '').slice(0, 40),
+      geraet: chGeraet(), geteilt: teilen, fahrgefuehl: skFgGueltig(lauf.fahrgefuehl), name: lauf.name || '' };
+    skVLokalSpeichern(lauf.key, e);
+    if (teilen) {
+      const eintrag = { art: 'strecke-zeit', fahrt: 'virtuell', strecke: lauf.key, zeit_ms: e.zeit, runden_ms: runden, fahrer: e.fahrer,
+        auto: e.auto, geraet: e.geraet, fahrgefuehl: e.fahrgefuehl, streckenname: String(lauf.name || '').slice(0, 32),
+        version: ($('app-version') || {}).textContent || '' };
+      eintrag.nr = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+      eintrag.url = o.url;
+      chAusgangSchreiben(chAusgangLesen().concat([eintrag]));
+      chAusgangZeichnen();
+      if (chNetzErlaubt()) chAusgangSenden(); else chSpaeter();
+    }
+    return { key: lauf.key, eintrag: e, gesendet: teilen };
+  }
   function skNachUpload(key) {
     const z = skOnline.zeiten[key];
     if (z) z.at = 0;
@@ -62094,8 +62611,18 @@
   function skListeHolen(frisch) {
     skCacheLaden();
     if (!skUrl() || skOnline.listeLaedt || !chNetzErlaubt()) return Promise.resolve(skOnline.liste);
-    if (!frisch && skOnline.liste && Date.now() - skOnline.listeAt < SK_LISTE_MS) return Promise.resolve(skOnline.liste);
+    if (skVirtuellAn() ? (!frisch && skOnline.listeV && Date.now() - (skOnline.listeVAt || 0) < SK_LISTE_MS)
+      : (!frisch && skOnline.liste && Date.now() - skOnline.listeAt < SK_LISTE_MS)) return Promise.resolve(skVirtuellAn() ? skOnline.listeV : skOnline.liste);
     skOnline.listeLaedt = true;
+    // v1.6.60: im Modus Virtuell die virtuellen Strecken (?vstrecken=1); deren Schluessel bekommen '|v'.
+    const virt = skVirtuellAn();
+    if (virt) {
+      return skGet('vstrecken=1&geraet=' + encodeURIComponent(chGeraet())).then((j) => {
+        if (!j || !j.ok || !Array.isArray(j.strecken)) throw new Error((j && j.fehler) || 'keine Antwort');
+        skOnline.listeV = j.strecken.map((s) => Object.assign({}, s, { strecke: s.strecke + '|v' }));
+      }).catch(() => { skOnline.listeVFehler = true; })
+        .then(() => { skOnline.listeLaedt = false; skOnline.listeVAt = Date.now(); return skOnline.listeV; });
+    }
     return skGet('strecken=1&geraet=' + encodeURIComponent(chGeraet())).then((j) => {
       if (!j || !j.ok || !Array.isArray(j.strecken)) throw new Error((j && j.fehler) || 'keine Antwort');
       skOnline.liste = j.strecken; skOnline.listeFehler = false;
@@ -62110,7 +62637,7 @@
     if (!skUrl() || z.laedt || !chNetzErlaubt()) return Promise.resolve(z);
     if (!frisch && z.zeiten && Date.now() - z.at < SK_ZEITEN_MS) return Promise.resolve(z);
     z.laedt = true;
-    return skGet('strecke=' + encodeURIComponent(key)).then((j) => {
+    return skGet(skIstV(key) ? 'vstrecke=' + encodeURIComponent(key.slice(0, -2)) : 'strecke=' + encodeURIComponent(key)).then((j) => {
       if (!j || !j.ok || !Array.isArray(j.zeiten)) throw new Error((j && j.fehler) || 'keine Antwort');
       z.zeiten = j.zeiten; z.fehler = false; z.stand = Date.now(); z.anzahl = j.anzahl || j.zeiten.length;
       skCacheSchreiben();
@@ -62391,7 +62918,7 @@
   function skDetailZeichnen() {
     if (!skDetail) { showSubpage('ch-community'); return; }
     const key = skDetail.strecke;
-    const p = codeToTrack(key);
+    const p = codeToTrack(skCodeTeil(key));   // v1.6.60: virtuell '|v', freie Strecken ohne Code (frei:...)
     if ($('sk-titel')) $('sk-titel').textContent = skDetail.name || key;
     const karte = $('sk-karte');
     if (karte) {
@@ -62401,7 +62928,7 @@
       } catch (e) { /* ohne Bild */ }
     }
     if ($('sk-fakten')) {
-      $('sk-fakten').textContent = (skDetail.name ? skDetail.name + ' · ' : '') + t('Code') + ' ' + key + (p ? ' · ' + t('Länge') + ' ' + chZahl(trackLaengeM(p.tiles), 2) + ' m · '
+      $('sk-fakten').textContent = (skDetail.name ? skDetail.name + ' · ' : '') + (p ? t('Code') + ' ' + skCodeTeil(key) : '') + (p ? ' · ' + t('Länge') + ' ' + chZahl(trackLaengeM(p.tiles), 2) + ' m · '
         + p.tiles.length + ' ' + t('Teile') : '') + ' · ' + t('{n} Fahrer').replace('{n}', +skDetail.fahrer || 0);
     }
     skZeichnen($('sk-detail-inhalt'), key);
@@ -62413,7 +62940,7 @@
   function skInEditorLaden() {
     if (!skDetail) return false;
     if (kRennenLaeuft()) { showHudToast(t('Erst das laufende Rennen beenden')); return false; }
-    const p = codeToTrack(skDetail.strecke);
+    const p = codeToTrack(skCodeTeil(skDetail.strecke));
     if (!p) return false;
     currentTrackTiles = p.tiles;
     trackRotationDeg = 0;
@@ -62479,10 +63006,27 @@
     return 0;
   }
   // data: communitySicht(), strecken: Eintraege wie aus ?strecken=1 (Vorgabe: aktuelle Liste + eigene).
+  // v1.6.60: virtuelle Strecken fuer die Community-Liste: online (skOnline.listeV) plus die eigenen lokalen virtuellen
+  // Zeiten, die online noch fehlen (gleicher Aufbau wie ?strecken=1).
+  function skVirtuelleStrecken() {
+    const on = (skOnline.listeV || []).slice();
+    const lokal = skVLokalAlle();
+    Object.keys(lokal).forEach((k) => {
+      if (on.some((s) => s.strecke === k + '|v')) return;
+      const l = lokal[k] || [];
+      if (!l.length) return;
+      const je = {};
+      l.forEach((z) => { const f = je[z.fahrgefuehl] || (je[z.fahrgefuehl] = { fahrer: 1, beste_ms: 0, beste_fahrer: z.fahrer || '' }); if (!f.beste_ms || z.zeit < f.beste_ms) f.beste_ms = z.zeit; });
+      on.push({ strecke: k + '|v', name: (l.find((z) => z.name) || {}).name || k, fahrer: 1, beste_ms: Math.min(...l.map((z) => z.zeit)),
+        beste_fahrer: l[0].fahrer || '', laeufe: l.length, eigene: true, je });
+    });
+    return on;
+  }
   function commEintraege(data, strecken) {
     const d = data || communitySicht();
-    // v1.6.56: Strecken mit Zeiten sind echte Fahrten; im Modus Virtuell nur die Community Challenges (virtuelle Zeiten).
-    const liste = (typeof chVirtuell === 'function' && chVirtuell()) ? [] : (strecken || skCommunityGefiltert(skOnline.liste, skEigeneStrecken()));
+    // v1.6.56/1.6.60: im Modus Virtuell die virtuellen Strecken (online ?vstrecken=1 plus eigene lokale), sonst die echten.
+    const liste = (typeof chVirtuell === 'function' && chVirtuell()) ? (strecken || skVirtuelleStrecken())
+      : (strecken || skCommunityGefiltert(skOnline.liste, skEigeneStrecken()));
     const raus = [];
     const schluessel = new Set();
     for (const tr of d.tracks || []) {
@@ -62590,7 +63134,7 @@
         info: best ? t('Bestzeit') + ' ' + chZeit(best) : t('Noch keine Zeit'), label: communityPresetName(tr.preset),
         spieler: e.spieler, laeufe: e.laeufe, oeffnen: () => challengeSeiteZeigen(tr.id) };
     }
-    const s = e.s, p = codeToTrack(s.strecke), fg = chVorschauFahrgefuehl(s), bz = skListenBestzeit(s, fg);
+    const s = e.s, p = codeToTrack(skCodeTeil(s.strecke)), fg = chVorschauFahrgefuehl(s), bz = skListenBestzeit(s, fg);
     return { art: 'strecke', tiles: p ? p.tiles : null, code: s.strecke, name: s.name || s.strecke,
       info: bz ? t('Bestzeit') + ' ' + chZeit(bz.ms) : t('Noch keine Zeit'), label: skFgName(fg),
       spieler: e.spieler, laeufe: e.laeufe, oeffnen: () => skDetailOeffnen(s) };
@@ -65155,6 +65699,151 @@
       if (e.message !== autoGelbFehlerZuletzt) { autoGelbFehlerZuletzt = e.message; log('Automatische Gelbe Flagge: ' + e.message, 'warn'); }
     }
   }, AG_TAKT_MS);
+  // ============================== STARTAMPEL (Raspberry Pi / Pico, Bluetooth LE) ==============================
+  //
+  // v1.6.60 uebernommen aus Gnen54s Fork (Zweig startampel, src/74-startampel.js, Stand 23.11.2026). BESTELLT (dort):
+  // eine echte Startampel am Tisch, angesteuert von OmegaSim per Bluetooth. Drei LED-Reihen: oben Rot, in der Mitte
+  // Gelb, unten Gruen mit fuenf Spalten.
+  //
+  //   gesperrt (kein Training/Rennen freigegeben)   Rot
+  //   Start im Fenster "Autos in Position"          Rot aus, Gelb an (OmegaSim sagt "Gentlemen, start your engines")
+  //   Starttoene des Countdowns                     Gruen, Spalte fuer Spalte dazu
+  //   Gruen / Los                                   alles aus
+  //   Fruehstart im Countdown                       Gruen aus, Gelb blinkt (bis Gruen)
+  //   Gelbe Flagge im Rennen                        Gelb, bis sie aufgehoben ist
+  //   Rennende oder Abbruch                         wieder Rot
+  //
+  // PROTOKOLL: Textzeilen mit "\n" auf eine schreibbare Characteristic eines EIGENEN Dienstes (nicht Nordic UART wie die
+  // Autos, sonst stuende die Ampel im Auto-Verbinden-Dialog). Gegenstueck: das Ampel-Programm auf Raspberry Pi bzw.
+  // Pico (separat, nicht in diesem Repository; Beschreibung im Wiki, Seite "Startampel").
+  //
+  //   ROT | START | GRUEN <1-5> | LOS | FRUEHSTART | GELB | GELB_AUS
+  //
+  // Unterschiede zu Gnen54s Fassung: der Startablauf bleibt der von OmegaSim (Ansage, dann Countdown, raceGridStart in
+  // 70-race.js) - seine einstellbare Wartezeit und "Fruehstart bricht den Start ab" sind nicht uebernommen; ein
+  // Fruehstart laesst die Ampel nur gelb blinken, Strafe wie in den Renneinstellungen.
+  const AMPEL_SERVICE = 'b5a30001-0e9a-4b7c-8d2f-a3f1c0de5a11';
+  const AMPEL_BEFEHL = 'b5a30002-0e9a-4b7c-8d2f-a3f1c0de5a11';
+  let ampelGeraet = null, ampelKanal = null;
+  let ampelSchlange = Promise.resolve();
+  let ampelVorstart = false;     // steht die Ampel gerade auf Gelb (START gesendet)?
+  let ampelLetzter = '', ampelFehler = '';
+
+  function ampelVerbunden() {
+    return !!(ampelKanal && ampelGeraet && ampelGeraet.gatt && ampelGeraet.gatt.connected);
+  }
+  // Befehle laufen nacheinander (Bluetooth vertraegt keinen zweiten Schreibvorgang, solange der erste offen ist, und
+  // START muss vor GRUEN ankommen). Ohne Antwort, wenn die Ampel es anbietet; sonst mit Antwort, hoechstens 1,5 s.
+  // Ein fehlgeschlagener Befehl wird einmal wiederholt. Jeder Befehl steht im Protokoll.
+  const AMPEL_SCHREIB_MS = 1500;
+  function ampelSchreiben(kanal, daten) {
+    const p = kanal.properties || {};
+    // In der Android-App (05-app-bruecke.js) am schnellen Autoweg vorbei, der nur den jeweils neuesten Befehl schreibt.
+    if (p.writeWithoutResponse && typeof kanal._befehlSchreiben === 'function') return kanal._befehlSchreiben(daten);
+    if (p.writeWithoutResponse && typeof kanal.writeValueWithoutResponse === 'function') return kanal.writeValueWithoutResponse(daten);
+    const schreiben = typeof kanal.writeValueWithResponse === 'function' ? kanal.writeValueWithResponse(daten) : kanal.writeValue(daten);
+    return Promise.race([schreiben, new Promise((_, nein) =>
+      setTimeout(() => nein(new Error('keine Antwort in ' + AMPEL_SCHREIB_MS + ' ms')), AMPEL_SCHREIB_MS))]);
+  }
+  function ampelSenden(befehl) {
+    if (befehl === 'ROT' || befehl === 'LOS' || befehl === 'FRUEHSTART') ampelVorstart = false;
+    else if (befehl === 'START') ampelVorstart = true;
+    if (!ampelVerbunden()) return;
+    const kanal = ampelKanal;
+    const daten = new TextEncoder().encode(befehl + '\n');
+    ampelSchlange = ampelSchlange
+      .then(() => ampelSchreiben(kanal, daten))
+      .catch(() => new Promise((r) => setTimeout(r, 150)).then(() => ampelSchreiben(kanal, daten)))
+      .then(() => { log('Startampel: ' + befehl, 'info'); ampelLetzter = befehl; ampelFehler = ''; ampelStatusZeigen(); })
+      .catch((e) => {
+        ampelFehler = befehl + ': ' + ((e && e.message) || e);
+        log('Startampel: ' + befehl + ' nicht gesendet (' + ((e && e.message) || e) + ')', 'err');
+        ampelStatusZeigen();
+      });
+  }
+  // Nach dem Verbinden den Stand der App nachziehen - die Ampel weiss sonst nicht, ob gerade ein Rennen laeuft.
+  function ampelStandSenden() {
+    if (raceState === 'racing' || raceState === 'finishing') {
+      ampelSenden('LOS');
+      if (typeof flagState !== 'undefined' && flagState !== 'green') ampelSenden('GELB');
+    } else if (raceState === 'countdown' || (typeof raceGridOffen === 'function' && raceGridOffen())) ampelSenden('START');
+    else ampelSenden('ROT');
+  }
+  function ampelStatusZeigen(text) {
+    const s = $('ampel-status');
+    let zeile = text || (ampelVerbunden()
+      ? t('Verbunden: {n}').replace('{n}', (ampelGeraet && ampelGeraet.name) || 'Startampel')
+      : t('Nicht verbunden.'));
+    if (!text && ampelLetzter) zeile += ' · ' + t('zuletzt') + ': ' + ampelLetzter;
+    if (!text && ampelFehler) zeile += ' · ⚠ ' + ampelFehler;
+    if (s) s.textContent = zeile;
+    const b = $('ampel-verbinden');
+    if (b) b.textContent = ampelVerbunden() ? t('Trennen') : t('Verbinden');
+  }
+  // Bricht die Verbindung ab (Funkloch, Pi kurz weg), verbindet OmegaSim von selbst neu - ohne Auswahlfenster, dasselbe
+  // Geraet - und schickt den aktuellen Stand. Fuenf Versuche im Abstand von 2 s.
+  let ampelVonHandGetrennt = false;
+  async function ampelWiederVerbinden(dev, versuch) {
+    if (ampelGeraet !== dev || ampelVonHandGetrennt || ampelVerbunden() || versuch > 5) return;
+    ampelStatusZeigen(t('Verbinde neu …'));
+    try {
+      const srv = await dev.gatt.connect();
+      const dienst = await srv.getPrimaryService(AMPEL_SERVICE);
+      ampelKanal = await dienst.getCharacteristic(AMPEL_BEFEHL);
+      log('Startampel wieder verbunden.', 'info');
+      ampelStatusZeigen();
+      ampelStandSenden();
+    } catch (e) {
+      ampelStatusZeigen();
+      setTimeout(() => ampelWiederVerbinden(dev, versuch + 1), 2000);
+    }
+  }
+  async function ampelVerbinden() {
+    if (ampelVerbunden()) {
+      ampelVonHandGetrennt = true;
+      try { ampelGeraet.gatt.disconnect(); } catch (e) { /* schon weg */ }
+      return;
+    }
+    ampelVonHandGetrennt = false;
+    if (!navigator.bluetooth) { showHudToast(t('Dieser Browser kann kein Bluetooth.')); return; }
+    try {
+      ampelStatusZeigen(t('Suche …'));
+      const dev = await navigator.bluetooth.requestDevice({ filters: [{ services: [AMPEL_SERVICE] }], optionalServices: [AMPEL_SERVICE] });
+      const srv = await dev.gatt.connect();
+      const dienst = await srv.getPrimaryService(AMPEL_SERVICE);
+      ampelKanal = await dienst.getCharacteristic(AMPEL_BEFEHL);
+      ampelGeraet = dev;
+      dev.addEventListener('gattserverdisconnected', () => {
+        if (ampelGeraet !== dev) return;
+        ampelKanal = null;
+        ampelSchlange = Promise.resolve();
+        log('Startampel getrennt.', 'err');
+        ampelStatusZeigen();
+        if (!ampelVonHandGetrennt) ampelWiederVerbinden(dev, 1);
+      });
+      log('Startampel verbunden.', 'info');
+      ampelStatusZeigen();
+      ampelStandSenden();
+    } catch (err) {
+      ampelKanal = null;
+      ampelStatusZeigen();
+      if (err && err.name === 'NotFoundError') log('Keine Startampel gewaehlt.', 'info');
+      else log('Startampel: Verbinden fehlgeschlagen: ' + (err && err.message), 'err');
+    }
+  }
+  if ($('ampel-verbinden')) $('ampel-verbinden').addEventListener('click', ampelVerbinden);
+
+  // ---- Aufrufe aus dem Rennablauf (70-race.js, 90-ghosts.js) ----
+  function ampelStartKnopf() { if (raceState === 'idle' || raceState === 'finished') ampelSenden('START'); }   // Start im Fenster "Autos in Position"
+  function ampelStartAbgebrochen() { ampelSenden('ROT'); }
+  function ampelCountdown() { if (!ampelVorstart) ampelSenden('START'); }        // Countdown ohne Startfenster (Mehrspieler, Challenge)
+  function startampelLicht(licht) { ampelSenden('GRUEN ' + Math.max(1, Math.min(5, licht))); }
+  function ampelLos() { ampelSenden('LOS'); }
+  function ampelRennende() { ampelSenden('ROT'); }
+  function ampelGelb(an) { ampelSenden(an ? 'GELB' : 'GELB_AUS'); }
+  function ampelFruehstartMelden() { if (raceState === 'countdown') ampelSenden('FRUEHSTART'); }
+
+  ampelStatusZeigen();
   // ============================== ONBOARD-KAMERA (FPV im Auto) ==============================
   //
   // BESTELLT: "kostenguenstig mit einem Carrera Hybrid Fahrzeug Streckenvideos erstellen,
@@ -67200,8 +67889,29 @@
   // Akku: BESTELLT "Akku-Ansage < 25 %" - eine eigene Schwelle, nicht die 10 % oben.
   const AKKU_SCHWELLE = 0.25;
   const AKKU_HYSTERESE = 0.32;
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: true, start: true };
-  const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false };
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: true, start: true,
+                     batterycrit: true };
+  const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false, batterycrit: false };
+  // v1.6.60 (aus Gnen54s Fork, Zweig akku-kritisch) BESTELLT: "Bei Unterschreiten der 5 % Schwelle eine Ansage: Session
+  // abbrechen, Box anfahren!" Eine ZWEITE Stufe unter der 25-%-Meldung, mit eigenem Schalter und ab Werk an: darunter
+  // bleibt das Auto bald stehen. AUFLOESUNG: batteryPercent() hat nur 17 Stufen (rund 6 % je Stufe) - mit 5 % fiel die
+  // Meldung erst bei 0 %, und "bei 0 % stehen die Fahrzeuge schon". Deshalb 6 %: die letzte Stufe, auf der das Auto
+  // noch faehrt. Erst nach dem Laden (ueber 15 %) wieder scharf.
+  const AKKU_KRITISCH = 0.06;
+  const AKKU_KRITISCH_HYSTERESE = 0.15;
+  // Je Auto ein Latch fuer die kritische Stufe (wie batteryLatchSet fuer 25 %).
+  const batteryKritLatchSet = new Set();
+  // Hinweis im Cockpit immer; dann die eigene Aufnahme ('batterycrit', sobald tools/voice_synth.py sie gerendert hat),
+  // sonst die Live-Stimme, und ohne beides (App-WebView) wenigstens die Aufnahme "Akku fast leer".
+  function akkuKritischMelden(name) {
+    if (!ansageAn.batterycrit) return false;
+    const de = lang === 'de';
+    const satz = de ? 'Session abbrechen, Box anfahren!' : 'Abort session, box now!';
+    const text = name ? name + ': ' + satz : satz;
+    if (typeof showHudToast === 'function') showHudToast(text);
+    if (ansage('batterycrit', text)) return true;
+    return playAnsageClip('battery');
+  }
   // JE Auto ein Latch fuer die Akku-Meldung: jedes Auto meldet unter 25 % einmal, erst nach
   // der Erholung wieder scharf. Ein gemeinsames Latch wuerde nur das ERSTE Auto melden.
   const batteryLatchSet = new Set();
@@ -67340,6 +68050,17 @@
     const bts = w.batteries;
     if (Array.isArray(bts) && bts.length) {
       for (const b of bts) {
+        // v1.6.60 KRITISCH (6 %) zuerst. Faellt der Akku in einem Schritt von ueber 25 % auf unter 6 %, wird nur die
+        // kritische Meldung gesagt - die 25-%-Sperre wird dabei still mitgesetzt, sonst kaemen zwei Saetze uebereinander.
+        if (b.value <= AKKU_KRITISCH && !batteryKritLatchSet.has(b.car)) {
+          batteryKritLatchSet.add(b.car);
+          batteryLatchSet.add(b.car);
+          // Den Namen nur, wenn mehrere Autos einen Akku melden - allein ist klar, wer gemeint ist.
+          if (akkuKritischMelden(bts.length > 1 ? (b.label || '') : '')) raus.push('batterycrit');
+          continue;
+        } else if (b.value > AKKU_KRITISCH_HYSTERESE) {
+          batteryKritLatchSet.delete(b.car);
+        }
         if (b.value <= AKKU_SCHWELLE && !batteryLatchSet.has(b.car)) {
           batteryLatchSet.add(b.car);
           // Ansage UND Blinken haengen an demselben Kaestchen: ausgeschaltet heisst keine
@@ -67367,6 +68088,13 @@
         }
       }
     } else if (w.battery !== null && w.battery !== undefined) {
+      if (w.battery <= AKKU_KRITISCH && !ansageLatch.batterycrit) {
+        ansageLatch.batterycrit = true;
+        ansageLatch.battery = true;
+        if (akkuKritischMelden('')) raus.push('batterycrit');
+      } else if (w.battery > AKKU_KRITISCH_HYSTERESE) {
+        ansageLatch.batterycrit = false;
+      }
       if (w.battery <= AKKU_SCHWELLE && !ansageLatch.battery) {
         ansageLatch.battery = true;
         if (ansage('battery', de ? 'Akku fast leer' : 'Battery low')) raus.push('battery');
@@ -67490,6 +68218,7 @@
                              'setting-announce-fuel': 'fuel', 'setting-announce-tyre': 'tyre',
                              'setting-announce-rain': 'rain', 'setting-announce-pit': 'pit',
                              'setting-announce-battery': 'battery',
+                             'setting-announce-battery-crit': 'batterycrit',
                              'setting-announce-meister': 'meister',
                              'setting-announce-sektor': 'sektor',
                              'setting-announce-start': 'start',
@@ -79686,7 +80415,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           + 'die Ampel.', 'err');
       showHudToast('GELBE FLAGGE');
       setRaceLights(0);
+      if (typeof ampelGelb === 'function') ampelGelb(true);   // v1.6.60: Startampel Gelb
     } else if (next === 'green') {
+      if (typeof ampelGelb === 'function') ampelGelb(false);
       limitYellow = 1;
       safetyCarHeim();
       applySpeedLimit();
@@ -88946,12 +89677,12 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // und der naechste Test in der Datei erbte ein bereits 'rain: true' geflanktes
         // Latch - eine Meldung fiel, die zur eigenen Zustandsfolge gar nicht gehoerte.
         const merkLatch = Object.assign({}, ansageLatch);
-        Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false });
+        Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false, batterycrit: false });
         // Das Akku-Latch ist JE AUTO (batteryLatchSet in 80-sound.js) und genauso geteilt -
         // dieselbe Vorsicht wie oben: eine vorangegangene Probe darf kein Auto-Latch
         // hinterlassen.
-        const merkBatt = new Set(batteryLatchSet);
-        batteryLatchSet.clear();
+        const merkBatt = new Set(batteryLatchSet), merkKrit = new Set(batteryKritLatchSet);
+        batteryLatchSet.clear(); batteryKritLatchSet.clear();
         // BESTELLT: die Aufnahme hat jetzt IMMER Vorrang vor der Live-Stimme (ansage()),
         // nicht nur ohne speechSynthesis. Diese Probe will aber ausdruecklich den
         // Live-Pfad beobachten (ueber die Attrappe unten) - ist der Browser, in dem der
@@ -88975,8 +89706,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
             delete window.speechSynthesis;
           }
           Object.assign(ansageLatch, merkLatch);
-          batteryLatchSet.clear();
-          merkBatt.forEach((c) => batteryLatchSet.add(c));
+          batteryLatchSet.clear(); batteryKritLatchSet.clear();
+          merkBatt.forEach((c) => batteryLatchSet.add(c)); merkKrit.forEach((c) => batteryKritLatchSet.add(c));
           Object.keys(voiceBuffers).forEach((k) => delete voiceBuffers[k]);
           Object.assign(voiceBuffers, echtBuffers);
         }
@@ -89038,9 +89769,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         // Zustand, eine vorangegangene Probe kann eine Flanke hinterlassen haben, die
         // zu DIESER Zustandsfolge nicht gehoert.
         const merkLatch = Object.assign({}, ansageLatch);
-        Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false });
-        const merkBatt = new Set(batteryLatchSet);
-        batteryLatchSet.clear();
+        Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false, batterycrit: false });
+        const merkBatt = new Set(batteryLatchSet), merkKrit = new Set(batteryKritLatchSet);
+        batteryLatchSet.clear(); batteryKritLatchSet.clear();
         try {
           delete window.speechSynthesis;
           const folge = schritte.map((w) => ({ w, fiel: ansagenPruefen(w) }));
@@ -89054,8 +89785,8 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                                   { configurable: true, value: echtSpeech });
           }
           Object.assign(ansageLatch, merkLatch);
-          batteryLatchSet.clear();
-          merkBatt.forEach((c) => batteryLatchSet.add(c));
+          batteryLatchSet.clear(); batteryKritLatchSet.clear();
+          merkBatt.forEach((c) => batteryLatchSet.add(c)); merkKrit.forEach((c) => batteryKritLatchSet.add(c));
         }
       } finally {
         Object.keys(merk).forEach((art) => {
@@ -89098,7 +89829,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       playFx = (puffer) => { abgespielt.push(puffer && puffer.markiert); return true; };
       const gesagt = [];
       const merkLatch = Object.assign({}, ansageLatch);
-      Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false });
+      Object.assign(ansageLatch, { damage: false, fuel: false, tyre: false, rain: null, battery: false, batterycrit: false });
       try {
         Object.defineProperty(window, 'speechSynthesis', {
           configurable: true,
@@ -111490,6 +112221,116 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Virtuell v1.6.60: gespeicherte Zeiten je Strecke/Richtung/Auto (Gnen54), Bestenliste in der Garage, AR-Knopf nur mit WebXR-AR', () => {
+    const f = [];
+    const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merk = lies(VF_ZEITEN_STORE), merkVF = { frei: VF.frei, tiles: VF.tiles, gegen: VF.gegen, beste: VF.beste, besteSplits: VF.besteSplits };
+    try {
+      localStorage.removeItem(VF_ZEITEN_STORE);
+      Object.assign(VF, { frei: { name: 'Heckenhoim' }, gegen: false });
+      if (vfZeitMerken(30000, [0, 100]) !== false) f.push('erste Runde als neue Bestzeit gemeldet');
+      if (vfZeitMerken(29000, [0, 90]) !== true) f.push('schnellere Runde nicht gemeldet');
+      vfZeitMerken(31000, null);
+      const e = vfZeitenAlle()[vfZeitenSchluessel()];
+      if (!e || e.beste !== 29000 || e.runden !== 3 || e.letzte[0] !== 31000 || (e.splits || [])[1] !== 90) f.push('Eintrag ' + JSON.stringify(e));
+      VF.gegen = true;
+      if (vfZeitenAlle()[vfZeitenSchluessel()]) f.push('Gegenrichtung teilt sich die Zeiten');
+      VF.gegen = false; VF.beste = null; VF.besteSplits = null;
+      vfZeitenLaden();
+      if (VF.beste !== 29000 || !VF.besteSplits) f.push('Laden: ' + VF.beste);
+      const box = vfBestenliste(vfAutoListe());
+      if (!box.querySelector('table') || box.textContent.indexOf('Heckenhoim') < 0) f.push('Bestenliste ohne Eintrag');
+      const kn = document.createElement('div'); vfGarageOptionen(kn);
+      const ar = kn.querySelector('[data-vf="ar"]');
+      if (!ar) f.push('kein AR-Knopf');
+      else if (ar.hidden !== !vfArMoeglich()) f.push('AR-Knopf sichtbar ohne AR');
+      if (!kn.querySelector('[data-vf="bestenliste"]')) f.push('Bestenliste fehlt in der Garage');
+    } finally {
+      Object.assign(VF, merkVF);
+      try { if (merk === null) localStorage.removeItem(VF_ZEITEN_STORE); else localStorage.setItem(VF_ZEITEN_STORE, merk); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bestzeit 29,000 s mit Zwischenzeiten, Gegenrichtung getrennt, Bestenliste, AR-Knopf ' + (vfArMoeglich() ? 'sichtbar' : 'verborgen (kein WebXR-AR)') };
+  });
+  stAdd('Startampel v1.6.60: Befehle fuer Start, Toene, Gruen, Gelb, Fruehstart und Ende (Attrappe)', async () => {
+    const f = [], gesendet = [];
+    const merk = { g: ampelGeraet, k: ampelKanal, rs: raceState };
+    try {
+      ampelKanal = { properties: { writeWithoutResponse: true }, writeValueWithoutResponse: (d) => { gesendet.push(new TextDecoder().decode(d).trim()); return Promise.resolve(); } };
+      ampelGeraet = { name: 'Ampel', gatt: { connected: true } };
+      raceState = 'idle';
+      ampelStartKnopf(); raceState = 'countdown'; ampelCountdown();
+      [1, 2, 3, 4, 5].forEach((n) => startampelLicht(n));
+      ampelFruehstartMelden(); raceState = 'racing'; ampelLos(); ampelGelb(true); ampelGelb(false); ampelRennende();
+      await ampelSchlange; await new Promise((ok) => setTimeout(ok, 20));
+      const soll = 'START|GRUEN 1|GRUEN 2|GRUEN 3|GRUEN 4|GRUEN 5|FRUEHSTART|LOS|GELB|GELB_AUS|ROT';
+      if (gesendet.join('|') !== soll) f.push(gesendet.join('|') + ' statt ' + soll);
+      if (!$('ampel-verbinden') || !$('sub-opt-addon')) f.push('Seite/Knopf fehlt');
+    } finally { ampelGeraet = merk.g; ampelKanal = merk.k; raceState = merk.rs; ampelSchlange = Promise.resolve(); ampelStatusZeigen(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'START, GRUEN 1-5, FRUEHSTART, LOS, GELB, GELB_AUS, ROT in Reihenfolge' };
+  });
+  stAdd('Ansagen v1.6.60: Akku kritisch bei 6 % (Session abbrechen, Box anfahren), je Auto, erst nach dem Laden wieder', () => {
+    const f = [];
+    const merkAn = Object.assign({}, ansageAn), merkLatch = Object.assign({}, ansageLatch);
+    const merkB = new Set(batteryLatchSet), merkK = new Set(batteryKritLatchSet);
+    try {
+      Object.assign(ansageAn, { battery: true, batterycrit: true });
+      batteryLatchSet.clear(); batteryKritLatchSet.clear();
+      const auto = { id: 'st-akku' };
+      const folge = [0.30, 0.12, 0.06, 0.00, 0.12, 0.06, 0.50, 0.06].map((v) => {
+        const r = ansagenPruefen({ batteries: [{ car: auto, value: v, label: 'A' }] }) || [];
+        return r.filter((x) => x === 'battery' || x === 'batterycrit').join(',');
+      });
+      const soll = ['', 'battery', 'batterycrit', '', '', '', '', 'batterycrit'];
+      if (folge.join('|') !== soll.join('|')) f.push('Folge ' + folge.join('|') + ' statt ' + soll.join('|'));
+      if (!$('setting-announce-battery-crit') || !$('setting-announce-battery-crit').checked) f.push('Schalter fehlt oder ab Werk aus');
+    } finally {
+      Object.assign(ansageAn, merkAn); Object.assign(ansageLatch, merkLatch);
+      batteryLatchSet.clear(); merkB.forEach((c) => batteryLatchSet.add(c));
+      batteryKritLatchSet.clear(); merkK.forEach((c) => batteryKritLatchSet.add(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '30/12/6/0/12/6/50/6 %: -, Akku, kritisch, -, -, -, -, kritisch' };
+  });
+  stAdd('Strecken v1.6.60: virtuelle Streckenzeiten (frei:<id>, gebaute Bahn, Gegenrichtung) lokal, Upload nur mit Sync und faehigem Skript, virtuelle Liste', () => {
+    const f = [];
+    const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merkV = lies(SK_V_STORE), merkOpt = lies(SK_OPT_STORE), merkAus = chAusgangLesen(), merkModus = lies(FAHR_MODUS_STORE);
+    const merkVF = { zeitLauf: VF.zeitLauf, freiId: VF.freiId, gegen: VF.gegen, tiles: VF.tiles, extern: VF.extern, studie: VF.studie, hubschrauber: VF.hubschrauber };
+    try {
+      localStorage.removeItem(SK_V_STORE);
+      skOptSetzen({ sync: false });
+      Object.assign(VF, { zeitLauf: { runden: [30000, 500, 28000] }, freiId: 'indeq', gegen: false, extern: null, studie: false, hubschrauber: false });
+      vfZeitenAbschluss();
+      const l = skVLokalAlle()['frei:indeq'];
+      if (!l || l.length !== 1 || l[0].zeit !== 28000 || !/^vf-/.test(l[0].fahrgefuehl)) f.push('lokal frei: ' + JSON.stringify(l));
+      if (chAusgangLesen().some((x) => x.fahrt === 'virtuell')) f.push('ohne Sync hochgeladen');
+      // Gebaute Bahn in Gegenrichtung, mit Sync: in die Warteschlange (Skript hier "nicht faehig": nichts gesendet).
+      const tiles = codeToTrack('SG11R3G12R3').tiles;
+      skOptSetzen({ sync: true });
+      chFaehig[chOnline().url] = { p: Promise.resolve(false), ja: false, at: Date.now() };
+      Object.assign(VF, { zeitLauf: { runden: [40000] }, freiId: '', gegen: true, tiles });
+      vfZeitenAbschluss();
+      const key = skSchluessel(tiles) + '|gegen';
+      if (!(skVLokalAlle()[key] || []).length) f.push('lokal Bahn Gegenrichtung fehlt: ' + key);
+      const q = chAusgangLesen().find((x) => x.fahrt === 'virtuell' && x.strecke === key);
+      if (!q || q.art !== 'strecke-zeit' || !/^vf-/.test(q.fahrgefuehl)) f.push('nicht in der Warteschlange: ' + JSON.stringify(q));
+      // Challenge/Studie zaehlen nicht.
+      Object.assign(VF, { zeitLauf: { runden: [41000] }, extern: 'challenge' });
+      const vorher = (skVLokalAlle()[key] || []).length;
+      vfZeitenAbschluss();
+      if ((skVLokalAlle()[key] || []).length !== vorher) f.push('Challenge-Fahrt in den Streckenzeiten');
+      // Virtuelle Liste enthaelt die lokalen Strecken mit '|v'.
+      const vl = skVirtuelleStrecken();
+      if (!vl.some((s) => s.strecke === 'frei:indeq|v') || !vl.some((s) => s.strecke === key + '|v')) f.push('virtuelle Liste: ' + vl.map((s) => s.strecke).join(','));
+      if (skLokal('frei:indeq|v').length !== 1) f.push('skLokal virtuell');
+    } finally {
+      Object.assign(VF, merkVF);
+      try { if (merkV === null) localStorage.removeItem(SK_V_STORE); else localStorage.setItem(SK_V_STORE, merkV); } catch (e) { /* egal */ }
+      try { if (merkOpt === null) localStorage.removeItem(SK_OPT_STORE); else localStorage.setItem(SK_OPT_STORE, merkOpt); } catch (e) { /* egal */ }
+      chAusgangSchreiben(merkAus);
+      try { if (merkModus === null) localStorage.removeItem(FAHR_MODUS_STORE); else localStorage.setItem(FAHR_MODUS_STORE, merkModus); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'frei:indeq und Bahn|gegen lokal, Upload nur mit Sync, Challenge zaehlt nicht, virtuelle Liste' };
+  });
   stAdd('Challenges v1.6.56: virtuell eigene Listen (|v), Medaillen x1,75, Upload erst mit faehigem Skript, Start mit dem virtuellen Auto, rote Akzente', async () => {
     const f = [];
     const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -111622,7 +112463,7 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         mass.push(m + ' ' + Math.round(g.indizes / 3 / 1000) + 'k');
       } catch (e) { f.push(m + ': ' + e.message); }
     }
-    const quelle = String(vfMalen);
+    const quelle = String(vfSzeneMalen);   // v1.6.60: die Szene steht in vfSzeneMalen (auch fuer AR)
     if (quelle.indexOf('geistModell') < 0 || quelle.indexOf('VF.grafik') < 0) f.push('Geist-Weiche fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'leicht: ' + mass.join(', ') + '; Geist in Performance als Kiste' };
   });
