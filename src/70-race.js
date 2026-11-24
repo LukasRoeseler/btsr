@@ -607,6 +607,7 @@
           fruehstart[w].frueh = true;
           fruehstartAnwenden(w);
           showHudToast(w >= 2 ? t('Frühstart Spieler {n}!').replace('{n}', w) : t('Frühstart!'));
+          if (typeof ampelFruehstartMelden === 'function') ampelFruehstartMelden();   // v1.6.60: Startampel blinkt gelb
         }
       });
     }, 100);
@@ -1937,6 +1938,7 @@
     if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
     syncRaceGridOrder();
     const w = raceGridWeiter; raceGridWeiter = null;
+    if (typeof ampelStartKnopf === 'function') ampelStartKnopf();   // v1.6.60: echte Startampel auf Gelb
     // v1.6.46 (gnen54): "Gentlemen, start your engines" sofort, der Countdown erst, wenn der Satz gesprochen ist
     // (ab Beginn der Ansage 2,4 s, spaetestens 4,5 s nach dem Knopf - eine haengende Stimme blockiert den Start nicht).
     if (!w) return;
@@ -1954,6 +1956,7 @@
   function raceGridAbbrechen() {
     const gs = $('race-gridscreen');
     if (gs) gs.hidden = true;
+    if (typeof ampelStartAbgebrochen === 'function') ampelStartAbgebrochen();   // v1.6.60: Startampel Rot
     if (typeof aufstellenStoppen === 'function') aufstellenStoppen(false);
     // v1.1.23 GEMELDET: "Genauso, wenn ich abbreche, nachdem ich auf automatische Aufstellung gedrueckt
     // habe - es klappt einfach gar nicht." Abbrechen haelt jetzt ALLE fahrenden NPCs und das Safety Car an,
@@ -2336,6 +2339,7 @@
       finishSeitenZaehlerZuruecksetzen();
     }
     raceState = 'countdown';
+    if (typeof ampelCountdown === 'function') ampelCountdown();   // v1.6.60: Startampel Gelb, falls noch nicht
     // Fruehstart-Erkennung ab HIER, auch waehrend eines Rennintros: raceState ist schon
     // 'countdown', und wer waehrend der Ansage losfaehrt, faehrt genauso zu frueh wie
     // waehrend der Ampel (PR #8 startete die Erkennung erst mit der Ampel, man konnte das
@@ -2372,6 +2376,7 @@
         if (stufe > 0 && warte < -400 && k + 1 < plan.length) { schritt(k + 1); return; }
         if (stufe > 0) {
           setRaceLights(stufe);
+          if (typeof startampelLicht === 'function') startampelLicht(stufe);   // v1.6.60: je Ton eine gruene Spalte mehr
           ampelTon(440 + (stufe - 1) * 60, 0.18, 'square', 0.18);
           schritt(k + 1);
           return;
@@ -2430,6 +2435,7 @@
     // and no laps count until the field crosses the line.
     raceFormationLap = raceFlying;
     raceGreenAt = raceFlying ? null : rennZeitJetzt();
+    if (typeof ampelLos === 'function') ampelLos();   // v1.6.60: Startampel aus
     zevGruen();
     fruehstartGruen();
     rammReset();
@@ -2584,6 +2590,7 @@
     // setFlag('green') - das zeigt "GRUEN" und schickt das Safety Car heim; es steht hier
     // ohnehin gleich. Ein laufender Neustart-Countdown prueft flagState und verfaellt.
     gelbBeenden();
+    if (typeof ampelRennende === 'function') ampelRennende();   // v1.6.60: Startampel wieder Rot
     // Das Safety Car steht beim Rennende - es hat in keinem Ergebnis etwas zu suchen.
     garage.forEach((c) => {
       if ((c.role === 'safetycar' || c.role === 'reinig') && c.ghost && c.ghost.running) {

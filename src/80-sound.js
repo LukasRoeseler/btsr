@@ -718,8 +718,29 @@
   // Akku: BESTELLT "Akku-Ansage < 25 %" - eine eigene Schwelle, nicht die 10 % oben.
   const AKKU_SCHWELLE = 0.25;
   const AKKU_HYSTERESE = 0.32;
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: true, start: true };
-  const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false };
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: true, start: true,
+                     batterycrit: true };
+  const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false, batterycrit: false };
+  // v1.6.60 (aus Gnen54s Fork, Zweig akku-kritisch) BESTELLT: "Bei Unterschreiten der 5 % Schwelle eine Ansage: Session
+  // abbrechen, Box anfahren!" Eine ZWEITE Stufe unter der 25-%-Meldung, mit eigenem Schalter und ab Werk an: darunter
+  // bleibt das Auto bald stehen. AUFLOESUNG: batteryPercent() hat nur 17 Stufen (rund 6 % je Stufe) - mit 5 % fiel die
+  // Meldung erst bei 0 %, und "bei 0 % stehen die Fahrzeuge schon". Deshalb 6 %: die letzte Stufe, auf der das Auto
+  // noch faehrt. Erst nach dem Laden (ueber 15 %) wieder scharf.
+  const AKKU_KRITISCH = 0.06;
+  const AKKU_KRITISCH_HYSTERESE = 0.15;
+  // Je Auto ein Latch fuer die kritische Stufe (wie batteryLatchSet fuer 25 %).
+  const batteryKritLatchSet = new Set();
+  // Hinweis im Cockpit immer; dann die eigene Aufnahme ('batterycrit', sobald tools/voice_synth.py sie gerendert hat),
+  // sonst die Live-Stimme, und ohne beides (App-WebView) wenigstens die Aufnahme "Akku fast leer".
+  function akkuKritischMelden(name) {
+    if (!ansageAn.batterycrit) return false;
+    const de = lang === 'de';
+    const satz = de ? 'Session abbrechen, Box anfahren!' : 'Abort session, box now!';
+    const text = name ? name + ': ' + satz : satz;
+    if (typeof showHudToast === 'function') showHudToast(text);
+    if (ansage('batterycrit', text)) return true;
+    return playAnsageClip('battery');
+  }
   // JE Auto ein Latch fuer die Akku-Meldung: jedes Auto meldet unter 25 % einmal, erst nach
   // der Erholung wieder scharf. Ein gemeinsames Latch wuerde nur das ERSTE Auto melden.
   const batteryLatchSet = new Set();
@@ -858,6 +879,17 @@
     const bts = w.batteries;
     if (Array.isArray(bts) && bts.length) {
       for (const b of bts) {
+        // v1.6.60 KRITISCH (6 %) zuerst. Faellt der Akku in einem Schritt von ueber 25 % auf unter 6 %, wird nur die
+        // kritische Meldung gesagt - die 25-%-Sperre wird dabei still mitgesetzt, sonst kaemen zwei Saetze uebereinander.
+        if (b.value <= AKKU_KRITISCH && !batteryKritLatchSet.has(b.car)) {
+          batteryKritLatchSet.add(b.car);
+          batteryLatchSet.add(b.car);
+          // Den Namen nur, wenn mehrere Autos einen Akku melden - allein ist klar, wer gemeint ist.
+          if (akkuKritischMelden(bts.length > 1 ? (b.label || '') : '')) raus.push('batterycrit');
+          continue;
+        } else if (b.value > AKKU_KRITISCH_HYSTERESE) {
+          batteryKritLatchSet.delete(b.car);
+        }
         if (b.value <= AKKU_SCHWELLE && !batteryLatchSet.has(b.car)) {
           batteryLatchSet.add(b.car);
           // Ansage UND Blinken haengen an demselben Kaestchen: ausgeschaltet heisst keine
@@ -885,6 +917,13 @@
         }
       }
     } else if (w.battery !== null && w.battery !== undefined) {
+      if (w.battery <= AKKU_KRITISCH && !ansageLatch.batterycrit) {
+        ansageLatch.batterycrit = true;
+        ansageLatch.battery = true;
+        if (akkuKritischMelden('')) raus.push('batterycrit');
+      } else if (w.battery > AKKU_KRITISCH_HYSTERESE) {
+        ansageLatch.batterycrit = false;
+      }
       if (w.battery <= AKKU_SCHWELLE && !ansageLatch.battery) {
         ansageLatch.battery = true;
         if (ansage('battery', de ? 'Akku fast leer' : 'Battery low')) raus.push('battery');
@@ -1008,6 +1047,7 @@
                              'setting-announce-fuel': 'fuel', 'setting-announce-tyre': 'tyre',
                              'setting-announce-rain': 'rain', 'setting-announce-pit': 'pit',
                              'setting-announce-battery': 'battery',
+                             'setting-announce-battery-crit': 'batterycrit',
                              'setting-announce-meister': 'meister',
                              'setting-announce-sektor': 'sektor',
                              'setting-announce-start': 'start',

@@ -1052,7 +1052,7 @@
       chUploadInfo = { ok: true };
       log((strecke ? 'Strecke' : 'Challenge') + ': Zeit hochgeladen (' + (strecke ? eintrag.strecke : eintrag.challenge) + ').', 'info');
       chAusgangZeichnen();
-      if (strecke) { if (typeof skNachUpload === 'function') skNachUpload(eintrag.strecke); }
+      if (strecke) { if (typeof skNachUpload === 'function') skNachUpload(eintrag.strecke + (eintrag.fahrt === 'virtuell' ? '|v' : '')); }
       else setTimeout(() => chAuffrischen(true), 2500);
       return true;
     }, (e) => {
@@ -2244,6 +2244,7 @@
     try { chKachelnZeichnen(); } catch (e) { /* noch nicht da */ }
     try { if (typeof chDauerKachelnZeichnen === 'function') chDauerKachelnZeichnen(); } catch (e) { /* egal */ }
     try { if (typeof chVorschauZeichnen === 'function') chVorschauZeichnen(); } catch (e) { /* egal */ }
+    try { if (typeof skListeHolen === 'function') skListeHolen(false).then(() => { if (typeof chVorschauZeichnen === 'function') chVorschauZeichnen(); }); } catch (e) { /* egal */ }
     if (chSeiteOffen()) { chZeichneDetail(); chListeLaden(chSchluessel(chWahl, chModus, chPreset)); }
     if (chCommunitySeiteOffen()) chZeichneListe();
   }

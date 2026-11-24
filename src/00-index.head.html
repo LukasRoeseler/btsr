@@ -4028,6 +4028,13 @@
   .grid-row.dragging { opacity: .45; }
   /* v1.1.3: virtuelle Fahrt (60d-virtuell.js), ueber allem ausser der Pause. */
   .vf-schicht { position: fixed; inset: 0; z-index: 300; background: #8ca8c6; }
+  /* v1.6.60: Augmented Reality - die Schicht ist durchsichtig, das Kamerabild kommt von der AR-Sitzung. */
+  .vf-schicht.vf-ar { background: transparent; }
+  .vf-ar-wurzel { position: fixed; inset: 0; z-index: 300; background: transparent; }
+  .vf-ar-hinweis { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); max-width: min(86vw, 520px); padding: .6em 1em;
+    border-radius: 10px; background: rgba(8,10,14,.72); color: #fff; text-align: center; font-weight: 700; pointer-events: none; z-index: 5; }
+  .vf-ar-neu { position: absolute; right: max(12px, env(safe-area-inset-right)); top: 22%; z-index: 5; }
+  .vf-ar-knopf { flex: 0 0 auto; min-height: 44px; padding: 0 12px; }
   /* v1.1.11: Streckenbild gross zeigen (Screenshot oder lange druecken), statt nur herunterzuladen. */
   .sb-schau { position: fixed; inset: 0; z-index: 500; background: rgba(5,7,12,.95); display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 10px; padding: max(10px, env(safe-area-inset-top)) 12px 12px; }
@@ -7395,6 +7402,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell: Rundenzeiten auf eigenen und freien Strecken (T&#246;rnerschleife, Heckenhoim, auch Gegenrichtung und RC Heli) werden je Fahrgef&#252;hl gespeichert und mit &#8222;Zeiten online synchronisieren&#8220; in eigene virtuelle Online-Listen geschickt; in den Challenges zeigt der Modus Virtuell diese Strecken. Aus Gnen54s Fork: gefahrene Zeiten je Strecke und Auto (Bestzeit und Zwischenzeiten gelten beim Start, Bestenliste in der virtuellen Garage), die Ansage &#8222;Akku kritisch&#8220; bei 6 % (Optionen &gt; Ton, ab Werk an), die echte Startampel am Tisch (Optionen &gt; Startampel, Bluetooth, Raspberry Pi / Pico) und seine Werkzeuge f&#252;r die freien Strecken (tools/strecken). Neu, Prototyp: AR in Chrome auf Android (Knopf &#8222;AR&#8220; in der virtuellen Garage): Strecke in Originalgr&#246;&#223;e auf dem Fu&#223;boden platzieren, dann f&#228;hrt das Auto bzw. fliegt der Heli im Zimmer.</li>
         <li>Virtuell: Drift rutscht nach der Handbremse weiter, statt pl&#246;tzlich zu stehen, und rollt nach einer Drehung &#252;ber 90 Grad r&#252;ckw&#228;rts weiter; im Drift kein Spritverbrauch. Boxenstopp: es gen&#252;gt jetzt, mit dem Auto in die Boxenbucht zu ragen (vorher musste es tief darin stehen), der Hinweis sagt &#8222;in der Boxenbucht anhalten&#8220;. RC Heli: der Heckrotor dreht sich, am Boden l&#228;sst er sich nicht mehr neigen, die Tore sind deutlich h&#246;her, jedes Tor macht &#8222;bling&#8220;, und die Runde z&#228;hlt direkt beim Flug durch das Start/Ziel-Tor nach allen Toren. Audi RS5 DTM: der K&#252;hlergrill unter dem Logo ist wieder schwarz statt wei&#223;.</li>
         <li>Challenges virtuell (WIP): Oben auf der Challenge-Seite schaltet Echt | Virtuell um (derselbe Fahrmodus wie auf FAHREN, im Modus Virtuell rote Akzente). Virtuell f&#228;hrst du w&#246;chentliche Challenges, Dauerrennen und Community Challenges mit dem virtuellen Auto, mit Ampel, Teilepr&#252;fung und Wertung wie echt; die Zeiten stehen in eigenen virtuellen Bestenlisten (selbes Backend, klar als virtuell markiert, mit Fahrgef&#252;hl), Medaillenzeiten virtuell vorl&#228;ufig &#215;1,75. Auch Karriere und andere Rennen, die von FAHREN aus starten, fahren im Modus Virtuell das virtuelle Auto. Automatische Sektoren: etwa ein Sektor je 4 Teile (Balkonia 6, Homington 3, mindestens 2). Virtuelle Garage: Vorschau mit durchsichtigem Hintergrund und Bild f&#252;r den RC Heli, Motorsound- und Fahrtrichtungs-Zeile entfernt (Richtung steht in der Streckenkachel), Strecke und Boden ohne WIP, Handling hei&#223;t jetzt &#8222;Pacejka (wie echte CH Autos, WIP)&#8220;.</li>
         <li>Virtuelles Fahren, Prototyp zum Testen: Das Fahrgef&#252;hl Drift ist neu und physikbasiert (WIP). Eigenes Fahrzeugmodell (Hecktriebler): durchdrehende Hinterr&#228;der mit kombiniertem Schlupf, Gewichtsverlagerung, Luft- und Rollwiderstand; mehr Gas = mehr Driftwinkel. X ist im Drift die Handbremse (Tastatur, Gamepad, am Handy ein Knopf links neben dem Gaspedal). Optionen &gt; Virtuell &gt; Drift-Gyro stellt die Gegenlenk-Hilfe ein (wie der Gyro eines RC-Driftautos), Aus = reine Physik.</li>
@@ -11361,6 +11369,15 @@
           <span>Gyro-Stabilisierung, Rollen und Nicken umkehren.</span>
         </button>
       </div>
+      <div class="k-zwischen">Zusatz-Hardware</div>
+      <div class="misc-grid">
+        <!-- v1.6.60 (aus Gnen54s Fork): echte Startampel am Tisch (Raspberry Pi / Pico, Bluetooth LE), 74c-startampel.js. -->
+        <button class="misc-tile subpage-open" data-sub="opt-addon">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="16" y="5" width="16" height="38" rx="4"/><circle cx="24" cy="14" r="3.5" fill="var(--bad)" stroke="var(--bad)"/><circle cx="24" cy="24" r="3.5"/><circle cx="24" cy="34" r="3.5" fill="var(--good)" stroke="var(--good)"/></svg>
+          <b>Startampel</b>
+          <span>Echte Startampel am Tisch (Raspberry Pi / Pico).</span>
+        </button>
+      </div>
       <div class="k-zwischen">Info</div>
       <div class="misc-grid">
         <button class="misc-tile info-open" data-sub="wozu">
@@ -11717,6 +11734,14 @@
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
       <h2>Virtuell <span class="wip-tag">WIP</span></h2>
       <div class="vf-opt-seite" id="opt-virtuell-inhalt"></div>
+    </div>
+    <div class="card subpage" id="sub-opt-addon">
+      <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
+      <h2>Startampel <span class="wip-tag">WIP</span></h2>
+      <p class="muted">Diese Einstellung braucht eigene Hardware am Tisch (Startampel mit Raspberry Pi oder Pico, Bluetooth LE).</p>
+      <div class="opt-row"><div class="opt-label">Startampel (Raspberry Pi / Pico)<small>Echte Startampel am Tisch: Rot, solange nichts freigegeben ist; Gelb beim Start im Fenster &bdquo;Bringe die Autos in Position&ldquo;; Gr&uuml;n Spalte f&uuml;r Spalte im Takt der Startt&ouml;ne; bei Gr&uuml;n alles aus; Gelb blinkt bei einem Fr&uuml;hstart; Gelb bei Gelber Flagge; nach dem Rennen wieder Rot.</small>
+          <div id="ampel-status" class="muted" style="font-size:12px;margin-top:4px">Nicht verbunden.</div></div>
+        <button type="button" id="ampel-verbinden">Verbinden</button></div>
     </div>
     <div class="card subpage" id="sub-opt-heli">
       <button class="misc-back subpage-back" data-sub="">&larr; Optionen</button>
@@ -12842,6 +12867,8 @@
         <label class="tgl"><input type="checkbox" id="setting-announce-start" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Akku ansagen<small>Einmal, wenn der Akku unter 25&nbsp;% f&auml;llt. Erst nach dem Laden wieder scharf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-battery"><span></span></label></div>
+      <div class="opt-row"><div class="opt-label">Akku kritisch ansagen<small>Einmal je Auto, wenn der Akku auf 6&nbsp;% f&auml;llt, die letzte Stufe vor dem Stehenbleiben: &bdquo;Session abbrechen, Box anfahren!&ldquo; Erst nach dem Laden wieder scharf.</small></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-battery-crit" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Meisterschaft ansagen <span class="wip-tag">WIP</span>
         <small>Nach jedem Event, welches Event es war und was als N&auml;chstes kommt; nach dem letzten, dass die Meisterschaft vorbei ist und wer gesamt gewonnen hat.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-meister" checked><span></span></label></div>

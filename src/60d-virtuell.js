@@ -1438,12 +1438,15 @@
     // er schreibt selbst keine Tiefe. Glanz je Flaeche wie 1.3.92, der Boden nach seiner Art.
     zeichne(F.strasse, F.txBahn, 0.16, VF_BUMP_BAHN);
     zeichne(F.rand, F.txRand, 0.10, 0);
-    gl.depthMask(false);
-    gl.enable(gl.POLYGON_OFFSET_FILL);
-    gl.polygonOffset(2, 16);
-    zeichne(F.boden, F.txBoden, F.art.glanz, F.art.art === 'rasen' ? 0 : VF_BUMP_BODEN);   // v1.5: Rasen ohne Relief (Halme waeren helle Striche)
-    gl.disable(gl.POLYGON_OFFSET_FILL);
-    gl.depthMask(true);
+    // v1.6.60: in AR kein Boden - dort ist der echte Fussboden zu sehen.
+    if (!VF.ar) {
+      gl.depthMask(false);
+      gl.enable(gl.POLYGON_OFFSET_FILL);
+      gl.polygonOffset(2, 16);
+      zeichne(F.boden, F.txBoden, F.art.glanz, F.art.art === 'rasen' ? 0 : VF_BUMP_BODEN);   // v1.5: Rasen ohne Relief (Halme waeren helle Striche)
+      gl.disable(gl.POLYGON_OFFSET_FILL);
+      gl.depthMask(true);
+    }
     gl.disableVertexAttribArray(P.ap); gl.disableVertexAttribArray(P.ac);
     if (P.auv >= 0) gl.disableVertexAttribArray(P.auv);
   }
@@ -3145,13 +3148,97 @@
     return bisZ < zur ? -1 : 0;
   }
   // Was an der Linie fuer die Kopfzeile passiert (die Zeitnahme selbst laeuft in der App, ueber den Puls).
+  // ---- GEFAHRENE ZEITEN JE STRECKE (v1.6.60, aus Gnen54s Fork: "Gefahrene Zeiten pro Strecke speichern") ----
+  // Je Strecke UND Auto: Bestzeit mit Datum und Zwischenzeiten (fuer das Delta), Rundenzahl und die letzten zehn Runden.
+  // Beim Start werden Bestzeit und Zwischenzeiten geladen (Beste/Delta im HUD gelten sofort). Schluessel wie bei Gnen54
+  // ("frei:<Name>" bzw. "bahn:<Code>", dazu "|<Auto>"), hier zusaetzlich "|gegen" fuer die Gegenrichtung (die
+  // Zwischenzeiten haengen an der Fahrtrichtung); der Hubschrauber ist ein eigenes "Auto".
+  const VF_ZEITEN_STORE = 'omegasim-vf-zeiten';
+  function vfZeitenSchluessel() {
+    let s = '-';
+    try { s = VF.frei ? 'frei:' + VF.frei.name : 'bahn:' + trackToCode(VF.tiles); } catch (e) { /* ohne */ }
+    return s + (VF.gegen ? '|gegen' : '') + '|' + vfAutoWahl();
+  }
+  function vfZeitenAlle() {
+    try { return JSON.parse(localStorage.getItem(VF_ZEITEN_STORE) || '{}') || {}; } catch (e) { return {}; }
+  }
+  function vfZeitenLaden() {
+    const e = vfZeitenAlle()[vfZeitenSchluessel()];
+    if (e && e.beste > 0) {
+      VF.beste = e.beste; VF.besteSplits = Array.isArray(e.splits) ? e.splits : null;
+      VF.besteGeladen = true;
+      showHudToast(t('Streckenbestzeit') + ': ' + vfZeitAcc(e.beste, 3));
+    }
+  }
+  function vfZeitMerken(ms, splits) {
+    const alle = vfZeitenAlle(), k = vfZeitenSchluessel();
+    const e = alle[k] || (alle[k] = { beste: null, datum: null, runden: 0, letzte: [] });
+    e.runden += 1;
+    e.letzte = [Math.round(ms)].concat(e.letzte || []).slice(0, 10);
+    const neu = !(e.beste > 0) || ms < e.beste;
+    if (neu) { e.beste = Math.round(ms); e.datum = Date.now(); e.splits = splits || null; }
+    try { localStorage.setItem(VF_ZEITEN_STORE, JSON.stringify(alle)); } catch (err) { /* voll */ }
+    return neu && e.runden > 1;
+  }
+  // Bestenliste in der Garage (aus Gnen54s Fork): je Strecke und Auto die gespeicherte Bestzeit, Rundenzahl und Datum.
+  // Zugeklappt, damit die Garage kurz bleibt.
+  function vfBestenliste(autos) {
+    const box = document.createElement('details');
+    box.className = 'opt-row opt-breit vf-bestenliste';
+    box.dataset.vf = 'bestenliste';
+    const sum = document.createElement('summary');
+    sum.textContent = t('Bestzeiten');
+    box.appendChild(sum);
+    const alle = vfZeitenAlle();
+    let jetztBahn = '';
+    try { if (currentTrackTiles && currentTrackTiles.length >= 3) jetztBahn = trackToCode(currentTrackTiles); } catch (e) { /* ohne */ }
+    const zeilen = Object.keys(alle).filter((k) => alle[k] && alle[k].beste > 0).map((k) => {
+      const e = alle[k], tr = k.lastIndexOf('|'), auto = k.slice(tr + 1);
+      let ort = k.slice(0, tr);
+      const gegen = /\|gegen$/.test(ort);
+      if (gegen) ort = ort.slice(0, -6);
+      let strecke = ort;
+      if (ort.indexOf('frei:') === 0) strecke = ort.slice(5);
+      else if (ort.indexOf('bahn:') === 0) strecke = t('Gebaute Bahn') + (ort.slice(5) === jetztBahn ? ' (' + t('aktuell') + ')' : ' ' + ort.slice(5, 11));
+      if (gegen) strecke += ' (' + t('Gegenrichtung') + ')';
+      const a = autos.find((x) => x.v === auto);
+      return { strecke, auto: a ? a.name : auto, beste: e.beste, runden: e.runden || 0, datum: e.datum };
+    }).sort((x, y) => x.strecke.localeCompare(y.strecke) || x.beste - y.beste);
+    if (!zeilen.length) {
+      const p = document.createElement('p');
+      p.className = 'muted';
+      p.textContent = t('Noch keine Bestzeiten');
+      box.appendChild(p);
+      return box;
+    }
+    const tab = document.createElement('table');
+    tab.className = 'vf-besten-tab';
+    tab.style.cssText = 'width:100%;border-collapse:collapse;font-size:0.9em';
+    const kopf = tab.insertRow();
+    [t('Strecke'), t('Auto'), t('Bestzeit'), t('Runden'), t('Datum')].forEach((h) => {
+      const th = document.createElement('th'); th.textContent = h; th.style.textAlign = 'left'; kopf.appendChild(th);
+    });
+    const spr = (typeof lang === 'string' && lang) || 'de';
+    zeilen.forEach((z) => {
+      const r2 = tab.insertRow();
+      [z.strecke, z.auto, vfZeitAcc(z.beste, 3), String(z.runden), z.datum ? new Date(z.datum).toLocaleDateString(spr) : '–']
+        .forEach((w) => { const c = r2.insertCell(); c.textContent = w; c.style.padding = '2px 6px 2px 0'; });
+    });
+    box.appendChild(tab);
+    return box;
+  }
   function vfRundeAnLinie(jetzt) {
     if (VF.rundeAb) {
       VF.letzte = jetzt - VF.rundeAb;
+      // v1.6.60: jede volle Runde fuer die virtuellen Streckenzeiten (nicht in einer Challenge/Studie/Rennen der App).
+      if (VF.zeitLauf && !VF.extern && !VF.studie && VF.zeitLauf.runden.length < 200) VF.zeitLauf.runden.push(Math.round(VF.letzte));
       // Delta (HUD): die Zwischenzeiten der besten Runde je Punkt der Mittellinie.
       const best = VF.beste === null || VF.letzte < VF.beste;
       if (best) { VF.beste = VF.letzte; VF.besteSplits = VF.splits; }
-      vfGeistRunde(best);
+      // v1.6.60: gespeicherte Zeit (Gnen54). Die Geisterlinie wird nicht gespeichert - nach einer geladenen Bestzeit
+      // nimmt der Geist deshalb die erste Runde dieser Fahrt, bis die Bestzeit faellt.
+      if (!VF.extern && !VF.studie && vfZeitMerken(VF.letzte, VF.splits)) showHudToast(t('Neue Streckenbestzeit') + ': ' + vfZeitAcc(VF.letzte, 3));
+      vfGeistRunde(best || !(VF.geist && VF.geist.beste));
       // Rundenrennen: nach der Ziel-Lap ist Schluss.
       VF.runden = (VF.runden || 0) + 1;
       if (VF.modus === 'laps' && VF.runden >= VF.limit) vfRennenEnde();
@@ -3783,7 +3870,11 @@
   }
   function vfBild(now) {
     if (!VF.aktiv) return;
-    VF.raf = requestAnimationFrame(vfBild);
+    // v1.6.60: in AR treibt die AR-Sitzung die Bilder (vfArBild setzt VF.ar.frame); der Takt des Fensters steht dann.
+    if (VF.ar) {
+      if (!VF.ar.frame) return;
+      VF.raf = VF.ar.session.requestAnimationFrame(vfArBild);
+    } else VF.raf = requestAnimationFrame(vfBild);
     // Ladebild: bis Klaenge, Texturen und Autos da sind, steht alles (kein HUD, keine Physik, keine Uhren).
     if (VF.laedt && vfLadeSchritt(now)) {
       VF.letzt = now; VF.letztRoh = now; VF.dtBild = 0;
@@ -4241,9 +4332,101 @@
     fn();
     P[key] += performance.now() - t0;
   }
+  // v1.6.60: die Szene (Flaechen, Autos, Hubschrauber, Rauch, NPCs, Geist) mit gegebener Projektion und Blick - fuer das
+  // normale Bild (vfMalen) und fuer Augmented Reality (vfArMalen, 60e-ar.js, je Auge die Matrizen der Kamera).
+  function vfSzeneMalen(gl, pv, blick, auge) {
+    // v1.3.39: Boden, Fahrbahn und Randsteine mit Texturen (vorher Eckfarben in VF.bahn).
+    vfFlaechenMalen(gl, pv, auge);
+    gl.useProgram(VF.prog);
+    if (!VF.loc) VF.loc = { m: gl.getUniformLocation(VF.prog, 'm'), w: gl.getUniformLocation(VF.prog, 'w'), nebel: gl.getUniformLocation(VF.prog, 'nebel'), alf: gl.getUniformLocation(VF.prog, 'alf'), sonne: gl.getUniformLocation(VF.prog, 'sonne'),
+                            dunst: gl.getUniformLocation(VF.prog, 'dunst'), aug: gl.getUniformLocation(VF.prog, 'aug'),
+                            p: gl.getAttribLocation(VF.prog, 'p'), c: gl.getAttribLocation(VF.prog, 'c'), pv: new Float32Array(16), w16: new Float32Array(16) };
+    const L = VF.loc;
+    for (let i = 0; i < 16; i++) L.pv[i] = pv[i];
+    gl.uniformMatrix4fv(L.m, false, L.pv);
+    vfTzSetzen(gl, L);
+    gl.uniform1f(L.alf, 1.0);
+    const zeichne = (pu, welt) => {
+      for (let i = 0; i < 16; i++) L.w16[i] = welt[i];
+      gl.uniformMatrix4fv(L.w, false, L.w16);
+      gl.bindBuffer(gl.ARRAY_BUFFER, pu.b);
+      gl.enableVertexAttribArray(L.p); gl.enableVertexAttribArray(L.c);
+      gl.vertexAttribPointer(L.p, 3, gl.FLOAT, false, 24, 0);
+      gl.vertexAttribPointer(L.c, 3, gl.FLOAT, false, 24, 12);
+      gl.drawArrays(gl.TRIANGLES, 0, pu.n);
+    };
+    if (VF.boxStriche) {
+      zeichne(VF.boxStriche, VF_EINS);
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
+    // v1.5: Baeume (nur auf Rasen), vor den Autos. v1.6.60: in AR keine (die echte Umgebung ist zu sehen).
+    if (VF.ar) { /* ohne Baeume */ }
+    else if (VF.weh && VF.weh.prog) vfWehenMalen(gl, pv);
+    else if (VF.baeume) {
+      zeichne(VF.baeume, VF_EINS);
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
+    const geistDa = !!(VF.geist && VF.geist.aktiv && VF.geist.an);
+    // Ohne Modell (Kasten gewaehlt oder Modell noch nicht geladen) bleibt der blaue Kasten als Geist.
+    // v1.6.48 (GEMELDET: Ruckeln im Performance-Modus nach ein paar Runden - ab Runde 2 faehrt der Geist): in Performance ist der
+    // Geist die leichte blaue Kiste statt eines zweiten vollen Modells in zwei Durchgaengen.
+    const geistModell = geistDa && VF.modell && VF.tprog && VF.grafik;
+    if (geistDa && !geistModell) {
+      if (!VF.geistAuto) VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.uniform1f(L.alf, 0.45);
+      zeichne(VF.geistAuto, vfLage(VF.geist.x, VF.geist.y, VF.geist.h));
+      gl.uniform1f(L.alf, 1.0);
+      gl.disable(gl.BLEND);
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
+    if (VF.hubschrauber) {
+      // RC Stunt Copter: Rumpf mit der Fluglage (Hoehe, Schraeglage, Nicken), darueber der drehende Hauptrotor.
+      gl.uniform1f(L.alf, 1.0);
+      const welt = vfHubLage(VF.x, VF.y, VF.h, VF.z || 0, VF.roll || 0, VF.pitch || 0);
+      zeichne(VF.auto, welt);
+      if (VF.hubRotor) zeichne(VF.hubRotor, vfMal(welt, vfRy(VF.rotor || 0)));
+      if (VF.hubHeck) zeichne(VF.hubHeck, vfKette(welt, vfT(0, VF_HUB_HECK_NABE[0], VF_HUB_HECK_NABE[1]), vfRx(VF.heckRotor || 0),
+        vfT(0, -VF_HUB_HECK_NABE[0], -VF_HUB_HECK_NABE[1])));
+      if (VF.hubTore) { if (!VF.hubTorPuffer) VF.hubTorPuffer = vfHubTorPufferBauen(gl); zeichne(VF.hubTorPuffer, vfT(0, 0, 0)); }
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    } else if (VF.modell && VF.tprog) vfModellMalen(gl, pv, blick, auge);
+    else {
+      zeichne(VF.auto, vfLage(VF.x, VF.y, VF.h));
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
+    // v1.6.27: Drift-Rauch (halbdurchsichtig, schreibt keine Tiefe), mit dem Farbprogramm.
+    if (VF.rauch && VF.rauch.length) {
+      gl.useProgram(VF.prog);
+      if (!VF.rauchPuffer) VF.rauchPuffer = vfRauchPufferBauen(gl);
+      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+      for (const p of VF.rauch) {
+        const u = p.t / p.leben, s = p.s0 + (p.s1 - p.s0) * Math.sqrt(u);
+        gl.uniform1f(L.alf, p.a0 * (1 - u) * Math.min(1, u * 8));
+        zeichne(VF.rauchPuffer, vfKette(vfT(p.x, p.y, p.z), vfRy(p.dreh + u), vfS(s, s * 0.8, s)));
+      }
+      gl.uniform1f(L.alf, 1.0);
+      gl.depthMask(true); gl.disable(gl.BLEND);
+      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
+    }
+    // NPCs: ihre eigenen Modelle an ihren Stellen.
+    if (VF.npcs && VF.tprog) {
+      for (const npc of VF.npcs) {
+        if (!npc.modell) continue;
+        // Neigung 1x: "Neigung sichtbar" gilt nur fuer das eigene Auto (v1.2.32 GEMELDET: "sollte auf
+        // Stufe 1 sein"). Bremslicht, wenn das Fahrzeugmodell des NPC bremst.
+        vfModellZeichnen(gl, pv, blick, npc.modell, VF.tprog, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, true,
+          !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, auge);
+      }
+    }
+    // v1.5.84: der Geist als durchscheinende Kopie des gewaehlten Autos, nach allen undurchsichtigen Autos.
+    if (geistModell) vfGeistMalen(gl, pv, blick, auge);
+  }
   function vfMalen() {
     const gl = VF.gl, cv = VF.cv;
     if (gl.isContextLost()) return;   // webglcontextlost beendet die Fahrt (virtuellStarten)
+    // v1.6.60: Augmented Reality zeichnet in die Ebene der AR-Sitzung (60e-ar.js), nicht in die Leinwand.
+    if (VF.ar) { if (VF.ar.frame && typeof vfArMalen === 'function') vfArMalen(VF.ar.frame); return; }
     // Handy (Touch): hoechstens 1,25-fache Aufloesung - die Pixelzahl ist auf dem Handy der teuerste Teil.
     // Quality (v1.3.113) darf mehr Pixel: bis 1,5 auf Touch, bis 2 auf Desktop.
     const qPix = VF.grafik && vfWacheStufe() < 2;   // v1.5: die Bildraten-Wache nimmt ab Stufe 2 die Quality-Aufloesung
@@ -4315,91 +4498,7 @@
         gl.viewport(0, 0, w, h);
       });
     }
-    // v1.3.39: Boden, Fahrbahn und Randsteine mit Texturen (vorher Eckfarben in VF.bahn).
-    vfFlaechenMalen(gl, pv, k.auge);
-    gl.useProgram(VF.prog);
-    if (!VF.loc) VF.loc = { m: gl.getUniformLocation(VF.prog, 'm'), w: gl.getUniformLocation(VF.prog, 'w'), nebel: gl.getUniformLocation(VF.prog, 'nebel'), alf: gl.getUniformLocation(VF.prog, 'alf'), sonne: gl.getUniformLocation(VF.prog, 'sonne'),
-                            dunst: gl.getUniformLocation(VF.prog, 'dunst'), aug: gl.getUniformLocation(VF.prog, 'aug'),
-                            p: gl.getAttribLocation(VF.prog, 'p'), c: gl.getAttribLocation(VF.prog, 'c'), pv: new Float32Array(16), w16: new Float32Array(16) };
-    const L = VF.loc;
-    for (let i = 0; i < 16; i++) L.pv[i] = pv[i];
-    gl.uniformMatrix4fv(L.m, false, L.pv);
-    vfTzSetzen(gl, L);
-    gl.uniform1f(L.alf, 1.0);
-    const zeichne = (pu, welt) => {
-      for (let i = 0; i < 16; i++) L.w16[i] = welt[i];
-      gl.uniformMatrix4fv(L.w, false, L.w16);
-      gl.bindBuffer(gl.ARRAY_BUFFER, pu.b);
-      gl.enableVertexAttribArray(L.p); gl.enableVertexAttribArray(L.c);
-      gl.vertexAttribPointer(L.p, 3, gl.FLOAT, false, 24, 0);
-      gl.vertexAttribPointer(L.c, 3, gl.FLOAT, false, 24, 12);
-      gl.drawArrays(gl.TRIANGLES, 0, pu.n);
-    };
-    if (VF.boxStriche) {
-      zeichne(VF.boxStriche, VF_EINS);
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
-    }
-    // v1.5: Baeume (nur auf Rasen), vor den Autos.
-    if (VF.weh && VF.weh.prog) vfWehenMalen(gl, pv);
-    else if (VF.baeume) {
-      zeichne(VF.baeume, VF_EINS);
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
-    }
-    const geistDa = !!(VF.geist && VF.geist.aktiv && VF.geist.an);
-    // Ohne Modell (Kasten gewaehlt oder Modell noch nicht geladen) bleibt der blaue Kasten als Geist.
-    // v1.6.48 (GEMELDET: Ruckeln im Performance-Modus nach ein paar Runden - ab Runde 2 faehrt der Geist): in Performance ist der
-    // Geist die leichte blaue Kiste statt eines zweiten vollen Modells in zwei Durchgaengen.
-    const geistModell = geistDa && VF.modell && VF.tprog && VF.grafik;
-    if (geistDa && !geistModell) {
-      if (!VF.geistAuto) VF.geistAuto = vfAutoBauen(gl, [0.45, 0.75, 1.0]);
-      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      gl.uniform1f(L.alf, 0.45);
-      zeichne(VF.geistAuto, vfLage(VF.geist.x, VF.geist.y, VF.geist.h));
-      gl.uniform1f(L.alf, 1.0);
-      gl.disable(gl.BLEND);
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
-    }
-    if (VF.hubschrauber) {
-      // RC Stunt Copter: Rumpf mit der Fluglage (Hoehe, Schraeglage, Nicken), darueber der drehende Hauptrotor.
-      gl.uniform1f(L.alf, 1.0);
-      const welt = vfHubLage(VF.x, VF.y, VF.h, VF.z || 0, VF.roll || 0, VF.pitch || 0);
-      zeichne(VF.auto, welt);
-      if (VF.hubRotor) zeichne(VF.hubRotor, vfMal(welt, vfRy(VF.rotor || 0)));
-      if (VF.hubHeck) zeichne(VF.hubHeck, vfKette(welt, vfT(0, VF_HUB_HECK_NABE[0], VF_HUB_HECK_NABE[1]), vfRx(VF.heckRotor || 0),
-        vfT(0, -VF_HUB_HECK_NABE[0], -VF_HUB_HECK_NABE[1])));
-      if (VF.hubTore) { if (!VF.hubTorPuffer) VF.hubTorPuffer = vfHubTorPufferBauen(gl); zeichne(VF.hubTorPuffer, vfT(0, 0, 0)); }
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
-    } else if (VF.modell && VF.tprog) vfModellMalen(gl, pv, blick, k.auge);
-    else {
-      zeichne(VF.auto, vfLage(VF.x, VF.y, VF.h));
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
-    }
-    // v1.6.27: Drift-Rauch (halbdurchsichtig, schreibt keine Tiefe), mit dem Farbprogramm.
-    if (VF.rauch && VF.rauch.length) {
-      gl.useProgram(VF.prog);
-      if (!VF.rauchPuffer) VF.rauchPuffer = vfRauchPufferBauen(gl);
-      gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
-      for (const p of VF.rauch) {
-        const u = p.t / p.leben, s = p.s0 + (p.s1 - p.s0) * Math.sqrt(u);
-        gl.uniform1f(L.alf, p.a0 * (1 - u) * Math.min(1, u * 8));
-        zeichne(VF.rauchPuffer, vfKette(vfT(p.x, p.y, p.z), vfRy(p.dreh + u), vfS(s, s * 0.8, s)));
-      }
-      gl.uniform1f(L.alf, 1.0);
-      gl.depthMask(true); gl.disable(gl.BLEND);
-      gl.disableVertexAttribArray(L.p); gl.disableVertexAttribArray(L.c);
-    }
-    // NPCs: ihre eigenen Modelle an ihren Stellen.
-    if (VF.npcs && VF.tprog) {
-      for (const npc of VF.npcs) {
-        if (!npc.modell) continue;
-        // Neigung 1x: "Neigung sichtbar" gilt nur fuer das eigene Auto (v1.2.32 GEMELDET: "sollte auf
-        // Stufe 1 sein"). Bremslicht, wenn das Fahrzeugmodell des NPC bremst.
-        vfModellZeichnen(gl, pv, blick, npc.modell, VF.tprog, npc.x, npc.y, npc.h, npc.feder, npc.lenkWinkel, npc.raddreh, VF.radModell, true,
-          !!(npc.motor && npc.motor.outputs && npc.motor.outputs.lights && npc.motor.outputs.lights.brake), 1, 0, k.auge);
-      }
-    }
-    // v1.5.84: der Geist als durchscheinende Kopie des gewaehlten Autos, nach allen undurchsichtigen Autos.
-    if (geistModell) vfGeistMalen(gl, pv, blick, k.auge);
+    vfSzeneMalen(gl, pv, blick, k.auge);
     // v1.5 (Quality): Bloom auf das fertige Bild, vor dem Regen. Scheitert er einmal, bleibt er fuer die Fahrt aus.
     if (vfBloomAn()) vfPassZeit('bloom', () => { try { vfBloomMalen(gl, w, h); } catch (e) { VF.bloomKaputt = true; VF.bloom = null; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, w, h); log('Virtuell: Bloom aus (' + e.message + ').', 'info'); } });
     // v1.5.19: Regen zuletzt (durchsichtig, ohne Tiefe zu schreiben).
@@ -5860,6 +5959,8 @@
     }
     const frei = freiK ? vfFreiCache[freiK] : null;
     VF.frei = frei;
+    VF.freiId = freiK || '';   // v1.6.60: Schluessel der virtuellen Streckenzeiten (frei:<id>)
+    VF.zeitLauf = { runden: [] };
     VF_BOX_SEITE = frei ? frei.seite : -1;   // freie Strecken: Box auf der Seite der DXF (boxSeite)
     const tiles = frei ? frei.tiles : (opts.tiles && opts.tiles.length >= 3 ? opts.tiles : vfTilesWaehlen());
     if (!tiles) { vfStartHinweis(t('Erst eine Strecke bauen')); return false; }
@@ -5899,7 +6000,10 @@
       + '<div class="vf-touch-heli vf-touch-heli-r"><div class="vf-touch-knauf"></div><span class="vf-touch-hinweis">' + t('Neigen / Rollen') + '</span></div></div>'
       + vfLadebildHtml((() => { try { return vfLadeKarteDrehen(vfLadeKarteSvg(tiles, frei ? frei.pts : null), window.innerWidth, window.innerHeight); } catch (e) { return ''; } })());
     schicht.classList.add('vf-laedt');
-    document.body.appendChild(schicht);
+    // v1.6.60: in AR liegt die Schicht im Wurzelelement der AR-Ueberlagerung (dom-overlay), durchsichtig.
+    VF.ar = opts.ar || null;
+    if (VF.ar) { schicht.classList.add('vf-ar'); (VF.ar.wurzel || document.body).appendChild(schicht); }
+    else document.body.appendChild(schicht);
     // v1.6.44 aus gnen54s testversion (aba1968): die Knopfleiste blendet sich nach 4 s Ruhe aus und kommt bei Mausbewegung,
     // Tippen oder Klick zurueck (Lenken auf den Touch-Flaechen zaehlt nicht). Der Knopf zum dauerhaften Ausblenden bleibt.
     { const kn = schicht.querySelector('.vf-knoepfe');
@@ -5918,8 +6022,9 @@
     // v1.6.46 GEMELDET: "der Schatten unter den virtuellen Autos im Performance-Modus ist heller als die Strasse". Mit dem
     // Alphakanal der Leinwand (Vorgabe) senkte jede halbdurchsichtige Flaeche (Schatten, Geist, Rauch) die Deckkraft des
     // Bildes, und der helle Seitenhintergrund schien durch. alpha: false = undurchsichtige Leinwand.
-    const gl = cv.getContext('webgl', { antialias: true, alpha: false }) || cv.getContext('experimental-webgl', { alpha: false });
+    const gl = cv.getContext('webgl', { antialias: true, alpha: false, xrCompatible: !!opts.ar }) || cv.getContext('experimental-webgl', { alpha: false });
     if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
+    if (VF.ar) cv.style.visibility = 'hidden';   // v1.6.60: in AR zeichnet die Sitzung, die Leinwand bleibt unsichtbar
     // v1.5.154: OES_standard_derivatives (fwidth) fuer den bildschirm-adaptiven Schatten-PCF des Autos.
     // Ohne die Erweiterung bleibt der feste Kern; der Shader prueft das selbst ueber GL_OES_standard_derivatives.
     gl.getExtension('OES_standard_derivatives');
@@ -6073,6 +6178,8 @@
     Object.assign(VF, { x: VF.pts[start].x, y: VF.pts[start].y, h: VF.pts[start].heading, idx: start, zaehler: 0, kachel: -2,
                         abseits: false, letzt: 0, kam: null, rundeAb: 0, letzte: null, beste: null, aktiv: true,
                         startX: VF.pts[start].x, startY: VF.pts[start].y, startH: VF.pts[start].heading });
+    VF.besteGeladen = false;
+    if (!VF.extern && !VF.studie) vfZeitenLaden();   // v1.6.60 (Gnen54): Bestzeit und Zwischenzeiten dieser Strecke
     if (!VF.hubschrauber) vfNpcStarten(gl, start);
     VF.hubTorPuffer = null;
     VF.hubTore = null;
@@ -6158,7 +6265,7 @@
     vfAmbienceAnwenden();   // v1.6.46: Ambience-Schalter der virtuellen Fahrt
     if (typeof showTab === 'function') showTab('race');
     VF.takt = setInterval(vfPaket, VF_TAKT_MS);
-    VF.raf = requestAnimationFrame(vfBild);
+    VF.raf = VF.ar ? VF.ar.session.requestAnimationFrame(vfArBild) : requestAnimationFrame(vfBild);
     showHudToast(t('Virtuelle Fahrt: frei fahren, ✕ beendet'));
     return true;
   }
@@ -6492,6 +6599,20 @@
     los.textContent = t('Losfahren');
     los.onclick = () => virtuellStarten();
     z.appendChild(los);
+    // v1.6.60 (WIP): Augmented Reality (Chrome auf Android mit ARCore): Strecke und Auto bzw. Hubschrauber im Zimmer.
+    {
+      const ar = document.createElement('button');
+      ar.type = 'button';
+      ar.className = 'vf-ar-knopf';
+      ar.dataset.vf = 'ar';
+      ar.innerHTML = 'AR <span class="wip-tag">WIP</span>';
+      ar.title = t('Augmented Reality: die Strecke im Zimmer (Chrome auf Android mit ARCore)');
+      ar.onclick = (e) => { e.stopPropagation(); if (typeof vfArStarten === 'function') vfArStarten(); };
+      ar.hidden = !(typeof vfArMoeglich === 'function' && vfArMoeglich());
+      z.appendChild(ar);
+    }
+    // v1.6.60 (aus Gnen54s Fork): Bestzeiten je Strecke und Auto, zugeklappt unter den Optionen der Garage.
+    try { rechts.appendChild(vfBestenliste(vfAutoListe())); } catch (e) { /* ohne */ }
     // Anleitung zum virtuellen Fahren (aus PR 4 von gnen54): Knopf "?" neben Losfahren, oeffnet
     // hilfe/virtuelles-fahren.html als Fenster ueber der Garage.
     const hilfe = document.createElement('button');
@@ -6619,8 +6740,42 @@
       }
     } catch (e) { /* ohne Ton weiterfahren */ }
   }
+  // v1.6.60: Schluessel und Name der Strecke fuer die virtuellen Zeiten, und das Fahrgefuehl als 'vf-<handling>'.
+  function vfFahrgefuehlId() { return VF.hubschrauber || vfHubschrauber() ? 'vf-heli' : 'vf-' + vfHandling(); }
+  function vfFahrgefuehlName(fg) {
+    const id = String(fg || '').replace(/^vf-/, '');
+    if (id === 'heli') return t('RC Heli');
+    return t('Virtuell') + ' · ' + vfHandlingName(id);
+  }
+  function vfZeitSchluessel() {
+    let key = '';
+    if (VF.freiId) key = 'frei:' + VF.freiId;
+    else if (VF.tiles && VF.tiles.length >= 3 && typeof skSchluessel === 'function') key = skSchluessel(VF.tiles);
+    return key ? key + (VF.gegen ? '|gegen' : '') : '';
+  }
+  function vfZeitName() {
+    if (VF.freiId && VF_FREIE[VF.freiId]) return t(VF_FREIE[VF.freiId].name) + (VF.gegen ? ' (' + t('Gegenrichtung') + ')' : '');
+    const k = VF.tiles && typeof skSchluessel === 'function' ? skSchluessel(VF.tiles) : '';
+    return (k && typeof skStreckenName === 'function' ? skStreckenName(k) : '') + (VF.gegen ? ' (' + t('Gegenrichtung') + ')' : '');
+  }
+  function vfZeitenAbschluss() {
+    const lauf = VF.zeitLauf;
+    VF.zeitLauf = null;
+    if (!lauf || !lauf.runden.length || VF.extern || VF.studie || typeof skVirtuellFahrtEnde !== 'function') return;
+    const key = vfZeitSchluessel();
+    if (!key) return;
+    let minMs = 1000;
+    try { if (!VF.freiId) minMs = chMinRundeMs({ code: key.split('|')[0], runden: 1 }); } catch (e) { /* 1 s */ }
+    try {
+      skVirtuellFahrtEnde({ key, name: vfZeitName(), runden: lauf.runden, fahrgefuehl: vfFahrgefuehlId(),
+        auto: VF.hubschrauber ? t('RC Stunt Copter') : vfAutoName(vfAutoWahl()), minMs });
+    } catch (e) { if (typeof log === 'function') log('Virtuelle Streckenzeiten: ' + e.message, 'warn'); }
+  }
   function virtuellBeenden() {
+    if (VF.aktiv) vfZeitenAbschluss();
+    if (VF.ar) { const ar = VF.ar; VF.ar = null; try { if (typeof vfArAufraeumen === 'function') vfArAufraeumen(ar); } catch (e) { /* egal */ } }
     VF.frei = undefined;
+    VF.freiId = '';
     VF_BOX_SEITE = -1;   // zurueck auf die Editor-Boxenseite (rechts)
     VF.hoehe = null;
     rennPauseBeenden();

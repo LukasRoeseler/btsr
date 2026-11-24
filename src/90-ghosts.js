@@ -7992,7 +7992,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
           + 'die Ampel.', 'err');
       showHudToast('GELBE FLAGGE');
       setRaceLights(0);
+      if (typeof ampelGelb === 'function') ampelGelb(true);   // v1.6.60: Startampel Gelb
     } else if (next === 'green') {
+      if (typeof ampelGelb === 'function') ampelGelb(false);
       limitYellow = 1;
       safetyCarHeim();
       applySpeedLimit();

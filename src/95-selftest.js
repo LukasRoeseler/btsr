@@ -14622,6 +14622,116 @@
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Virtuell v1.6.60: gespeicherte Zeiten je Strecke/Richtung/Auto (Gnen54), Bestenliste in der Garage, AR-Knopf nur mit WebXR-AR', () => {
+    const f = [];
+    const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merk = lies(VF_ZEITEN_STORE), merkVF = { frei: VF.frei, tiles: VF.tiles, gegen: VF.gegen, beste: VF.beste, besteSplits: VF.besteSplits };
+    try {
+      localStorage.removeItem(VF_ZEITEN_STORE);
+      Object.assign(VF, { frei: { name: 'Heckenhoim' }, gegen: false });
+      if (vfZeitMerken(30000, [0, 100]) !== false) f.push('erste Runde als neue Bestzeit gemeldet');
+      if (vfZeitMerken(29000, [0, 90]) !== true) f.push('schnellere Runde nicht gemeldet');
+      vfZeitMerken(31000, null);
+      const e = vfZeitenAlle()[vfZeitenSchluessel()];
+      if (!e || e.beste !== 29000 || e.runden !== 3 || e.letzte[0] !== 31000 || (e.splits || [])[1] !== 90) f.push('Eintrag ' + JSON.stringify(e));
+      VF.gegen = true;
+      if (vfZeitenAlle()[vfZeitenSchluessel()]) f.push('Gegenrichtung teilt sich die Zeiten');
+      VF.gegen = false; VF.beste = null; VF.besteSplits = null;
+      vfZeitenLaden();
+      if (VF.beste !== 29000 || !VF.besteSplits) f.push('Laden: ' + VF.beste);
+      const box = vfBestenliste(vfAutoListe());
+      if (!box.querySelector('table') || box.textContent.indexOf('Heckenhoim') < 0) f.push('Bestenliste ohne Eintrag');
+      const kn = document.createElement('div'); vfGarageOptionen(kn);
+      const ar = kn.querySelector('[data-vf="ar"]');
+      if (!ar) f.push('kein AR-Knopf');
+      else if (ar.hidden !== !vfArMoeglich()) f.push('AR-Knopf sichtbar ohne AR');
+      if (!kn.querySelector('[data-vf="bestenliste"]')) f.push('Bestenliste fehlt in der Garage');
+    } finally {
+      Object.assign(VF, merkVF);
+      try { if (merk === null) localStorage.removeItem(VF_ZEITEN_STORE); else localStorage.setItem(VF_ZEITEN_STORE, merk); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bestzeit 29,000 s mit Zwischenzeiten, Gegenrichtung getrennt, Bestenliste, AR-Knopf ' + (vfArMoeglich() ? 'sichtbar' : 'verborgen (kein WebXR-AR)') };
+  });
+  stAdd('Startampel v1.6.60: Befehle fuer Start, Toene, Gruen, Gelb, Fruehstart und Ende (Attrappe)', async () => {
+    const f = [], gesendet = [];
+    const merk = { g: ampelGeraet, k: ampelKanal, rs: raceState };
+    try {
+      ampelKanal = { properties: { writeWithoutResponse: true }, writeValueWithoutResponse: (d) => { gesendet.push(new TextDecoder().decode(d).trim()); return Promise.resolve(); } };
+      ampelGeraet = { name: 'Ampel', gatt: { connected: true } };
+      raceState = 'idle';
+      ampelStartKnopf(); raceState = 'countdown'; ampelCountdown();
+      [1, 2, 3, 4, 5].forEach((n) => startampelLicht(n));
+      ampelFruehstartMelden(); raceState = 'racing'; ampelLos(); ampelGelb(true); ampelGelb(false); ampelRennende();
+      await ampelSchlange; await new Promise((ok) => setTimeout(ok, 20));
+      const soll = 'START|GRUEN 1|GRUEN 2|GRUEN 3|GRUEN 4|GRUEN 5|FRUEHSTART|LOS|GELB|GELB_AUS|ROT';
+      if (gesendet.join('|') !== soll) f.push(gesendet.join('|') + ' statt ' + soll);
+      if (!$('ampel-verbinden') || !$('sub-opt-addon')) f.push('Seite/Knopf fehlt');
+    } finally { ampelGeraet = merk.g; ampelKanal = merk.k; raceState = merk.rs; ampelSchlange = Promise.resolve(); ampelStatusZeigen(); }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'START, GRUEN 1-5, FRUEHSTART, LOS, GELB, GELB_AUS, ROT in Reihenfolge' };
+  });
+  stAdd('Ansagen v1.6.60: Akku kritisch bei 6 % (Session abbrechen, Box anfahren), je Auto, erst nach dem Laden wieder', () => {
+    const f = [];
+    const merkAn = Object.assign({}, ansageAn), merkLatch = Object.assign({}, ansageLatch);
+    const merkB = new Set(batteryLatchSet), merkK = new Set(batteryKritLatchSet);
+    try {
+      Object.assign(ansageAn, { battery: true, batterycrit: true });
+      batteryLatchSet.clear(); batteryKritLatchSet.clear();
+      const auto = { id: 'st-akku' };
+      const folge = [0.30, 0.12, 0.06, 0.00, 0.12, 0.06, 0.50, 0.06].map((v) => {
+        const r = ansagenPruefen({ batteries: [{ car: auto, value: v, label: 'A' }] }) || [];
+        return r.filter((x) => x === 'battery' || x === 'batterycrit').join(',');
+      });
+      const soll = ['', 'battery', 'batterycrit', '', '', '', '', 'batterycrit'];
+      if (folge.join('|') !== soll.join('|')) f.push('Folge ' + folge.join('|') + ' statt ' + soll.join('|'));
+      if (!$('setting-announce-battery-crit') || !$('setting-announce-battery-crit').checked) f.push('Schalter fehlt oder ab Werk aus');
+    } finally {
+      Object.assign(ansageAn, merkAn); Object.assign(ansageLatch, merkLatch);
+      batteryLatchSet.clear(); merkB.forEach((c) => batteryLatchSet.add(c));
+      batteryKritLatchSet.clear(); merkK.forEach((c) => batteryKritLatchSet.add(c));
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '30/12/6/0/12/6/50/6 %: -, Akku, kritisch, -, -, -, -, kritisch' };
+  });
+  stAdd('Strecken v1.6.60: virtuelle Streckenzeiten (frei:<id>, gebaute Bahn, Gegenrichtung) lokal, Upload nur mit Sync und faehigem Skript, virtuelle Liste', () => {
+    const f = [];
+    const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merkV = lies(SK_V_STORE), merkOpt = lies(SK_OPT_STORE), merkAus = chAusgangLesen(), merkModus = lies(FAHR_MODUS_STORE);
+    const merkVF = { zeitLauf: VF.zeitLauf, freiId: VF.freiId, gegen: VF.gegen, tiles: VF.tiles, extern: VF.extern, studie: VF.studie, hubschrauber: VF.hubschrauber };
+    try {
+      localStorage.removeItem(SK_V_STORE);
+      skOptSetzen({ sync: false });
+      Object.assign(VF, { zeitLauf: { runden: [30000, 500, 28000] }, freiId: 'indeq', gegen: false, extern: null, studie: false, hubschrauber: false });
+      vfZeitenAbschluss();
+      const l = skVLokalAlle()['frei:indeq'];
+      if (!l || l.length !== 1 || l[0].zeit !== 28000 || !/^vf-/.test(l[0].fahrgefuehl)) f.push('lokal frei: ' + JSON.stringify(l));
+      if (chAusgangLesen().some((x) => x.fahrt === 'virtuell')) f.push('ohne Sync hochgeladen');
+      // Gebaute Bahn in Gegenrichtung, mit Sync: in die Warteschlange (Skript hier "nicht faehig": nichts gesendet).
+      const tiles = codeToTrack('SG11R3G12R3').tiles;
+      skOptSetzen({ sync: true });
+      chFaehig[chOnline().url] = { p: Promise.resolve(false), ja: false, at: Date.now() };
+      Object.assign(VF, { zeitLauf: { runden: [40000] }, freiId: '', gegen: true, tiles });
+      vfZeitenAbschluss();
+      const key = skSchluessel(tiles) + '|gegen';
+      if (!(skVLokalAlle()[key] || []).length) f.push('lokal Bahn Gegenrichtung fehlt: ' + key);
+      const q = chAusgangLesen().find((x) => x.fahrt === 'virtuell' && x.strecke === key);
+      if (!q || q.art !== 'strecke-zeit' || !/^vf-/.test(q.fahrgefuehl)) f.push('nicht in der Warteschlange: ' + JSON.stringify(q));
+      // Challenge/Studie zaehlen nicht.
+      Object.assign(VF, { zeitLauf: { runden: [41000] }, extern: 'challenge' });
+      const vorher = (skVLokalAlle()[key] || []).length;
+      vfZeitenAbschluss();
+      if ((skVLokalAlle()[key] || []).length !== vorher) f.push('Challenge-Fahrt in den Streckenzeiten');
+      // Virtuelle Liste enthaelt die lokalen Strecken mit '|v'.
+      const vl = skVirtuelleStrecken();
+      if (!vl.some((s) => s.strecke === 'frei:indeq|v') || !vl.some((s) => s.strecke === key + '|v')) f.push('virtuelle Liste: ' + vl.map((s) => s.strecke).join(','));
+      if (skLokal('frei:indeq|v').length !== 1) f.push('skLokal virtuell');
+    } finally {
+      Object.assign(VF, merkVF);
+      try { if (merkV === null) localStorage.removeItem(SK_V_STORE); else localStorage.setItem(SK_V_STORE, merkV); } catch (e) { /* egal */ }
+      try { if (merkOpt === null) localStorage.removeItem(SK_OPT_STORE); else localStorage.setItem(SK_OPT_STORE, merkOpt); } catch (e) { /* egal */ }
+      chAusgangSchreiben(merkAus);
+      try { if (merkModus === null) localStorage.removeItem(FAHR_MODUS_STORE); else localStorage.setItem(FAHR_MODUS_STORE, merkModus); } catch (e) { /* egal */ }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'frei:indeq und Bahn|gegen lokal, Upload nur mit Sync, Challenge zaehlt nicht, virtuelle Liste' };
+  });
   stAdd('Challenges v1.6.56: virtuell eigene Listen (|v), Medaillen x1,75, Upload erst mit faehigem Skript, Start mit dem virtuellen Auto, rote Akzente', async () => {
     const f = [];
     const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -14754,7 +14864,7 @@
         mass.push(m + ' ' + Math.round(g.indizes / 3 / 1000) + 'k');
       } catch (e) { f.push(m + ': ' + e.message); }
     }
-    const quelle = String(vfMalen);
+    const quelle = String(vfSzeneMalen);   // v1.6.60: die Szene steht in vfSzeneMalen (auch fuer AR)
     if (quelle.indexOf('geistModell') < 0 || quelle.indexOf('VF.grafik') < 0) f.push('Geist-Weiche fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'leicht: ' + mass.join(', ') + '; Geist in Performance als Kiste' };
   });
