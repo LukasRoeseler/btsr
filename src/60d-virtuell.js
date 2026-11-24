@@ -23,6 +23,10 @@
   const VF_MU = 1.0;                // Haftbeiwert auf trockener Bahn (mal gripScale fuer Regen)
   const VF_ABSEITS_BREMSE = 3.0;    // Tempoverlust neben der Bahn je Sekunde (exponentiell)
   const VF_ABSEITS_ZURUECK_MS = 2500;
+  // v1.6.69 BESTELLT: "Mach eine Option, die mir erlaubt, im virtuellen Fahren abzuschalten, dass das Auto zurueck auf die
+  // Strecke gesetzt wird." Ab Werk an (wie bisher); aus = neben der Bahn weiterfahren, zurueck nur ueber den Knopf.
+  const VF_ZURUECK_STORE = 'omegasim-vf-zuruecksetzen';
+  function vfZuruecksetzenAn() { try { return localStorage.getItem(VF_ZURUECK_STORE) !== 'aus'; } catch (e) { return true; } }
   // v1.3.125: Option "Kein Tempoverlust neben der Bahn" (Vorgabe Aus = das Auto bremst wie bisher).
   // 'aus' schaltet den Tempoverlust ab, das Auto faehrt neben der Bahn ungebremst weiter.
   const VF_ABSEITS_BREMSE_STORE = 'omegasim-vf-abseits-bremse';
@@ -4026,7 +4030,7 @@
     vfRandsteinTon(kerb, q, kmh);   // v1.3.39: dumpfes Rumpeln, je Bild (billig), blendet selbst aus
     if (ab) {
       if (vfAbseitsBremseAn()) st.speedKmh *= Math.exp(-VF_ABSEITS_BREMSE * dt);
-      if (rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
+      if (vfZuruecksetzenAn() && rennZeitJetzt() - VF.abseitsSeit > VF_ABSEITS_ZURUECK_MS) vfZuruecksetzen();
     }
     // NPCs: folgen ihrer Spur mit Stufe-1-Tempo und bremsen vor Kurven (vfNpcSteuern).
     // DIAGNOSE (temporaer, Latenz): Zeit fuer NPC-Steuerung + Kollision (vfVerkehr).
@@ -6317,7 +6321,7 @@
   // Optionen > Virtuell die Einstellungen der Fahrt (VF_OPT_FAHRT), Optionen > RC Heli die des Hubschraubers (VF_OPT_HELI),
   // die virtuelle Garage den Rest (Auto, Lack, Boden, Strecke, Richtung, Handling, NPCs, Losfahren).
   const VF_OPT_FAHRT = ['Schaltung', 'Grafik', 'Tageszeit', 'Sichtfeld mit Tempo', 'Geist folgt meiner Linie', 'Rückspiegel (Motorhaube)',
-    'Kein Tempoverlust neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar', 'Drift-Gyro', 'Rauch-Auflösung', 'Strecken-Ambience'];
+    'Kein Tempoverlust neben der Bahn', 'Zurücksetzen neben der Bahn', 'Pflicht-Boxendurchfahrt', 'Neigung sichtbar', 'Drift-Gyro', 'Rauch-Auflösung', 'Strecken-Ambience'];
   // v1.6.46 BESTELLT: "fuer Strecken Ambience extra Option im virtuellen Fahren" (aus gnen54s 817c361: ab Werk aus).
   // Waehrend einer virtuellen Fahrt gilt dieser Schalter statt Optionen > Ton (ambienceAktiv, 80-sound.js).
   const VF_AMBIENCE_STORE = 'omegasim-vf-ambience';
@@ -6571,6 +6575,16 @@
     const abseitsZeile = garWertZeile(t('Kein Tempoverlust neben der Bahn'), abseitsBremse ? t('Aus') : t('An'), abseitsWahl, abseitsWahl);
     abseitsZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(abseitsZeile);
+    // v1.6.69: automatisches Zuruecksetzen neben der Bahn abschaltbar.
+    {
+      const an = vfZuruecksetzenAn();
+      const w = () => { try { localStorage.setItem(VF_ZURUECK_STORE, an ? 'aus' : 'an'); } catch (e) { /* egal */ } vfGarageNeu(); };
+      const z = garWertZeile(t('Zurücksetzen neben der Bahn'), an ? t('An') : t('Aus'), w, w);
+      const l = z.querySelector('.gk-l'); l.classList.add('opt-label');
+      l.insertAdjacentHTML('beforeend', '<small>' + t('An (Vorgabe): steht das Auto 2,5 s neben der Bahn, kommt es zurück auf die Strecke. Aus: du fährst neben der Bahn weiter, zurück nur mit dem Knopf „Zurücksetzen“.') + '</small>');
+      z.dataset.vfZurueck = '1';
+      rechts.appendChild(z);
+    }
     // NPCs: wie viele andere Autos mitfahren (0-3), zufaellige Skins aus den echten Modellen.
     const nNpc = vfNpcAnzahl();
     const npcWahl = (dd) => {

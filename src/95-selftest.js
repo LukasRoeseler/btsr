@@ -14652,6 +14652,22 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bestzeit 29,000 s mit Zwischenzeiten, Gegenrichtung getrennt, Bestenliste, AR-Knopf ' + (vfArMoeglich() ? 'sichtbar' : 'verborgen (kein WebXR-AR)') };
   });
+  stAdd('Virtuell v1.6.69: Zuruecksetzen neben der Bahn abschaltbar (Optionen > Virtuell, ab Werk an)', () => {
+    const f = [];
+    const merk = (() => { try { return localStorage.getItem(VF_ZURUECK_STORE); } catch (e) { return null; } })();
+    try {
+      localStorage.removeItem(VF_ZURUECK_STORE);
+      if (!vfZuruecksetzenAn()) f.push('ab Werk aus');
+      const box = document.createElement('div'); vfGarageOptionen(box);
+      const z = box.querySelector('[data-vf-zurueck]');
+      if (!z) f.push('keine Zeile');
+      else { z.querySelector('[data-d="1"]').click(); if (vfZuruecksetzenAn()) f.push('Knopf schaltet nicht aus'); }
+      if (VF_OPT_FAHRT.indexOf('Zurücksetzen neben der Bahn') < 0) f.push('nicht unter Optionen > Virtuell');
+      const quelle = String(vfBild);
+      if (quelle.indexOf('vfZuruecksetzenAn()') < 0) f.push('vfBild fragt die Option nicht');
+    } finally { try { if (merk === null) localStorage.removeItem(VF_ZURUECK_STORE); else localStorage.setItem(VF_ZURUECK_STORE, merk); } catch (e) { /* egal */ } }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'ab Werk an, Zeile schaltet aus, unter Optionen > Virtuell' };
+  });
   stAdd('Virtuell v1.6.67: Marker-AR - Weltabbildung (Hoehe = aus dem Papier), Kameraort, Glaettung orthonormal, AR-Knopf mit Kamera, Marker-Blatt', async () => {
     const f = [];
     // Welt -> Marker: Welt-Hoehe (y) wird Marker-z (aus dem Papier), Welt-x bleibt x, Welt-z wird -Marker-y; Massstab mm.
