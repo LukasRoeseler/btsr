@@ -14622,6 +14622,57 @@
     if (!$('setting-announce-sektor') || !$('setting-announce-sektor').closest('.opt-row').querySelector('.opt-label small')) f.push('Schalter mit Erklaerung fehlt');
     return { ok: !f.length, mass: f.length ? f.join(' | ') : plan.n + ' Sektoren mit Saum und Nummer, Puls dicker, Ansage nur bei Bestzeit (' + gesagt.length + ' von 5)' };
   });
+  stAdd('Challenges v1.6.56: virtuell eigene Listen (|v), Medaillen x1,75, Upload erst mit faehigem Skript, Start mit dem virtuellen Auto, rote Akzente', async () => {
+    const f = [];
+    const lies = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const merkModus = lies(FAHR_MODUS_STORE), merkTab = kAktiverTab(), merkWahl = chWahl, merkMod = chModus, merkFetch = window.fetch;
+    const setzModus = (m) => { try { localStorage.setItem(FAHR_MODUS_STORE, m); } catch (e) { /* egal */ } konsoleFahrenZeichnen(); };
+    let mass = '';
+    try {
+      setzModus('echt');
+      if (chSchluessel('x', 'hotlap', 'pro') !== 'x|hotlap|pro') f.push('echt: ' + chSchluessel('x', 'hotlap', 'pro'));
+      const def = CHALLENGES[0], g0 = chSterneSchwellen(def).gold;
+      setzModus('virtuell');
+      if (chSchluessel('x', 'hotlap', 'pro') !== 'x|hotlap|pro|v') f.push('virtuell: ' + chSchluessel('x', 'hotlap', 'pro'));
+      if (chSchluessel('x', 'hotlap', 'pro', false) !== 'x|hotlap|pro') f.push('Angabe echt wirkt nicht');
+      if (Math.abs(chSterneSchwellen(def).gold / g0 - CH_VIRTUELL_FAKTOR) > 0.01) f.push('Medaillen virtuell nicht x' + CH_VIRTUELL_FAKTOR);
+      // Rote Akzente und Umschalter.
+      const kb = getComputedStyle($('tab-challenges')).getPropertyValue('--k-blau').trim().toLowerCase();
+      if (kb !== '#e53935') f.push('Akzent virtuell ' + kb);
+      if (!$('ch-fahrt') || !$('ch-fahrt').querySelector('[data-fahrt="virtuell"].an')) f.push('Umschalter zeigt nicht Virtuell');
+      // Upload: altes Skript (nicht faehig) -> nichts senden, Zeit bleibt in der Schlange.
+      let posts = 0;
+      window.fetch = (u, o) => { if (o && o.method === 'POST') posts++; return merkFetch(u, o); };
+      const url = 'https://example.invalid/st-faehig';
+      chFaehig[url] = { p: Promise.resolve(false), ja: false, at: Date.now() };
+      const r = await chEintragSenden({ fahrt: 'virtuell', url, nr: 'st-virt-1', challenge: 'x' });
+      if (r !== false || posts) f.push('virtuelle Zeit an ein altes Skript gesendet');
+      window.fetch = merkFetch;
+      // Start: die Challenge faehrt das virtuelle Auto, ohne eigenes Rennen der virtuellen Fahrt.
+      if (typeof virtuellStarten === 'function' && physicsEnabled && !VF.aktiv) {
+        chWahl = def.id; chModus = 'hotlap';
+        challengeStarten();
+        if (!VF.aktiv) mass = 'virtuelle Fahrt startet hier nicht (kein WebGL?)';
+        else {
+          if (VF.extern !== 'challenge' || VF.modus !== 'practice') f.push('extern ' + VF.extern + ' / ' + VF.modus);
+          if (!chLauf || !chLauf.virtuell || chLauf.probe) f.push('Lauf nicht virtuell: ' + JSON.stringify(chLauf && { v: chLauf.virtuell, p: chLauf.probe }));
+          challengeAbbrechen();
+          await new Promise((ok) => setTimeout(ok, 30));
+          if (VF.aktiv) f.push('virtuelle Fahrt endet nicht mit dem Abbruch');
+        }
+      }
+    } finally {
+      window.fetch = merkFetch;
+      if (chLauf) challengeAbbrechen();
+      if (VF.aktiv) { try { virtuellBeenden(); } catch (e) { /* weiter */ } }
+      chAusgangRaus('st-virt-1');
+      chWahl = merkWahl; chModus = merkMod;
+      try { if (merkModus === null) localStorage.removeItem(FAHR_MODUS_STORE); else localStorage.setItem(FAHR_MODUS_STORE, merkModus); } catch (e) { /* egal */ }
+      konsoleFahrenZeichnen();
+      if (merkTab) showTab(merkTab);
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Listen |v, Medaillen x' + CH_VIRTUELL_FAKTOR + ', kein Upload an altes Skript, Start/Abbruch mit dem virtuellen Auto, rot' + (mass ? ' (' + mass + ')' : '') };
+  });
   stAdd('Virtuell v1.6.52: Reifenwahl in der Garage (Griff im Regen), Rauch-Aufloesung, Ladebalken unten links, Audi-Kamera vor dem Wischer', () => {
     const f = [];
     const merkTab = kAktiverTab(), merkT = tyres, merkModus = (() => { try { return localStorage.getItem(FAHR_MODUS_STORE); } catch (e) { return null; } })();
@@ -14934,7 +14985,7 @@
       try { if (merkA === null) localStorage.removeItem(VF_AUTO_STORE); else localStorage.setItem(VF_AUTO_STORE, merkA); } catch (e) { /* egal */ }
       if (rm && merkRm !== null) rm.value = merkRm;
     }
-    // Tore: Oval mit 3 Sektoren -> 2 Sektortore + Start/Ziel.
+    // Tore: Oval mit n Sektoren (seit v1.6.56: 8) -> n-1 Sektortore + Start/Ziel.
     const merkVF = { pts: VF.pts, nrm: VF.nrm, tiles: VF.tiles, frei: VF.frei, zielIdx: VF.zielIdx, x: VF.x, y: VF.y, z: VF.z, rundeAb: VF.rundeAb, hubTore: VF.hubTore };
     let mass = '';
     try {
@@ -14956,7 +15007,7 @@
       VF.rundeAb = 1000;
       durch(T.liste[T.liste.length - 1], 10);
       if (vfHubRundeErlaubt(rennZeitJetzt())) f.push('Runde ohne alle Tore erlaubt');
-      durch(T.liste[1], 10);
+      for (let k = 1; k < T.liste.length - 1; k++) durch(T.liste[k], 10);
       durch(T.liste[T.liste.length - 1], 10);
       if (!vfHubRundeErlaubt(rennZeitJetzt())) f.push('Runde nach allen Toren nicht erlaubt');
       vfHubRundeGezaehlt();
@@ -15123,7 +15174,16 @@
         try { localStorage.setItem(VF_AUTO_STORE, 'hubschrauber'); } catch (e) { /* egal */ }
         vfGarageSeite();
         if ($('vg-optionen').querySelectorAll('[data-vf-hub]').length !== 0) f.push('Heli-Optionen noch in der Garage (gehoeren nach Optionen > RC Heli)');
-        if (!$('vg-vorschau').querySelector('.vg-heli')) f.push('Heli ohne Bild');
+        const hb = $('vg-vorschau').querySelector('.vf-vorschau-bild');
+        if (!hb || hb.getAttribute('src') !== 'img/vf/vorschau.png') f.push('Heli ohne Bild');
+        // v1.6.56: kein Motorsound und keine Fahrtrichtung mehr in der Garage, Hintergrund durchsichtig, Boden/Strecke ohne WIP.
+        vfGarageSeite();
+        const tg = [...$('vg-optionen').querySelectorAll('.gk-l')].map((x) => x.textContent).join('|');
+        if (tg.indexOf(t('Motorsound')) >= 0 || tg.indexOf(t('Fahrtrichtung')) >= 0) f.push('Motorsound/Fahrtrichtung noch in der Garage');
+        const bz = $('vg-optionen').querySelector('[data-vf-boden]'), sz = $('vg-optionen').querySelector('[data-vf-strecke]');
+        if ((bz && bz.querySelector('.wip-tag')) || (sz && sz.querySelector('.wip-tag'))) f.push('Boden/Strecke noch WIP');
+        const vv = $('vg-vorschau').querySelector('.vf-vorschau');
+        if (vv && getComputedStyle(vv).backgroundImage !== 'none') f.push('Vorschau mit Hintergrund');
       }
       // v1.6.41: Optionen > Virtuell gibt es wieder, jetzt mit den Einstellungen der Fahrt (Test 'Optionen v1.6.41').
       // Echte Garage: der Knopf fuehrt in die virtuelle Garage.
@@ -18474,7 +18534,7 @@
     // Optionen rechts in der Garage: Motorsound-Zeile, Tonstatus, Losfahren.
     const vfBox = document.createElement('div');
     vfGarageOptionen(vfBox);
-    if (!vfBox.querySelector('[data-vf="los"]') || !vfBox.querySelector('.gk-zeile') || !vfBox.querySelector('.vf-ton-status')) f.push('Garagen-Optionen unvollstaendig');
+    if (!vfBox.querySelector('[data-vf="los"]') || !vfBox.querySelector('.gk-zeile')) f.push('Garagen-Optionen unvollstaendig');
     if (vfTonGeladen('') || vfTonGeladen('gibtsnicht')) f.push('vfTonGeladen meldet Leeres als geladen');
     if (!(Math.abs(gefangen.r) < 0.05 && Math.abs(gefangen.vy) < 0.3)) f.push('faengt sich nicht: r ' + gefangen.r + ' vy ' + gefangen.vy);
     // V5R (Werte wie img/autos/v5r/auto.json): Federung - Bremsen nickt die Nase, Rechtskurve legt nach links,
@@ -18604,7 +18664,7 @@
       const zGT3 = lauf(VF_GT3, 30, 0.5, 2), zSchnell = lauf(schnell, 30, 0.5, 2);
       if (!(Math.abs(zSchnell.r) > Math.abs(zGT3.r))) f.push('Schnell dreht nicht enger: ' + zSchnell.r + ' / ' + zGT3.r);
       // v1.6.25 (Issue #9): heisst Pacejka, Reifenkurve mit dem Formfaktor des echten Fahrens.
-      if (vfHandlingName('schnell') !== t('Pacejka (WIP)')) f.push('Name ' + vfHandlingName('schnell'));
+      if (vfHandlingName('schnell') !== t('Pacejka (wie echte CH Autos, WIP)')) f.push('Name ' + vfHandlingName('schnell'));
       if (physEngine && physEngine.config && Math.abs(schnell.C - physEngine.config.pacejkaC) > 1e-9) f.push('C ' + schnell.C + ' statt ' + physEngine.config.pacejkaC);
       // Ungueltiger Wert faellt auf GT3 zurueck.
       vfHandlingSetzen('gibtsnicht');
@@ -18633,7 +18693,7 @@
       const box = document.createElement('div');
       vfGarageOptionen(box);
       const z = box.querySelector('[data-vf-boden]');
-      if (!z || !z.querySelector('.wip-tag')) f.push('Bodenzeile mit WIP fehlt in der Garage');
+      if (!z || z.querySelector('.wip-tag')) f.push('Bodenzeile fehlt in der Garage oder traegt noch WIP (seit v1.6.56 ohne)');
       else if (z.querySelector('b').textContent !== t(VF_BOEDEN[0].name)) f.push('Bodenzeile zeigt ' + z.querySelector('b').textContent);
     } finally {
       try { if (vorher === null) localStorage.removeItem(VF_BODEN_STORE); else localStorage.setItem(VF_BODEN_STORE, vorher); } catch (e) { /* privat */ }
@@ -30154,7 +30214,7 @@
     const m = stSekMerk();
     try {
       trackMode = 'on';
-      const erw = { 3: 1, 8: 1, 14: 1, 15: 2, 25: 3, 30: 3, 100: 10, 160: 10 };
+      const erw = { 3: 1, 4: 2, 8: 2, 13: 3, 25: 6, 30: 8, 38: 10, 100: 10, 160: 10 };
       for (const n of Object.keys(erw)) {
         if (autoSektorFormel(+n) !== erw[n]) f.push(n + ' Teile: ' + autoSektorFormel(+n) + ' statt ' + erw[n]);
       }
@@ -30162,7 +30222,7 @@
       const code = trackToCode(tiles);
       if (trackSektorModus(tiles) !== 'auto') f.push('neue Strecke nicht automatisch');
       const pa = autoSektorPlanFuer(tiles, true);
-      if (!pa || pa.n !== 3) f.push('automatisch: ' + (pa ? pa.n : 'kein Plan'));
+      if (!pa || pa.n !== 8) f.push('automatisch: ' + (pa ? pa.n : 'kein Plan'));
       tiles[0].sm = 'aus';
       if (autoSektorPlanFuer(tiles, true)) f.push('aus und trotzdem Sektoren');
       tiles[0].sm = 'manuell';
@@ -30185,7 +30245,7 @@
         if (!I18N_EN[k] || !I18N_ES[k]) f.push('Uebersetzung fehlt: ' + k);
       }
     } finally { stSekZurueck(m); }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : '8 keine, 15 zwei, 25 drei, 100 zehn; aus/manuell in den Teilen, Grenze wandert mit, Code gleich, keine Renn-Option' };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : '8 zwei, 13 drei, 25 sechs, 100 zehn; aus/manuell in den Teilen, Grenze wandert mit, Code gleich, keine Renn-Option' };
   });
 
   stAdd('Sektoren v1.3.81: Grenzen auf Teilefugen und etwa gleich lang, Vorrang der Start/Ziel-Teile, Ausdruck unveraendert', () => {
@@ -30236,7 +30296,7 @@
       // Bahn: der Regler gilt nicht (wie seine Erklaerung sagt), die Strecke gilt.
       currentTrackTiles = stSekStrecke(ST_SEK_OVAL).tiles;
       sectorCount = 3;
-      if (sektorZiel() !== 1 || sektorAnzeigeZahl() !== 3 || !autoSektorenAktiv()) f.push('Bahn mit Regler 3: Ziel ' + sektorZiel() + ', Anzeige ' + sektorAnzeigeZahl());
+      if (sektorZiel() !== 1 || sektorAnzeigeZahl() !== autoSektorFormel(currentTrackTiles.length) || !autoSektorenAktiv()) f.push('Bahn mit Regler 3: Ziel ' + sektorZiel() + ', Anzeige ' + sektorAnzeigeZahl());
       // Ausdruck: unveraendert der Regler, keine Strecken-Sektoren.
       trackMode = 'off';
       if (sektorZiel() !== 3 || sektorAnzeigeZahl() !== 3 || autoSektorenAktiv() || autoSektorPlanAktuell()) f.push('Ausdruck: Ziel ' + sektorZiel() + ', auto ' + autoSektorenAktiv());
@@ -30269,6 +30329,9 @@
       trackMode = 'on';
       sectorCount = 1;
       const tiles = stSekStrecke(ST_SEK_OVAL).tiles;
+      // v1.6.56: die Formel gibt dem Oval jetzt 8 Sektoren; die Zeitmessung wird weiter mit 3 geprueft (manuell gesetzt,
+      // an den Fugen der Dreiteilung).
+      tiles[0].sm = 'manuell'; autoSektorGrenzen(tiles, 3).kacheln.forEach((k) => { tiles[k].sg = 1; });
       currentTrackTiles = tiles; lineCache = null;
       const p = autoSektorPlanAktuell();
       if (!p || p.n !== 3) return { ok: false, mass: 'kein Plan mit 3 Sektoren: ' + JSON.stringify(p) };
@@ -30515,10 +30578,11 @@
       if (sekWahl.sel !== 0) f.push('links zurueck nicht auf Start/Ziel (' + sekWahl.sel + ')');
       trackEditorPad('confirm');
       if (currentTrackTiles[0].sg) f.push('Start/Ziel abwaehlbar oder setzbar');
-      // Klick auf ein Teil der Karte (Teil 11, eine automatische Grenze): entfernt sie.
+      // Klick auf ein Teil der Karte (eine automatische Grenze, die dritte): entfernt sie.
       const svgEl = $('track-preview-svg').querySelector('svg');
       const geo = trackEditorGeo;
-      const pk = geo && geo.pts.filter((q) => q.tile === 11);
+      const kk = pa.kacheln[2];
+      const pk = geo && geo.pts.filter((q) => q.tile === kk);
       if (!svgEl || !pk || !pk.length) f.push('keine Kartengeometrie');
       else {
         const q = pk[Math.floor(pk.length / 2)];
@@ -30526,9 +30590,9 @@
         const sc = pt.matrixTransform(svgEl.getScreenCTM());
         const klick = () => $('track-preview-svg').dispatchEvent(new MouseEvent('click', { clientX: sc.x, clientY: sc.y, bubbles: true }));
         klick();
-        if (currentTrackTiles[11].sg) f.push('Klick entfernt die Grenze nicht');
+        if (currentTrackTiles[kk].sg) f.push('Klick entfernt die Grenze nicht');
         klick();
-        if (!currentTrackTiles[11].sg) f.push('zweiter Klick setzt sie nicht wieder');
+        if (!currentTrackTiles[kk].sg) f.push('zweiter Klick setzt sie nicht wieder');
         klick();
       }
       const zahl = $('track-sek-zahl').textContent;

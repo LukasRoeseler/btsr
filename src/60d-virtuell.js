@@ -620,7 +620,7 @@
         if (!vfTexDaten.bahn) { if (vfBahnLauf().next().done) vfTexLauf.bahn = null; }
         else if (!vfTexDaten.rand) vfRandTexturDaten();
         else if (!(vfTexDaten.boden && vfTexDaten.bodenId === P.id)) { if (vfBodenLauf(P).next().done) vfTexLauf.boden = null; }
-        else { vfVorbereiten = false; if (typeof vfGarageSeiteOffen === 'function' && vfGarageSeiteOffen()) vfGarageBodenSetzen(); return; }
+        else { vfVorbereiten = false; return; }
       } while (frist.timeRemaining() > 8);
       ric(schritt);
     };
@@ -1962,7 +1962,7 @@
   // v1.3.5: 'gran' heisst Gran Hybrismo (wie Gran Turismo Sport), neu 'acc' Assetto Carrera (wie
   // ACC). Die Kennung 'gran' bleibt, damit eine gespeicherte Wahl weiter gilt.
   // v1.6.25 (Issue #9) BESTELLT: "Schnell" heisst "Pacejka" - die Kennung 'schnell' bleibt (gespeicherte Wahl).
-  const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Pacejka (WIP)' },
+  const VF_HANDLING_MODI = [{ id: 'gt3', name: 'GT3' }, { id: 'schnell', name: 'Pacejka (wie echte CH Autos, WIP)' },
                             { id: 'librecorsa', name: 'LibreCorsa GT3 (WIP)' }, { id: 'drift', name: 'Drift (WIP)' }];
   // v1.5.25: Gran Hybrismo und Assetto Carrera sind entfernt; eine gespeicherte Wahl faehrt als LibreCorsa GT3.
   const VF_HANDLING_ENTFERNT = { gran: 'librecorsa', acc: 'librecorsa' };
@@ -5798,7 +5798,7 @@
     VF.tilesVorher = currentTrackTiles;
     try { VF.editorVorher = localStorage.getItem(EDITOR_STRECKE_STORE); } catch (e) { VF.editorVorher = undefined; }
     // v1.5.150: freie Strecke (nur virtuell) statt der gebauten Bahn - erst laden, dann neu starten.
-    const freiK = !(opts.tiles && opts.tiles.length >= 3) && !opts.studie ? vfFreiWahl() : '';
+    const freiK = !(opts.tiles && opts.tiles.length >= 3) && !opts.studie && !opts.extern ? vfFreiWahl() : '';
     if (freiK && !vfFreiCache[freiK]) {
       vfFreiLaden(freiK).then(() => virtuellStarten(opts), () => vfStartHinweis(t('Strecke konnte nicht geladen werden')));
       return true;
@@ -5809,6 +5809,9 @@
     const tiles = frei ? frei.tiles : (opts.tiles && opts.tiles.length >= 3 ? opts.tiles : vfTilesWaehlen());
     if (!tiles) { vfStartHinweis(t('Erst eine Strecke bauen')); return false; }
     VF.studie = !!opts.studie;
+    // v1.6.56: extern = ein Rennen der App (Challenge, Karriere, Meisterschaft) nutzt das virtuelle Auto; die virtuelle
+    // Fahrt fuehrt dann kein eigenes Rennen (Training, keine eigene Ampel) und endet mit dem Rennen.
+    VF.extern = opts.extern || null;
     const schicht = document.createElement('div');
     schicht.className = 'vf-schicht';
     const lbl = (txt) => '<span class="vf-lbl">' + txt + '</span>';
@@ -5942,7 +5945,7 @@
     const s = Math.max(0, VF.pts.findIndex((p) => p.tile >= 0 && tiles[p.tile] && tiles[p.tile].type === TILE_TYPE.START));
     let start = ((s - Math.round(TRACK_SAMPLES_PER_TILE / 2)) % VF.pts.length + VF.pts.length) % VF.pts.length;
     VF.zielIdx = vfZielIdx(VF.pts, tiles);
-    VF.gegen = opts.gegen !== undefined ? !!opts.gegen : (vfGegenAn() && !opts.studie);
+    VF.gegen = opts.gegen !== undefined ? !!opts.gegen : (vfGegenAn() && !opts.studie && !opts.extern);
     if (VF.gegen) {
       const n = VF.pts.length, G = vfGegenrichtung(VF.pts, VF.boxBucht);
       const vorLinie = ((VF.zielIdx - start) % n + n) % n;   // so weit vor der Linie steht das Auto
@@ -6053,7 +6056,7 @@
     // Rennmodus: Runden, Endurance, Qualifying und Training werden uebernommen; seit v1.3.95 auch
     // Time Attack (bestzeit), NPC-Knockout und Derby - mit eigener Wertung fuer die virtuellen NPCs
     // (die Geister-Wertung aus 90-ghosts/90d-challenger greift hier nicht).
-    VF.modus = raceMode;
+    VF.modus = VF.extern ? 'practice' : raceMode;
     if (VF.modus !== 'laps' && VF.modus !== 'endurance' && VF.modus !== 'qualifying' && VF.modus !== 'practice'
         && VF.modus !== 'bestzeit' && VF.modus !== 'knockout' && VF.modus !== 'derby') {
       showHudToast(t('Rennmodus im virtuellen Fahren nicht verfügbar') + ' – ' + t('Training'));
@@ -6129,16 +6132,7 @@
       if (!sampleEngine.ready && !sampleEngine.loading) loadEngineSamples();
     } catch (e) { /* ohne Ton weiter */ }
   }
-  function vfTonStatus() {
-    if (!soundEnabled) return t('Ton ist aus (Optionen > Ton).');
-    if (location.protocol === 'file:') return t('Direkt von der Festplatte geöffnet: hier lassen sich die Aufnahmen nicht laden, es spielt der Ersatzton. Mit „Start OmegaSim.bat“ starten.');
-    if (audioCtx && audioCtx.state !== 'running') return t('Ton wartet auf einen Tipp.');
-    const k = vfMotorZiel();
-    if (VF.aktiv && sampleEngine.nodes && sampleEngine.car === k) return t('Aufnahme spielt.');
-    if (vfTonGeladen(k)) return t('Aufnahme geladen und bereit.');
-    if (sampleEngine.loading) return t('Aufnahmen werden geladen …');
-    return t('Keine Aufnahmen gefunden – es spielt der Ersatzton.');
-  }
+
   // ---- VIRTUELLE GARAGE (v1.6.32, WIP) ----
   // BESTELLT: "Zur virtuellen Garage: Diese sollte komplett eigenstaendig sein und mit der Vorschau fuer Handy optimiert."
   // Eine eigene Seite (#tab-vgarage) statt der rechten Spalte der echten Garage: links (Hochformat: oben) das Vorschaubild
@@ -6186,8 +6180,9 @@
     else if (vfGarageSeiteOffen()) vfGarageSeite();
     else renderGarage();
   }
-  const VF_HELI_BILD = '<svg class="vg-heli" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
-    + '<path d="M6 12h36M24 12v5"/><path d="M14 24a10 7 0 0 1 10-7h4a8 8 0 0 1 8 8v2a3 3 0 0 1-3 3H19a5 5 0 0 1-5-6z"/><path d="M36 25h8M44 21v8"/><path d="M18 30l-2 6M30 30l2 6M12 36h24"/></svg>';
+  // v1.6.56 BESTELLT: "In der Vorschau in der Garage bei virtuell fehlt das Helikopter Modell": eigenes Bild
+  // (tools/heli_vorschau.py), die Autos wie bisher aus tools/vorschau_bilder.py.
+  function vfVorschauUrl(id) { return id === VF_HELIKOPTER ? 'img/vf/vorschau.png' : vfModellPfad(id) + 'vorschau.png'; }
   function vfGarageSeite() {
     const host = $('vg-optionen'), vor = $('vg-vorschau');
     if (!host || !vor) return;
@@ -6197,11 +6192,10 @@
     // v1.6.41: Einstellungen der Fahrt und des Hubschraubers stehen in den Optionen (Kacheln Virtuell und RC Heli).
     vfZeilenWahl(host, VF_OPT_FAHRT.concat(VF_OPT_HELI)).forEach((z) => z.remove());
     vor.innerHTML = '';
+    // v1.6.56 BESTELLT: "Mach einfach den ganzen Hintergrund durchsichtig und die Menue-Hintergrundfarbe ist dann da" -
+    // kein Boden mehr hinter dem Bild, nur das transparente Auto bzw. der Hubschrauber.
     const bild = host.querySelector('.vf-vorschau');
-    if (bild && vfHubschrauber()) bild.remove();   // der Heli hat kein Vorschaubild, statt dessen das Symbol
-    if (bild && !vfHubschrauber()) vor.appendChild(bild);
-    else if (vfHubschrauber()) { const d = document.createElement('div'); d.className = 'opt-row opt-breit vf-vorschau'; d.innerHTML = VF_HELI_BILD; vor.appendChild(d); }
-    vfGarageBodenSetzen();
+    if (bild) vor.appendChild(bild);
     const name = document.createElement('div');
     name.className = 'vg-name';
     name.setAttribute('data-i18n-skip', '');
@@ -6211,38 +6205,6 @@
     if (los) vor.appendChild(los);
     host.scrollTop = y;
     if (host.querySelector('.opt-label small:not(.opt-info-versteckt)') && typeof optInfoEinrichten === 'function') optInfoEinrichten();
-  }
-  // v1.6.37 BESTELLT: "the preview should show the background that is selected (eg grass) and on top the car preview
-  // picture but without the grey background". Hinter das transparente Vorschaubild kommt der gewaehlte Boden: ein Stueck
-  // seiner Textur (sobald vfTexturenVorbereiten sie gerechnet hat, einmal je Art als JPEG-Daten-URL gemerkt), in
-  // Perspektive als Boden, darueber Himmel (Rasen) oder eine dunkle Wand (Holz, Laminat). Bis dahin die Grundfarbe.
-  const vfBodenVorschauCache = {};
-  function vfBodenVorschauUrl(id) {
-    if (vfBodenVorschauCache[id]) return vfBodenVorschauCache[id];
-    const T = vfTexDaten.boden;
-    if (!T || vfTexDaten.bodenId !== id) return '';
-    try {
-      const gross = document.createElement('canvas');
-      gross.width = T.w; gross.height = T.h;
-      gross.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(T.d.buffer, T.d.byteOffset, T.w * T.h * 4), T.w, T.h), 0, 0);
-      const k = document.createElement('canvas');
-      k.width = 512; k.height = 256;
-      k.getContext('2d').drawImage(gross, 0, 0, T.w / 2, T.h / 2, 0, 0, 512, 256);
-      vfBodenVorschauCache[id] = k.toDataURL('image/jpeg', 0.8);
-    } catch (e) { return ''; }
-    return vfBodenVorschauCache[id];
-  }
-  function vfGarageBodenSetzen() {
-    const vor = document.querySelector('#vg-vorschau .vf-vorschau');
-    if (!vor) return;
-    const P = vfBodenArt(vfBodenWahl());
-    vor.classList.toggle('vg-draussen', P.id === 'rasen');
-    let b = vor.querySelector('.vg-boden');
-    if (!b) { b = document.createElement('div'); b.className = 'vg-boden'; vor.insertBefore(b, vor.firstChild); }
-    const url = vfBodenVorschauUrl(P.id), f = P.ton && P.ton[0] ? P.ton[0] : [90, 130, 60];
-    b.style.backgroundColor = 'rgb(' + f.join(',') + ')';
-    b.style.backgroundImage = url ? 'url("' + url + '")' : 'none';
-    b.dataset.boden = P.id + (url ? ':bild' : ':farbe');
   }
   function vfGarageZeigen() {
     if (typeof fahrModusSetzen === 'function' && !fahrModusVirtuell()) fahrModusSetzen('virtuell');
@@ -6256,23 +6218,8 @@
     kopf.className = 'gar-a-titel';
     kopf.textContent = t('Virtuelles Auto');
     rechts.appendChild(kopf);
-    const sel = $('sound-profile');
-    const global = sel && sel.selectedIndex >= 0 ? motorNamen(sel.options[sel.selectedIndex]) : '';
-    const werte = [{ v: '', name: t('Wie in Optionen') + (global ? ' (' + global + ')' : '') }]
-      .concat(sel ? [...sel.options].filter((o) => o.value).map((o) => ({ v: o.value, name: motorNamen(o) })) : []);
-    const j = Math.max(0, werte.findIndex((w) => w.v === vfMotorGewaehlt()));
-    const wahl = (d) => {
-      const n = werte[(j + d + werte.length) % werte.length].v;
-      try { localStorage.setItem(VF_MOTOR_STORE, n || VF_MOTOR_GLOBAL); } catch (e) { /* egal */ }
-      vfGarageNeu();
-    };
-    if (vfMotorFest()) {
-      // Eigenbau von Gnen54: Motorklang fest zum Auto, die Pfeile sind gesperrt.
-      const fest = garWertZeile(t('Motorsound'), werte[j].name + ' (' + t('fest zum Auto') + ')', () => {}, () => {});
-      fest.dataset.vfMotorFest = '1';
-      fest.querySelectorAll('button').forEach((k) => { k.disabled = true; k.style.visibility = 'hidden'; });
-      rechts.appendChild(fest);
-    } else rechts.appendChild(garWertZeile(t('Motorsound'), werte[j].name, () => wahl(-1), () => wahl(1)));
+    // v1.6.56 BESTELLT: "Engine Sound Option entfernen fuer virtuelle Garage" - jedes Auto hat seinen festen Motorklang
+    // (VF_MOTOR_FEST), die Zeile zeigte nur noch den gesperrten Wert.
     // v1.1.9: welches Auto, und wie deutlich die Federung sichtbar neigt.
     const autos = vfAutoListe();
     const ja = Math.max(0, autos.findIndex((a) => a.v === vfAutoWahl()));
@@ -6321,7 +6268,7 @@
       const img = document.createElement('img');
       img.className = 'vf-vorschau-bild';
       img.alt = autos[ja].name;
-      img.src = vfModellPfad(autos[ja].v) + 'vorschau.png';   // v1.6.37: transparent (tools/vorschau_bilder.py)
+      img.src = vfVorschauUrl(autos[ja].v);   // transparent (tools/vorschau_bilder.py, Heli: tools/heli_vorschau.py)
       img.onerror = () => { vor.remove(); };
       vor.appendChild(img);
       rechts.appendChild(vor);
@@ -6332,7 +6279,6 @@
     const bodenWahl = (dd) => { vfBodenSetzen(VF_BOEDEN[(jb + dd + VF_BOEDEN.length) % VF_BOEDEN.length].id); vfGarageNeu(); };
     const bodenZeile = garWertZeile(t('Boden'), t(VF_BOEDEN[jb].name), () => bodenWahl(-1), () => bodenWahl(1));
     bodenZeile.dataset.vfBoden = '1';
-    bodenZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(bodenZeile);
     // v1.5.150: freie Strecke (Törnerschleife, nur virtuell) oder die gebaute Bahn des Editors.
     const freiListe = vfStreckenListe();
@@ -6346,19 +6292,8 @@
     // Aus PR 4 von gnen54: beide Toernerschleifen (mit und ohne Bruecke) sind waehlbar.
     const freiZeile = garWertZeile(t('Strecke'), freiListe[jf] ? t(VF_FREIE[freiListe[jf]].name) + ' (' + t('nur virtuell') + ')' : t('Gebaute Bahn'), () => freiWahl(-1), () => freiWahl(1));
     freiZeile.dataset.vfStrecke = '1';
-    freiZeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
     rechts.appendChild(freiZeile);
-    // Fahrtrichtung (BESTELLT, WIP): die Strecke andersherum fahren, siehe vfGegenrichtung.
-    {
-      const gegen = vfGegenAn();
-      const rWahl = () => { try { localStorage.setItem(VF_RICHTUNG_STORE, gegen ? 'normal' : 'gegen'); } catch (e) { /* egal */ } vfGarageNeu(); };
-      const rZeile = garWertZeile(t('Fahrtrichtung'), gegen ? t('Gegenrichtung') : t('Normal'), rWahl, rWahl);
-      const rL = rZeile.querySelector('.gk-l');
-      rL.classList.add('opt-label');
-      rL.insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span><small>' + t('Die Strecke andersherum fahren. Ziellinie, Sektoren und Boxengasse bleiben an ihrem Platz.') + '</small>');
-      rZeile.dataset.feld = 'richtung';
-      rechts.appendChild(rZeile);
-    }
+    // v1.6.56 BESTELLT: "Direction entfernen aus virtual garage, das ist ja in der Streckenkachel schon" (Knopf fa-richtung).
     // Schaltung: Automatik oder Manuell (schalten dann mit I/K).
     const autoSch = vfSchaltungAuto();
     const schaltWahl = () => {
@@ -6489,15 +6424,7 @@
       };
       rechts.appendChild(garWertZeile(t('Neigung sichtbar'), VF_FEDER_WERTE[jf] + '×', () => federWahl(-1), () => federWahl(1)));
     }
-    const status = document.createElement('p');
-    status.className = 'muted vf-ton-status';
-    status.textContent = vfTonStatus();
-    rechts.appendChild(status);
-    const iv = setInterval(() => {
-      if (!status.isConnected) { clearInterval(iv); return; }
-      const s = vfTonStatus();
-      if (status.textContent !== s) status.textContent = s;
-    }, 500);
+    // v1.6.56: die Zeile zum Ladezustand des Motorklangs entfaellt mit der Motorsound-Zeile.
     const z = document.createElement('div');
     z.className = 'opt-row opt-breit gar-a-aktion';
     const los = document.createElement('button');
@@ -6724,7 +6651,9 @@
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
     // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).
-    if (!VF.studie && typeof showTab === 'function') { showTab('vgarage'); vfGarageSeite(); }   // v1.6.32: zurueck in die virtuelle Garage
-    VF.studie = false;
+    if (VF.extern === 'challenge' && typeof showTab === 'function') showTab('challenges');
+    else if (VF.extern && typeof showTab === 'function') showTab('fahren');
+    else if (!VF.studie && typeof showTab === 'function') { showTab('vgarage'); vfGarageSeite(); }   // v1.6.32: zurueck in die virtuelle Garage
+    VF.studie = false; VF.extern = null;
   }
   window.addEventListener('keydown', (e) => { if (VF.aktiv && e.key === 'Escape') { e.stopImmediatePropagation(); virtuellBeenden(); } }, true);

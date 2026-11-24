@@ -342,6 +342,7 @@
     const v = m === 'virtuell';
     try { localStorage.setItem(FAHR_MODUS_STORE, v ? 'virtuell' : 'echt'); } catch (e) { /* egal */ }
     konsoleFahrenZeichnen();
+    if (typeof chFahrtGewechselt === 'function') chFahrtGewechselt();   // v1.6.56: Challenges zeigen die Zeiten des Modus
   }
   // Garage im passenden Modus oeffnen: virtuell mit den Optionen der virtuellen Fahrt rechts.
   // v1.6.32: im Modus Virtuell die eigenstaendige virtuelle Garage (#tab-vgarage, 60d-virtuell.js).
@@ -529,6 +530,15 @@
   async function konsoleLosfahren(ohneAuto) {
     // Laeuft schon ein Rennen (Options fuehrt mitten im Rennen hierher), geht es nur zurueck.
     if (kRennenLaeuft()) { konsoleInsCockpit(); return; }
+    // v1.6.56 BESTELLT: "Alles soll analog gehandhabt sein, also auch woechentliche und Dauerrennen, Karriere usw."
+    // Im Modus Virtuell faehrt das virtuelle Auto auf der Strecke des Editors; das Rennen selbst (Ampel, Wertung,
+    // Karriere, Meisterschaft) laeuft wie mit dem echten Auto, die virtuelle Fahrt fuehrt kein eigenes (extern).
+    if (fahrModusVirtuell() && typeof virtuellStarten === 'function' && !(typeof vfAktiv === 'function' && vfAktiv())) {
+      if (!currentTrackTiles || currentTrackTiles.length < 4) { showHudToast(t('Diese Runde braucht eine Strecke: erst scannen, laden oder bauen.')); return; }
+      if (!virtuellStarten({ tiles: currentTrackTiles, extern: 'rennen' })) return;
+      if (raceState === 'idle' || raceState === 'finished') toggleRace();
+      return;
+    }
     if (!playerCar && !ohneAuto) {
       const lage = await garageConnect({ stumm: true });
       if (!playerCar) {
@@ -891,6 +901,7 @@
     // v1.6.23 (Issue #7): Modus Virtuell - die Autos-Kachel zeigt das virtuelle Auto.
     const vfM = fahrModusVirtuell(), vfId = vfM && typeof vfAutoWahl === 'function' ? vfAutoWahl() : '';
     document.body.classList.toggle('fm-virtuell', vfM);
+    if (typeof chFahrtZeichnen === 'function') chFahrtZeichnen();   // v1.6.56: Umschalter auf der Challenge-Seite
     document.querySelectorAll('#fa-modus [data-fm]').forEach((b) => {
       const an = (b.dataset.fm === 'virtuell') === vfM;
       b.classList.toggle('an', an); b.setAttribute('aria-pressed', an ? 'true' : 'false');
@@ -947,7 +958,7 @@
       } else if (vfM) {
         // Vorschaubild des virtuellen Autos (Seitenansicht), dahinter das Bild der virtuellen Fahrt.
         // v1.6.37: transparentes Vorschaubild auf dem Garagenbild der virtuellen Fahrt (BESTELLT: garage_virtual).
-        ab.style.backgroundImage = 'url("' + vfModellPfad(vfId) + 'vorschau.png"), url(img/garage-virtuell.jpg)';
+        ab.style.backgroundImage = 'url("' + vfVorschauUrl(vfId) + '"), url(img/garage-virtuell.jpg)';
         ab.innerHTML = '';
       } else {
         ab.style.backgroundImage = afoto ? 'url("' + afoto + '")' : 'url(img/garage.jpg)';   // v1.0.15: Garagenfoto (BESTELLT)

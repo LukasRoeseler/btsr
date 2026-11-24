@@ -1464,7 +1464,12 @@
   #fa-modus .k-modus-wahl b.an { background: rgba(0,163,224,.42); color: #fff; box-shadow: inset 0 -4px 0 #00a3e0; }
   /* v1.6.46 BESTELLT: "wenn virtuell = an, dann hellblaue Akzentfarbe durch rote ersetzen ueberall in den Menues auf der FAHREN
      Seite". Die Akzentfarbe ist --k-blau; im Modus Virtuell auf FAHREN und in der virtuellen Garage rot. */
-  body.fm-virtuell #tab-fahren, body.fm-virtuell #tab-vgarage { --k-blau: #e53935; --k-blau-text: #fff; }
+  body.fm-virtuell #tab-fahren, body.fm-virtuell #tab-vgarage, body.fm-virtuell #tab-challenges { --k-blau: #e53935; --k-blau-text: #fff; }
+  /* v1.6.56: Umschalter Echt | Virtuell oben auf der Challenge-Seite. */
+  .ch-fahrt { display: inline-flex; margin-left: .6em; vertical-align: middle; border: 1px solid var(--k-blau); border-radius: 999px; overflow: hidden;
+    padding: 0; background: rgba(0,0,0,.35); cursor: pointer; font: inherit; }
+  .ch-fahrt b { padding: .2em .8em; font-size: .55em; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.6); }
+  .ch-fahrt b.an { background: var(--k-blau); color: var(--k-blau-text); }
   body.fm-virtuell #fa-modus .k-modus-wahl b.an { background: rgba(229,57,53,.45); box-shadow: inset 0 -4px 0 #e53935; }
   .k-modus-wahl .wip-tag { margin-left: 3px; font-size: 8px; vertical-align: super; text-shadow: none; }
   /* v1.6.37 BESTELLT: "background of the drive virtually box should be this image: drive_virtually". */
@@ -4332,16 +4337,9 @@
   .vg-raster { display: grid; grid-template-columns: minmax(0, 40%) minmax(0, 1fr); gap: 12px; margin-top: 6px; align-items: start; }
   .vg-vorschau { position: sticky; top: 6px; display: flex; flex-direction: column; gap: 8px; }
   .vg-vorschau .vf-vorschau { position: relative; display: grid; place-items: center; padding: 0; border: 0; overflow: hidden; aspect-ratio: 16 / 9;
-    max-height: 58vh; background: linear-gradient(#262c36 0%, #3a414c 52%, #1a1e24 53%); border-radius: 8px; }
-  .vg-vorschau .vf-vorschau.vg-draussen { background: linear-gradient(#4f86c6 0%, #b5d3ee 50%, #dfe9e0 52%, #6e8f5a 53%); }
-  /* v1.6.37: der gewaehlte Boden in Perspektive (vfGarageBodenSetzen), darauf das transparente Auto. */
-  .vg-vorschau .vg-boden { position: absolute; left: -40%; right: -40%; bottom: 0; height: 95%; background-size: 22% auto; background-repeat: repeat;
-    transform: perspective(420px) rotateX(62deg); transform-origin: 50% 100%; }
-  .vg-vorschau .vf-vorschau::after { content: ""; position: absolute; left: 0; right: 0; top: 40%; height: 22%; pointer-events: none;
-    background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.25) 45%, rgba(0,0,0,0)); }
+    max-height: 58vh; background: transparent; box-shadow: none; border-radius: 8px; }
+  /* v1.6.56: Hintergrund durchsichtig, nur das transparente Auto (bzw. der Hubschrauber) auf der Menue-Farbe. */
   .vg-vorschau .vf-vorschau-bild { position: relative; z-index: 1; width: 100%; height: 100%; max-width: none; max-height: none; object-fit: contain; object-position: center bottom; }
-  .vg-vorschau .vg-heli { position: relative; z-index: 1; }
-  .vg-vorschau .vg-heli { width: 55%; height: 75%; color: #9fd8ff; }
   .vg-name { font-weight: 700; font-size: clamp(13px, 1.8vw, 18px); text-align: center; }
   .vg-vorschau .vf-los-zeile { display: flex; gap: 8px; justify-content: center; border: 0; padding: 0; }
   .vg-vorschau .vf-los-zeile .primary { flex: 1 1 auto; min-height: 44px; font-size: 1.05em; }
@@ -6954,7 +6952,8 @@
     <div class="home-lade" id="ch-lade" role="status" aria-label="Lädt …" hidden>
       <span class="home-lade-dreh" id="ch-lade-dreh"></span><span class="home-lade-text" id="ch-lade-text" data-i18n-skip></span></div>
     <div class="card subpage-home" id="sub-home-challenges">
-      <h2>Challenges <span class="wip-tag">experimentell</span></h2>
+      <h2>Challenges <span class="wip-tag">experimentell</span>
+        <button type="button" class="ch-fahrt" id="ch-fahrt" aria-label="Echt oder virtuell" title="Echte oder virtuelle Zeiten und Fahrten (wie der Fahrmodus auf FAHREN)."><b data-fahrt="echt">Echt</b><b data-fahrt="virtuell">Virtuell</b></button></h2>
       <!-- v1.3.58 BESTELLT: "Strukturiere die Challenges um ... Der Community-Tab ganz oben (vor
            woechentlichen Challenges) und Network ganz unten. Fuege eine Vorschau der jeweils
            meistgefahrenen Strecke beider Typen ein und einen Button 'Alle anzeigen'." Die Karten
@@ -7396,6 +7395,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Challenges virtuell (WIP): Oben auf der Challenge-Seite schaltet Echt | Virtuell um (derselbe Fahrmodus wie auf FAHREN, im Modus Virtuell rote Akzente). Virtuell f&#228;hrst du w&#246;chentliche Challenges, Dauerrennen und Community Challenges mit dem virtuellen Auto, mit Ampel, Teilepr&#252;fung und Wertung wie echt; die Zeiten stehen in eigenen virtuellen Bestenlisten (selbes Backend, klar als virtuell markiert, mit Fahrgef&#252;hl), Medaillenzeiten virtuell vorl&#228;ufig &#215;1,75. Auch Karriere und andere Rennen, die von FAHREN aus starten, fahren im Modus Virtuell das virtuelle Auto. Automatische Sektoren: etwa ein Sektor je 4 Teile (Balkonia 6, Homington 3, mindestens 2). Virtuelle Garage: Vorschau mit durchsichtigem Hintergrund und Bild f&#252;r den RC Heli, Motorsound- und Fahrtrichtungs-Zeile entfernt (Richtung steht in der Streckenkachel), Strecke und Boden ohne WIP, Handling hei&#223;t jetzt &#8222;Pacejka (wie echte CH Autos, WIP)&#8220;.</li>
         <li>Virtuelles Fahren, Prototyp zum Testen: Das Fahrgef&#252;hl Drift ist neu und physikbasiert (WIP). Eigenes Fahrzeugmodell (Hecktriebler): durchdrehende Hinterr&#228;der mit kombiniertem Schlupf, Gewichtsverlagerung, Luft- und Rollwiderstand; mehr Gas = mehr Driftwinkel. X ist im Drift die Handbremse (Tastatur, Gamepad, am Handy ein Knopf links neben dem Gaspedal). Optionen &gt; Virtuell &gt; Drift-Gyro stellt die Gegenlenk-Hilfe ein (wie der Gyro eines RC-Driftautos), Aus = reine Physik.</li>
         <li>Virtuelles Fahren: Reifenwahl in der virtuellen Garage (weich, mittel, hart, Regen), dieselben Mischungen wie beim echten Fahren, damit du im Regen auf Regenreifen fahren kannst. Neue Option &#8222;Rauch-Aufl&#246;sung&#8220; unter Optionen &gt; Virtuell (Automatisch: wie bisher in Performance, etwas feiner in Quality; von Hand bis 8&#215;). Der Ladebalken sitzt jetzt unten links statt mitten &#252;ber der Strecke. Die Motorhaubenkamera des Audi RS5 DTM sitzt weiter vorn, der Scheibenwischer ist nicht mehr im Bild.</li>
         <li>Men&#252;s: Wisch-Animationen beim Wechsel der Seiten (vom Startbildschirm zu FAHREN, zwischen den Reitern je nach Richtung) und beim &#214;ffnen und Schlie&#223;en der Unterseiten; nicht ins Cockpit, und aus, wenn das Ger&#228;t reduzierte Bewegung w&#252;nscht.</li>

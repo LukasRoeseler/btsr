@@ -4248,8 +4248,12 @@
   // (ZIEL_LAENGS.linieOben der ersten Start/Ziel-Kachel). N = runde(Teile / 10), 1 bis 10;
   // 1 heisst keine Sektoren (8 -> 1, 15 -> 2, 25 -> 3, 100 -> 10), und nie mehr als
   // Teile / 2 - ein Abschnitt unter zwei Teilen misst nur noch die Meldegenauigkeit.
+  // v1.6.56 BESTELLT: "Automatische Sektoren: Die duerfen weniger Teile haben, z.B. bei Balkonia 50 Kilometers sind es
+  // 3 Sektoren, dort duerfen es 6 oder 7 sein; insgesamt anpassen, auch die kuerzesten Strecken duerfen 2-3 Sektoren
+  // haben wie Homington". Jetzt etwa ein Sektor je 4 Teile, mindestens 2, hoechstens 10 (und weiter nie mehr als
+  // Teile / 2): Homington (13 Teile) 3, Balkonia (25) 6, 30 Teile 8, ab 38 Teilen 10.
   function autoSektorFormel(teile) {
-    const n = Math.max(1, Math.min(10, Math.round((teile || 0) / 10)));
+    const n = Math.max(2, Math.min(10, Math.round((teile || 0) / 4)));
     return Math.max(1, Math.min(n, Math.floor((teile || 0) / 2)));
   }
   function trackSektorModus(tiles) {

@@ -37,7 +37,8 @@
   // data: communitySicht(), strecken: Eintraege wie aus ?strecken=1 (Vorgabe: aktuelle Liste + eigene).
   function commEintraege(data, strecken) {
     const d = data || communitySicht();
-    const liste = strecken || skCommunityGefiltert(skOnline.liste, skEigeneStrecken());
+    // v1.6.56: Strecken mit Zeiten sind echte Fahrten; im Modus Virtuell nur die Community Challenges (virtuelle Zeiten).
+    const liste = (typeof chVirtuell === 'function' && chVirtuell()) ? [] : (strecken || skCommunityGefiltert(skOnline.liste, skEigeneStrecken()));
     const raus = [];
     const schluessel = new Set();
     for (const tr of d.tracks || []) {

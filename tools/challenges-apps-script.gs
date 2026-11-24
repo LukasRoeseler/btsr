@@ -33,7 +33,15 @@
  */
 
 const BLATT = 'Zeiten';
-const KOPF = ['zeitpunkt', 'challenge', 'modus', 'preset', 'zeit_ms', 'runden_ms', 'auto', 'fahrer', 'geraet', 'version'];
+// v1.6.56: "fahrt" ('virtuell' oder leer = echt) und "fahrgefuehl" (Handling der virtuellen Fahrt) hinten angehaengt;
+// ein vorhandenes Blatt bekommt die Kopfzellen beim ersten Eintrag nachgetragen (kopfErgaenzen).
+const KOPF = ['zeitpunkt', 'challenge', 'modus', 'preset', 'zeit_ms', 'runden_ms', 'auto', 'fahrer', 'geraet', 'version', 'fahrt', 'fahrgefuehl'];
+function kopfErgaenzen(sh, kopf) {
+  const n = sh.getLastColumn();
+  const ist = n ? sh.getRange(1, 1, 1, n).getValues()[0].map((x) => String(x)) : [];
+  kopf.forEach((name, i) => { if (ist[i] !== name && ist.indexOf(name) < 0) sh.getRange(1, i + 1).setValue(name); });
+}
+function virtuellAngabe(d) { return d && d.fahrt === 'virtuell' ? 'virtuell' : ''; }
 // id -> Runden im Rennen und Mindestrundenzeit in ms. Die App rechnet Streckenlaenge geteilt
 // durch 2,5 m/s - rund 50 % ueber dem gemessenen Hoechsttempo der Autos (1,64 m/s) - und
 // verwirft schnellere Runden selbst (72-challenges.js, chMinRundeMs). Hier stehen die Werte
@@ -184,7 +192,7 @@ const C_BLATT = 'Community', C_KOPF = ['zeitpunkt', 'id', 'code', 'name', 'gerae
 const C_PRESETS = ['arcade', 'pro', 'gt3', 'f1', 'realgt3', 'propacejka'];
 // v0.9.62: runden_ms (Rundenzeiten je Lauf) mit, damit die 3er-Serie auch fuer Community
 // Strecken rechnen kann. Alte Zeilen haben die Spalte nicht und gelten als leer.
-const CZ_BLATT = 'CommunityZeiten', CZ_KOPF = ['zeitpunkt', 'id', 'zeit_ms', 'fahrer', 'geraet', 'runden_ms'];
+const CZ_BLATT = 'CommunityZeiten', CZ_KOPF = ['zeitpunkt', 'id', 'zeit_ms', 'fahrer', 'geraet', 'runden_ms', 'fahrt', 'fahrgefuehl'];
 function blattMit(name, kopf) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName(name);
@@ -223,13 +231,16 @@ function communityPost(d) {
       const z = Number(d.zeit_ms);
       if (!isFinite(z) || z < 1000 || z > 3600000) return { ok: false, fehler: 'Zeit unplausibel' };
       const runden = Array.isArray(d.runden_ms) ? d.runden_ms.map(Number).filter((x) => isFinite(x)) : [];
-      blattMit(CZ_BLATT, CZ_KOPF).appendRow([new Date(), id, Math.round(z), textSicher(d.fahrer, 16),
-        textSicher(d.geraet, 40), runden.length ? JSON.stringify(runden) : '']);
+      const czb = blattMit(CZ_BLATT, CZ_KOPF);
+      kopfErgaenzen(czb, CZ_KOPF);
+      czb.appendRow([new Date(), id, Math.round(z), textSicher(d.fahrer, 16),
+        textSicher(d.geraet, 40), runden.length ? JSON.stringify(runden) : '', virtuellAngabe(d),
+        virtuellAngabe(d) ? textSicher(d.fahrgefuehl, 20) : '']);
       // v1.0.21: Spur der schnellsten Runde (die App schickt nur gewertete Runden).
       if (d.spur) {
         try {
           const r = runden.filter((x) => x >= 1000);
-          spurSpeichern('community|' + id, d, r.length ? Math.min.apply(null, r) : z, 40);
+          spurSpeichern('community|' + id + (virtuellAngabe(d) ? '|v' : ''), d, r.length ? Math.min.apply(null, r) : z, 40);
         } catch (e) { /* die Zeit zaehlt auch ohne Spur */ }
       }
       return { ok: true };
@@ -240,7 +251,7 @@ function communityPost(d) {
 function communityGet() {
   const zeiten = {};
   blattMit(CZ_BLATT, CZ_KOPF).getDataRange().getValues().slice(1).forEach((z) => {
-    const id = String(z[1]);
+    const id = String(z[1]) + (z[6] === 'virtuell' ? '|v' : '');
     let rundenMs = [];
     try { rundenMs = JSON.parse(z[5] || '[]'); } catch (e) { rundenMs = []; }
     (zeiten[id] = zeiten[id] || []).push({ zeitpunkt: z[0], zeit_ms: Number(z[2]), fahrer: z[3], geraet: z[4],
@@ -684,8 +695,9 @@ function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    const sp = spalten();
     const sh = blatt();
+    kopfErgaenzen(sh, KOPF);
+    const sp = spalten();
     // Zeile in KOPF-Reihenfolge schreiben, damit umgeordnete Spalten nichts verschieben.
     const zeile = KOPF.map((name) => {
       if (name === 'zeitpunkt') return new Date();
@@ -698,6 +710,8 @@ function doPost(e) {
       if (name === 'fahrer') return textSicher(d.fahrer, 16);
       if (name === 'geraet') return textSicher(d.geraet, 40);
       if (name === 'version') return textSicher(d.version, 20);
+      if (name === 'fahrt') return virtuellAngabe(d);
+      if (name === 'fahrgefuehl') return virtuellAngabe(d) ? textSicher(d.fahrgefuehl, 20) : '';
       return '';
     });
     sh.appendRow(zeile);
@@ -707,7 +721,7 @@ function doPost(e) {
         const c = CHALLENGES[d.challenge];
         const r = Array.isArray(d.runden_ms) ? d.runden_ms.map(Number).filter((x) => isFinite(x) && x >= c.min) : [];
         const runde = d.modus === 'hotlap' ? Number(d.zeit_ms) : (r.length ? Math.min.apply(null, r) : 0);
-        spurSpeichern(d.challenge + '|' + d.modus + '|' + d.preset, d, runde, c.min / Math.max(3, Number(d.spur.n) || 3) * 0.3);
+        spurSpeichern(d.challenge + '|' + d.modus + '|' + d.preset + (virtuellAngabe(d) ? '|v' : ''), d, runde, c.min / Math.max(3, Number(d.spur.n) || 3) * 0.3);
       } catch (e) { /* die Zeit zaehlt auch ohne Spur */ }
     }
   } finally { lock.releaseLock(); }
@@ -766,6 +780,8 @@ function doGet(e) {
       blatt: sh ? BLATT : null,
       kopf: kopf, zeilen: zeilen, challenges: challenges });
   }
+  // v1.6.56: die App fragt, ob dieses Skript virtuelle Zeiten getrennt fuehrt (sonst schickt sie keine).
+  if (p.faehig) return antwort({ ok: true, virtuell: true });
   if (p.community) return antwort(communityGet());
   if (p.strecken) return antwort(streckenListe(p.geraet));
   if (p.strecke) return antwort(streckeGet(String(p.strecke)));
@@ -778,7 +794,8 @@ function doGet(e) {
   if (p.alle) {
     const listen = {};
     werte.forEach((z) => {
-      const k = zelle(sp, z, 'challenge') + '|' + zelle(sp, z, 'modus') + '|' + zelle(sp, z, 'preset');
+      const k = zelle(sp, z, 'challenge') + '|' + zelle(sp, z, 'modus') + '|' + zelle(sp, z, 'preset')
+        + (zelle(sp, z, 'fahrt') === 'virtuell' ? '|v' : '');
       if (!zelle(sp, z, 'challenge')) return;
       (listen[k] = listen[k] || []).push(zeileZuEintrag(sp, z));
     });
@@ -790,7 +807,8 @@ function doGet(e) {
   }
   const liste = werte
     .filter((z) => zelle(sp, z, 'challenge') === p.challenge
-      && zelle(sp, z, 'modus') === p.modus && zelle(sp, z, 'preset') === p.preset)
+      && zelle(sp, z, 'modus') === p.modus && zelle(sp, z, 'preset') === p.preset
+      && (zelle(sp, z, 'fahrt') === 'virtuell') === (p.fahrt === 'virtuell'))
     .map((z) => zeileZuEintrag(sp, z))
     .sort((a, b) => a.zeit_ms - b.zeit_ms);
   return antwort({ ok: true, anzahl: liste.length, zeiten: liste.slice(0, MAX_ZEILEN_ANTWORT) });

@@ -2706,6 +2706,8 @@
     if (typeof karriereRennenEnde === 'function') karriereRennenEnde(willAuslaufen);
     // Online-Streckenzeiten (72c-strecken-online.js): nicht fuer Challenges, die haben eigene Listen.
     if (typeof skSitzungEnde === 'function' && !(typeof challengeLaeuft === 'function' && challengeLaeuft())) skSitzungEnde();
+    // v1.6.56: ein Rennen mit dem virtuellen Auto (konsoleLosfahren im Modus Virtuell) beendet die virtuelle Fahrt mit.
+    if (typeof VF !== 'undefined' && VF.aktiv && VF.extern === 'rennen') setTimeout(() => { if (VF.aktiv && VF.extern === 'rennen') virtuellBeenden(); }, 1200);
     if (typeof challengeRennenEnde === 'function' && challengeRennenEnde(willAuslaufen)) { /* erledigt */ }
     else if (typeof konsoleRennenBeendet === 'function') konsoleRennenBeendet();
     else {
