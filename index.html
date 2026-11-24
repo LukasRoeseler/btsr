@@ -4033,8 +4033,9 @@
   .vf-ar-wurzel { position: fixed; inset: 0; z-index: 300; background: transparent; pointer-events: none; }
   /* v1.6.67 Marker-AR: Kamerabild unten, die durchsichtige Leinwand darueber. */
   .vf-schicht.vf-mk { background: #000; }
-  .vf-mk-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; pointer-events: none; }
-  .vf-schicht.vf-mk > canvas { position: absolute; inset: 0; z-index: 1; }
+  /* v1.6.71: das Video ist nur noch Quelle (Textur im 3D-Bild, vfMkHintergrund); es bleibt gross im DOM, damit die WebView
+     es weiter dekodiert, liegt aber unter der undurchsichtigen Leinwand und unter dem HUD. */
+  .vf-mk-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
   .vf-mk-leiste { position: absolute; right: max(12px, env(safe-area-inset-right)); top: 22%; z-index: 5; display: flex; flex-direction: column; gap: 8px; }
   .vf-mk-leiste > * { padding: .45em .8em; border-radius: 8px; background: rgba(8,10,14,.72); color: #fff; border: 1px solid var(--vf-linie);
     font: inherit; font-size: calc(var(--vf-s) * .7); text-decoration: none; text-align: center; cursor: pointer; }
@@ -6088,7 +6089,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.70</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.72</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7414,6 +7415,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Marker-AR &#252;berarbeitet: Der Marker ist jetzt Start/Ziel, das Auto steht beim Start auf dem Marker und f&#228;hrt Richtung Blatt-Oberkante los (vorher lag die Streckenmitte auf dem Marker, das Auto oft au&#223;erhalb des Bildes). Die Erkennung l&#228;uft in einem eigenen Thread mit h&#246;herer Aufl&#246;sung, das Bild ruckelt nicht mehr, wenn sie rechnet. Das Kamerabild ist jetzt Teil des 3D-Bilds, die Strecke wird nicht mehr wei&#223;lich. Die Lage springt nicht mehr zwischen zwei Neigungen, die Gl&#228;ttung passt sich der Bewegung an, kurze Aussetzer (bis 1,5 s) werden &#252;berbr&#252;ckt.</li>
         <li>Virtuell: Neue Option &#8222;Zur&#252;cksetzen neben der Bahn&#8220; unter Optionen &gt; Virtuell (ab Werk an). Aus: Das Auto wird nach 2,5 s neben der Bahn nicht mehr zur&#252;ck auf die Strecke gesetzt, du f&#228;hrst weiter; zur&#252;ck nur mit dem Knopf &#8222;Zur&#252;cksetzen&#8220;.</li>
         <li>Neu, Prototyp: Marker-AR ohne ARCore, f&#252;r Handys, die kein Google-AR k&#246;nnen (z. B. Galaxy A16/A41), in der App und im Browser. Den Marker (Optionen in der AR-Ansicht: &#8222;Marker drucken&#8220;, Datei ar-marker-a4.svg) in Originalgr&#246;&#223;e auf A4 drucken und auf den Boden legen, dann in der virtuellen Garage &#8222;AR&#8220; tippen: Das Kamerabild ist der Hintergrund, die Strecke liegt mittig auf dem Marker, und du kannst um sie herumgehen, solange der Marker im Bild ist. Ma&#223;stab 1:1, 1:2 oder 1:4 umschaltbar. Erkennung mit js-aruco2 (Open Source, MIT/BSD/LGPL-3, liegt unter lib/js-aruco2).</li>
         <li>AR: Ein Tipp auf AR gibt jetzt immer eine R&#252;ckmeldung. Der Knopf zeigt &#8222;AR startet &#8230;&#8220;; lehnt Chrome die Sitzung ab oder antwortet 12 s lang nicht, erscheint ein Fenster mit dem Grund, Hinweisen (Chrome aktualisieren, &#8222;Google Play-Dienste f&#252;r AR&#8220; installieren, Kamera erlauben) und dem Protokoll. Vorher stand der Fehler nur als unsichtbarer Hinweis da, und eine h&#228;ngende Anfrage blockierte weitere Tipps.</li>
@@ -18012,13 +18014,14 @@
     "Marker-AR (ohne ARCore)": "Marker AR (without ARCore)",
     "Dieses Gerät gibt kein Kamerabild an die Seite.": "This device does not provide a camera image to the page.",
     "Die Kamera muss für OmegaSim erlaubt sein (Android-Einstellungen > Apps > OmegaSim bzw. Chrome > Berechtigungen > Kamera).": "The camera must be allowed for OmegaSim (Android settings > Apps > OmegaSim or Chrome > Permissions > Camera).",
-    "Kamera auf den ausgedruckten Marker richten (ar-marker-a4.svg, in Originalgröße drucken). Die Strecke liegt mittig auf dem Marker.": "Point the camera at the printed marker (ar-marker-a4.svg, print at original size). The track sits centred on the marker.",
     "Maßstab": "Scale",
     "Marker drucken": "Print marker",
     "Neu, Prototyp: Marker-AR ohne ARCore, für Handys, die kein Google-AR können (z. B. Galaxy A16/A41), in der App und im Browser. Den Marker (Optionen in der AR-Ansicht: „Marker drucken“, Datei ar-marker-a4.svg) in Originalgröße auf A4 drucken und auf den Boden legen, dann in der virtuellen Garage „AR“ tippen: Das Kamerabild ist der Hintergrund, die Strecke liegt mittig auf dem Marker, und du kannst um sie herumgehen, solange der Marker im Bild ist. Maßstab 1:1, 1:2 oder 1:4 umschaltbar. Erkennung mit js-aruco2 (Open Source, MIT/BSD/LGPL-3, liegt unter lib/js-aruco2).": "New, prototype: marker AR without ARCore, for phones that cannot do Google AR (e.g. Galaxy A16/A41), in the app and in the browser. Print the marker (in the AR view: “Print marker”, file ar-marker-a4.svg) at original size on A4 and lay it on the floor, then tap “AR” in the virtual garage: the camera image is the background, the track sits centred on the marker, and you can walk around it as long as the marker stays in view. Scale 1:1, 1:2 or 1:4 switchable. Detection with js-aruco2 (open source, MIT/BSD/LGPL-3, in lib/js-aruco2).",
     "Zurücksetzen neben der Bahn": "Reset when off track",
     "An (Vorgabe): steht das Auto 2,5 s neben der Bahn, kommt es zurück auf die Strecke. Aus: du fährst neben der Bahn weiter, zurück nur mit dem Knopf „Zurücksetzen“.": "On (default): if the car is off the track for 2.5 s, it is put back on the track. Off: you keep driving off the track; back only with the “Reset” button.",
     "Virtuell: Neue Option „Zurücksetzen neben der Bahn“ unter Optionen > Virtuell (ab Werk an). Aus: Das Auto wird nach 2,5 s neben der Bahn nicht mehr zurück auf die Strecke gesetzt, du fährst weiter; zurück nur mit dem Knopf „Zurücksetzen“.": "Virtual: new option “Reset when off track” under Options > Virtual (on by default). Off: the car is no longer put back on the track after 2.5 s off it, you keep driving; back only with the “Reset” button.",
+    "Kamera auf den ausgedruckten Marker richten (ar-marker-a4.svg, in Originalgröße drucken). Der Marker ist Start/Ziel, die Strecke geht nach oben auf dem Blatt los.": "Point the camera at the printed marker (ar-marker-a4.svg, print at original size). The marker is start/finish; the track starts towards the top of the sheet.",
+    "Marker-AR überarbeitet: Der Marker ist jetzt Start/Ziel, das Auto steht beim Start auf dem Marker und fährt Richtung Blatt-Oberkante los (vorher lag die Streckenmitte auf dem Marker, das Auto oft außerhalb des Bildes). Die Erkennung läuft in einem eigenen Thread mit höherer Auflösung, das Bild ruckelt nicht mehr, wenn sie rechnet. Das Kamerabild ist jetzt Teil des 3D-Bilds, die Strecke wird nicht mehr weißlich. Die Lage springt nicht mehr zwischen zwei Neigungen, die Glättung passt sich der Bewegung an, kurze Aussetzer (bis 1,5 s) werden überbrückt.": "Marker AR reworked: the marker is now start/finish, the car starts on the marker and drives off towards the top edge of the sheet (before, the track centre was on the marker and the car was often out of view). Detection runs in its own thread at higher resolution, so the image no longer stutters while it computes. The camera image is now part of the 3D image, the track no longer turns whitish. The pose no longer jumps between two tilts, smoothing adapts to the movement, short dropouts (up to 1.5 s) are bridged.",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
     "Raum hat ein eigenes Menü (Strecke → Raum, und „Raum“ in der FAHREN-Streckenkachel auf der Bahn): Größe, Raumgestalter, Tutorial und gespeicherte Räume mit Namen zum Laden und Löschen. Im Editor blendet der Schalter „Raum“ den Raum aus; ausgeblendet zählt er auch für Zufallsstrecken nicht. Ziehen im Editor: die Strecke folgt jetzt Finger, Maus und rechtem Stick, der Raum bleibt liegen. Alle Streckenbilder (Fahren-Kachel, Übersicht, Startaufstellung, Listen) zeigen die Originalteile mit Pfeilen. Neue Ladeanimation: ein Streckenteil dreht sich, abwechselnd Gerade und Rechtskurve. Community-Bestzeiten (vorher Community-Strecken): beim Einreichen wählt man die Abstimmung (Arcade, Pro, GT3, F1, Realismus GT3), die Liste zeigt sie, und gefahren wird damit. Einzelrennen nach einem Mehrspieler-Rennen fragt nicht mehr „für alle?“, wenn niemand sonst da ist.": "Room has its own menu (Track → Room, and “Room” in the DRIVE track tile on the rail): size, room designer, tutorial and saved rooms with names to load and delete. In the editor the “Room” switch hides the room; hidden, it is also ignored for random tracks. Dragging in the editor: the track now follows finger, mouse and right stick, the room stays put. All track pictures (drive tile, overview, starting grid, lists) show the original pieces with arrows. New loading animation: a track piece spins, alternating straight and right curve. Community best times (formerly community tracks): when submitting you choose the setup (Arcade, Pro, GT3, F1, Realism GT3), the list shows it, and it is driven with it. A single-player race after a multiplayer race no longer asks “for everyone?” when nobody else is there.",
@@ -20896,12 +20899,12 @@
     "Achsen:": "Ejes:",
     "Acht Probeblätter, um die Kodierung zu knacken": "Ocho hojas de prueba para descifrar la codificación",
     "Akku": "Batería",
+    "Kamera auf den ausgedruckten Marker richten (ar-marker-a4.svg, in Originalgröße drucken). Der Marker ist Start/Ziel, die Strecke geht nach oben auf dem Blatt los.": "Apunta la cámara al marcador impreso (ar-marker-a4.svg, imprimir a tamaño original). El marcador es salida/meta; la pista arranca hacia el borde superior de la hoja.",
     "Zurücksetzen neben der Bahn": "Reiniciar fuera de la pista",
     "An (Vorgabe): steht das Auto 2,5 s neben der Bahn, kommt es zurück auf die Strecke. Aus: du fährst neben der Bahn weiter, zurück nur mit dem Knopf „Zurücksetzen“.": "Activado (por defecto): si el coche está 2,5 s fuera de la pista, vuelve a la pista. Desactivado: sigues conduciendo fuera; solo vuelves con el botón «Reiniciar».",
     "Marker-AR (ohne ARCore)": "RA con marcador (sin ARCore)",
     "Dieses Gerät gibt kein Kamerabild an die Seite.": "Este dispositivo no da imagen de cámara a la página.",
     "Die Kamera muss für OmegaSim erlaubt sein (Android-Einstellungen > Apps > OmegaSim bzw. Chrome > Berechtigungen > Kamera).": "La cámara debe estar permitida para OmegaSim (Ajustes de Android > Aplicaciones > OmegaSim o Chrome > Permisos > Cámara).",
-    "Kamera auf den ausgedruckten Marker richten (ar-marker-a4.svg, in Originalgröße drucken). Die Strecke liegt mittig auf dem Marker.": "Apunta la cámara al marcador impreso (ar-marker-a4.svg, imprimir a tamaño original). La pista queda centrada sobre el marcador.",
     "Maßstab": "Escala",
     "Marker drucken": "Imprimir marcador",
     "Protokoll:": "Registro:",
@@ -49571,7 +49574,7 @@
     // v1.6.46 GEMELDET: "der Schatten unter den virtuellen Autos im Performance-Modus ist heller als die Strasse". Mit dem
     // Alphakanal der Leinwand (Vorgabe) senkte jede halbdurchsichtige Flaeche (Schatten, Geist, Rauch) die Deckkraft des
     // Bildes, und der helle Seitenhintergrund schien durch. alpha: false = undurchsichtige Leinwand.
-    const gl = cv.getContext('webgl', { antialias: true, alpha: !!opts.marker, xrCompatible: !!opts.ar }) || cv.getContext('experimental-webgl', { alpha: !!opts.marker });
+    const gl = cv.getContext('webgl', { antialias: true, alpha: false, xrCompatible: !!opts.ar }) || cv.getContext('experimental-webgl', { alpha: false });
     if (!gl) { schicht.remove(); showHudToast(t('Dieses Gerät kann kein WebGL')); return false; }
     if (VF.ar) cv.style.visibility = 'hidden';   // v1.6.60: in AR zeichnet die Sitzung, die Leinwand bleibt unsichtbar
     // v1.5.154: OES_standard_derivatives (fwidth) fuer den bildschirm-adaptiven Schatten-PCF des Autos.
@@ -50760,7 +50763,15 @@
   // Fahrt. Je Bild: Ausschnitt des Videos verkleinert (VF_MK.erkennBreite) erkennen, Pose glaetten, Projektion aus
   // dem Bildwinkel der Kamera (VF_MK.bildwinkel) passend zum angezeigten Ausschnitt (object-fit: cover), Szene zeichnen
   // (vfSzeneMalen). Marker: ar-marker-a4.svg (ARUCO_MIP_36h12 Nummer 0, schwarzes Quadrat 160 mm).
-  const VF_MK = { id: 0, mm: 160, bildwinkel: 63, erkennBreite: 480, verlorenMs: 700 };
+  // v1.6.71 GEMELDET: "Es funktioniert nicht. Ganz selten ploppt die Strecke als weisse Textur auf, aber ohne Auto. Sie
+  // reagiert dann zu langsam, zu zuckend, und meistens wird der Marker nicht erkannt." Geaendert:
+  //   - Erkennung in einem Web Worker (vfMkWorker) mit 720 statt 480 Pixeln Breite - das Bild wartet nicht mehr darauf;
+  //   - das Kamerabild ist eine Textur im 3D-Bild (vfMkHintergrund), die Leinwand undurchsichtig - vorher war sie
+  //     durchsichtig, und jede Flaeche mit Alpha unter 1 wurde ueber dem Video weisslich;
+  //   - der Marker ist Start/Ziel (vorher die Mitte der Strecke - das Auto stand oft ausserhalb des Bildes);
+  //   - von den zwei Loesungen der Lage (Kippmehrdeutigkeit bei ebenen Markern) die, die zur vorigen passt; Glaettung
+  //     je nach Bewegung (ruhig: stark, schnell: schwach), Aussetzer bis 1,5 s ueberbrueckt.
+  const VF_MK = { id: 0, mm: 160, bildwinkel: 63, erkennBreite: 720, verlorenMs: 1500 };
   const VF_MK_MASSSTAB_STORE = 'omegasim-vf-ar-massstab';
   const VF_MK_MASSSTAEBE = [1, 0.5, 0.25];
   function vfMkMassstab() { try { const v = +localStorage.getItem(VF_MK_MASSSTAB_STORE); return VF_MK_MASSSTAEBE.indexOf(v) >= 0 ? v : 0.5; } catch (e) { return 0.5; } }
@@ -50806,8 +50817,9 @@
     video.playsInline = true; video.muted = true; video.autoplay = true;
     video.setAttribute('playsinline', '');
     video.srcObject = stream;
-    const mk = { video, stream, det: new window.AR.Detector({ dictionaryName: 'ARUCO_MIP_36h12' }), posit: null, cnv: document.createElement('canvas'),
-                 pose: null, zuletzt: 0, gesehen: 0, bilder: 0 };
+    const mk = { video, stream, det: null, posit: null, cnv: document.createElement('canvas'),
+                 pose: null, zuletzt: 0, gesehen: 0, bilder: 0, worker: null, wartet: false, n: 0 };
+    vfMkWorkerStarten(mk);
     mk.ctx = mk.cnv.getContext('2d', { willReadFrequently: true });
     let ok = false;
     try { ok = virtuellStarten({ marker: mk }); } catch (e) { log('Marker-AR: ' + e.message, 'warn'); }
@@ -50824,7 +50836,7 @@
     if (!sch || !VF.marker) return;
     let h = sch.querySelector('.vf-ar-hinweis');
     if (!h) { h = document.createElement('div'); h.className = 'vf-ar-hinweis'; sch.appendChild(h); }
-    h.textContent = t('Kamera auf den ausgedruckten Marker richten (ar-marker-a4.svg, in Originalgröße drucken). Die Strecke liegt mittig auf dem Marker.');
+    h.textContent = t('Kamera auf den ausgedruckten Marker richten (ar-marker-a4.svg, in Originalgröße drucken). Der Marker ist Start/Ziel, die Strecke geht nach oben auf dem Blatt los.');
     let leiste = sch.querySelector('.vf-mk-leiste');
     if (!leiste) {
       leiste = document.createElement('div'); leiste.className = 'vf-mk-leiste';
@@ -50845,6 +50857,7 @@
   }
   function vfMkAufraeumen(mk) {
     if (!mk) return;
+    try { if (mk.worker) mk.worker.terminate(); } catch (e) { /* egal */ }
     try { mk.stream.getTracks().forEach((tr) => tr.stop()); } catch (e) { /* egal */ }
     try { mk.video.remove(); } catch (e) { /* egal */ }
   }
@@ -50856,33 +50869,80 @@
     const s = Math.max(W / vw, H / vh), f = fV * s;
     return [2 * f / W, 0, 0, 0, 0, 2 * f / H, 0, 0, 0, 0, (fern + nah) / (nah - fern), -1, 0, 0, 2 * fern * nah / (nah - fern), 0];
   }
-  // Marker im Video suchen; Pose als Kamera <- Marker (GL-Achsen: x rechts, y oben, z zum Betrachter), Masse in mm.
-  function vfMkErkennen(mk, jetzt) {
-    const v = mk.video;
-    if (!(v.readyState >= 2 && v.videoWidth)) return;
-    const dw = VF_MK.erkennBreite, dh = Math.round(dw * v.videoHeight / v.videoWidth);
-    if (mk.cnv.width !== dw || mk.cnv.height !== dh) { mk.cnv.width = dw; mk.cnv.height = dh; mk.posit = null; }
-    if (!mk.posit) mk.posit = new window.POS.Posit(VF_MK.mm, (dw / 2) / Math.tan(VF_MK.bildwinkel * Math.PI / 360));
-    mk.ctx.drawImage(v, 0, 0, dw, dh);
-    const bild = mk.ctx.getImageData(0, 0, dw, dh);
-    const liste = mk.det.detect(bild) || [];
-    const m = liste.find((x) => x.id === VF_MK.id) || null;
-    mk.bilder++;
-    if (!m) return;
-    const ecken = m.corners.map((c) => ({ x: c.x - dw / 2, y: dh / 2 - c.y }));
-    const p = mk.posit.pose(ecken);
-    if (!p || !p.bestRotation || !p.bestTranslation) return;
-    const R = p.bestRotation, T = p.bestTranslation;
-    // POSIT: Kamera x rechts, y oben, z nach vorn. GL: z zum Betrachter -> F = diag(1, 1, -1) links.
-    const M = [R[0][0], R[1][0], -R[2][0], 0, R[0][1], R[1][1], -R[2][1], 0, R[0][2], R[1][2], -R[2][2], 0, T[0], T[1], -T[2], 1];
-    // Glaetten: gegen Zittern halb zum neuen Wert, bei einem Sprung (Marker neu im Bild) sofort.
-    if (mk.pose && jetzt - mk.zuletzt < 300) {
-      const a = 0.5;
+  // Erkennung im Web Worker: die Bibliothek per importScripts, je Auftrag ein Bild (RGBA, uebertragen, nicht kopiert),
+  // Antwort beide Loesungen der Lage. Ohne Worker (alte WebView) im Hauptthread wie in 1.6.68.
+  function vfMkWorkerStarten(mk) {
+    try {
+      const u = (f) => new URL('lib/js-aruco2/' + f, location.href).href;
+      const code = 'importScripts(' + ['cv.js', 'aruco.js', 'svd.js', 'posit1.js'].map((f) => JSON.stringify(u(f))).join(',') + ');\n'
+        + 'var det = new AR.Detector({ dictionaryName: "ARUCO_MIP_36h12" }), pos = null, pf = 0;\n'
+        + 'onmessage = function (e) { var d = e.data, r = { n: d.n, ok: false, buf: d.buf };\n'
+        + '  try { if (!pos || pf !== d.f) { pos = new POS.Posit(d.mm, d.f); pf = d.f; }\n'
+        + '    var ms = det.detect({ width: d.w, height: d.h, data: new Uint8ClampedArray(d.buf) }) || [], m = null;\n'
+        + '    for (var i = 0; i < ms.length; i++) if (ms[i].id === d.id) m = ms[i];\n'
+        + '    if (m) { var ec = m.corners.map(function (c) { return { x: c.x - d.w / 2, y: d.h / 2 - c.y }; }); var p = pos.pose(ec);\n'
+        + '      r.ok = true; r.r1 = p.bestRotation; r.t1 = p.bestTranslation; r.e1 = p.bestError; r.r2 = p.alternativeRotation; r.t2 = p.alternativeTranslation; r.e2 = p.alternativeError; }\n'
+        + '  } catch (err) { r.fehler = String(err); }\n'
+        + '  postMessage(r, [r.buf]); };\n';
+      const w = new Worker(URL.createObjectURL(new Blob([code], { type: 'text/javascript' })));
+      w.onmessage = (e) => { mk.wartet = false; vfMkAntwort(mk, e.data); };
+      w.onerror = (e) => { log('Marker-AR: Worker ' + (e.message || 'Fehler') + ' - Erkennung im Hauptthread', 'warn'); try { w.terminate(); } catch (err) { /* egal */ } mk.worker = null; mk.wartet = false; };
+      mk.worker = w;
+    } catch (e) { mk.worker = null; }
+  }
+  // POSIT -> GL (Kamera <- Marker, mm): POSIT x rechts, y oben, z nach vorn; GL z zum Betrachter -> F = diag(1, 1, -1) links.
+  function vfMkGl(R, T) {
+    return [R[0][0], R[1][0], -R[2][0], 0, R[0][1], R[1][1], -R[2][1], 0, R[0][2], R[1][2], -R[2][2], 0, T[0], T[1], -T[2], 1];
+  }
+  function vfMkAntwort(mk, r) {
+    if (!r || !r.ok || !r.r1 || !r.t1) { if (r && r.fehler && !mk.fehler) { mk.fehler = r.fehler; log('Marker-AR: ' + r.fehler, 'warn'); } return; }
+    const jetzt = performance.now();
+    let M = vfMkGl(r.r1, r.t1);
+    // Kippmehrdeutigkeit: passt die zweite Loesung besser zur vorigen Lage (Normale), und ist ihr Fehler nicht viel
+    // groesser, die zweite nehmen - sonst springt die Strecke zwischen zwei Neigungen.
+    const vor = mk.pose && jetzt - mk.zuletzt < VF_MK.verlorenMs ? mk.pose : null;
+    if (vor && r.r2 && r.t2 && isFinite(r.e2) && r.e2 >= 0 && r.e2 < Math.max(3, (r.e1 || 0) * 3)) {
+      const M2 = vfMkGl(r.r2, r.t2);
+      const d1 = M[8] * vor[8] + M[9] * vor[9] + M[10] * vor[10], d2 = M2[8] * vor[8] + M2[9] * vor[9] + M2[10] * vor[10];
+      if (d2 > d1 + 0.05) M = M2;
+    }
+    // Glaettung je nach Bewegung: kleine Aenderung stark glaetten (Zittern), grosse fast sofort uebernehmen.
+    if (vor) {
+      const dt = Math.hypot(M[12] - vor[12], M[13] - vor[13], M[14] - vor[14]);
+      const dr = 1 - (M[8] * vor[8] + M[9] * vor[9] + M[10] * vor[10]);
+      const a = Math.max(0.25, Math.min(1, 0.25 + dt / 40 + dr * 25));
       for (let i = 0; i < 16; i++) mk.pose[i] += (M[i] - mk.pose[i]) * a;
       vfMkOrtho(mk.pose);
     } else mk.pose = M;
     mk.zuletzt = jetzt;
     mk.gesehen++;
+  }
+  // Je Bild: hat der Worker frei, das aktuelle Videobild verkleinert hinschicken (ohne Worker: hier erkennen).
+  function vfMkErkennen(mk) {
+    const v = mk.video;
+    if (!(v.readyState >= 2 && v.videoWidth)) return;
+    const dw = Math.min(VF_MK.erkennBreite, v.videoWidth), dh = Math.round(dw * v.videoHeight / v.videoWidth);
+    const f = (dw / 2) / Math.tan(VF_MK.bildwinkel * Math.PI / 360);
+    if (mk.worker) {
+      if (mk.wartet) return;
+      if (mk.cnv.width !== dw || mk.cnv.height !== dh) { mk.cnv.width = dw; mk.cnv.height = dh; }
+      mk.ctx.drawImage(v, 0, 0, dw, dh);
+      const bild = mk.ctx.getImageData(0, 0, dw, dh);
+      mk.wartet = true; mk.bilder++;
+      mk.worker.postMessage({ n: ++mk.n, w: dw, h: dh, f, mm: VF_MK.mm, id: VF_MK.id, buf: bild.data.buffer }, [bild.data.buffer]);
+      return;
+    }
+    // Rueckfall ohne Worker
+    if (!mk.det) mk.det = new window.AR.Detector({ dictionaryName: 'ARUCO_MIP_36h12' });
+    if (mk.cnv.width !== dw || mk.cnv.height !== dh) { mk.cnv.width = dw; mk.cnv.height = dh; mk.posit = null; }
+    if (!mk.posit) mk.posit = new window.POS.Posit(VF_MK.mm, f);
+    mk.ctx.drawImage(v, 0, 0, dw, dh);
+    const liste = mk.det.detect(mk.ctx.getImageData(0, 0, dw, dh)) || [];
+    mk.bilder++;
+    const m = liste.find((x) => x.id === VF_MK.id);
+    if (!m) return;
+    const p = mk.posit.pose(m.corners.map((c) => ({ x: c.x - dw / 2, y: dh / 2 - c.y })));
+    vfMkAntwort(mk, { ok: true, r1: p.bestRotation, t1: p.bestTranslation, e1: p.bestError, r2: p.alternativeRotation, t2: p.alternativeTranslation, e2: p.alternativeError });
   }
   // Drehteil wieder orthonormal machen (Gram-Schmidt auf den Spalten).
   function vfMkOrtho(M) {
@@ -50894,14 +50954,53 @@
     const z = [x[1] * y[2] - x[2] * y[1], x[2] * y[0] - x[0] * y[2], x[0] * y[1] - x[1] * y[0]];
     M[0] = x[0]; M[1] = x[1]; M[2] = x[2]; M[4] = y[0]; M[5] = y[1]; M[6] = y[2]; M[8] = z[0]; M[9] = z[1]; M[10] = z[2];
   }
-  // Welt der Fahrt -> Marker (mm): Marker-x = Welt-x, Marker-z (aus dem Papier, nach oben) = Welt-Hoehe,
-  // Marker-y = -Welt-z; Massstab: Einheiten -> mm (echte Carrera-Groesse) mal Massstab; Mitte der Strecke auf den Marker.
+  // Welt der Fahrt -> Marker (mm): Marker-x = Welt-x, Marker-z (aus dem Papier, nach oben) = Welt-Hoehe, Marker-y = -Welt-z;
+  // Massstab: Einheiten -> mm (echte Carrera-Groesse) mal Massstab. v1.6.71: der Startpunkt liegt auf dem Marker, die
+  // Fahrtrichtung am Start zeigt zur Oberkante des Blatts (Ry(h) dreht die Startrichtung auf Welt -z = Blatt-oben).
   function vfMkWelt() {
-    let cx = 0, cy = 0;
-    if (VF.pts && VF.pts.length) { VF.pts.forEach((p) => { cx += p.x; cy += p.y; }); cx /= VF.pts.length; cy /= VF.pts.length; }
+    const sx = VF.startX !== undefined ? VF.startX : (VF.pts && VF.pts[0] ? VF.pts[0].x : 0);
+    const sy = VF.startY !== undefined ? VF.startY : (VF.pts && VF.pts[0] ? VF.pts[0].y : 0);
+    const sh = (VF.startH || 0) * Math.PI / 180;
     const s = 10 / TRACK_UNITS_PER_CM * vfMkMassstab();
     const A = [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1];
-    return vfKette(A, vfS(s, s, s), vfT(-cx, 0, -cy));
+    return vfKette(A, vfS(s, s, s), vfRy(sh), vfT(-sx, 0, -sy));
+  }
+  // Das Kamerabild als Hintergrund (Textur, Ausschnitt wie object-fit: cover), ohne Tiefe.
+  function vfMkHintergrund(gl, mk, W, H) {
+    const v = mk.video;
+    if (!(v.readyState >= 2 && v.videoWidth)) return;
+    if (!mk.hg) {
+      const vs = 'attribute vec2 p; uniform vec4 c; varying vec2 uv; void main() { vec2 t = p * 0.5 + 0.5; uv = vec2(c.x + t.x * (c.z - c.x), c.w - t.y * (c.w - c.y)); gl_Position = vec4(p, 0.0, 1.0); }';
+      const fs = 'precision mediump float; uniform sampler2D tx; varying vec2 uv; void main() { gl_FragColor = vec4(texture2D(tx, uv).rgb, 1.0); }';
+      const sh = (typ, q) => { const o = gl.createShader(typ); gl.shaderSource(o, q); gl.compileShader(o); return o; };
+      const pr = gl.createProgram();
+      gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr);
+      const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]), gl.STATIC_DRAW);
+      const tx = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tx);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      mk.hg = { pr, b, tx, ap: gl.getAttribLocation(pr, 'p'), c: gl.getUniformLocation(pr, 'c'), t: gl.getUniformLocation(pr, 'tx') };
+    }
+    const g = mk.hg;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, g.tx);
+    const flip = gl.getParameter(gl.UNPACK_FLIP_Y_WEBGL), pre = gl.getParameter(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, v); } catch (e) { /* Bild noch nicht bereit */ }
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flip); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, pre);
+    const vw = v.videoWidth, vh = v.videoHeight, sc = Math.max(W / vw, H / vh);
+    const du = (1 - (W / sc) / vw) / 2, dv = (1 - (H / sc) / vh) / 2;
+    gl.useProgram(g.pr);
+    gl.uniform4f(g.c, du, dv, 1 - du, 1 - dv);
+    gl.uniform1i(g.t, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, g.b);
+    gl.enableVertexAttribArray(g.ap);
+    gl.vertexAttribPointer(g.ap, 2, gl.FLOAT, false, 8, 0);
+    gl.disable(gl.DEPTH_TEST); gl.depthMask(false);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.depthMask(true);
+    gl.disableVertexAttribArray(g.ap);
   }
   // Ein Bild: durchsichtig loeschen, Marker suchen, Szene von der Kamera aus zeichnen.
   function vfMkMalen() {
@@ -50912,10 +51011,11 @@
     if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, w, h);
-    gl.clearColor(0, 0, 0, 0);
+    gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     const jetzt = performance.now();
-    try { vfMkErkennen(mk, jetzt); } catch (e) { if (!mk.fehler) { mk.fehler = e; log('Marker-AR: ' + e.message, 'warn'); } }
+    try { vfMkHintergrund(gl, mk, W, H); } catch (e) { if (!mk.hgFehler) { mk.hgFehler = e; log('Marker-AR Hintergrund: ' + e.message, 'warn'); } }
+    try { vfMkErkennen(mk); } catch (e) { if (!mk.fehler) { mk.fehler = e; log('Marker-AR: ' + e.message, 'warn'); } }
     const sichtbar = !!(mk.pose && jetzt - mk.zuletzt < VF_MK.verlorenMs);
     const h2 = VF.schicht && VF.schicht.querySelector('.vf-ar-hinweis');
     if (h2) h2.hidden = sichtbar;
@@ -112627,15 +112727,19 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
   stAdd('Virtuell v1.6.67: Marker-AR - Weltabbildung (Hoehe = aus dem Papier), Kameraort, Glaettung orthonormal, AR-Knopf mit Kamera, Marker-Blatt', async () => {
     const f = [];
     // Welt -> Marker: Welt-Hoehe (y) wird Marker-z (aus dem Papier), Welt-x bleibt x, Welt-z wird -Marker-y; Massstab mm.
-    const merkPts = VF.pts;
+    const merkPts = VF.pts, merkS = [VF.startX, VF.startY, VF.startH];
     try {
-      VF.pts = [{ x: 0, y: 0 }];
+      VF.pts = [{ x: 0, y: 0 }]; VF.startX = 0; VF.startY = 0; VF.startH = 0;   // v1.6.71: Start/Ziel auf dem Marker
       const W = vfMkWelt(), s = 10 / TRACK_UNITS_PER_CM * vfMkMassstab();
       const ab = (v) => [W[0] * v[0] + W[4] * v[1] + W[8] * v[2] + W[12], W[1] * v[0] + W[5] * v[1] + W[9] * v[2] + W[13], W[2] * v[0] + W[6] * v[1] + W[10] * v[2] + W[14]];
       const oben = ab([0, 1, 0]), vorn = ab([0, 0, 1]);
       if (Math.abs(oben[2] - s) > 1e-6 || Math.abs(oben[0]) > 1e-6 || Math.abs(oben[1]) > 1e-6) f.push('Hoehe nicht aus dem Papier: ' + oben);
       if (Math.abs(vorn[1] + s) > 1e-6) f.push('Welt-z nicht -Marker-y: ' + vorn);
-    } finally { VF.pts = merkPts; }
+      // Startrichtung (Kurs 90 Grad = nach +x) zeigt zur Oberkante des Blatts (Marker +y).
+      VF.startH = 90; const W2 = vfMkWelt();
+      const r2 = [W2[0] + W2[12], W2[1] + W2[13]], r0 = [W2[12], W2[13]];
+      if (!(r2[1] - r0[1] > 0.9 * s && Math.abs(r2[0] - r0[0]) < 0.1 * s)) f.push('Startrichtung nicht Blatt-oben: ' + [r2[0] - r0[0], r2[1] - r0[1]]);
+    } finally { VF.pts = merkPts; VF.startX = merkS[0]; VF.startY = merkS[1]; VF.startH = merkS[2]; }
     // Kameraort: Blick = Verschiebung (0,0,-500) -> Auge bei (0,0,500).
     const auge = vfMkAuge([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, -500, 1]);
     if (Math.abs(auge[2] - 500) > 1e-6) f.push('Auge ' + auge);
