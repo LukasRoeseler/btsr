@@ -6093,7 +6093,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.88</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.89</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7419,6 +7419,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Ansagen: Die Startansage &bdquo;Gentlemen, start your engines&ldquo; und die Ansage der Sektor-Bestzeiten sind jetzt ab Werk aus. Beide bleiben unter Optionen &gt; Ansagen einzeln schaltbar.</li>
         <li>Virtuell fahren: drei neue Autos aus Speed Dreams (GPL-2.0-or-later) in der Garage, umgewandelt mit tools/sd_auto.py: Cavallo 360 (Ferrari 360 Modena, 3,6 l V8), Murasama NSX (Honda/Acura NSX 1991, 3,0 l V6) und Spirit 300 (Lotus M250, 3,0 l V6). Jedes hat zwei Alternativ-Lackierungen aus Speed Dreams, die in der Garage in der Farbwahl (&#8222;Lackfarbe&#8220;) mit den Pfeilen w&auml;hlbar sind (die Lackierung ersetzt die Karosserietextur; Farbe und Lackierung schlie&szlig;en sich gegenseitig aus). Scheiben und Lichter werden beim Umf&auml;rben nicht mitgef&auml;rbt. Fahrdaten, Federn, Reifen und Lichter kommen aus der .xml; die Vorschaubilder sind neu gezeichnet.</li>
         <li>Reifenquietschen in der virtuellen Fahrt: quietscht erst, wenn die Reifen wirklich rutschen (am Scheitel der Reifenkurve und etwas gehalten), nicht mehr bei jedem Lenkeinschlag. &#220;berall halb so laut und ohne mitsteigende Tonh&#246;he; das hohe Bremsenquietschen ist virtuell aus. Neu in Optionen &gt; Virtuell: Totzone f&#252;r die Steuerung &#8222;Neigen&#8220; (0 bis 15 Grad, Vorgabe 2,5).</li>
         <li>Vorschaubilder neu: grauer Hintergrund mit leichtem Verlauf f&#252;r alle Autos und den Hubschrauber (ein Skript f&#252;r alles: tools/vorschau_bilder.py). Bei Boxer 96, FMC GT4 und Lynx 220 sitzen die R&#228;der jetzt in den Radk&#228;sten (die Karosserie steht wie im Spiel um die Bodenfreiheit h&#246;her). Marker-AR: Kamerabild und Strecke geh&#246;ren jetzt immer zum selben Moment (das Bild wird erst mit der erkannten Lage gezeigt), die Lage folgt Bewegungen schneller, ohne im Stand mehr zu zittern. Brems-, R&#252;ck- und Scheinwerferlicht leuchten in AR schw&#228;cher.</li>
@@ -12890,10 +12891,10 @@
         <label class="tgl"><input type="checkbox" id="setting-announce-pit" checked><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Sektor-Bestzeiten ansagen <span class="wip-tag">WIP</span>
         <small>Wenn ein Sektor schneller war als jeder fr&uuml;here dieser Sitzung: &bdquo;Sektor 2, Bestzeit, 4,3 Sekunden&ldquo;. Der Sektor pulsiert dabei auf der Streckenkarte.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-sektor" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-sektor"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Startansage <span class="wip-tag">WIP</span>
         <small>Beim Start im Fenster &bdquo;Bringe die Autos in Position&ldquo; und an der Startampel der virtuellen Fahrt: &bdquo;Gentlemen, start your engines&ldquo; (immer englisch). Der Countdown beginnt, wenn der Satz gesprochen ist. Aus der Startampel von Gnen54.</small></div>
-        <label class="tgl"><input type="checkbox" id="setting-announce-start" checked><span></span></label></div>
+        <label class="tgl"><input type="checkbox" id="setting-announce-start"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Akku ansagen<small>Einmal, wenn der Akku unter 25&nbsp;% f&auml;llt. Erst nach dem Laden wieder scharf.</small></div>
         <label class="tgl"><input type="checkbox" id="setting-announce-battery"><span></span></label></div>
       <div class="opt-row"><div class="opt-label">Akku kritisch ansagen<small>Einmal je Auto, wenn der Akku auf 6&nbsp;% f&auml;llt, die letzte Stufe vor dem Stehenbleiben: &bdquo;Session abbrechen, Box anfahren!&ldquo; Erst nach dem Laden wieder scharf.</small></div>
@@ -17971,6 +17972,7 @@
     "Teppich und Vorbeifahrten der Strecke während der virtuellen Fahrt (ab Werk aus). Beim echten Fahren gilt der Schalter unter Optionen > Ton.": "Background bed and pass-bys of the track during virtual driving (off by default). For real driving the switch under Options > Sound applies.",
     "Startansage": "Start announcement",
     "Beim Start im Fenster „Bringe die Autos in Position“ und an der Startampel der virtuellen Fahrt: „Gentlemen, start your engines“ (immer englisch). Der Countdown beginnt, wenn der Satz gesprochen ist. Aus der Startampel von Gnen54.": "When starting from the “Bring the cars into position” window and at the start lights of virtual driving: “Gentlemen, start your engines” (always English). The countdown begins once the sentence has been spoken. From Gnen54's start lights.",
+    "Ansagen: Die Startansage „Gentlemen, start your engines“ und die Ansage der Sektor-Bestzeiten sind jetzt ab Werk aus. Beide bleiben unter Optionen > Ansagen einzeln schaltbar.": "Announcements: the start announcement “Gentlemen, start your engines” and the sector best times announcement are now off by default. Both remain individually switchable under Options > Announcements.",
     "Optionen: „Virtuell“ und „RC Heli“ stehen in einem eigenen Abschnitt unter den Einstellungen. Neu unter Virtuell: Gyro-Stärke für das Fahrgefühl Drift und ein eigener Schalter für die Strecken-Ambience (ab Werk aus). Neue Startansage „Gentlemen, start your engines“ (aus Gnen54s Startampel) beim Start aus dem Fenster „Autos in Position“ und an der virtuellen Startampel. Im Modus Virtuell sind die Akzente auf FAHREN rot. Der Heli ohne Gyro stabilisiert sich nach einem Überschlag, statt zurückzudrehen. Der Schatten unter den Autos ist im Performance-Modus jetzt dunkel (das Bild war an halbdurchsichtigen Stellen durchscheinend), die Farbkreise in der Garage sind auch am Handy rund.": "Options: “Virtual” and “RC heli” are in their own section below the settings. New under Virtual: gyro strength for the Drift handling and a separate switch for the track ambience (off by default). New start announcement “Gentlemen, start your engines” (from Gnen54's start lights) when starting from the “Cars in position” window and at the virtual start lights. In virtual mode the accents on DRIVE are red. The heli without gyro stabilises after a flip instead of turning back. The shadow under the cars is now dark in Performance mode (the picture was see-through at translucent spots), the paint circles in the garage are round on phones too.",
     "Virtuell fahren, Grafikmodus Performance flüssiger: leichte Modellfassungen für den Audi RS5 DTM und den Käfer (gut halb so viele Dreiecke, Werkzeug tools/modell_perf.py nach Gnen54), der Geist ist in Performance eine einfache Kiste statt eines zweiten vollen Modells, das verdeckte Cockpit unter der virtuellen Fahrt zeichnet seltener und das Regenradar gar nicht.": "Virtual driving, smoother Performance graphics: light model versions for the Audi RS5 DTM and the Beetle (just over half the triangles, tool tools/modell_perf.py after Gnen54), the ghost is a simple box in Performance instead of a second full model, the hidden cockpit under the virtual drive redraws less often and the rain radar not at all.",
     "Menüs: Wisch-Animationen beim Wechsel der Seiten (vom Startbildschirm zu FAHREN, zwischen den Reitern je nach Richtung) und beim Öffnen und Schließen der Unterseiten; nicht ins Cockpit, und aus, wenn das Gerät reduzierte Bewegung wünscht.": "Menus: swipe animations when changing pages (from the start screen to DRIVE, between tabs depending on direction) and when opening and closing subpages; not into the cockpit, and off when the device asks for reduced motion.",
@@ -20986,6 +20988,7 @@
     "Teppich und Vorbeifahrten der Strecke während der virtuellen Fahrt (ab Werk aus). Beim echten Fahren gilt der Schalter unter Optionen > Ton.": "Fondo y pasadas de la pista durante la conducción virtual (apagado de fábrica). Al conducir real vale el interruptor en Opciones > Sonido.",
     "Startansage": "Anuncio de salida",
     "Beim Start im Fenster „Bringe die Autos in Position“ und an der Startampel der virtuellen Fahrt: „Gentlemen, start your engines“ (immer englisch). Der Countdown beginnt, wenn der Satz gesprochen ist. Aus der Startampel von Gnen54.": "Al salir desde la ventana “Coloca los coches en posición” y en el semáforo de la conducción virtual: “Gentlemen, start your engines” (siempre en inglés). La cuenta atrás empieza cuando se ha dicho la frase. Del semáforo de Gnen54.",
+    "Ansagen: Die Startansage „Gentlemen, start your engines“ und die Ansage der Sektor-Bestzeiten sind jetzt ab Werk aus. Beide bleiben unter Optionen > Ansagen einzeln schaltbar.": "Anuncios: el anuncio de salida «Gentlemen, start your engines» y el anuncio de los mejores tiempos de sector ahora están desactivados por defecto. Ambos siguen siendo conmutables individualmente en Opciones > Anuncios.",
     "Seitennahe Kamera": "Cámara lateral cercana",
     "Stein grau marmoriert": "Piedra gris jaspeada",
     "Los!": "¡Ya!",
@@ -68706,7 +68709,7 @@
   // Akku: BESTELLT "Akku-Ansage < 25 %" - eine eigene Schwelle, nicht die 10 % oben.
   const AKKU_SCHWELLE = 0.25;
   const AKKU_HYSTERESE = 0.32;
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: true, start: true,
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: false, start: false,
                      batterycrit: true };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false, batterycrit: false };
   // v1.6.60 (aus Gnen54s Fork, Zweig akku-kritisch) BESTELLT: "Bei Unterschreiten der 5 % Schwelle eine Ansage: Session
@@ -115338,6 +115341,28 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
                  + (fehlt.length ? ' | fehlt: ' + fehlt.join(', ') : '') };
   });
 
+  // ---- v1.6.89: Startansage und Sektor-Bestzeiten ab Werk aus ------------------
+  // BESTELLT: "deactivate the sector-times announcement" und die Startansage abschaltbar. Beide
+  // Schalter bleiben bestehen, aber die VORGABE aus dem Markup ist jetzt aus. Geprueft wird wie bei
+  // "alle fuenf Ansagen" defaultChecked (die Vorgabe), nicht der Stand, den der Nutzer eingestellt hat.
+  stAdd('Ansagen v1.6.89: Startansage und Sektor-Bestzeiten ab Werk aus', () => {
+    const f = [];
+    const start = $('setting-announce-start');
+    const sektor = $('setting-announce-sektor');
+    if (!start) f.push('Startansage-Schalter fehlt');
+    else if (start.defaultChecked) f.push('Startansage ist ab Werk an');
+    if (!sektor) f.push('Sektor-Schalter fehlt');
+    else if (sektor.defaultChecked) f.push('Sektor-Bestzeiten sind ab Werk an');
+    // Die Vorgabe aus dem Markup ist gefragt; der Schalter bleibt bedienbar (presetSet meldet Erfolg).
+    const merkS = start ? start.checked : false;
+    const merkK = sektor ? sektor.checked : false;
+    if (start && !presetSet('setting-announce-start', true)) f.push('Startansage nicht einschaltbar');
+    if (sektor && !presetSet('setting-announce-sektor', true)) f.push('Sektor nicht einschaltbar');
+    if (start) presetSet('setting-announce-start', merkS);
+    if (sektor) presetSet('setting-announce-sektor', merkK);
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'beide ab Werk aus und wieder einschaltbar' };
+  });
+
   // ---- Jede Linie im Positionsdiagramm hat einen hellen Saum ----
   //
   // GEMELDET: "Positionen Diagramm nach Rennen: hier sehe ich die schwarze Linie auf
@@ -133279,6 +133304,23 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
         if (v === 5.45 || v === 5.5) { cfg['setting-topspeed-kmh'] = 4; geaendert = true; }
         try {
           localStorage.setItem('chc.migrate.topspeed1131.v1', '1');
+          if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
+        } catch (e) { /* dann eben nur fuer diese Sitzung */ }
+      }
+    }
+    // ---- EINMALIG (v1.6.89): Startansage und Sektor-Bestzeiten ab Werk aus ------------------
+    // BESTELLT: "deactivate the sector-times announcement" und die Startansage abschaltbar. Die neue
+    // Vorgabe ist aus; ein gespeichertes "an" aus der Zeit, als beide ab Werk an waren, wird einmal
+    // auf aus gestellt. Wer sie danach wieder anstellt, behaelt sie (dieselbe Regel wie v1.1.25).
+    {
+      let erledigt = false;
+      try { erledigt = localStorage.getItem('chc.migrate.announceaus1689.v1') === '1'; } catch (e) { /* privat */ }
+      if (!erledigt) {
+        let geaendert = false;
+        if (cfg['setting-announce-start'] === true || cfg['setting-announce-start'] === 'true') { cfg['setting-announce-start'] = false; geaendert = true; }
+        if (cfg['setting-announce-sektor'] === true || cfg['setting-announce-sektor'] === 'true') { cfg['setting-announce-sektor'] = false; geaendert = true; }
+        try {
+          localStorage.setItem('chc.migrate.announceaus1689.v1', '1');
           if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
         } catch (e) { /* dann eben nur fuer diese Sitzung */ }
       }

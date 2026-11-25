@@ -16899,6 +16899,28 @@
                  + (fehlt.length ? ' | fehlt: ' + fehlt.join(', ') : '') };
   });
 
+  // ---- v1.6.89: Startansage und Sektor-Bestzeiten ab Werk aus ------------------
+  // BESTELLT: "deactivate the sector-times announcement" und die Startansage abschaltbar. Beide
+  // Schalter bleiben bestehen, aber die VORGABE aus dem Markup ist jetzt aus. Geprueft wird wie bei
+  // "alle fuenf Ansagen" defaultChecked (die Vorgabe), nicht der Stand, den der Nutzer eingestellt hat.
+  stAdd('Ansagen v1.6.89: Startansage und Sektor-Bestzeiten ab Werk aus', () => {
+    const f = [];
+    const start = $('setting-announce-start');
+    const sektor = $('setting-announce-sektor');
+    if (!start) f.push('Startansage-Schalter fehlt');
+    else if (start.defaultChecked) f.push('Startansage ist ab Werk an');
+    if (!sektor) f.push('Sektor-Schalter fehlt');
+    else if (sektor.defaultChecked) f.push('Sektor-Bestzeiten sind ab Werk an');
+    // Die Vorgabe aus dem Markup ist gefragt; der Schalter bleibt bedienbar (presetSet meldet Erfolg).
+    const merkS = start ? start.checked : false;
+    const merkK = sektor ? sektor.checked : false;
+    if (start && !presetSet('setting-announce-start', true)) f.push('Startansage nicht einschaltbar');
+    if (sektor && !presetSet('setting-announce-sektor', true)) f.push('Sektor nicht einschaltbar');
+    if (start) presetSet('setting-announce-start', merkS);
+    if (sektor) presetSet('setting-announce-sektor', merkK);
+    return { ok: !f.length, mass: f.length ? f.join('; ') : 'beide ab Werk aus und wieder einschaltbar' };
+  });
+
   // ---- Jede Linie im Positionsdiagramm hat einen hellen Saum ----
   //
   // GEMELDET: "Positionen Diagramm nach Rennen: hier sehe ich die schwarze Linie auf

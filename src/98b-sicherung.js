@@ -385,6 +385,23 @@
         } catch (e) { /* dann eben nur fuer diese Sitzung */ }
       }
     }
+    // ---- EINMALIG (v1.6.89): Startansage und Sektor-Bestzeiten ab Werk aus ------------------
+    // BESTELLT: "deactivate the sector-times announcement" und die Startansage abschaltbar. Die neue
+    // Vorgabe ist aus; ein gespeichertes "an" aus der Zeit, als beide ab Werk an waren, wird einmal
+    // auf aus gestellt. Wer sie danach wieder anstellt, behaelt sie (dieselbe Regel wie v1.1.25).
+    {
+      let erledigt = false;
+      try { erledigt = localStorage.getItem('chc.migrate.announceaus1689.v1') === '1'; } catch (e) { /* privat */ }
+      if (!erledigt) {
+        let geaendert = false;
+        if (cfg['setting-announce-start'] === true || cfg['setting-announce-start'] === 'true') { cfg['setting-announce-start'] = false; geaendert = true; }
+        if (cfg['setting-announce-sektor'] === true || cfg['setting-announce-sektor'] === 'true') { cfg['setting-announce-sektor'] = false; geaendert = true; }
+        try {
+          localStorage.setItem('chc.migrate.announceaus1689.v1', '1');
+          if (geaendert) localStorage.setItem(AUTO_STORE, JSON.stringify(cfg));
+        } catch (e) { /* dann eben nur fuer diese Sitzung */ }
+      }
+    }
     // AUCH HIER GEPRUEFT. Die eigene Ablage ist nicht vertrauenswuerdiger als eine Datei:
     // sie kann aus einer aelteren Fassung stammen, in der ein Regler andere Grenzen hatte.
     const { bad } = presetPruefen(cfg);

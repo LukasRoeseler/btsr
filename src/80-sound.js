@@ -718,7 +718,7 @@
   // Akku: BESTELLT "Akku-Ansage < 25 %" - eine eigene Schwelle, nicht die 10 % oben.
   const AKKU_SCHWELLE = 0.25;
   const AKKU_HYSTERESE = 0.32;
-  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: true, start: true,
+  const ansageAn = { lap: true, damage: false, fuel: false, tyre: false, rain: false, pit: true, battery: false, status: true, meister: true, sektor: false, start: false,
                      batterycrit: true };
   const ansageLatch = { damage: false, fuel: false, tyre: false, rain: null, battery: false, batterycrit: false };
   // v1.6.60 (aus Gnen54s Fork, Zweig akku-kritisch) BESTELLT: "Bei Unterschreiten der 5 % Schwelle eine Ansage: Session
