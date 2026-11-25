@@ -4942,6 +4942,7 @@
                       { id: 'naeher', name: 'Seitennahe Kamera' }, { id: 'haube', name: 'Motorhaube' },
                       { id: 'oben', name: 'Von oben (Start/Ziel)' },
                       { id: 'fahrer', name: 'Fahrer am Rand', wip: true },
+                      { id: 'fahrerzoom', name: 'Fahrer am Rand (Zoom)', wip: true },
                       { id: 'tv', name: 'TV-Kamera', wip: true }];
   const VF_KAMERA_STORE = 'omegasim-vf-kamera';
   function vfKameraId() {
@@ -4980,7 +4981,7 @@
     return VF.dreh;
   }
   function vfDrehNull() { const D = vfDreh(); D.g = 0; D.n = 0; D.vg = 0; D.vn = 0; }
-  function vfDrehArt(id) { return id === 'haube' || id === 'fahrer' || id === 'tv' ? 'umsehen' : (id === 'oben' ? 'oben' : 'kreisen'); }
+  function vfDrehArt(id) { return id === 'haube' || id === 'fahrer' || id === 'fahrerzoom' || id === 'tv' ? 'umsehen' : (id === 'oben' ? 'oben' : 'kreisen'); }
   // Grenzen der Hoehe n (Bogenmass): kreisen = Erhebung gegen die Standardhoehe, oben = Neigung aus der
   // Senkrechten, umsehen = Blick nach unten (positiv) / oben (negativ).
   function vfDrehGrenzen(art) {
@@ -5091,6 +5092,8 @@
   // 1150 voll): Verhaeltnis 162, die Tiefe reicht auch fuer Randstein (0,09 hoch) gegen Fahrbahn.
   const VF_FAHRER_AUGE_CM = 100, VF_FAHRER_ABSTAND_CM = 75, VF_FAHRER_TAU = 0.25, VF_FAHRER_ZOOM_TAU = 0.8;
   const VF_FAHRER_FOV = 34, VF_FAHRER_FOV_FERN = 21;
+  // v1.6.91: "Fahrer am Rand (Zoom)" - dieselbe Position, aber ein engeres Sichtfeld (Tele) als der Fahrer.
+  const VF_FAHRER_ZOOM_FOV = 20, VF_FAHRER_ZOOM_FOV_FERN = 13;
   function vfFahrerOrt(pts, nrm, tiles) {
     const n = pts.length, rand = TRACK_HALF_W + TRACK_KERB_W, abst = VF_FAHRER_ABSTAND_CM * TRACK_UNITS_PER_CM;
     const s = Math.max(0, pts.findIndex((p) => p.tile >= 0 && tiles[p.tile] && tiles[p.tile].type === TILE_TYPE.START));
@@ -5120,12 +5123,16 @@
   // Liefert F.k = { auge, ziel, fov, nah, fern } (dieselben Arrays jedes Mal, keine Allokation je Bild).
   function vfFahrerKamera(F, x, y, dt) {
     const o = F.ort, z = F.z;
-    if (!F.k) F.k = { auge: [o.x, o.h, o.y], ziel: [0, 0, 0], fov: VF_FAHRER_FOV, nah: 8, fern: 1300 };
-    const dx = x - o.x, dz = y - o.y, dy = VF_AUTO.H * 0.5 - o.h, waag = Math.hypot(dx, dz);
+    // v1.6.91: F.fov / F.fovFern erlauben der "Fahrer am Rand"-Kamera ein eigenes (Tele-)Sichtfeld fuer die
+    // Zoom-Variante und die TV-Kamera; F.zielX / F.zielY verschieben den Zielpunkt nach vorn (Vorhalt).
+    if (!F.k) F.k = { auge: [o.x, o.h, o.y], ziel: [0, 0, 0], fov: F.fov || VF_FAHRER_FOV, nah: 8, fern: 1300 };
+    const fovNah = F.fov || VF_FAHRER_FOV, fovFern = F.fovFern || VF_FAHRER_FOV_FERN;
+    const tx = F.zielX !== undefined ? F.zielX : x, ty = F.zielY !== undefined ? F.zielY : y;
+    const dx = tx - o.x, dz = ty - o.y, dy = VF_AUTO.H * 0.5 - o.h, waag = Math.hypot(dx, dz);
     const gier = Math.atan2(dz, dx), nick = Math.atan2(dy, Math.max(1e-6, waag));
     const dist = Math.hypot(waag, dy);
     // v1.3.124 Studienmodus: der Zoom der Fahrer-Kamera laesst sich abschalten (fixes Sichtfeld).
-    const fovZiel = VF_STUDIE_ZOOM_AUS ? VF_FAHRER_FOV : VF_FAHRER_FOV - (VF_FAHRER_FOV - VF_FAHRER_FOV_FERN) * Math.max(0, Math.min(1, (dist - 150) / 300));
+    const fovZiel = VF_STUDIE_ZOOM_AUS ? fovNah : fovNah - (fovNah - fovFern) * Math.max(0, Math.min(1, (dist - 150) / 300));
     if (z.gier === undefined) { z.gier = gier; z.nick = nick; z.fov = fovZiel; }
     else {
       const a = 1 - Math.exp(-Math.max(0, dt) / VF_FAHRER_TAU), b = 1 - Math.exp(-Math.max(0, dt) / VF_FAHRER_ZOOM_TAU);
@@ -5142,9 +5149,16 @@
   // ---- v1.5 (WIP, Plan Paket 4 "TV-Kamera"): Kameras am Streckenrand, geschnitten wie im Fernsehen ----
   // Posten alle VF_TV_ABSTAND Teile aussen neben der Bahn (frei von der Strecke, nicht im Innenfeld), hoeher
   // als der Fahrer am Rand. Gezeigt wird der naechste Posten; gewechselt (harter Schnitt) erst, wenn ein
-  // anderer um VF_TV_HYST naeher ist und der aktuelle mindestens VF_TV_MIN_S lief. Jeder Posten folgt dem
-  // Auto wie die Fahrer-Kamera (vfFahrerKamera: weich schwenken, mit dem Abstand zoomen).
+  // anderer um VF_TV_HYST naeher ist und der aktuelle mindestens VF_TV_MIN_S lief.
+  // v1.6.91 BESTELLT: "change tv camera to be much more like the librecorsa.org camera." librecorsa
+  // (TracksideBroadcastDirector) faehrt den Posten als Dolly die Strecke entlang, der Blick eilt dem Auto
+  // voraus (Vorhalt) und das Sichtfeld ist ein Tele-Objektiv, das das Auto etwa gleich gross haelt. Das hier
+  // nachgeahmt: jeder Posten hat einen Dolly ueber seinen Sektor, die Kamera gleitet mit dem Auto mit, das
+  // Ziel liegt um VF_TV_VORHALT vor dem Auto (nur wenn es faehrt), und das FOV kommt aus der Entfernung.
   const VF_TV_ABSTAND = 3, VF_TV_HYST = 0.8, VF_TV_MIN_S = 1.5, VF_TV_HOEHE = 1.8;
+  const VF_TV_DOLLY = 6;                        // Punkte je Dolly
+  const VF_TV_FOV = 22, VF_TV_FOV_FERN = 15;    // Tele: enger als die Fahrer-Kamera (34..21)
+  const VF_TV_VORHALT = 12;                     // Blick-Vorhalt (Streckeneinheiten), mal Tempoanteil
   function vfTvPosten(pts, nrm, tiles) {
     const n = pts.length, rand = TRACK_HALF_W + TRACK_KERB_W, abst = VF_FAHRER_ABSTAND_CM * TRACK_UNITS_PER_CM * 1.5;
     const innen = (x, y) => {
@@ -5157,16 +5171,26 @@
     };
     const frei = (x, y) => { let d = Infinity; for (const q of pts) d = Math.min(d, Math.hypot(q.x - x, q.y - y)); return d - rand; };
     const schritt = Math.max(1, Math.round(TRACK_SAMPLES_PER_TILE * VF_TV_ABSTAND));
+    const halbe = schritt / 2;
     const out = [];
     for (let i = 0; i < n; i += schritt) {
       let best = null;
       for (const sg of [1, -1]) {
         const x = pts[i].x + nrm[i].x * sg * (rand + abst), y = pts[i].y + nrm[i].y * sg * (rand + abst);
         const wert = (frei(x, y) >= abst * 0.9 ? 0 : 1000) + (innen(x, y) ? 100 : 0);
-        if (!best || wert < best.wert) best = { x, y, wert };
+        if (!best || wert < best.wert) best = { x, y, wert, seite: sg };
       }
-      if (best.wert < 1000) out.push({ ort: { x: best.x, y: best.y, h: VF_FAHRER_AUGE_CM * TRACK_UNITS_PER_CM * VF_TV_HOEHE, idx: i }, z: {}, k: null });
+      if (best.wert < 1000) {
+        // Dolly: Punkte ueber den Sektor auf derselben Seite, damit die Kamera mit dem Auto mitgleitet.
+        const dolly = [];
+        for (let k = 0; k < VF_TV_DOLLY; k++) {
+          const j = Math.round((i - halbe + (k * 2 * halbe) / (VF_TV_DOLLY - 1)) % n + n) % n;
+          dolly.push({ x: pts[j].x + nrm[j].x * best.seite * (rand + abst), y: pts[j].y + nrm[j].y * best.seite * (rand + abst) });
+        }
+        out.push({ ort: { x: best.x, y: best.y, h: VF_FAHRER_AUGE_CM * TRACK_UNITS_PER_CM * VF_TV_HOEHE, idx: i }, z: {}, k: null, seite: best.seite, halbe, dolly });
+      }
     }
+    out.n = n;   // Gesamtzahl der Streckenpunkte, fuer den Sektorfortschritt des Dollys.
     return out;
   }
   // Welcher Posten (rein, fuer den Selbsttest): T = { posten, aktiv, seit }, Auto bei (x, y), jetzt in s.
@@ -5183,10 +5207,30 @@
     }
     return false;
   }
-  function vfTvKamera(T, x, y, dt) {
+  // Die TV-Kamera: Dolly-Position aus der Sektorlage des Autos, Vorhalt, Tele-Sichtfeld. idx = Index des
+  // Autos auf der Mittellinie (VF.idx), damit der Dolly weiss, wo im Sektor das Auto gerade ist.
+  function vfTvKamera(T, x, y, dt, idx) {
     T.uhr = (T.uhr || 0) + Math.max(0, dt || 0);
     vfTvWahl(T, x, y, T.uhr);
-    return vfFahrerKamera(T.posten[T.aktiv], x, y, dt);
+    const P = T.posten[T.aktiv];
+    let ex = P.ort.x, ey = P.ort.y;
+    const n = T.posten.n || 1;
+    if (P.dolly && P.dolly.length > 1 && idx !== undefined && P.halbe) {
+      let rel = ((idx - P.ort.idx) % n + n) % n;   // kuerzester Weg, damit die Runde umlaeuft
+      if (rel > n / 2) rel -= n;
+      const u = Math.max(0, Math.min(1, (rel + P.halbe) / (2 * P.halbe)));
+      const f = u * (P.dolly.length - 1), i0 = Math.floor(f), i1 = Math.min(P.dolly.length - 1, i0 + 1), ft = f - i0;
+      ex = P.dolly[i0].x + (P.dolly[i1].x - P.dolly[i0].x) * ft;
+      ey = P.dolly[i0].y + (P.dolly[i1].y - P.dolly[i0].y) * ft;
+    }
+    // Vorhalt: Blick ein Stueck vor das Auto, skaliert mit dem Tempo (steht das Auto, schaut es aufs Auto).
+    const r = (VF.h || 0) * Math.PI / 180, fx = Math.sin(r), fz = -Math.cos(r);
+    let kmh = 0; try { kmh = Math.abs((physEngine && physEngine.state && physEngine.state.speedKmh) || 0); } catch (e) { /* egal */ }
+    const vor = VF_TV_VORHALT * Math.max(0, Math.min(1, kmh / 60));
+    const F = { ort: { x: ex, y: ey, h: P.ort.h }, z: P.z, k: P.k, fov: VF_TV_FOV, fovFern: VF_TV_FOV_FERN, zielX: x + fx * vor, zielY: y + fz * vor };
+    const k = vfFahrerKamera(F, x, y, dt);
+    P.z = F.z; P.k = F.k;
+    return k;
   }
   function vfKamera(dt) {
     const r = VF.h * Math.PI / 180, fx = Math.sin(r), fz = -Math.cos(r);
@@ -5209,14 +5253,21 @@
     // der Rampe.
     const H = vfHzSpieler();
     if (!H.z && !H.p) return k;
-    const innen = id === 'haube' || id === 'fahrer';
+    const innen = id === 'haube' || id === 'fahrer' || id === 'fahrerzoom';
     const weit = Math.hypot(k.ziel[0] - k.auge[0], k.ziel[2] - k.auge[2]);
     return Object.assign({}, k, { auge: [k.auge[0], k.auge[1] + H.z, k.auge[2]],
       ziel: [k.ziel[0], k.ziel[1] + H.z + (innen ? Math.tan(H.p) * weit : 0), k.ziel[2]] });
   }
   function vfKameraBasis(id, fx, fz, dt, art, D) {
     if (id === 'fahrer' && VF.fahrer) { VF.kam = null; return vfFahrerKamera(VF.fahrer, VF.x, VF.y, dt); }
-    if (id === 'tv' && VF.tv && VF.tv.posten.length) { VF.kam = null; return vfTvKamera(VF.tv, VF.x, VF.y, dt); }
+    // v1.6.91 BESTELLT: "add another camera mode that is like 6 (fahrer) but has stronger zoom." Gleiche
+    // Position wie der Fahrer am Rand, aber ein deutlich engeres Sichtfeld (Tele) - eigener Zustand, damit
+    // sich die beiden Kameras nicht das Schwenken/Zoomen teilen.
+    if (id === 'fahrerzoom' && VF.fahrer) {
+      if (!VF.fahrerZoom) VF.fahrerZoom = { ort: VF.fahrer.ort, z: {}, k: null, fov: VF_FAHRER_ZOOM_FOV, fovFern: VF_FAHRER_ZOOM_FOV_FERN };
+      VF.kam = null; return vfFahrerKamera(VF.fahrerZoom, VF.x, VF.y, dt);
+    }
+    if (id === 'tv' && VF.tv && VF.tv.posten.length) { VF.kam = null; return vfTvKamera(VF.tv, VF.x, VF.y, dt, VF.idx); }
     if (id === 'haube') {
       // Auf der Motorhaube (Speed Dreams: Bonnet 0,75 m vor, 0,95 m hoch), fest am Auto.
       const s = VF.modell ? VF_AUTO.L / VF.modell.d.laenge : 2;
@@ -5426,7 +5477,12 @@
       const emis = t.rolle === 'scheinwerfer' ? (licht ? 1.3 * (arL ? arL.emis : 1) : 0) : t.rolle === 'ruecklicht' ? ruecklichtEmis : 0;
       // Karosserie mit leichtem Clear-Coat-Glanz (klar, nur Quality), Scheiben/Glas dagegen nicht.
       // Der Lack betrifft nur Karosserieteile: Scheinwerfer, Ruecklichter und Scheiben bleiben unveraendert.
-      const lackTeil = !t.rolle || t.rolle === 'karosserie' || t.rolle === 'lack';
+      // v1.6.91 BESTELLT: "exhaust pipes, lights, etc. still get colored. this shouldn't happen." Die
+      // Auspuffrohre, der Motorraum, Antenne, Kennzeichen, Gitter, Unterboden und Scheibenwischer sind
+      // eigene Teile, aber in auto.json als 'karosserie' abgelegt - sie wuerden also mitgefärbt. Ihr
+      // Name beginnt mit einem Nicht-Lack-Praefix, deshalb bleiben sie beim Umfaerben unveraendert.
+      const lackTeil = (!t.rolle || t.rolle === 'karosserie' || t.rolle === 'lack')
+        && !/^(EXHAUST|ENGINE|ANTENNA|PLATE|GRILLE|REARGRILLE|WIPER|UNDER)/.test(t.name);
       // v1.5.157: klar 0.3 -> 0.5 (mehr Klarlack-Glanz in Quality). Die Raeder bleiben bei 0.2, das
       // Glas unveraendert - nur die Karosserie bekommt den naesseren Glanz.
       setze(aufbau, lackTeil ? lackTint : VF_WEISS, emis, 1, 0, 1, 0.5, 0, lackTeil && lackHex ? 1 : 0);
@@ -6013,8 +6069,27 @@
     VF.x = VF.startX; VF.y = VF.startY; VF.h = VF.startH;
     return true;
   }
+  // v1.6.91 BESTELLT: "In virtual driving, tank is not refilled on restart; make tank, tires, etc. always
+  // 100% at race start." Im virtuellen Fahren geht es ums Fahren, nicht um Sprit- und Reifenmanagement -
+  // jede Fahrt beginnt mit vollem Tank und frischen Reifen (wie ein Service vor dem Start). Nur die eigene
+  // Fahrt (nicht VF.extern): ein Rennen der App verwaltet Sprit und Reifen selbst.
+  function vfRennenFrisch() {
+    if (typeof fuel !== 'undefined' && fuel !== 100) fuel = 100;
+    if (!VF.hubschrauber) {
+      try {
+        if (typeof resetTyres === 'function') resetTyres(physEngine);
+        else if (physEngine && physEngine.state) {
+          const st = physEngine.state, amb = physEngine.config.tyreAmbientC;
+          st.tyreWear = 0; st.tyreWearL = 0; st.tyreWearR = 0; st.tyreGrip = 1; st.tyreTempC = amb;
+          for (let i = 0; i < 4; i++) { st.tyreWear4[i] = 0; st.tyreTemp4[i] = amb; }
+        }
+      } catch (e) { /* egal */ }
+    }
+    VF.tyreTemp = 0;   // das Reifengriff-Modell der virtuellen Fahrt beginnt ebenfalls kalt.
+  }
   function vfLadenEnde() {
     VF.laedt = false;
+    if (!VF.extern) vfRennenFrisch();   // v1.6.91: volle Tanks und frische Reifen zu Rennbeginn
     if (VF.modus && VF.modus !== 'practice' && !VF.studie && !VF.hubschrauber) {
       VF.ampel = { t0: performance.now(), aus: 5300 + Math.random() * 1200 };
       if (typeof startAnsageSprechen === 'function') startAnsageSprechen();   // v1.6.46 (gnen54): "Gentlemen, start your engines"
@@ -7050,7 +7125,7 @@
     clearTimeout(vfFreigabeTimer);
     vfFreigabeTimer = setTimeout(vfSpeicherFreigeben, VF_FREIGABE_MS);
     vfSpiegelRahmen(null);
-    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.weh = null; VF.umw = null; VF.boxStriche = null; VF.boxBucht = null; VF.fahrer = null; VF.tv = null; VF.ui = null; VF.wetterKnopf = null; VF.stick = null; VF.tasten = {};
+    VF.schicht = null; VF.gl = null; VF.flaeche = null; VF.baeume = null; VF.weh = null; VF.umw = null; VF.boxStriche = null; VF.boxBucht = null; VF.fahrer = null; VF.fahrerZoom = null; VF.tv = null; VF.ui = null; VF.wetterKnopf = null; VF.stick = null; VF.tasten = {};
     renderGarage();
     // Zurueck in die Garage, wo die Optionen der virtuellen Fahrt stehen (dort startet die naechste).
     // Eine Studienfahrt geht zurueck in die Studie (98f-studie.js zeigt sie selbst).

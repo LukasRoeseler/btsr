@@ -19173,6 +19173,17 @@
     if (e60.some((e, i) => i && e > e60[i - 1] + 1e-9)) f.push('Blick naehert sich nicht stetig');
     if (!(e60[e60.length - 1] < 1)) f.push('nach 1,5 s noch ' + e60[e60.length - 1].toFixed(2) + ' Grad daneben');
     if (Math.abs(e60[60] - e30[30]) > 0.5) f.push('haengt von der Bildrate ab: ' + e60[60].toFixed(2) + ' / ' + e30[30].toFixed(2) + ' Grad');
+    // v1.6.91: "Fahrer am Rand (Zoom)" - gleiche Position, aber deutlich engeres Sichtfeld (Tele).
+    if (!VF_KAMERAS.some((k) => k.id === 'fahrerzoom' && k.wip)) f.push('Kamera "Fahrer am Rand (Zoom)" fehlt');
+    if (vfDrehArt('fahrerzoom') !== 'umsehen') f.push('fahrerzoom dreht nicht umsehen');
+    {
+      const Fz = { ort, z: {}, k: null, fov: VF_FAHRER_ZOOM_FOV, fovFern: VF_FAHRER_ZOOM_FOV_FERN };
+      const Ff = { ort, z: {}, k: null };
+      const ziel = pts[Math.floor(pts.length / 3)];
+      vfFahrerKamera(Fz, ziel.x, ziel.y, 1 / 60);
+      vfFahrerKamera(Ff, ziel.x, ziel.y, 1 / 60);
+      if (!(Fz.k.fov < Ff.k.fov)) f.push('Zoom-FOV ' + Fz.k.fov.toFixed(1) + ' nicht enger als ' + Ff.k.fov.toFixed(1));
+    }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bahn ' + bahnCm.toFixed(0) + ' cm, ' + masse.join(', ') + ' cm, Fahrer '
       + randCm.toFixed(0) + ' cm neben dem Rand, Blick ' + e60[0].toFixed(0) + ' -> ' + e60[15].toFixed(1) + ' (0,25 s) -> ' + e60[90].toFixed(2) + ' Grad' };
   });
@@ -27780,6 +27791,15 @@
       let d = Infinity; for (const q of pts) d = Math.min(d, Math.hypot(q.x - P.ort.x, q.y - P.ort.y));
       if (d < rand) f.push('Posten ' + i + ' auf der Bahn');
       if (!(P.ort.h > VF_FAHRER_AUGE_CM * TRACK_UNITS_PER_CM)) f.push('Posten ' + i + ' nicht hoeher als der Fahrer');
+    });
+    // v1.6.91: jeder Posten hat einen Dolly auf derselben Seite (librecorsa-Art), ausserhalb der Bahn.
+    if (posten.n !== pts.length) f.push('posten.n ' + posten.n + ' statt ' + pts.length);
+    posten.forEach((P, i) => {
+      if (!P.dolly || P.dolly.length < 2) f.push('Posten ' + i + ' ohne Dolly');
+      else for (const d of P.dolly) {
+        let dd = Infinity; for (const q of pts) dd = Math.min(dd, Math.hypot(q.x - d.x, q.y - d.y));
+        if (dd < TRACK_HALF_W) f.push('Dolly ' + i + ' auf der Bahn');
+      }
     });
     if (!VF_KAMERAS.some((k) => k.id === 'tv' && k.wip)) f.push('TV-Kamera nicht in der Liste (WIP)');
     // Ein Auto faehrt die Mittellinie ab: Schnitte nur nach Mindestdauer, am Ende nahe am naechsten Posten.

@@ -3092,8 +3092,14 @@
     // latUse des Einspurmodells faengt das Rutschen nicht und wuerde auch bei normalem Kurven
     // faden quietschen. Ausserhalb der virtuellen Fahrt bleibt alles wie bisher.
     const vfAktivJetzt = typeof vfAktiv === 'function' && vfAktiv();
-    const vfNutzung = vfAktivJetzt && pst ? (pst.vfNutzung || 0) : -1;
+    // v1.6.91 BESTELLT: "in virtual driving with drift mode, disable the tyre screeching sound."
+    // Im Fahrgefuehl Drift liegt das Auto die ganze Zeit quer, der Schraeglauf ist also dauerhaft
+    // ueber der Schwelle - das Quietschen waere ein Dauergeraeusch, kein Signal. Darum ist es im
+    // Drift komplett aus (kein Ton, kein Rumpeln).
+    const vfDriftJetzt = vfAktivJetzt && typeof vfHandling === 'function' && vfHandling() === 'drift';
+    const vfNutzung = (vfAktivJetzt && !vfDriftJetzt && pst) ? (pst.vfNutzung || 0) : -1;
     if (vfNutzung >= 0) setTyreSqueal(tyreVfNutzung(vfNutzung, now), TYRE_SQUEAL_VF.start, TYRE_SQUEAL_VF.voll);
+    else if (vfDriftJetzt) { tyreVfGlatt = 0; tyreVfAt = 0; setTyreSqueal(0); }
     else { tyreVfGlatt = 0; tyreVfAt = 0; setTyreSqueal(Math.max(pst.latUse || 0, pacQuietsch)); }
     // Neben der Bahn: nur auf der Bahn messbar (Schiene meldet 0xff), lauter mit dem Tempo.
     const neben = typeof trackMode !== 'undefined' && trackMode === 'on'
