@@ -1748,7 +1748,7 @@
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
-  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/' };
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/', cavallo360: 'img/autos/cavallo360/', nsx: 'img/autos/nsx/', spirit300: 'img/autos/spirit300/' };
   // v1.6.27 (Issue #15): der RC Stunt Copter in der Garage. Er ist KEIN Auto: er hat kein
   // auto.json/auto.bin (VF_MODELL_PFADE), sondern wird als eigener Hubschrauber gebaut und
   // mit zwei Sticks geflogen. Ueberall, wo ein Auto-Modell oder ein Fahrprofil gebraucht wird,
@@ -1874,6 +1874,35 @@
   }
   function vfLackSetzen(hex) { try { localStorage.setItem(VF_LACK_STORE, hex || ''); } catch (e) { /* egal */ } }
   function vfLackId(hex) { const f = VF_LACK_FARBEN.find((x) => x.v === (hex || '')); return f ? f.id : 'auto'; }
+  // v1.6.85 (Issue #17): alternate liveries of the Speed Dreams cars. A livery is an alternate body
+  // texture that shares the base paint's UV layout, so the app swaps the body texture for it. The
+  // livery and the colour tint (Lackfarbe) are mutually exclusive: picking one clears the other.
+  const VF_LIVREE_STORE = 'omegasim-vf-livree';
+  // Per car the livery id and its display label (proper names, not translated). The texture names
+  // live in auto.json under "livree" (written by tools/sd_auto.py).
+  const VF_LIVREES = {
+    cavallo360: [['bee', 'Bee'], ['tsubashi', 'Tsubashi']],
+    nsx: [['amami', 'Amami'], ['tribal', 'Tribal']],
+    spirit300: [['GTR', 'GTR'], ['sport', 'Sport']],
+  };
+  // Selected livery id for a car ('' if none). Stored as "<car>:<id>" so switching cars resets it.
+  function vfLivree(auto) {
+    auto = auto || vfAutoWahl();
+    const l = VF_LIVREES[auto];
+    if (!l) return '';
+    try {
+      const v = localStorage.getItem(VF_LIVREE_STORE) || '';
+      if (!v.startsWith(auto + ':')) return '';
+      const id = v.slice(auto.length + 1);
+      return l.some(([x]) => x === id) ? id : '';
+    } catch (e) { return ''; }
+  }
+  function vfLivreeSetzen(id) { try { localStorage.setItem(VF_LIVREE_STORE, id ? vfAutoWahl() + ':' + id : ''); } catch (e) { /* egal */ } }
+  function vfLivreeName(id) {
+    const l = VF_LIVREES[vfAutoWahl()] || [];
+    const f = l.find(([x]) => x === id);
+    return f ? f[1] : id;
+  }
   // Die Farbe der Karosserie: Der Shader faerbt sie um (Helligkeit des Texels mal Lackfarbe, uniform lack = 1), statt zu
   // multiplizieren - sonst wuerde Rot auf einem gelben Auto Orange. Ohne Farbe bleibt das Modell, wie es ist.
   // v1.5.104: Beim Umfaerben ist die Helligkeit des Texels auf 0,82 begrenzt (Shader, min(...)): helle Grundlacke (gelber
@@ -1890,6 +1919,12 @@
     return (vfHeliErlaubt() ? [{ v: 'hubschrauber', name: t('RC Stunt Copter') + ' (' + t('nur Training') + ', WIP)' }] : []).concat([
             { v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
             { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
+            // v1.6.85 (Issue #17): die drei weiteren Speed-Dreams-Autos (GPL-2.0-or-later), umgewandelt mit
+            // tools/sd_auto.py, siehe img/autos/<id>/LIZENZ.txt. Jeweils zwei Alternativ-Lackierungen
+            // (Kleidungs-Option "Lackierung" in der Garage) - Fahrdaten aus der .xml, kein WIP noetig.
+            { v: 'cavallo360', name: 'Cavallo 360 (Ferrari 360 Modena, Speed Dreams)' },
+            { v: 'nsx', name: 'Murasama NSX (Honda/Acura NSX 1991, Speed Dreams)' },
+            { v: 'spirit300', name: 'Spirit 300 (Lotus M250, Speed Dreams)' },
             // Eigenbau von Gnen54 (CC BY 4.0), WIP: Fahrdaten geschaetzt, siehe img/autos/kaefer/LIZENZ.txt
             { v: 'kaefer', name: t('VW Käfer 1303 RS mit Boxster-Motor (Gnen54, WIP)') },
             // v1.5.104: Eigenbau von Gnen54 auf der Modiplay-MP1-Karosserie (Freigabe Sturmkind, nicht kommerziell),
@@ -1924,7 +1959,9 @@
   // Vulture V5.R = Corvette C5-R (das Vorbild), FMC GT4 = Ford GT40, Boxer 96 = Porsche 911 GT3 (Boxer-6), Lynx 220 =
   // Jaguar XJ220 mit V6-Biturbo (naechster Klang: Ferrari 296 GT3, V6), Audi RS5 DTM = sein eigener Reihen-4-Turbo.
   const VF_MOTOR_FEST = { kaefer: 'boxster986', spider: 'listerstorm', caravelle: 'boxster986',
-    v5r: 'c5r', fmcgt4: 'gt40', boxer96: 'p992gt3r', lynx220: 'f296gt3', audirs5: 'rs5dtm' };
+    v5r: 'c5r', fmcgt4: 'gt40', boxer96: 'p992gt3r', lynx220: 'f296gt3', audirs5: 'rs5dtm',
+    // v1.6.85 (Issue #17): Ferrarireihe (V8) bzw. V6 wie der Lynx 220 / Jaguar XJ220.
+    cavallo360: 'amggt3', nsx: 'f296gt3', spirit300: 'f296gt3' };
   function vfMotorFest() { return VF_MOTOR_FEST[vfAutoWahl()] || ''; }
   // Die echte Neigung eines GT1 ist klein (0,5 Grad Rollen bei 1,5 g) und bei Modellgroesse unsichtbar.
   // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.
@@ -3060,7 +3097,13 @@
     const quad = gl.createBuffer();
     // Teillisten einmal hier statt je Bild per filter (Aufbau ohne Glas, Raeder, Glas).
     const teile = daten.meta.teile;
+    // v1.6.85 (Issue #17): alternate liveries are loaded as separate textures so they can be swapped
+    // in for the base paint texture at draw time (see vfModellZeichnen).
+    const livree = daten.meta.livree || null;
+    const livreeTex = {};
+    if (livree) livree.list.forEach((l) => { livreeTex[l.id] = vfTextur(gl, pfad + l.tex); });
     return { meta: daten.meta, d: daten.meta.physik, vbo, ibo, tex, schatten, glanz: vfGlanzTextur(gl), quad,
+             livree, livreeTex,
              aufbauTeile: teile.filter((t) => t.gruppe === 'auto' && t.rolle !== 'glas' && t.rolle !== 'scheinwerferglas'),
              radTeile: teile.filter((t) => t.gruppe === 'rad'),
              glasTeile: teile.filter((t) => t.rolle === 'glas' || t.rolle === 'scheinwerferglas') };
@@ -5217,6 +5260,9 @@
   // M ist das gebaute Modell (vfModellBauen), T das Texturprogramm, fe der Federungszustand.
   function vfModellZeichnen(gl, pv, blick, M, T, x, y, h, fe, lenkWinkel, raddreh, radModell, licht, bremst, fs, nick, auge, lackHex) {
     const d = M.d, u = T.u;
+    // v1.6.85 (Issue #17): if a livery is chosen for this car, its body uses the livery texture
+    // instead of the base paint texture (same UV layout). Read per model so NPCs keep their own look.
+    const livreeId = (M.livree && M.livreeTex) ? vfLivree(M.meta.kennung) : '';
     const s = VF_AUTO.L / d.laenge;
     const lage = vfMal(vfLage(x, y, h), vfS(s, s, s));
     const g = fs || 1, fez = fe || { z: 0, th: 0, ph: 0 };
@@ -5266,7 +5312,10 @@
       gl.vertexAttribPointer(T.an, 3, gl.FLOAT, false, 32, t.ecke0 * 32 + 12);
       gl.vertexAttribPointer(T.auv, 2, gl.FLOAT, false, 32, t.ecke0 * 32 + 24);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
-      gl.bindTexture(gl.TEXTURE_2D, M.tex[t.tex]);
+      // v1.6.85 (Issue #17): swap the base paint texture for the chosen livery (same UV layout).
+      let tx = M.tex[t.tex];
+      if (livreeId && t.tex === M.livree.paint && M.livreeTex[livreeId]) tx = M.livreeTex[livreeId];
+      gl.bindTexture(gl.TEXTURE_2D, tx);
       gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
     };
     const flaeche = (ecken, tx) => {      // ecken: je Ecke x y z u v (Welt)
@@ -6447,7 +6496,8 @@
     // fehlt ein Bild, verschwindet die Zeile still.
     {
       const jl = Math.max(0, VF_LACK_FARBEN.findIndex((f) => f.v === vfLack()));
-      const lackWahl = (dd) => { vfLackSetzen(VF_LACK_FARBEN[(jl + dd + VF_LACK_FARBEN.length) % VF_LACK_FARBEN.length].v); vfGarageNeu(); };
+      // v1.6.85 (Issue #17): picking a colour tint clears any chosen livery (they are mutually exclusive).
+      const lackWahl = (dd) => { vfLackSetzen(VF_LACK_FARBEN[(jl + dd + VF_LACK_FARBEN.length) % VF_LACK_FARBEN.length].v); vfLivreeSetzen(''); vfGarageNeu(); };
       const zeile = garWertZeile(t('Lackfarbe'), t(VF_LACK_FARBEN[jl].n), () => lackWahl(-1), () => lackWahl(1));
       zeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
       const palette = document.createElement('span');
@@ -6458,7 +6508,7 @@
         b.className = 'vf-lack' + (i === jl ? ' aktiv' : '');
         b.style.background = f.v || 'linear-gradient(135deg,#c8102e 0%,#0057b8 50%,#e8e8e8 100%)';
         b.title = t(f.n); b.setAttribute('aria-label', t(f.n));
-        b.onclick = (e) => { e.stopPropagation(); vfLackSetzen(f.v); vfGarageNeu(); };
+        b.onclick = (e) => { e.stopPropagation(); vfLackSetzen(f.v); vfLivreeSetzen(''); vfGarageNeu(); };
         palette.appendChild(b);
       });
       zeile.querySelector('.gk-w').appendChild(palette);
@@ -6472,6 +6522,22 @@
       vor.appendChild(img);
       rechts.appendChild(vor);
       rechts.appendChild(zeile);
+    }
+    // v1.6.85 (Issue #17): alternate liveries of the Speed Dreams cars. Only for cars that have them;
+    // the livery and the colour tint are mutually exclusive (picking one clears the other).
+    {
+      const list = VF_LIVREES[autos[ja].v] || [];
+      if (list.length) {
+        const opt = [['', t('Original')]].concat(list);
+        const jl = Math.max(0, opt.findIndex(([id]) => id === vfLivree()));
+        const livreeWahl = (dd) => {
+          const id = opt[(jl + dd + opt.length) % opt.length][0];
+          vfLivreeSetzen(id); if (id) vfLackSetzen(''); vfGarageNeu();
+        };
+        const z = garWertZeile(t('Lackierung'), opt[jl][1], () => livreeWahl(-1), () => livreeWahl(1));
+        z.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+        rechts.appendChild(z);
+      }
     }
     // v1.3.39 (WIP): der Fussboden unter der Bahn, Dielen in echten Massen (siehe VF_BOEDEN).
     const jb = Math.max(0, VF_BOEDEN.findIndex((b) => b.id === vfBodenWahl()));

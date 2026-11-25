@@ -1,0 +1,709 @@
+{
+ "name": "Cavallo 360",
+ "kennung": "cavallo360",
+ "quelle": "Speed Dreams, data/cars/models/sc-cavallo-360",
+ "lizenz": "GPL-2.0-or-later (Speed Dreams)",
+ "koordinaten": "m; +x links, +y oben, +z vorn",
+ "ecken": 3781,
+ "indizes": 16833,
+ "indexAb": 120992,
+ "schritt": 32,
+ "teile": [
+  {
+   "name": "WIPER_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 0,
+   "ecken": 34,
+   "index0": 0,
+   "indizes": 219
+  },
+  {
+   "name": "WFRAME2_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 34,
+   "ecken": 98,
+   "index0": 219,
+   "indizes": 354
+  },
+  {
+   "name": "UNDER_s_8",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 132,
+   "ecken": 219,
+   "index0": 573,
+   "indizes": 900
+  },
+  {
+   "name": "TLSURROUND3_s_7",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 351,
+   "ecken": 192,
+   "index0": 1473,
+   "indizes": 654
+  },
+  {
+   "name": "TAILLIGHTS_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 543,
+   "ecken": 52,
+   "index0": 2127,
+   "indizes": 252
+  },
+  {
+   "name": "STEERINGWH_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360-int.jpg",
+   "ecke0": 595,
+   "ecken": 104,
+   "index0": 2379,
+   "indizes": 564
+  },
+  {
+   "name": "RVENT5_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 699,
+   "ecken": 18,
+   "index0": 2943,
+   "indizes": 39
+  },
+  {
+   "name": "RVENT4_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 717,
+   "ecken": 12,
+   "index0": 2982,
+   "indizes": 36
+  },
+  {
+   "name": "RVENT2_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 729,
+   "ecken": 16,
+   "index0": 3018,
+   "indizes": 33
+  },
+  {
+   "name": "MIRRORS2_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 745,
+   "ecken": 16,
+   "index0": 3051,
+   "indizes": 51
+  },
+  {
+   "name": "MIRRORS_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 761,
+   "ecken": 56,
+   "index0": 3102,
+   "indizes": 366
+  },
+  {
+   "name": "LIGHTS_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 817,
+   "ecken": 58,
+   "index0": 3468,
+   "indizes": 258
+  },
+  {
+   "name": "HEADLIGHTS_s_8",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 875,
+   "ecken": 220,
+   "index0": 3726,
+   "indizes": 1098
+  },
+  {
+   "name": "HEAD_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "driver-sc-cavallo-360.jpg",
+   "ecke0": 1095,
+   "ecken": 41,
+   "index0": 4824,
+   "indizes": 309
+  },
+  {
+   "name": "FVENT3_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 1136,
+   "ecken": 32,
+   "index0": 5133,
+   "indizes": 84
+  },
+  {
+   "name": "FAIRDAMIN_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 1168,
+   "ecken": 99,
+   "index0": 5217,
+   "indizes": 381
+  },
+  {
+   "name": "EXHAUST_s_7",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 1267,
+   "ecken": 124,
+   "index0": 5598,
+   "indizes": 456
+  },
+  {
+   "name": "ENGINE1_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360-int.jpg",
+   "ecke0": 1391,
+   "ecken": 12,
+   "index0": 6054,
+   "indizes": 54
+  },
+  {
+   "name": "ENGINE0_s_9",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 1403,
+   "ecken": 128,
+   "index0": 6108,
+   "indizes": 576
+  },
+  {
+   "name": "BONNET_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 1531,
+   "ecken": 28,
+   "index0": 6684,
+   "indizes": 81
+  },
+  {
+   "name": "PLANE_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 1559,
+   "ecken": 8,
+   "index0": 6765,
+   "indizes": 21
+  },
+  {
+   "name": "BODYSIDEAIR_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 1567,
+   "ecken": 58,
+   "index0": 6786,
+   "indizes": 207
+  },
+  {
+   "name": "BODY9001_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 1625,
+   "ecken": 10,
+   "index0": 6993,
+   "indizes": 36
+  },
+  {
+   "name": "BODY9_s_15",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 1635,
+   "ecken": 828,
+   "index0": 7029,
+   "indizes": 3621
+  },
+  {
+   "name": "BODY5_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2463,
+   "ecken": 10,
+   "index0": 10650,
+   "indizes": 21
+  },
+  {
+   "name": "BODY39_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2473,
+   "ecken": 14,
+   "index0": 10671,
+   "indizes": 54
+  },
+  {
+   "name": "BODY36_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2487,
+   "ecken": 78,
+   "index0": 10725,
+   "indizes": 336
+  },
+  {
+   "name": "BODY35_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2565,
+   "ecken": 112,
+   "index0": 11061,
+   "indizes": 579
+  },
+  {
+   "name": "BODY34_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2677,
+   "ecken": 14,
+   "index0": 11640,
+   "indizes": 39
+  },
+  {
+   "name": "BODY33_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2691,
+   "ecken": 7,
+   "index0": 11679,
+   "indizes": 15
+  },
+  {
+   "name": "BODY32_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2698,
+   "ecken": 24,
+   "index0": 11694,
+   "indizes": 75
+  },
+  {
+   "name": "BODY31_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2722,
+   "ecken": 14,
+   "index0": 11769,
+   "indizes": 42
+  },
+  {
+   "name": "BODY30_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2736,
+   "ecken": 24,
+   "index0": 11811,
+   "indizes": 75
+  },
+  {
+   "name": "BODY29_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2760,
+   "ecken": 7,
+   "index0": 11886,
+   "indizes": 18
+  },
+  {
+   "name": "BODY28_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2767,
+   "ecken": 22,
+   "index0": 11904,
+   "indizes": 66
+  },
+  {
+   "name": "BODY27_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2789,
+   "ecken": 23,
+   "index0": 11970,
+   "indizes": 75
+  },
+  {
+   "name": "BODY22_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2812,
+   "ecken": 25,
+   "index0": 12045,
+   "indizes": 93
+  },
+  {
+   "name": "BODY21_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2837,
+   "ecken": 12,
+   "index0": 12138,
+   "indizes": 45
+  },
+  {
+   "name": "BODY20_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2849,
+   "ecken": 8,
+   "index0": 12183,
+   "indizes": 18
+  },
+  {
+   "name": "BODY19_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2857,
+   "ecken": 9,
+   "index0": 12201,
+   "indizes": 36
+  },
+  {
+   "name": "BODY18_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 2866,
+   "ecken": 194,
+   "index0": 12237,
+   "indizes": 930
+  },
+  {
+   "name": "BODY17_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 3060,
+   "ecken": 17,
+   "index0": 13167,
+   "indizes": 57
+  },
+  {
+   "name": "BODY16_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 3077,
+   "ecken": 20,
+   "index0": 13224,
+   "indizes": 93
+  },
+  {
+   "name": "BODY15_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 3097,
+   "ecken": 8,
+   "index0": 13317,
+   "indizes": 21
+  },
+  {
+   "name": "BODY14_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 3105,
+   "ecken": 9,
+   "index0": 13338,
+   "indizes": 27
+  },
+  {
+   "name": "BODY12_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 3114,
+   "ecken": 64,
+   "index0": 13365,
+   "indizes": 309
+  },
+  {
+   "name": "WILIGHTS_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 3178,
+   "ecken": 48,
+   "index0": 13674,
+   "indizes": 237
+  },
+  {
+   "name": "WI003_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 3226,
+   "ecken": 20,
+   "index0": 13911,
+   "indizes": 75
+  },
+  {
+   "name": "WI002_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 3246,
+   "ecken": 70,
+   "index0": 13986,
+   "indizes": 249
+  },
+  {
+   "name": "WI001_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 3316,
+   "ecken": 44,
+   "index0": 14235,
+   "indizes": 150
+  },
+  {
+   "name": "WI_s_10",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360.png",
+   "ecke0": 3360,
+   "ecken": 124,
+   "index0": 14385,
+   "indizes": 546
+  },
+  {
+   "name": "CHAIR_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360-int.jpg",
+   "ecke0": 3484,
+   "ecken": 60,
+   "index0": 14931,
+   "indizes": 429
+  },
+  {
+   "name": "CHAIR1_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-cavallo-360-int.jpg",
+   "ecke0": 3544,
+   "ecken": 60,
+   "index0": 15360,
+   "indizes": 438
+  },
+  {
+   "name": "DRIVER_s_7",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "driver-sc-cavallo-360.jpg",
+   "ecke0": 3604,
+   "ecken": 165,
+   "index0": 15798,
+   "indizes": 1002
+  },
+  {
+   "name": "NECK_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "driver-sc-cavallo-360.jpg",
+   "ecke0": 3769,
+   "ecken": 12,
+   "index0": 16800,
+   "indizes": 33
+  }
+ ],
+ "schatten": "shadow.png",
+ "lichter": {
+  "brems": [
+   [
+    0.72,
+    0.59,
+    -2.07,
+    0.2
+   ],
+   [
+    -0.72,
+    0.59,
+    -2.07,
+    0.2
+   ],
+   [
+    0.1,
+    0.72,
+    -2.15,
+    0.07
+   ],
+   [
+    -0.1,
+    0.72,
+    -2.15,
+    0.07
+   ],
+   [
+    0.0,
+    0.72,
+    -2.15,
+    0.07
+   ]
+  ],
+  "rueck": [
+   [
+    0.56,
+    0.59,
+    -2.11,
+    0.2
+   ],
+   [
+    -0.56,
+    0.59,
+    -2.11,
+    0.2
+   ]
+  ],
+  "front": [
+   [
+    0.55,
+    0.46,
+    1.9,
+    0.25
+   ],
+   [
+    -0.55,
+    0.46,
+    1.9,
+    0.25
+   ],
+   [
+    0.65,
+    0.51,
+    1.9,
+    0.25
+   ],
+   [
+    -0.65,
+    0.51,
+    1.9,
+    0.25
+   ]
+  ]
+ },
+ "physik": {
+  "masse": 1360.0,
+  "schwerpunktHoehe": 0.25,
+  "radstand": 2.62,
+  "a": 1.4672,
+  "b": 1.1528,
+  "vorderachse": 1.22,
+  "hinterachse": -1.4,
+  "laenge": 4.45,
+  "breite": 1.922,
+  "hoehe": 1.2,
+  "massenVerteilung": 0.8,
+  "lenkGrad": 45.0,
+  "bremsVorn": 0.6,
+  "cx": 0.32,
+  "stirnflaeche": 1.95,
+  "auftriebVorn": 0.56,
+  "auftriebHinten": 0.7,
+  "fluegelVorn": 0.0,
+  "fluegelHinten": 0.0,
+  "leerlauf": 900.0,
+  "begrenzer": 8500.0,
+  "reifen": {
+   "vorn": {
+    "radius": 0.3201,
+    "breite": 0.225,
+    "spur": 1.67,
+    "bodenfreiheit": 0.1,
+    "mu": 1.3
+   },
+   "hinten": {
+    "radius": 0.341,
+    "breite": 0.285,
+    "spur": 1.618,
+    "bodenfreiheit": 0.1,
+    "mu": 1.3
+   }
+  },
+  "feder": {
+   "vorn": {
+    "k": 67000.0,
+    "druck": 7000.0,
+    "zug": 14000.0,
+    "weg": 0.12,
+    "stab": 0.0
+   },
+   "hinten": {
+    "k": 69000.0,
+    "druck": 7000.0,
+    "zug": 14000.0,
+    "weg": 0.12,
+    "stab": 0.0
+   }
+  },
+  "gefedert": 1243.7
+ },
+ "livree": {
+  "paint": "sc-cavallo-360.png",
+  "list": [
+   {
+    "id": "bee",
+    "name": "bee",
+    "tex": "sc-cavallo-360-bee.png"
+   },
+   {
+    "id": "tsubashi",
+    "name": "tsubashi",
+    "tex": "sc-cavallo-360-tsubashi.png"
+   }
+  ]
+ }
+}

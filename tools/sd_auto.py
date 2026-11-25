@@ -135,6 +135,24 @@ def textur_schreiben(quelle, ziel_ordner, name, max_seite):
     return datei
 
 
+def livery_erkennen(quelle, basis):
+    """Find livery (alternate paint scheme) textures of a car: files named <basis>-<name>.png,
+    excluding the interior/rpm/speed/preview helpers. A livery shares the body's UV layout, so the
+    app swaps the body texture for the chosen livery."""
+    aus = []
+    if not basis:
+        return aus
+    for f in os.listdir(quelle):
+        m = re.match(re.escape(basis) + r'-([A-Za-z0-9]+)\.png$', f)
+        if not m:
+            continue
+        name = m.group(1).lower()
+        if name.startswith(('int', 'rpm', 'speed', 'preview')):
+            continue
+        aus.append((m.group(1), f))
+    return aus
+
+
 def main(quelle, kennung):
     xmls = [f for f in os.listdir(quelle) if f.endswith('.xml')]
     if len(xmls) != 1:
@@ -178,6 +196,20 @@ def main(quelle, kennung):
     if os.path.exists(os.path.join(quelle, 'shadow.png')):
         schatten = textur_schreiben(os.path.join(quelle, 'shadow.png'), ziel, 'shadow.png', 128)
 
+    # v1.6.84: alternate liveries. Each replaces the main body (paint) texture, which is the texture
+    # most body (karosserie) parts use. Written to img/autos/<id>/ and listed in auto.json as "livree".
+    basis = os.path.splitext(os.path.basename(modell))[0]
+    livery_teile = livery_erkennen(quelle, basis)
+    from collections import Counter
+    zaehl = Counter(t['tex'] for t in teile if t['rolle'] == 'karosserie')
+    lack_tex = zaehl.most_common(1)[0][0] if zaehl else None
+    livree = None
+    if livery_teile and lack_tex:
+        livree = {'paint': lack_tex, 'list': []}
+        for lid, lfile in livery_teile:
+            tex = textur_schreiben(os.path.join(quelle, lfile), ziel, lfile, TEXTUR_MAX.get('karosserie', 1024))
+            livree['list'].append({'id': lid, 'name': lid, 'tex': tex})
+
     roh = b''.join(struct.pack('<8f', *e) for e in ecken)
     pad = (-len(roh)) % 4
     roh += b'\0' * pad
@@ -193,7 +225,14 @@ def main(quelle, kennung):
     for achse, sek in (('vorn', 'Front Right Wheel'), ('hinten', 'Rear Right Wheel')):
         felge = zahl(w, sek + '/rim diameter') * 0.0254 / 2
         breite = zahl(w, sek + '/tire width') / 1000
-        flanke = breite * zahl(w, sek + '/tire height-width ratio')
+        # Some Speed Dreams models give the tyre sidewall as a height/width ratio, others as an
+        # absolute height in mm; both lead to the tyre radius used below (e.g. the NSX).
+        if w.get(sek + '/tire height-width ratio'):
+            flanke = breite * float(w[sek + '/tire height-width ratio'])
+        elif w.get(sek + '/tire height'):
+            flanke = float(w[sek + '/tire height']) / 1000
+        else:
+            raise SystemExit('fehlt in der .xml: ' + sek + '/tire height-width ratio')
         reifen[achse] = {'radius': round(felge + flanke, 4), 'breite': round(breite, 4), 'spur': round(2 * abs(zahl(w, sek + '/ypos')), 4),
                          'bodenfreiheit': zahl(w, sek + '/ride height') / 1000,
                          'mu': zahl(w, sek + '/Compounds/medium/mu', zahl(w, sek + '/mu', 1.2))}
@@ -234,15 +273,20 @@ def main(quelle, kennung):
         'lizenz': 'GPL-2.0-or-later (Speed Dreams)', 'koordinaten': 'm; +x links, +y oben, +z vorn',
         'ecken': len(ecken), 'indizes': len(indizes), 'indexAb': index_ab, 'schritt': 32,
         'teile': teile, 'schatten': schatten, 'lichter': lichter, 'physik': physik,
+        'livree': livree,
     }
     json.dump(meta, open(os.path.join(ziel, 'auto.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, indent=1)
+    lizenz_text = ('%s aus Speed Dreams (%s).\n\nModell, Texturen und Fahrzeugdaten: GNU General Public License, Version 2 oder\n'
+                   'spaeter (siehe den Kopf der Speed-Dreams-Datei %s). Umgewandelt mit tools/sd_auto.py:\nInnenraum entfernt, '
+                   'Texturen verkleinert, Koordinaten gedreht.')
+    if livree:
+        lizenz_text += ' Alternative Lackierungen (%s) beigelegt.' % ', '.join(l['id'] for l in livree['list'])
+    lizenz_text += '\nhttps://www.gnu.org/licenses/old-licenses/gpl-2.0.html\n'
     open(os.path.join(ziel, 'LIZENZ.txt'), 'w', encoding='utf-8', newline='\n').write(
-        '%s aus Speed Dreams (%s).\n\nModell, Texturen und Fahrzeugdaten: GNU General Public License, Version 2 oder\n'
-        'spaeter (siehe den Kopf der Speed-Dreams-Datei %s). Umgewandelt mit tools/sd_auto.py:\nInnenraum entfernt, '
-        'Texturen verkleinert, Koordinaten gedreht.\nhttps://www.gnu.org/licenses/old-licenses/gpl-2.0.html\n'
-        % (meta['name'], meta['quelle'], xmls[0]))
-    print('%s: %d Teile, %d Ecken, %d Dreiecke, auto.bin %d KB, Texturen %s'
-          % (meta['name'], len(teile), len(ecken), len(indizes) // 3, len(roh) // 1024, sorted(set(texturen.values()))))
+        lizenz_text % (meta['name'], meta['quelle'], xmls[0]))
+    print('%s: %d Teile, %d Ecken, %d Dreiecke, auto.bin %d KB, Texturen %s, Lackierungen %s'
+          % (meta['name'], len(teile), len(ecken), len(indizes) // 3, len(roh) // 1024,
+             sorted(set(texturen.values())), [l['id'] for l in (livree['list'] if livree else [])]))
 
 
 if __name__ == '__main__':

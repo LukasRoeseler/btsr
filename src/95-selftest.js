@@ -15290,6 +15290,28 @@
     } catch (e) { f.push('laedt nicht: ' + e.message); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
   });
+  stAdd('Virtuell v1.6.85: Cavallo 360, Murasama NSX und Spirit 300 (Speed Dreams, GPL) waehlbar, Modell laedt, Masse und Lackierungen da', async () => {
+    const f = [], mass = [];
+    const cars = [['cavallo360', 'img/autos/cavallo360/'], ['nsx', 'img/autos/nsx/'], ['spirit300', 'img/autos/spirit300/']];
+    for (const [id, pfad] of cars) {
+      if (!vfAutoListe().some((a) => a.v === id)) f.push(id + ' nicht in der Liste');
+      if (VF_MODELL_PFADE[id] !== pfad) f.push(id + ' Pfad fehlt');
+      try {
+        const d = await vfModellDaten(pfad);
+        const m = d.meta, P = m.physik;
+        if (!m.teile.some((t) => t.rolle === 'karosserie')) f.push(id + ' keine Karosserie');
+        if (m.teile.some((t) => t.ecken > 65535 || t.ecke0 + t.ecken > m.ecken || t.index0 + t.indizes > m.indizes)) f.push(id + ' Teilbereiche ausserhalb');
+        if (!(P.laenge > 3.8 && P.laenge < 5.3 && P.radstand > 2.2 && P.radstand < 3.0)) f.push(id + ' Masse ' + P.laenge + '/' + P.radstand);
+        if (!(P.reifen.vorn.radius > 0.28 && P.reifen.vorn.radius < 0.4)) f.push(id + ' Rad ' + P.reifen.vorn.radius);
+        if (!(m.lichter.front.length >= 2 && m.lichter.rueck.length >= 2)) f.push(id + ' Lichter fehlen');
+        const prof = vfPhysikAus(P);
+        if (!(prof.m > 700)) f.push(id + ' Fahrprofil m=' + prof.m);
+        if (!(m.livree && m.livree.list && m.livree.list.length >= 2)) f.push(id + ' keine Lackierungen');
+        mass.push(id + ': ' + m.ecken + ' Ecken, ' + P.laenge + ' m, ' + m.livree.list.length + ' Lackierungen');
+      } catch (e) { f.push(id + ' laedt nicht: ' + e.message); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass.join('; ') };
+  });
   stAdd('Virtuell v1.6.54: Drift mit Physik - Pruefstand: Heck kommt mit Gas, Stick haelt den Winkel ohne Dreher, Handbremse dreht ein, halbes Gas greift, ohne Hilfe reine Physik', () => {
     const f = [], mass = [];
     if (!VF_HANDLING_MODI.some((m) => m.id === 'drift')) f.push('Drift nicht waehlbar');

@@ -1,0 +1,6 @@
+Murasama NSX aus Speed Dreams (Speed Dreams, data/cars/models/sc-murasama-nsx).
+
+Modell, Texturen und Fahrzeugdaten: GNU General Public License, Version 2 oder
+spaeter (siehe den Kopf der Speed-Dreams-Datei sc-murasama-nsx.xml). Umgewandelt mit tools/sd_auto.py:
+Innenraum entfernt, Texturen verkleinert, Koordinaten gedreht. Alternative Lackierungen (amami, tribal) beigelegt.
+https://www.gnu.org/licenses/old-licenses/gpl-2.0.html

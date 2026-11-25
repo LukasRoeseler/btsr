@@ -6093,7 +6093,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.84</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.85</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7382,7 +7382,7 @@
       <p class="dank-quelle" data-i18n-skip><a href="https://github.com/ange-yaghi/engine-sim"
          target="_blank" rel="noopener noreferrer">github.com/ange-yaghi/engine-sim</a> &middot; audio/CREDITS.md</p>
       <h3 style="font-size:14px; margin:18px 0 6px 0">Woher die 3D-Modelle kommen</h3>
-      <p class="muted">Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 und Boxer 96. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder sp&auml;ter. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.</p>
+      <p class="muted">Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4, Boxer 96, Cavallo 360, Murasama NSX und Spirit 300. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder sp&auml;ter. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.</p>
       <p class="muted">Der VW K&auml;fer 1303 RS ist eine eigene Konstruktion von Gnen54 (OmegaSim CAD) und steht unter Creative Commons Namensnennung 4.0 (CC BY 4.0).</p>
       <p class="muted">Spider NG1: Aufbau von Gnen54 (OmegaSim CAD) auf der Karosserie MODIplay MP-1 Spider von Sturmkind, 3D-Daten f&uuml;r HYBRID von Thomas Strobel (FREAKPALACE Customs). Freigabe von Sturmkind am 16.11.2026: Verwendung erlaubt, solange die Karosserien nicht kommerziell verkauft werden. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.</p>
       <p class="muted">VW Caravelle (Bulli): Aufbau von Gnen54 (OmegaSim CAD) auf einer Karosserie von Vehicle World (Designerin Revantika), mit schriftlicher Erlaubnis von Vehicle World zur Weitergabe an die Carrera-Hybrid-Community. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.</p>
@@ -7419,6 +7419,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren: drei neue Autos aus Speed Dreams (GPL-2.0-or-later) in der Garage, umgewandelt mit tools/sd_auto.py: Cavallo 360 (Ferrari 360 Modena, 3,6 l V8), Murasama NSX (Honda/Acura NSX 1991, 3,0 l V6) und Spirit 300 (Lotus M250, 3,0 l V6). Jedes hat zwei Alternativ-Lackierungen aus Speed Dreams, die in der Garage unter &#8222;Lackierung&#8220; w&auml;hlbar sind (die Lackierung ersetzt die Karosserietextur; &#8222;Lackfarbe&#8220; und &#8222;Lackierung&#8220; schlie&szlig;en sich gegenseitig aus). Fahrdaten, Federn, Reifen und Lichter kommen aus der .xml; die Vorschaubilder sind neu gezeichnet.</li>
         <li>Reifenquietschen in der virtuellen Fahrt: quietscht erst, wenn die Reifen wirklich rutschen (am Scheitel der Reifenkurve und etwas gehalten), nicht mehr bei jedem Lenkeinschlag. &#220;berall halb so laut und ohne mitsteigende Tonh&#246;he; das hohe Bremsenquietschen ist virtuell aus. Neu in Optionen &gt; Virtuell: Totzone f&#252;r die Steuerung &#8222;Neigen&#8220; (0 bis 15 Grad, Vorgabe 2,5).</li>
         <li>Vorschaubilder neu: grauer Hintergrund mit leichtem Verlauf f&#252;r alle Autos und den Hubschrauber (ein Skript f&#252;r alles: tools/vorschau_bilder.py). Bei Boxer 96, FMC GT4 und Lynx 220 sitzen die R&#228;der jetzt in den Radk&#228;sten (die Karosserie steht wie im Spiel um die Bodenfreiheit h&#246;her). Marker-AR: Kamerabild und Strecke geh&#246;ren jetzt immer zum selben Moment (das Bild wird erst mit der erkannten Lage gezeigt), die Lage folgt Bewegungen schneller, ohne im Stand mehr zu zittern. Brems-, R&#252;ck- und Scheinwerferlicht leuchten in AR schw&#228;cher.</li>
         <li>Freie virtuelle Strecken: Zur Auswahl stehen die T&#246;rnerschleife 2.0 mit und ohne Br&#252;cke. Bestenlisten zeigen nur noch Zeiten von Strecken, die es in der App gibt.</li>
@@ -17573,6 +17574,7 @@
     "Ein Wort oder eine Zahl macht den Wetterplan wiederholbar: dieselbe Strecke und derselbe Startwert geben jedes Mal dieselben Wechsel zur selben Zeit. Leer lässt das Wetter wie bisher zufällig.": "A word or a number makes the weather plan repeatable: the same track and the same seed give the same changes at the same time every time. Empty leaves the weather random as before.",
     "Regen beim echten Fahren ist jetzt binär: Die Front mit Ton, Tropfen und Regenlicht bleibt, aber der Griff ist nur noch trocken oder nass. Nass wird er, sobald die Front die Hälfte erreicht hat (rund 5 s nach dem Regenbeginn), trocken wieder darunter. Slicks im Nassen sind deutlich langsamer und rutschig, Regenreifen im Trockenen etwas langsamer; es gibt keine Zwischenstufe. Das gilt für dein Auto, Spieler 2 und 3 und die NPCs gleich. Neu (WIP): Wetter-Startwert in den Renneinstellungen: ein Wort oder eine Zahl macht den Wetterplan wiederholbar, dieselbe Strecke und derselbe Startwert geben dieselben Wechsel zur selben Zeit.": "Rain in real driving is now binary: the front with its sound, drops and rain light stays, but the grip is only dry or wet. It turns wet as soon as the front has reached half strength (about 5 s after the rain starts) and dry again below it. Slicks in the wet are much slower and slippery, rain tyres in the dry are a little slower; there is no intermediate step. This applies equally to your car, players 2 and 3 and the NPCs. New (WIP): weather seed in the race settings: a word or a number makes the weather plan repeatable, the same track and the same seed give the same changes at the same time.",
     "Lackfarbe": "Paint colour",
+    "Lackierung": "Livery",
     "Original": "Original",
     "Rot": "Red",
     "Blau": "Blue",
@@ -18043,6 +18045,7 @@
     "Vorschaubilder neu: grauer Hintergrund mit leichtem Verlauf für alle Autos und den Hubschrauber (ein Skript für alles: tools/vorschau_bilder.py). Bei Boxer 96, FMC GT4 und Lynx 220 sitzen die Räder jetzt in den Radkästen (die Karosserie steht wie im Spiel um die Bodenfreiheit höher). Marker-AR: Kamerabild und Strecke gehören jetzt immer zum selben Moment (das Bild wird erst mit der erkannten Lage gezeigt), die Lage folgt Bewegungen schneller, ohne im Stand mehr zu zittern. Brems-, Rück- und Scheinwerferlicht leuchten in AR schwächer.": "New preview images: gray background with a light gradient for all cars and the helicopter (one script for everything: tools/vorschau_bilder.py). On the Boxer 96, FMC GT4 and Lynx 220 the wheels now sit in the wheel arches (the body is raised by the ground clearance, as in the game). Marker AR: camera image and track now always belong to the same moment (the image is shown together with the detected pose), and the pose follows movements faster without more jitter when still. Brake, tail and head lights are dimmer in AR.",
     "Totzone Neigen": "Tilt dead zone",
     "Steuerung „Neigen“: so viele Grad um die Mitte lenkt das Auto noch nicht. Größer = ruhiger geradeaus, kleiner = feiner. Voller Einschlag bleibt bei 35°.": "“Tilt” steering: within this many degrees around the centre the car does not steer yet. Larger = steadier straight ahead, smaller = finer. Full lock stays at 35°.",
+    "Virtuell fahren: drei neue Autos aus Speed Dreams (GPL-2.0-or-later) in der Garage, umgewandelt mit tools/sd_auto.py: Cavallo 360 (Ferrari 360 Modena, 3,6 l V8), Murasama NSX (Honda/Acura NSX 1991, 3,0 l V6) und Spirit 300 (Lotus M250, 3,0 l V6). Jedes hat zwei Alternativ-Lackierungen aus Speed Dreams, die in der Garage unter „Lackierung“ wählbar sind (die Lackierung ersetzt die Karosserietextur; „Lackfarbe“ und „Lackierung“ schließen sich gegenseitig aus). Fahrdaten, Federn, Reifen und Lichter kommen aus der .xml; die Vorschaubilder sind neu gezeichnet.": "Virtual driving: three new cars from Speed Dreams (GPL-2.0-or-later) in the garage, converted with tools/sd_auto.py: Cavallo 360 (Ferrari 360 Modena, 3.6 l V8), Murasama NSX (Honda/Acura NSX 1991, 3.0 l V6) and Spirit 300 (Lotus M250, 3.0 l V6). Each has two alternate liveries from Speed Dreams, selectable in the garage under “Livery” (the livery replaces the body texture; “Paint colour” and “Livery” are mutually exclusive). Driving data, springs, tyres and lights come from the .xml; the preview images are redrawn.",
     "Reifenquietschen in der virtuellen Fahrt: quietscht erst, wenn die Reifen wirklich rutschen (am Scheitel der Reifenkurve und etwas gehalten), nicht mehr bei jedem Lenkeinschlag. Überall halb so laut und ohne mitsteigende Tonhöhe; das hohe Bremsenquietschen ist virtuell aus. Neu in Optionen > Virtuell: Totzone für die Steuerung „Neigen“ (0 bis 15 Grad, Vorgabe 2,5).": "Tyre squeal in virtual driving: it only squeals when the tyres really slide (at the peak of the tyre curve and held for a moment), no longer on every steering input. Half as loud everywhere and without rising pitch; the high brake squeal is off in virtual driving. New in Options > Virtual: dead zone for “Tilt” steering (0 to 15 degrees, default 2.5).",
     "Community-Bestzeiten: Jede Strecke hat jetzt eine eigene Seite wie die Wochenstrecken, geöffnet mit einem Tipp auf Bild oder Namen in der Liste: große Karte (Tipp für Vollbild), Spiegeln, Länge, Platzbedarf und Abstimmung, Teileprüfung, Medaillen, Start und die Bestenliste mit allen Zeiten. Zurück (oder Kreis) führt in die Liste. Die Liste bleibt nicht mehr bei „Lade …“ stehen. Auf luuke42.github.io/omegasim führt der APK-Link immer zum Release, damit jeder Download gezählt wird.": "Community best times: every track now has its own page like the weekly tracks, opened by tapping its picture or name in the list: large map (tap for full screen), mirroring, length, footprint and setup, parts check, medals, start and the leaderboard with all times. Back (or circle) returns to the list. The list no longer gets stuck on “Loading …”. On luuke42.github.io/omegasim the APK link always goes to the release, so every download is counted.",
     "Töne nach echten Aufnahmen nachgestimmt (gerechnet, keine Aufnahme in der App): Reifenquietschen höher (um 800 Hz statt 620) und mit zitternder Tonhöhe wie haftendes und rutschendes Gummi; Schalten mit rauschendem Metall-Klacken statt Ton; Abblasventil länger (0,6 s) und mit langsamem Flattern; Auspuffknaller tiefer und voller; Laderpfeifen endet bei 5,8 kHz statt 7. Neu unter den Motorton-Zusätzen (experimentell): Abrollgeräusch, Reifen und Fahrtwind werden mit dem Tempo lauter und heller.": "Sounds retuned against real recordings (still synthesised, no recording in the app): tyre squeal higher (around 800 Hz instead of 620) with a jittering pitch like rubber gripping and slipping; gearshift with a noisy metal clack instead of a tone; blow-off valve longer (0.6 s) with a slow flutter; exhaust pops lower and fuller; turbo whistle tops out at 5.8 kHz instead of 7. New among the engine sound extras (experimental): rolling noise, tyres and wind get louder and brighter with speed.",
@@ -20482,7 +20485,7 @@
     "STRAFSTOPP": "PENALTY STOP",
     "Woher die 3D-Modelle kommen": "Where the 3D models come from",
     "Der VW Käfer 1303 RS ist eine eigene Konstruktion von Gnen54 (OmegaSim CAD) und steht unter Creative Commons Namensnennung 4.0 (CC BY 4.0).": "The VW Beetle 1303 RS is an original design by Gnen54 (OmegaSim CAD), licensed under Creative Commons Attribution 4.0 (CC BY 4.0).",
-    "Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 und Boxer 96. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder später. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.": "The cars of the virtual drive come from the free racing game Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 and Boxer 96. Models, textures and vehicle data are licensed under the GNU General Public License, version 2 or later. Converted with tools/sd_auto.py (interior removed, textures downscaled); the license and source notice is in each car's folder.",
+    "Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4, Boxer 96, Cavallo 360, Murasama NSX und Spirit 300. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder später. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.": "The cars of the virtual drive come from the free racing game Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4, Boxer 96, Cavallo 360, Murasama NSX and Spirit 300. Models, textures and vehicle data are licensed under the GNU General Public License, version 2 or later. Converted with tools/sd_auto.py (interior removed, textures downscaled); the license and source notice is in each car's folder.",
     "Grafik verloren: virtuelle Fahrt beendet": "Graphics lost: virtual drive ended",
     "Derby gewonnen: letzter auf der Bahn": "Derby won: last one on the track",
     "Gegner übrig": "Opponents left",
@@ -21322,6 +21325,7 @@
     "automatische Gelbe Flagge": "bandera amarilla automática",
     "Im virtuellen Fahren nicht verfügbar: {l}": "No disponible en la conducción virtual: {l}",
     "Lackfarbe": "Color de pintura",
+    "Lackierung": "Decoración",
     "Original": "Original",
     "Rot": "Rojo",
     "Blau": "Azul",
@@ -22527,7 +22531,7 @@
     "Die weite 30-Grad-Kurve (dreifacher Radius). Standard 90 %. Haarnadel und Engstelle fahren MAX-NPCs nach den normalen Regeln: Höchsttempo in der Haarnadel und Mindesttempo gelten weiter.": "La curva amplia de 30 grados (triple radio). Estándar 90 %. Los NPC MAX toman la horquilla y el estrechamiento según las reglas normales: la velocidad máxima en la horquilla y la velocidad mínima siguen vigentes.",
     "Woher die 3D-Modelle kommen": "De dónde vienen los modelos 3D",
     "Der VW Käfer 1303 RS ist eine eigene Konstruktion von Gnen54 (OmegaSim CAD) und steht unter Creative Commons Namensnennung 4.0 (CC BY 4.0).": "El VW Escarabajo 1303 RS es un diseño propio de Gnen54 (OmegaSim CAD) con licencia Creative Commons Atribución 4.0 (CC BY 4.0).",
-    "Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 und Boxer 96. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder später. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.": "Los coches de la conducción virtual proceden del juego de carreras libre Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4 y Boxer 96. Modelos, texturas y datos del vehículo están bajo la GNU General Public License, versión 2 o posterior. Convertidos con tools/sd_auto.py (interior eliminado, texturas reducidas); la licencia y la fuente están en la carpeta de cada coche.",
+    "Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4, Boxer 96, Cavallo 360, Murasama NSX und Spirit 300. Modelle, Texturen und Fahrzeugdaten stehen unter der GNU General Public License, Version 2 oder später. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.": "Los coches de la conducción virtual proceden del juego de carreras libre Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4, Boxer 96, Cavallo 360, Murasama NSX y Spirit 300. Modelos, texturas y datos del vehículo están bajo la GNU General Public License, versión 2 o posterior. Convertidos con tools/sd_auto.py (interior eliminado, texturas reducidas); la licencia y la fuente están en la carpeta de cada coche.",
     "Grafik verloren: virtuelle Fahrt beendet": "Gráficos perdidos: conducción virtual terminada",
     "Derby gewonnen: letzter auf der Bahn": "Derby ganado: el último en pista",
     "Gegner übrig": "Rivales restantes",
@@ -45318,7 +45322,7 @@
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
-  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/' };
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/', cavallo360: 'img/autos/cavallo360/', nsx: 'img/autos/nsx/', spirit300: 'img/autos/spirit300/' };
   // v1.6.27 (Issue #15): der RC Stunt Copter in der Garage. Er ist KEIN Auto: er hat kein
   // auto.json/auto.bin (VF_MODELL_PFADE), sondern wird als eigener Hubschrauber gebaut und
   // mit zwei Sticks geflogen. Ueberall, wo ein Auto-Modell oder ein Fahrprofil gebraucht wird,
@@ -45444,6 +45448,35 @@
   }
   function vfLackSetzen(hex) { try { localStorage.setItem(VF_LACK_STORE, hex || ''); } catch (e) { /* egal */ } }
   function vfLackId(hex) { const f = VF_LACK_FARBEN.find((x) => x.v === (hex || '')); return f ? f.id : 'auto'; }
+  // v1.6.85 (Issue #17): alternate liveries of the Speed Dreams cars. A livery is an alternate body
+  // texture that shares the base paint's UV layout, so the app swaps the body texture for it. The
+  // livery and the colour tint (Lackfarbe) are mutually exclusive: picking one clears the other.
+  const VF_LIVREE_STORE = 'omegasim-vf-livree';
+  // Per car the livery id and its display label (proper names, not translated). The texture names
+  // live in auto.json under "livree" (written by tools/sd_auto.py).
+  const VF_LIVREES = {
+    cavallo360: [['bee', 'Bee'], ['tsubashi', 'Tsubashi']],
+    nsx: [['amami', 'Amami'], ['tribal', 'Tribal']],
+    spirit300: [['GTR', 'GTR'], ['sport', 'Sport']],
+  };
+  // Selected livery id for a car ('' if none). Stored as "<car>:<id>" so switching cars resets it.
+  function vfLivree(auto) {
+    auto = auto || vfAutoWahl();
+    const l = VF_LIVREES[auto];
+    if (!l) return '';
+    try {
+      const v = localStorage.getItem(VF_LIVREE_STORE) || '';
+      if (!v.startsWith(auto + ':')) return '';
+      const id = v.slice(auto.length + 1);
+      return l.some(([x]) => x === id) ? id : '';
+    } catch (e) { return ''; }
+  }
+  function vfLivreeSetzen(id) { try { localStorage.setItem(VF_LIVREE_STORE, id ? vfAutoWahl() + ':' + id : ''); } catch (e) { /* egal */ } }
+  function vfLivreeName(id) {
+    const l = VF_LIVREES[vfAutoWahl()] || [];
+    const f = l.find(([x]) => x === id);
+    return f ? f[1] : id;
+  }
   // Die Farbe der Karosserie: Der Shader faerbt sie um (Helligkeit des Texels mal Lackfarbe, uniform lack = 1), statt zu
   // multiplizieren - sonst wuerde Rot auf einem gelben Auto Orange. Ohne Farbe bleibt das Modell, wie es ist.
   // v1.5.104: Beim Umfaerben ist die Helligkeit des Texels auf 0,82 begrenzt (Shader, min(...)): helle Grundlacke (gelber
@@ -45460,6 +45493,12 @@
     return (vfHeliErlaubt() ? [{ v: 'hubschrauber', name: t('RC Stunt Copter') + ' (' + t('nur Training') + ', WIP)' }] : []).concat([
             { v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
             { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
+            // v1.6.85 (Issue #17): die drei weiteren Speed-Dreams-Autos (GPL-2.0-or-later), umgewandelt mit
+            // tools/sd_auto.py, siehe img/autos/<id>/LIZENZ.txt. Jeweils zwei Alternativ-Lackierungen
+            // (Kleidungs-Option "Lackierung" in der Garage) - Fahrdaten aus der .xml, kein WIP noetig.
+            { v: 'cavallo360', name: 'Cavallo 360 (Ferrari 360 Modena, Speed Dreams)' },
+            { v: 'nsx', name: 'Murasama NSX (Honda/Acura NSX 1991, Speed Dreams)' },
+            { v: 'spirit300', name: 'Spirit 300 (Lotus M250, Speed Dreams)' },
             // Eigenbau von Gnen54 (CC BY 4.0), WIP: Fahrdaten geschaetzt, siehe img/autos/kaefer/LIZENZ.txt
             { v: 'kaefer', name: t('VW Käfer 1303 RS mit Boxster-Motor (Gnen54, WIP)') },
             // v1.5.104: Eigenbau von Gnen54 auf der Modiplay-MP1-Karosserie (Freigabe Sturmkind, nicht kommerziell),
@@ -45494,7 +45533,9 @@
   // Vulture V5.R = Corvette C5-R (das Vorbild), FMC GT4 = Ford GT40, Boxer 96 = Porsche 911 GT3 (Boxer-6), Lynx 220 =
   // Jaguar XJ220 mit V6-Biturbo (naechster Klang: Ferrari 296 GT3, V6), Audi RS5 DTM = sein eigener Reihen-4-Turbo.
   const VF_MOTOR_FEST = { kaefer: 'boxster986', spider: 'listerstorm', caravelle: 'boxster986',
-    v5r: 'c5r', fmcgt4: 'gt40', boxer96: 'p992gt3r', lynx220: 'f296gt3', audirs5: 'rs5dtm' };
+    v5r: 'c5r', fmcgt4: 'gt40', boxer96: 'p992gt3r', lynx220: 'f296gt3', audirs5: 'rs5dtm',
+    // v1.6.85 (Issue #17): Ferrarireihe (V8) bzw. V6 wie der Lynx 220 / Jaguar XJ220.
+    cavallo360: 'amggt3', nsx: 'f296gt3', spirit300: 'f296gt3' };
   function vfMotorFest() { return VF_MOTOR_FEST[vfAutoWahl()] || ''; }
   // Die echte Neigung eines GT1 ist klein (0,5 Grad Rollen bei 1,5 g) und bei Modellgroesse unsichtbar.
   // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.
@@ -46630,7 +46671,13 @@
     const quad = gl.createBuffer();
     // Teillisten einmal hier statt je Bild per filter (Aufbau ohne Glas, Raeder, Glas).
     const teile = daten.meta.teile;
+    // v1.6.85 (Issue #17): alternate liveries are loaded as separate textures so they can be swapped
+    // in for the base paint texture at draw time (see vfModellZeichnen).
+    const livree = daten.meta.livree || null;
+    const livreeTex = {};
+    if (livree) livree.list.forEach((l) => { livreeTex[l.id] = vfTextur(gl, pfad + l.tex); });
     return { meta: daten.meta, d: daten.meta.physik, vbo, ibo, tex, schatten, glanz: vfGlanzTextur(gl), quad,
+             livree, livreeTex,
              aufbauTeile: teile.filter((t) => t.gruppe === 'auto' && t.rolle !== 'glas' && t.rolle !== 'scheinwerferglas'),
              radTeile: teile.filter((t) => t.gruppe === 'rad'),
              glasTeile: teile.filter((t) => t.rolle === 'glas' || t.rolle === 'scheinwerferglas') };
@@ -48787,6 +48834,9 @@
   // M ist das gebaute Modell (vfModellBauen), T das Texturprogramm, fe der Federungszustand.
   function vfModellZeichnen(gl, pv, blick, M, T, x, y, h, fe, lenkWinkel, raddreh, radModell, licht, bremst, fs, nick, auge, lackHex) {
     const d = M.d, u = T.u;
+    // v1.6.85 (Issue #17): if a livery is chosen for this car, its body uses the livery texture
+    // instead of the base paint texture (same UV layout). Read per model so NPCs keep their own look.
+    const livreeId = (M.livree && M.livreeTex) ? vfLivree(M.meta.kennung) : '';
     const s = VF_AUTO.L / d.laenge;
     const lage = vfMal(vfLage(x, y, h), vfS(s, s, s));
     const g = fs || 1, fez = fe || { z: 0, th: 0, ph: 0 };
@@ -48836,7 +48886,10 @@
       gl.vertexAttribPointer(T.an, 3, gl.FLOAT, false, 32, t.ecke0 * 32 + 12);
       gl.vertexAttribPointer(T.auv, 2, gl.FLOAT, false, 32, t.ecke0 * 32 + 24);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, M.ibo);
-      gl.bindTexture(gl.TEXTURE_2D, M.tex[t.tex]);
+      // v1.6.85 (Issue #17): swap the base paint texture for the chosen livery (same UV layout).
+      let tx = M.tex[t.tex];
+      if (livreeId && t.tex === M.livree.paint && M.livreeTex[livreeId]) tx = M.livreeTex[livreeId];
+      gl.bindTexture(gl.TEXTURE_2D, tx);
       gl.drawElements(gl.TRIANGLES, t.indizes, gl.UNSIGNED_SHORT, t.index0 * 2);
     };
     const flaeche = (ecken, tx) => {      // ecken: je Ecke x y z u v (Welt)
@@ -50017,7 +50070,8 @@
     // fehlt ein Bild, verschwindet die Zeile still.
     {
       const jl = Math.max(0, VF_LACK_FARBEN.findIndex((f) => f.v === vfLack()));
-      const lackWahl = (dd) => { vfLackSetzen(VF_LACK_FARBEN[(jl + dd + VF_LACK_FARBEN.length) % VF_LACK_FARBEN.length].v); vfGarageNeu(); };
+      // v1.6.85 (Issue #17): picking a colour tint clears any chosen livery (they are mutually exclusive).
+      const lackWahl = (dd) => { vfLackSetzen(VF_LACK_FARBEN[(jl + dd + VF_LACK_FARBEN.length) % VF_LACK_FARBEN.length].v); vfLivreeSetzen(''); vfGarageNeu(); };
       const zeile = garWertZeile(t('Lackfarbe'), t(VF_LACK_FARBEN[jl].n), () => lackWahl(-1), () => lackWahl(1));
       zeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
       const palette = document.createElement('span');
@@ -50028,7 +50082,7 @@
         b.className = 'vf-lack' + (i === jl ? ' aktiv' : '');
         b.style.background = f.v || 'linear-gradient(135deg,#c8102e 0%,#0057b8 50%,#e8e8e8 100%)';
         b.title = t(f.n); b.setAttribute('aria-label', t(f.n));
-        b.onclick = (e) => { e.stopPropagation(); vfLackSetzen(f.v); vfGarageNeu(); };
+        b.onclick = (e) => { e.stopPropagation(); vfLackSetzen(f.v); vfLivreeSetzen(''); vfGarageNeu(); };
         palette.appendChild(b);
       });
       zeile.querySelector('.gk-w').appendChild(palette);
@@ -50042,6 +50096,22 @@
       vor.appendChild(img);
       rechts.appendChild(vor);
       rechts.appendChild(zeile);
+    }
+    // v1.6.85 (Issue #17): alternate liveries of the Speed Dreams cars. Only for cars that have them;
+    // the livery and the colour tint are mutually exclusive (picking one clears the other).
+    {
+      const list = VF_LIVREES[autos[ja].v] || [];
+      if (list.length) {
+        const opt = [['', t('Original')]].concat(list);
+        const jl = Math.max(0, opt.findIndex(([id]) => id === vfLivree()));
+        const livreeWahl = (dd) => {
+          const id = opt[(jl + dd + opt.length) % opt.length][0];
+          vfLivreeSetzen(id); if (id) vfLackSetzen(''); vfGarageNeu();
+        };
+        const z = garWertZeile(t('Lackierung'), opt[jl][1], () => livreeWahl(-1), () => livreeWahl(1));
+        z.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+        rechts.appendChild(z);
+      }
     }
     // v1.3.39 (WIP): der Fussboden unter der Bahn, Dielen in echten Massen (siehe VF_BOEDEN).
     const jb = Math.max(0, VF_BOEDEN.findIndex((b) => b.id === vfBodenWahl()));
@@ -113645,6 +113715,28 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       mass = m.ecken + ' Ecken, ' + m.teile.length + ' Teile, ' + P.laenge + ' m lang, Radstand ' + P.radstand + ' m';
     } catch (e) { f.push('laedt nicht: ' + e.message); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
+  });
+  stAdd('Virtuell v1.6.85: Cavallo 360, Murasama NSX und Spirit 300 (Speed Dreams, GPL) waehlbar, Modell laedt, Masse und Lackierungen da', async () => {
+    const f = [], mass = [];
+    const cars = [['cavallo360', 'img/autos/cavallo360/'], ['nsx', 'img/autos/nsx/'], ['spirit300', 'img/autos/spirit300/']];
+    for (const [id, pfad] of cars) {
+      if (!vfAutoListe().some((a) => a.v === id)) f.push(id + ' nicht in der Liste');
+      if (VF_MODELL_PFADE[id] !== pfad) f.push(id + ' Pfad fehlt');
+      try {
+        const d = await vfModellDaten(pfad);
+        const m = d.meta, P = m.physik;
+        if (!m.teile.some((t) => t.rolle === 'karosserie')) f.push(id + ' keine Karosserie');
+        if (m.teile.some((t) => t.ecken > 65535 || t.ecke0 + t.ecken > m.ecken || t.index0 + t.indizes > m.indizes)) f.push(id + ' Teilbereiche ausserhalb');
+        if (!(P.laenge > 3.8 && P.laenge < 5.3 && P.radstand > 2.2 && P.radstand < 3.0)) f.push(id + ' Masse ' + P.laenge + '/' + P.radstand);
+        if (!(P.reifen.vorn.radius > 0.28 && P.reifen.vorn.radius < 0.4)) f.push(id + ' Rad ' + P.reifen.vorn.radius);
+        if (!(m.lichter.front.length >= 2 && m.lichter.rueck.length >= 2)) f.push(id + ' Lichter fehlen');
+        const prof = vfPhysikAus(P);
+        if (!(prof.m > 700)) f.push(id + ' Fahrprofil m=' + prof.m);
+        if (!(m.livree && m.livree.list && m.livree.list.length >= 2)) f.push(id + ' keine Lackierungen');
+        mass.push(id + ': ' + m.ecken + ' Ecken, ' + P.laenge + ' m, ' + m.livree.list.length + ' Lackierungen');
+      } catch (e) { f.push(id + ' laedt nicht: ' + e.message); }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass.join('; ') };
   });
   stAdd('Virtuell v1.6.54: Drift mit Physik - Pruefstand: Heck kommt mit Gas, Stick haelt den Winkel ohne Dreher, Handbremse dreht ein, halbes Gas greift, ohne Hilfe reine Physik', () => {
     const f = [], mass = [];

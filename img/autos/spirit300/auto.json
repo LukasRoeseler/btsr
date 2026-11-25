@@ -1,0 +1,481 @@
+{
+ "name": "Spirit 300",
+ "kennung": "spirit300",
+ "quelle": "Speed Dreams, data/cars/models/sc-spirit-300",
+ "lizenz": "GPL-2.0-or-later (Speed Dreams)",
+ "koordinaten": "m; +x links, +y oben, +z vorn",
+ "ecken": 3111,
+ "indizes": 13035,
+ "indexAb": 99552,
+ "schritt": 32,
+ "teile": [
+  {
+   "name": "WIPER_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 0,
+   "ecken": 46,
+   "index0": 0,
+   "indizes": 300
+  },
+  {
+   "name": "REARLIGHTSP_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 46,
+   "ecken": 44,
+   "index0": 300,
+   "indizes": 207
+  },
+  {
+   "name": "REARLIGHTS_s_7",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 90,
+   "ecken": 160,
+   "index0": 507,
+   "indizes": 531
+  },
+  {
+   "name": "PLATE_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 250,
+   "ecken": 207,
+   "index0": 1038,
+   "indizes": 1053
+  },
+  {
+   "name": "OUTSIDE_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 457,
+   "ecken": 116,
+   "index0": 2091,
+   "indizes": 606
+  },
+  {
+   "name": "HEAD_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 573,
+   "ecken": 51,
+   "index0": 2697,
+   "indizes": 279
+  },
+  {
+   "name": "FRONTLIGHTS_s_11",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 624,
+   "ecken": 230,
+   "index0": 2976,
+   "indizes": 966
+  },
+  {
+   "name": "EXHAUST_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 854,
+   "ecken": 104,
+   "index0": 3942,
+   "indizes": 495
+  },
+  {
+   "name": "CARBODY5_s_6",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 958,
+   "ecken": 213,
+   "index0": 4437,
+   "indizes": 963
+  },
+  {
+   "name": "CARBODY4_s_8",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1171,
+   "ecken": 194,
+   "index0": 5400,
+   "indizes": 861
+  },
+  {
+   "name": "CARBODY39_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1365,
+   "ecken": 26,
+   "index0": 6261,
+   "indizes": 69
+  },
+  {
+   "name": "CARBODY37_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1391,
+   "ecken": 10,
+   "index0": 6330,
+   "indizes": 21
+  },
+  {
+   "name": "CARBODY36_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1401,
+   "ecken": 8,
+   "index0": 6351,
+   "indizes": 18
+  },
+  {
+   "name": "CARBODY34_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1409,
+   "ecken": 24,
+   "index0": 6369,
+   "indizes": 63
+  },
+  {
+   "name": "CARBODY33_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1433,
+   "ecken": 22,
+   "index0": 6432,
+   "indizes": 69
+  },
+  {
+   "name": "CARBODY32_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1455,
+   "ecken": 38,
+   "index0": 6501,
+   "indizes": 105
+  },
+  {
+   "name": "CARBODY319_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1493,
+   "ecken": 32,
+   "index0": 6606,
+   "indizes": 102
+  },
+  {
+   "name": "CARBODY318_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1525,
+   "ecken": 22,
+   "index0": 6708,
+   "indizes": 66
+  },
+  {
+   "name": "CARBODY317_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1547,
+   "ecken": 22,
+   "index0": 6774,
+   "indizes": 63
+  },
+  {
+   "name": "CARBODY316_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1569,
+   "ecken": 32,
+   "index0": 6837,
+   "indizes": 99
+  },
+  {
+   "name": "CARBODY313_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1601,
+   "ecken": 10,
+   "index0": 6936,
+   "indizes": 21
+  },
+  {
+   "name": "CARBODY312_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1611,
+   "ecken": 28,
+   "index0": 6957,
+   "indizes": 102
+  },
+  {
+   "name": "CARBODY311_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1639,
+   "ecken": 19,
+   "index0": 7059,
+   "indizes": 57
+  },
+  {
+   "name": "CARBODY310_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1658,
+   "ecken": 17,
+   "index0": 7116,
+   "indizes": 51
+  },
+  {
+   "name": "CARBODY31_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1675,
+   "ecken": 20,
+   "index0": 7167,
+   "indizes": 57
+  },
+  {
+   "name": "CARBODY3_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1695,
+   "ecken": 267,
+   "index0": 7224,
+   "indizes": 1149
+  },
+  {
+   "name": "CARBODY2_s_24",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 1962,
+   "ecken": 396,
+   "index0": 8373,
+   "indizes": 1194
+  },
+  {
+   "name": "CARBODY1_s_7",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 2358,
+   "ecken": 524,
+   "index0": 9567,
+   "indizes": 2445
+  },
+  {
+   "name": "WI01_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 2882,
+   "ecken": 120,
+   "index0": 12012,
+   "indizes": 453
+  },
+  {
+   "name": "DRIVER_s_7",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 3002,
+   "ecken": 71,
+   "index0": 12465,
+   "indizes": 321
+  },
+  {
+   "name": "DRIVERHAND_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-spirit-300.png",
+   "ecke0": 3073,
+   "ecken": 38,
+   "index0": 12786,
+   "indizes": 249
+  }
+ ],
+ "schatten": "shadow.png",
+ "lichter": {
+  "brems": [
+   [
+    0.42,
+    0.76,
+    -2.02,
+    0.12
+   ],
+   [
+    -0.42,
+    0.76,
+    -2.02,
+    0.12
+   ],
+   [
+    0.07,
+    0.91,
+    -2.04,
+    0.06
+   ],
+   [
+    -0.07,
+    0.91,
+    -2.04,
+    0.06
+   ],
+   [
+    0.0,
+    0.91,
+    -2.04,
+    0.06
+   ]
+  ],
+  "rueck": [
+   [
+    0.54,
+    0.76,
+    -2.02,
+    0.12
+   ],
+   [
+    -0.54,
+    0.76,
+    -2.02,
+    0.12
+   ],
+   [
+    0.42,
+    0.76,
+    -2.02,
+    0.12
+   ],
+   [
+    -0.42,
+    0.76,
+    -2.02,
+    0.12
+   ]
+  ],
+  "front": [
+   [
+    0.65,
+    0.5,
+    1.8,
+    0.14
+   ],
+   [
+    -0.65,
+    0.5,
+    1.8,
+    0.14
+   ],
+   [
+    0.72,
+    0.53,
+    1.73,
+    0.18
+   ],
+   [
+    -0.72,
+    0.53,
+    1.73,
+    0.18
+   ]
+  ]
+ },
+ "physik": {
+  "masse": 1440.0,
+  "schwerpunktHoehe": 0.285,
+  "radstand": 2.735,
+  "a": 1.5316,
+  "b": 1.2034,
+  "vorderachse": 1.235,
+  "hinterachse": -1.5,
+  "laenge": 4.2,
+  "breite": 1.9,
+  "hoehe": 1.17,
+  "massenVerteilung": 0.62,
+  "lenkGrad": 45.0,
+  "bremsVorn": 0.52,
+  "cx": 0.32,
+  "stirnflaeche": 1.85,
+  "auftriebVorn": 0.65,
+  "auftriebHinten": 0.61,
+  "fluegelVorn": 0.0,
+  "fluegelHinten": 0.0,
+  "leerlauf": 2000.0,
+  "begrenzer": 8500.0,
+  "reifen": {
+   "vorn": {
+    "radius": 0.3179,
+    "breite": 0.255,
+    "spur": 1.56,
+    "bodenfreiheit": 0.11,
+    "mu": 1.3
+   },
+   "hinten": {
+    "radius": 0.3269,
+    "breite": 0.3,
+    "spur": 1.6,
+    "bodenfreiheit": 0.11,
+    "mu": 1.3
+   }
+  },
+  "feder": {
+   "vorn": {
+    "k": 37000.0,
+    "druck": 8800.0,
+    "zug": 9200.0,
+    "weg": 0.15,
+    "stab": 0.0
+   },
+   "hinten": {
+    "k": 57000.0,
+    "druck": 8680.0,
+    "zug": 9100.0,
+    "weg": 0.15,
+    "stab": 0.0
+   }
+  },
+  "gefedert": 1340.0
+ },
+ "livree": {
+  "paint": "sc-spirit-300.png",
+  "list": [
+   {
+    "id": "GTR",
+    "name": "GTR",
+    "tex": "sc-spirit-300-GTR.png"
+   },
+   {
+    "id": "sport",
+    "name": "sport",
+    "tex": "sc-spirit-300-sport.png"
+   }
+  ]
+ }
+}

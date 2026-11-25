@@ -1,0 +1,341 @@
+{
+ "name": "Murasama NSX",
+ "kennung": "nsx",
+ "quelle": "Speed Dreams, data/cars/models/sc-murasama-nsx",
+ "lizenz": "GPL-2.0-or-later (Speed Dreams)",
+ "koordinaten": "m; +x links, +y oben, +z vorn",
+ "ecken": 2607,
+ "indizes": 12810,
+ "indexAb": 83424,
+ "schritt": 32,
+ "teile": [
+  {
+   "name": "WIPER_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 0,
+   "ecken": 31,
+   "index0": 0,
+   "indizes": 213
+  },
+  {
+   "name": "HANDLES_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx-int.png",
+   "ecke0": 31,
+   "ecken": 24,
+   "index0": 213,
+   "indizes": 105
+  },
+  {
+   "name": "EXHAUST_s_7",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 55,
+   "ecken": 292,
+   "index0": 318,
+   "indizes": 1773
+  },
+  {
+   "name": "ENGINE_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 347,
+   "ecken": 51,
+   "index0": 2091,
+   "indizes": 243
+  },
+  {
+   "name": "ANTENNA_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 398,
+   "ecken": 21,
+   "index0": 2334,
+   "indizes": 111
+  },
+  {
+   "name": "WIS31_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 419,
+   "ecken": 9,
+   "index0": 2445,
+   "indizes": 33
+  },
+  {
+   "name": "WIS30_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 428,
+   "ecken": 76,
+   "index0": 2478,
+   "indizes": 288
+  },
+  {
+   "name": "UNDERS41_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 504,
+   "ecken": 213,
+   "index0": 2766,
+   "indizes": 807
+  },
+  {
+   "name": "STEERINGWHS_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx-int.png",
+   "ecke0": 717,
+   "ecken": 102,
+   "index0": 3573,
+   "indizes": 522
+  },
+  {
+   "name": "RVENTS01_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 819,
+   "ecken": 8,
+   "index0": 4095,
+   "indizes": 15
+  },
+  {
+   "name": "RVENTS00_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 827,
+   "ecken": 20,
+   "index0": 4110,
+   "indizes": 51
+  },
+  {
+   "name": "REARGRILLES_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 847,
+   "ecken": 44,
+   "index0": 4161,
+   "indizes": 186
+  },
+  {
+   "name": "REARGRILLE2_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 891,
+   "ecken": 6,
+   "index0": 4347,
+   "indizes": 9
+  },
+  {
+   "name": "MIRRORSS3_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 897,
+   "ecken": 162,
+   "index0": 4356,
+   "indizes": 990
+  },
+  {
+   "name": "HEADS1_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "driver-sc-murasama-nsx.jpg",
+   "ecke0": 1059,
+   "ecken": 41,
+   "index0": 5346,
+   "indizes": 315
+  },
+  {
+   "name": "DRIVERS20_s_11",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "driver-sc-murasama-nsx.jpg",
+   "ecke0": 1100,
+   "ecken": 118,
+   "index0": 5661,
+   "indizes": 624
+  },
+  {
+   "name": "BODYSIDE001_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx-int.png",
+   "ecke0": 1218,
+   "ecken": 121,
+   "index0": 6285,
+   "indizes": 435
+  },
+  {
+   "name": "BODYMREARFR_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 1339,
+   "ecken": 16,
+   "index0": 6720,
+   "indizes": 48
+  },
+  {
+   "name": "BODYMHOOD2_s_59",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 1355,
+   "ecken": 1204,
+   "index0": 6768,
+   "indizes": 5907
+  },
+  {
+   "name": "BODYMFLGT_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-murasama-nsx.png",
+   "ecke0": 2559,
+   "ecken": 48,
+   "index0": 12675,
+   "indizes": 135
+  }
+ ],
+ "schatten": "shadow.png",
+ "lichter": {
+  "brems": [
+   [
+    0.39,
+    0.67,
+    -2.22,
+    0.15
+   ],
+   [
+    -0.39,
+    0.67,
+    -2.22,
+    0.15
+   ],
+   [
+    0.62,
+    0.67,
+    -2.22,
+    0.15
+   ],
+   [
+    -0.62,
+    0.67,
+    -2.22,
+    0.15
+   ]
+  ],
+  "rueck": [
+   [
+    0.74,
+    0.75,
+    -2.19,
+    0.12
+   ],
+   [
+    -0.74,
+    0.75,
+    -2.19,
+    0.12
+   ]
+  ],
+  "front": [
+   [
+    0.55,
+    0.16,
+    2.23,
+    0.25
+   ],
+   [
+    -0.55,
+    0.16,
+    2.23,
+    0.25
+   ]
+  ]
+ },
+ "physik": {
+  "masse": 1113.0,
+  "schwerpunktHoehe": 0.25,
+  "radstand": 2.62,
+  "a": 1.31,
+  "b": 1.31,
+  "vorderachse": 1.28,
+  "hinterachse": -1.34,
+  "laenge": 4.41,
+  "breite": 1.81,
+  "hoehe": 1.1,
+  "massenVerteilung": 0.85,
+  "lenkGrad": 30.0,
+  "bremsVorn": 0.59,
+  "cx": 0.32,
+  "stirnflaeche": 1.95,
+  "auftriebVorn": 0.63,
+  "auftriebHinten": 0.63,
+  "fluegelVorn": 0.0,
+  "fluegelHinten": 0.0,
+  "leerlauf": 2000.0,
+  "begrenzer": 8500.0,
+  "reifen": {
+   "vorn": {
+    "radius": 0.32,
+    "breite": 0.25,
+    "spur": 1.51,
+    "bodenfreiheit": 0.1,
+    "mu": 1.3
+   },
+   "hinten": {
+    "radius": 0.3275,
+    "breite": 0.25,
+    "spur": 1.53,
+    "bodenfreiheit": 0.1,
+    "mu": 1.3
+   }
+  },
+  "feder": {
+   "vorn": {
+    "k": 60000.0,
+    "druck": 6000.0,
+    "zug": 12000.0,
+    "weg": 0.15,
+    "stab": 0.0
+   },
+   "hinten": {
+    "k": 60000.0,
+    "druck": 6000.0,
+    "zug": 12000.0,
+    "weg": 0.15,
+    "stab": 0.0
+   }
+  },
+  "gefedert": 1014.2
+ },
+ "livree": {
+  "paint": "sc-murasama-nsx.png",
+  "list": [
+   {
+    "id": "amami",
+    "name": "amami",
+    "tex": "sc-murasama-nsx-amami.png"
+   },
+   {
+    "id": "tribal",
+    "name": "tribal",
+    "tex": "sc-murasama-nsx-tribal.png"
+   }
+  ]
+ }
+}
