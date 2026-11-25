@@ -37,6 +37,14 @@ ROLLEN = [
     ('WIOUTSIDE', 'glas'), ('WIHEADLIGHTS', 'scheinwerferglas'), ('HL', 'scheinwerfer'), ('RL', 'ruecklicht'),
     ('BLINK', 'blinker'), ('MIR', 'karosserie'), ('MET', 'karosserie'), ('CFOUTSIDE', 'karosserie'),
     ('BDYCARBODY', 'karosserie'), ('BDYREARWING', 'karosserie'), ('BDYOUTERBANNER', 'karosserie'), ('BDYWIPER', 'karosserie'),
+    # v1.6.85 (Issue #17): the newer SD cars name their glass/light objects differently. They share the
+    # body texture, but a role that is not 'karosserie'/'lack' keeps them out of the paint tint, so the
+    # lights and windows stay their own colour. 'scheibe' = window, opaque but not tinted (the windows are
+    # part of the body texture, not separate transparent glass).
+    ('WIPER', 'karosserie'), ('WFRAME', 'karosserie'),
+    ('WI', 'scheibe'), ('WIS', 'scheibe'), ('OUTSIDE', 'scheibe'),
+    ('HEADLIGHT', 'scheinwerfer'), ('FRONTLIGHT', 'scheinwerfer'), ('LIGHTS', 'scheinwerfer'),
+    ('TAILLIGHT', 'ruecklicht'), ('REARLIGHT', 'ruecklicht'), ('TL', 'ruecklicht'),
 ]
 WEG = ('INT', 'DASH', 'DIS', 'FLOOR', 'TRANSTUNNEL', 'CFINTERIOR', 'WIINSIDE', 'BDYINNERBANNER', 'BDYCOLCHASSIS', 'GRILL')
 # Texturgroesse in der App (lange Seite). Die Lackierung traegt Schrift und braucht am meisten.

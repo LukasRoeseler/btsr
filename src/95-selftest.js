@@ -15312,6 +15312,38 @@
     }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : mass.join('; ') };
   });
+  stAdd('Virtuell v1.6.86: Lackfarbe und Lackierung sind eine Auswahl (Original, Farben, Lackierungen), gegenseitig exklusiv', () => {
+    const f = [];
+    const nFarben = VF_LACK_FARBEN.filter((x) => x.v).length;
+    for (const id of ['cavallo360', 'nsx', 'spirit300']) {
+      const opt = vfLackOptionen(id);
+      if (opt.length !== 1 + nFarben + VF_LIVREES[id].length) f.push(id + ': ' + opt.length + ' Optionen');
+      if (opt[0].v !== '' || opt[0].livree !== '' || opt[0].n !== 'Original') f.push(id + ': keine Original-Option');
+      if (opt.filter((o) => o.v).length !== nFarben) f.push(id + ': ' + opt.filter((o) => o.v).length + ' Farben');
+      if (opt.filter((o) => o.livree).length !== VF_LIVREES[id].length) f.push(id + ': ' + opt.filter((o) => o.livree).length + ' Lackierungen');
+      if (opt.some((o) => o.v && o.livree)) f.push(id + ': Option mit Farbe und Lackierung');
+    }
+    // Ein Auto ohne Lackierungen (v5r): nur Original und Farben.
+    const opt5 = vfLackOptionen('v5r');
+    if (opt5.length !== 1 + nFarben || opt5.some((o) => o.livree)) f.push('v5r: ' + opt5.length + ' Optionen');
+    // Index: Original 0, erste Farbe 1, nach den Farben die Lackierungen.
+    const merk = (() => { try { return localStorage.getItem(VF_LACK_STORE); } catch (e) { return null; } })();
+    const merkL = (() => { try { return localStorage.getItem(VF_LIVREE_STORE); } catch (e) { return null; } })();
+    try {
+      vfLackSetzen(''); try { localStorage.setItem(VF_LIVREE_STORE, ''); } catch (e) { }
+      if (vfLackIndex('cavallo360') !== 0) f.push('Original Index ' + vfLackIndex('cavallo360'));
+      vfLackSetzen(VF_LACK_FARBEN[1].v);
+      if (vfLackIndex('cavallo360') !== 1) f.push('Rot Index ' + vfLackIndex('cavallo360'));
+      vfLackSetzen(''); try { localStorage.setItem(VF_LIVREE_STORE, 'cavallo360:bee'); } catch (e) { }
+      if (vfLackIndex('cavallo360') !== 1 + nFarben) f.push('Bee Index ' + vfLackIndex('cavallo360'));
+      try { localStorage.setItem(VF_LIVREE_STORE, 'cavallo360:tsubashi'); } catch (e) { }
+      if (vfLackIndex('cavallo360') !== 1 + nFarben + 1) f.push('Tsubashi Index ' + vfLackIndex('cavallo360'));
+    } finally {
+      try { if (merk === null) localStorage.removeItem(VF_LACK_STORE); else localStorage.setItem(VF_LACK_STORE, merk); } catch (e) { }
+      try { if (merkL === null) localStorage.removeItem(VF_LIVREE_STORE); else localStorage.setItem(VF_LIVREE_STORE, merkL); } catch (e) { }
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'ok' };
+  });
   stAdd('Virtuell v1.6.54: Drift mit Physik - Pruefstand: Heck kommt mit Gas, Stick haelt den Winkel ohne Dreher, Handbremse dreht ein, halbes Gas greift, ohne Hilfe reine Physik', () => {
     const f = [], mass = [];
     if (!VF_HANDLING_MODI.some((m) => m.id === 'drift')) f.push('Drift nicht waehlbar');

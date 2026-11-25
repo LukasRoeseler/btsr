@@ -41,7 +41,7 @@
   },
   {
    "name": "TLSURROUND3_s_7",
-   "rolle": "karosserie",
+   "rolle": "ruecklicht",
    "gruppe": "auto",
    "tex": "sc-cavallo-360.png",
    "ecke0": 351,
@@ -51,7 +51,7 @@
   },
   {
    "name": "TAILLIGHTS_s_3",
-   "rolle": "karosserie",
+   "rolle": "ruecklicht",
    "gruppe": "auto",
    "tex": "sc-cavallo-360.png",
    "ecke0": 543,
@@ -121,7 +121,7 @@
   },
   {
    "name": "LIGHTS_s_5",
-   "rolle": "karosserie",
+   "rolle": "scheinwerfer",
    "gruppe": "auto",
    "tex": "sc-cavallo-360.png",
    "ecke0": 817,
@@ -131,7 +131,7 @@
   },
   {
    "name": "HEADLIGHTS_s_8",
-   "rolle": "karosserie",
+   "rolle": "scheinwerfer",
    "gruppe": "auto",
    "tex": "sc-cavallo-360.png",
    "ecke0": 875,
@@ -471,7 +471,7 @@
   },
   {
    "name": "WILIGHTS_s_1",
-   "rolle": "karosserie",
+   "rolle": "scheibe",
    "gruppe": "auto",
    "tex": "sc-cavallo-360.png",
    "ecke0": 3178,
@@ -481,7 +481,7 @@
   },
   {
    "name": "WI003_s_0",
-   "rolle": "karosserie",
+   "rolle": "scheibe",
    "gruppe": "auto",
    "tex": "sc-cavallo-360.png",
    "ecke0": 3226,
@@ -491,7 +491,7 @@
   },
   {
    "name": "WI002_s_0",
-   "rolle": "karosserie",
+   "rolle": "scheibe",
    "gruppe": "auto",
    "tex": "sc-cavallo-360.png",
    "ecke0": 3246,
@@ -501,7 +501,7 @@
   },
   {
    "name": "WI001_s_1",
-   "rolle": "karosserie",
+   "rolle": "scheibe",
    "gruppe": "auto",
    "tex": "sc-cavallo-360.png",
    "ecke0": 3316,
@@ -511,7 +511,7 @@
   },
   {
    "name": "WI_s_10",
-   "rolle": "karosserie",
+   "rolle": "scheibe",
    "gruppe": "auto",
    "tex": "sc-cavallo-360.png",
    "ecke0": 3360,

@@ -1898,10 +1898,28 @@
     } catch (e) { return ''; }
   }
   function vfLivreeSetzen(id) { try { localStorage.setItem(VF_LIVREE_STORE, id ? vfAutoWahl() + ':' + id : ''); } catch (e) { /* egal */ } }
-  function vfLivreeName(id) {
-    const l = VF_LIVREES[vfAutoWahl()] || [];
-    const f = l.find(([x]) => x === id);
-    return f ? f[1] : id;
+  // v1.6.85 (Issue #17): die Auswahl in der Zeile "Lackfarbe" ist Original, dann die Lackfarben und
+  // (wenn das Auto welche hat) die Lackierungen. Farbe und Lackierung schließen sich gegenseitig aus
+  // (die eine Auswahl löscht die andere), deshalb hat jede Option entweder v (Farbe) oder livree (id).
+  function vfLackOptionen(auto) {
+    const farbListe = VF_LACK_FARBEN.filter((f) => f.v);
+    const livreeListe = VF_LIVREES[auto] || [];
+    return [
+      { v: '', livree: '', n: 'Original' },
+      ...farbListe.map((f) => ({ v: f.v, livree: '', n: f.n })),
+      ...livreeListe.map(([id, name]) => ({ v: '', livree: id, n: name })),
+    ];
+  }
+  // Der Index der aktuellen Wahl (Farbe oder Lackierung) in vfLackOptionen(auto).
+  function vfLackIndex(auto) {
+    const livAkt = vfLivree(auto);
+    const nFarben = VF_LACK_FARBEN.filter((f) => f.v).length;
+    if (livAkt) {
+      const li = (VF_LIVREES[auto] || []).findIndex(([id]) => id === livAkt);
+      return 1 + nFarben + (li >= 0 ? li : 0);
+    }
+    const ci = VF_LACK_FARBEN.filter((f) => f.v).findIndex((f) => f.v === vfLack());
+    return ci >= 0 ? 1 + ci : 0;
   }
   // Die Farbe der Karosserie: Der Shader faerbt sie um (Helligkeit des Texels mal Lackfarbe, uniform lack = 1), statt zu
   // multiplizieren - sonst wuerde Rot auf einem gelben Auto Orange. Ohne Farbe bleibt das Modell, wie es ist.
@@ -1920,8 +1938,8 @@
             { v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
             { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
             // v1.6.85 (Issue #17): die drei weiteren Speed-Dreams-Autos (GPL-2.0-or-later), umgewandelt mit
-            // tools/sd_auto.py, siehe img/autos/<id>/LIZENZ.txt. Jeweils zwei Alternativ-Lackierungen
-            // (Kleidungs-Option "Lackierung" in der Garage) - Fahrdaten aus der .xml, kein WIP noetig.
+            // tools/sd_auto.py, siehe img/autos/<id>/LIZENZ.txt. Jeweils zwei Alternativ-Lackierungen,
+            // wählbar in der Garage in der Farbwahl („Lackfarbe“) - Fahrdaten aus der .xml, kein WIP noetig.
             { v: 'cavallo360', name: 'Cavallo 360 (Ferrari 360 Modena, Speed Dreams)' },
             { v: 'nsx', name: 'Murasama NSX (Honda/Acura NSX 1991, Speed Dreams)' },
             { v: 'spirit300', name: 'Spirit 300 (Lotus M250, Speed Dreams)' },
@@ -6494,12 +6512,22 @@
     // v1.5.10 (WIP): Vorschau des gewaehlten Autos (Seitenansicht in der Originalfarbe) und die Lackfarbe.
     // Die Vorschau ist ein Bild je Auto (img/autos/<modell>/vorschau.jpg, tools/vorschau_bilder.py);
     // fehlt ein Bild, verschwindet die Zeile still.
+    // v1.6.85 (Issue #17): Lackfarbe und die alternativen Lackierungen der Speed-Dreams-Autos sind eine
+    // gemeinsame Auswahl in der Zeile "Lackfarbe": mit den Pfeilen blättert man durch Original, die
+    // Lackfarben und (wenn das Auto welche hat) die Lackierungen. Farbe und Lackierung schließen sich
+    // gegenseitig aus (die eine Auswahl löscht die andere). Die Palette zeigt nur die Lackfarben als
+    // Punkte (schnelle Wahl); die Lackierungen sind eigene Texturen und nur über die Pfeile zu erreichen.
     {
-      const jl = Math.max(0, VF_LACK_FARBEN.findIndex((f) => f.v === vfLack()));
-      // v1.6.85 (Issue #17): picking a colour tint clears any chosen livery (they are mutually exclusive).
-      const lackWahl = (dd) => { vfLackSetzen(VF_LACK_FARBEN[(jl + dd + VF_LACK_FARBEN.length) % VF_LACK_FARBEN.length].v); vfLivreeSetzen(''); vfGarageNeu(); };
-      const zeile = garWertZeile(t('Lackfarbe'), t(VF_LACK_FARBEN[jl].n), () => lackWahl(-1), () => lackWahl(1));
+      const optListe = vfLackOptionen(autos[ja].v);
+      const ji = vfLackIndex(autos[ja].v);
+      const lackWahl = (dd) => {
+        const o = optListe[(ji + dd + optListe.length) % optListe.length];
+        vfLackSetzen(o.v); vfLivreeSetzen(o.livree); vfGarageNeu();
+      };
+      const zeile = garWertZeile(t('Lackfarbe'), t(optListe[ji].n), () => lackWahl(-1), () => lackWahl(1));
       zeile.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
+      // Palette: nur die Lackfarben; ist eine Lackierung gewaehlt, ist kein Punkt aktiv.
+      const jl = vfLivree() ? -1 : Math.max(0, VF_LACK_FARBEN.findIndex((f) => f.v === vfLack()));
       const palette = document.createElement('span');
       palette.className = 'vf-lack-palette';
       VF_LACK_FARBEN.forEach((f, i) => {
@@ -6522,22 +6550,6 @@
       vor.appendChild(img);
       rechts.appendChild(vor);
       rechts.appendChild(zeile);
-    }
-    // v1.6.85 (Issue #17): alternate liveries of the Speed Dreams cars. Only for cars that have them;
-    // the livery and the colour tint are mutually exclusive (picking one clears the other).
-    {
-      const list = VF_LIVREES[autos[ja].v] || [];
-      if (list.length) {
-        const opt = [['', t('Original')]].concat(list);
-        const jl = Math.max(0, opt.findIndex(([id]) => id === vfLivree()));
-        const livreeWahl = (dd) => {
-          const id = opt[(jl + dd + opt.length) % opt.length][0];
-          vfLivreeSetzen(id); if (id) vfLackSetzen(''); vfGarageNeu();
-        };
-        const z = garWertZeile(t('Lackierung'), opt[jl][1], () => livreeWahl(-1), () => livreeWahl(1));
-        z.querySelector('.gk-l').insertAdjacentHTML('beforeend', ' <span class="wip-tag">WIP</span>');
-        rechts.appendChild(z);
-      }
     }
     // v1.3.39 (WIP): der Fussboden unter der Bahn, Dielen in echten Massen (siehe VF_BOEDEN).
     const jb = Math.max(0, VF_BOEDEN.findIndex((b) => b.id === vfBodenWahl()));

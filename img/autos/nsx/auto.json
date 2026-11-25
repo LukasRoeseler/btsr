@@ -61,7 +61,7 @@
   },
   {
    "name": "WIS31_s_0",
-   "rolle": "karosserie",
+   "rolle": "scheibe",
    "gruppe": "auto",
    "tex": "sc-murasama-nsx.png",
    "ecke0": 419,
@@ -71,7 +71,7 @@
   },
   {
    "name": "WIS30_s_4",
-   "rolle": "karosserie",
+   "rolle": "scheibe",
    "gruppe": "auto",
    "tex": "sc-murasama-nsx.png",
    "ecke0": 428,

@@ -21,7 +21,7 @@
   },
   {
    "name": "REARLIGHTSP_s_3",
-   "rolle": "karosserie",
+   "rolle": "ruecklicht",
    "gruppe": "auto",
    "tex": "sc-spirit-300.png",
    "ecke0": 46,
@@ -31,7 +31,7 @@
   },
   {
    "name": "REARLIGHTS_s_7",
-   "rolle": "karosserie",
+   "rolle": "ruecklicht",
    "gruppe": "auto",
    "tex": "sc-spirit-300.png",
    "ecke0": 90,
@@ -51,7 +51,7 @@
   },
   {
    "name": "OUTSIDE_s_3",
-   "rolle": "karosserie",
+   "rolle": "scheibe",
    "gruppe": "auto",
    "tex": "sc-spirit-300.png",
    "ecke0": 457,
@@ -71,7 +71,7 @@
   },
   {
    "name": "FRONTLIGHTS_s_11",
-   "rolle": "karosserie",
+   "rolle": "scheinwerfer",
    "gruppe": "auto",
    "tex": "sc-spirit-300.png",
    "ecke0": 624,
@@ -291,7 +291,7 @@
   },
   {
    "name": "WI01_s_5",
-   "rolle": "karosserie",
+   "rolle": "scheibe",
    "gruppe": "auto",
    "tex": "sc-spirit-300.png",
    "ecke0": 2882,
