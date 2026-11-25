@@ -2441,8 +2441,31 @@
   // Pruefstand (Node, je 1/60 s): voller Einschlag + Vollgas ab 8-25 m/s: 15 Grad nach 0,6 s; danach Stick 0,3 / 0,6 / 1
   // bei Vollgas: Drift bei 5 / 30 / 54 Grad, kein Dreher in 8 s; Handbremse 0,4 s bei 20 m/s: 36 Grad; halbes Gas greift;
   // Vollbremsung 30 -> 0 m/s in 3,3 s; 5 -> 30 m/s in 5,2 s. Ohne Hilfe dreht Vollgas mit Einschlag das Auto ein.
+  // v1.6.90 GETRIEBE IM DRIFT: ein 5-Gang-Automatikgetriebe wie im echten Fahren. Die Uebersetzungen
+  // folgen derselben Regel wie die Getriebe in 30-input.js: ratio * topFrac = GEAR_PRODUCT fuer alle
+  // ausser dem letzten (luftwiderstandsbegrenzt, ratio 0,88) - der 5-Gang-Satz des P412, auf zwei
+  // Stellen gerundet (deshalb die 0,006-Toleranz im Selbsttest). Die Drehzahl steigt mit ratio * Tempo;
+  // daraus kommen die Schaltpunkte (Hochschalten bei upshiftRpm, Herunter bei downshiftRpm).
+  // BESTELLT (v1.6.90): "Multi-Gang-Automatik im Drift, aber der Drift darf nicht enden, weil das Auto
+  // automatisch hochschaltet." Deshalb haelt die Automatik den Gang, solange das Auto quer liegt
+  // (Schwimmwinkel > driftGrad); erst wenn es wieder gerade faehrt, schaltet sie hoch. Die KRAFT bleibt
+  // wie im Direktantrieb (min(fMax, leistung/w)) - das Getriebe ist Anzeige und Schicht, kein zweiter
+  // Hebel, denn sonst wuerde der fein abgestimmte Drift-Handling-Selbsttest (v1.6.54) kippen.
+  const VF_DRIFT_GEARS = [
+    { ratio: 3.17, topFrac: 0.30 },   // 1. bis 30 % von Vmax
+    { ratio: 2.11, topFrac: 0.45 },
+    { ratio: 1.53, topFrac: 0.62 },
+    { ratio: 1.17, topFrac: 0.81 },
+    { ratio: 0.88, topFrac: 1.00 },   // 5. (luftwiderstandsbegrenzt)
+  ];
+  const VF_DRIFT_TOPSPEED_MS = 62;    // Bezugstempo fuer die Drehzahl (m/s, echte Skala)
+  let VF_DRIFT_RPM_SCALE = 0;
+  for (const g of VF_DRIFT_GEARS) VF_DRIFT_RPM_SCALE = Math.max(VF_DRIFT_RPM_SCALE, g.ratio * g.topFrac);
+  VF_DRIFT_RPM_SCALE = REDLINE_RPM / VF_DRIFT_RPM_SCALE;
   const VF_DRIFT_AUTO = { m: 1250, Iz: 1500, a: 1.2, b: 1.35, h: 0.5, mu: 1.05, B: 9.5, C: 1.5, lastEmpf: 0.1,
-    lenkGrad: 50, leistung: 220000, fMax: 8200, mRad: 110, bremsG: 1.0, bremsVorn: 0.65, hand: 9000, luft: 0.55, roll: 0.012 };
+    lenkGrad: 50, leistung: 220000, fMax: 8200, mRad: 110, bremsG: 1.0, bremsVorn: 0.65, hand: 9000, luft: 0.55, roll: 0.012,
+    gears: VF_DRIFT_GEARS, topSpeedMs: VF_DRIFT_TOPSPEED_MS, rpmScale: VF_DRIFT_RPM_SCALE,
+    upshiftRpm: 7800, downshiftRpm: 3800, shiftMs: 0.05, driftGrad: 10 };
   const VF_DRIFT_HILFE = 1.6, VF_DRIFT_GYRO_R = 0.6;
   function vfDriftHilfe() { const f = vfDriftGyro(); return { hilfe: VF_DRIFT_HILFE * f, gyro: VF_DRIFT_GYRO_R * f }; }
   // Fuer alles, was VF.P liest (Raddarstellung, Quietschen, Kamera): Geometrie und Reifen des Driftautos.
@@ -2479,6 +2502,23 @@
       const F = DH * Math.sin(P.C * Math.atan(P.B * sl));
       const fxH = sl > 1e-9 ? F * kap / sl : 0, fyH = sl > 1e-9 ? -F * tA / sl : 0;
       // Hinterrad samt Motor: Antrieb gegen Reifenkraft; Bremse und Handbremse halten es hoechstens an (blockieren).
+      // v1.6.90 Getriebe (5-Gang-Automatik): die Drehzahl steigt mit ratio * Tempo, die Schaltpunkte haengen
+      // daran. Liegt das Auto quer (Schwimmwinkel > driftGrad), haelt die Automatik den Gang und schaltet
+      // nicht hoch - im Drift soll der Zug nicht abfallen. Die KRAFT bleibt dieselbe wie im Direktantrieb
+      // (min(fMax, leistung/w)); nur die Schaltpunkte und die Anzeige kommen aus den Gaengen.
+      const gN = P.gears.length;
+      let gear = Math.max(0, Math.min(gN - 1, z.gear | 0));
+      const ratio = P.gears[gear].ratio;
+      const rpm = P.rpmScale * ratio * (Math.max(0, z.w) / P.topSpeedMs);
+      const quer = Math.abs(Math.atan2(z.vy, Math.max(1, z.vx))) * 180 / Math.PI > P.driftGrad;
+      if (z.shift > 0) z.shift -= h;
+      else if (gear < gN - 1 && rpm > P.upshiftRpm && !quer) { gear++; z.shift = P.shiftMs; }
+      else if (gear > 0 && rpm < P.downshiftRpm) { gear--; z.shift = P.shiftMs; }
+      z.gear = gear;
+      // Die KRAFT bleibt dieselbe wie im Direktantrieb (min(fMax, leistung/w)). Das Getriebe ist eine
+      // Anzeige- und Schicht-Ebene: es waehlt den Gang nach der Drehzahl, haelt ihn aber im Drift. So
+      // endet ein Drift nie, weil die Automatik hochschaltet - der Zug faellt nicht ab, und der Gang
+      // bleibt, solange das Auto quer liegt.
       let antrieb = (e.gas || 0) * Math.min(P.fMax, P.leistung / Math.max(z.w, 4));
       // Anfahrhilfe: unter 6 m/s nimmt sie bei viel Schlupf Gas weg (wie ein Fahrer, der beim Anfahren dosiert),
       // sonst stuende das Auto mit Vollgas zwei Sekunden lang qualmend auf der Stelle. 0 -> 10 m/s in 1,9 s.
@@ -2522,7 +2562,7 @@
     // Von aussen auf 0 gesetzt (Zuruecksetzen, Box, Unfall): das Modell beginnt neu.
     // v1.6.58: kein Neustart mehr, wenn der Tacho 0 zeigt (das blockierte Hinterrad zeigte 0 und hielt das Auto an);
     // wer das Auto anhaelt (Zuruecksetzen, Derby), setzt VF.dp selbst zurueck.
-    if (!VF.dp) { const v0 = Math.max(0, (st.speedKmh || 0) * tf * zuReal); VF.dp = { vx: v0, vy: 0, r: 0, w: v0, ax: 0, d: 0 }; }
+    if (!VF.dp) { const v0 = Math.max(0, (st.speedKmh || 0) * tf * zuReal); VF.dp = { vx: v0, vy: 0, r: 0, w: v0, ax: 0, d: 0, gear: 0, shift: 0 }; }
     const z = VF.dp;
     const ty = typeof throttleY === 'number' ? throttleY : 0;
     let gas = Math.max(0, ty), bremse = Math.max(0, -ty);
@@ -2532,6 +2572,17 @@
     const hh = vfDriftHilfe();
     const mu = (physEngine.config.gripScale || 1) * (VF.abseits ? 0.55 : 1);
     vfDriftSchritt(z, { lenk, gas, bremse, hand: !!VF.handbremse, hilfe: hh.hilfe, gyro: hh.gyro, mu }, sdt, VF_DRIFT_AUTO);
+    // v1.6.90: Gang und Drehzahl fuer den Tacho-Block aus dem Drift-Getriebe. Das echte physEngine.update()
+    // laeuft im Drift nicht, also blieben Gang und Drehzahl sonst stehen.
+    if (st) {
+      const gH = Math.max(0, Math.min(VF_DRIFT_AUTO.gears.length - 1, z.gear | 0));
+      const rH = VF_DRIFT_AUTO.gears[gH].ratio;
+      const rpmH = VF_DRIFT_AUTO.rpmScale * rH * (Math.max(0, z.w) / VF_DRIFT_AUTO.topSpeedMs);
+      st.currentGear = gH;
+      st.driveMode = 'forward';
+      st.rpm = Math.max(IDLE_RPM, Math.min(REDLINE_RPM, rpmH));
+      st.rpmFrac = Math.max(0, Math.min(1, (st.rpm - IDLE_RPM) / (REDLINE_RPM - IDLE_RPM)));
+    }
     VF.ax = z.ax; VF.ay = z.vx * z.r;
     VF.pitch = Math.max(-0.03, Math.min(0.03, -(VF.ax || 0) * 0.0018));
     VF.h += z.r * sdt * 180 / Math.PI;

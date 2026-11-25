@@ -15423,6 +15423,47 @@
     } finally { Object.assign(VF, merkV); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : mass.join(', ') };
   });
+  stAdd('Virtuell v1.6.90: Drift-Getriebe - 5 Gaenge, schaltet beim Geradeausfahren hoch, haelt im Drift', () => {
+    const f = [], mass = [];
+    const G = VF_DRIFT_AUTO.gears;
+    // Aufbau: 5 Gaenge, ratio * topFrac = GEAR_PRODUCT bis zum letzten (luftwiderstandsbegrenzten) Gang.
+    // 0,006 Toleranz wie beim echten Getriebe-Selbsttest, weil die Uebersetzungen gerundet sind.
+    if (!G || G.length !== 5) f.push('Drift-Getriebe hat ' + (G ? G.length : 0) + ' Gaenge');
+    else {
+      const P = GEAR_PRODUCT;
+      const ref = G[0].ratio * G[0].topFrac;
+      if (G.slice(0, -1).some((g) => Math.abs(g.ratio * g.topFrac - P) > 0.006)) f.push('ratio*topFrac nicht ' + P);
+      if (!(G[G.length - 1].ratio * G[G.length - 1].topFrac < ref)) f.push('letzter Gang nicht luftbegrenzt');
+      // Die Drehzahlformel folgt dem echten Getriebe (rpmScale = REDLINE / max(ratio*topFrac)).
+      const maxProd = Math.max(...G.map((g) => g.ratio * g.topFrac));
+      if (Math.abs(VF_DRIFT_AUTO.rpmScale - REDLINE_RPM / maxProd) > 1e-6) f.push('rpmScale falsch');
+      // Im obersten Gang bei Bezugstempo bleibt die Drehzahl unter der Grenze (luftbegrenzt).
+      const topRpm = VF_DRIFT_AUTO.rpmScale * G[G.length - 1].ratio;
+      if (!(topRpm < REDLINE_RPM)) f.push('oberster Gang erreicht die Drehzahlgrenze (' + topRpm.toFixed(0) + ')');
+    }
+    // Geradeaus mit Vollgas: die Automatik schaltet hoch (Drehzahl steigt mit dem Tempo).
+    {
+      const z = { vx: 5, vy: 0, r: 0, w: 5, ax: 0, gear: 0, shift: 0 };
+      let maxGear = 0;
+      for (let t = 0; t < 6; t += 1 / 60) { vfDriftSchritt(z, { mu: 1, hilfe: 0, gyro: 0, lenk: 0, gas: 1 }, 1 / 60); maxGear = Math.max(maxGear, z.gear); }
+      mass.push('Gang geradeaus ' + maxGear);
+      if (maxGear < 2) f.push('schaltet beim Geradeausfahren nicht hoch (max ' + maxGear + ')');
+    }
+    // Im Drift (Schwimmwinkel > driftGrad) haelt die Automatik den Gang und schaltet nicht hoch.
+    {
+      const z = { vx: 15, vy: 0, r: 0, w: 15, ax: 0, gear: 0, shift: 0 };
+      let driftGear = -1, held = true;
+      for (let t = 0; t < 2.5; t += 1 / 60) {
+        vfDriftSchritt(z, { mu: 1, hilfe: VF_DRIFT_HILFE, gyro: VF_DRIFT_GYRO_R, lenk: 1, gas: 1 }, 1 / 60);
+        const beta = Math.abs(Math.atan2(z.vy, Math.max(0.1, z.vx))) * 180 / Math.PI;
+        if (beta > VF_DRIFT_AUTO.driftGrad) { if (driftGear < 0) driftGear = z.gear; else if (z.gear > driftGear) held = false; }
+      }
+      mass.push('Gang im Drift ' + (driftGear >= 0 ? driftGear : 'kein'));
+      if (driftGear < 0) f.push('Drift kam nicht zustande');
+      else if (!held) f.push('schaltet im Drift hoch (ab ' + driftGear + ')');
+    }
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : mass.join(', ') };
+  });
   stAdd('Virtuell v1.6.85: Totzone Neigen einstellbar (Optionen Virtuell), wirkt auf den Lenkwert', async () => {
     const f = [];
     const merk = (() => { try { return localStorage.getItem(VF_NEIGEN_TOT_STORE); } catch (e) { return null; } })();
