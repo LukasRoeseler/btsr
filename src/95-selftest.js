@@ -15290,7 +15290,7 @@
     } catch (e) { f.push('laedt nicht: ' + e.message); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
   });
-  stAdd('Virtuell v1.6.85: Cavallo 360, Murasama NSX, Spirit 300 und Archer R-9 (Speed Dreams, GPL) waehlbar, Modell laedt, Masse und Lackierungen da', async () => {
+  stAdd('Virtuell v1.6.85: Cavallo 360, Murasama NSX, Spirit 300 und Archer R-9 (Speed Dreams, Free Art License 1.3) waehlbar, Modell laedt, Masse und Lackierungen da', async () => {
     const f = [], mass = [];
     const cars = [['cavallo360', 'img/autos/cavallo360/'], ['nsx', 'img/autos/nsx/'], ['spirit300', 'img/autos/spirit300/'], ['archerr9', 'img/autos/archerr9/']];
     for (const [id, pfad] of cars) {

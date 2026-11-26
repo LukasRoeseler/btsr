@@ -2,7 +2,7 @@
  "name": "FMC GT4",
  "kennung": "fmcgt4",
  "quelle": "Speed Dreams, data/cars/models/sc-fmc-gt4",
- "lizenz": "GPL-2.0-or-later (Speed Dreams)",
+ "lizenz": "Free Art License 1.3 (Modell, Texturen); GPL-2.0-or-later (Fahrzeugdaten)",
  "koordinaten": "m; +x links, +y oben, +z vorn",
  "ecken": 3029,
  "indizes": 14805,

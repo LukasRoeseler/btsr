@@ -149,7 +149,7 @@
     'sd_v8gt', 'sd_v10', 'sd_v8muscle', 'sd_v8alt', 'sd_v12', 'sd_v12weich',
     // v1.0.18 BESTELLT: "Toro R-GT einbauen" - aus den Speed-Dreams-Spieldaten, Free Art License.
     'sd_toro',
-    // v1.1.9 BESTELLT: der Vulture V5R aus Speed Dreams (virtuelle Fahrt), sein eigener V8 (GPL-2+).
+    // v1.1.9 BESTELLT: der Vulture V5R aus Speed Dreams (virtuelle Fahrt), sein eigener V8 (Free Art License 1.3).
     'sd_v5r',
     // v1.1.45 BESTELLT: die Lynx 220 (Jaguar XJ220), ihr eigener V6-Turbo (Free Art).
     'sd_lynx',

@@ -1802,7 +1802,7 @@
  "sd_v5r": {
   "label": "Speed Dreams: Vulture V5.R (7,0 l V8)",
   "cylinders": 8,
-  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls1-vulture-v5r/v5r-v8.wav): Speed-Dreams-Team (ls1-vulture-v5r), GPL-2.0-or-later",
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls1-vulture-v5r/v5r-v8.wav): Speed-Dreams-Team (ls1-vulture-v5r), Free Art License 1.3 (artlibre.org/licence/lal/en)",
   "crackle": 0.5,
   "turbo": false,
   "loops": {
@@ -1908,7 +1908,7 @@
  "sd_fmc": {
   "label": "Speed Dreams: FMC GT4 (Ford GT40 Mk1, 4,7 l V8)",
   "cylinders": 8,
-  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-fmc-gt4/sc-fmc-gt4.wav): Speed-Dreams-Team (sc-fmc-gt4), GPL-2.0-or-later",
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-fmc-gt4/sc-fmc-gt4.wav): Speed-Dreams-Team (sc-fmc-gt4), Free Art License 1.3 (artlibre.org/licence/lal/en)",
   "crackle": 0.45,
   "turbo": false,
   "loops": {
@@ -1961,7 +1961,7 @@
  "sd_boxer": {
   "label": "Speed Dreams: Boxer 96 (Porsche 911 GT3, 3,6 l Boxer-6)",
   "cylinders": 6,
-  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-boxer-96/sc-boxer-96.wav): Speed-Dreams-Team (sc-boxer-96), GPL-2.0-or-later",
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-boxer-96/sc-boxer-96.wav): Speed-Dreams-Team (sc-boxer-96), Free Art License 1.3 (artlibre.org/licence/lal/en)",
   "crackle": 0.4,
   "turbo": false,
   "loops": {
@@ -2053,7 +2053,7 @@
  "sd_cavallo": {
   "label": "Speed Dreams: Cavallo 360 (Ferrari 360 Modena, 3,6 l V8)",
   "cylinders": 8,
-  "source": "Aufnahme aus Speed Dreams 2.4 (data/sound/f360.wav): Speed-Dreams-Team (sc-cavallo-360), GPL-2.0-or-later",
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/sound/f360.wav): Speed-Dreams-Team (sc-cavallo-360), Free Art License 1.3 (artlibre.org/licence/lal/en)",
   "crackle": 0.45,
   "turbo": false,
   "loops": {
@@ -2106,7 +2106,7 @@
  "sd_nsx": {
   "label": "Speed Dreams: Murasama NSX (Honda NSX, 3,0 l V6)",
   "cylinders": 6,
-  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-murasama-nsx/sc-murasama-nsx.wav): Speed-Dreams-Team (sc-murasama-nsx), GPL-2.0-or-later",
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-murasama-nsx/sc-murasama-nsx.wav): Speed-Dreams-Team (sc-murasama-nsx), Free Art License 1.3 (artlibre.org/licence/lal/en)",
   "crackle": 0.35,
   "turbo": false,
   "loops": {
@@ -2152,7 +2152,7 @@
  "sd_spirit": {
   "label": "Speed Dreams: Spirit 300 (3,0 l V6)",
   "cylinders": 6,
-  "source": "Aufnahme aus Speed Dreams 2.4 (data/sound/lotus.wav): Speed-Dreams-Team (sc-spirit-300), GPL-2.0-or-later",
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/sound/lotus.wav): Speed-Dreams-Team (sc-spirit-300), Free Art License 1.3 (artlibre.org/licence/lal/en)",
   "crackle": 0.35,
   "turbo": false,
   "loops": {
@@ -2198,7 +2198,7 @@
  "sd_archer": {
   "label": "Speed Dreams: Archer R-9 (Aston Martin DBR9, 6,0 l V12)",
   "cylinders": 12,
-  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls1-archer-r9/archer-r9-v12.wav): Speed-Dreams-Team (ls1-archer-r9), GPL-2.0-or-later",
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls1-archer-r9/archer-r9-v12.wav): Speed-Dreams-Team (ls1-archer-r9), Free Art License 1.3 (artlibre.org/licence/lal/en)",
   "crackle": 0.35,
   "turbo": false,
   "loops": {

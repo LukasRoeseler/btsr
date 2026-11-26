@@ -5,7 +5,7 @@
 [[Datei:OmegaSim-Virtuell-Fahren.png|mini|Die virtuelle Fahrt: der Vulture V5.R aus Speed Dreams in der 3D-Ansicht, mit Verfolgerkamera über die Strecke aus dem Editor.]]
 [[Datei:OmegaSim-Virtuell-Auto.png|mini|Das virtuelle Auto, der Vulture V5.R aus [https://www.speed-dreams.org/ Speed Dreams] (nahe Verfolgerkamera).]]
 
-Das '''Fahrzeugmodell''' stammt für das Standard-Auto aus '''[https://www.speed-dreams.org/ Speed Dreams]''', einem freien Rennsimulator (GPL-2+): Das Modell <code>ls1-vulture-v5r</code> (Vulture V5.R) wird mit <code>tools/sd_auto.py</code> übernommen – samt Lichtorten, Rädern und den Fahrzeugdaten (Masse, Schwerpunkt, Radstand, Einschlag, Bremsbalance, Abtrieb) aus der <code>.xml</code>-Datei des Originals. Einige weitere Modelle folgen demselben Schema ([[#Einstellungen|siehe Auto-Auswahl]]).
+Das '''Fahrzeugmodell''' stammt für das Standard-Auto aus '''[https://www.speed-dreams.org/ Speed Dreams]''', einem freien Rennsimulator: Das Modell <code>ls1-vulture-v5r</code> (Vulture V5.R) wird mit <code>tools/sd_auto.py</code> übernommen – samt Lichtorten, Rädern und den Fahrzeugdaten (Masse, Schwerpunkt, Radstand, Einschlag, Bremsbalance, Abtrieb) aus der <code>.xml</code>-Datei des Originals. Modell und Texturen stehen unter der Free Art License 1.3, die Fahrzeugdaten unter GPL-2.0-or-later (siehe <code>img/autos/v5r/LIZENZ.txt</code>). Einige weitere Modelle folgen demselben Schema ([[#Einstellungen|siehe Auto-Auswahl]]).
 
 == Auf einen Blick ==
 {| class="wikitable"

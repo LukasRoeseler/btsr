@@ -57,31 +57,31 @@ MOTOREN = [
     ('sd_toro', 'toro-rgt.wav', 'Speed Dreams: Lamborghini Murciélago R-GT (Toro R-GT, 6,0 l V12)', 12, 1100, 8000, 0.4,
      'Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en)'),
     # v1.1.9 BESTELLT: der Vulture V5R fuer die virtuelle Fahrt (img/autos/v5r). Sein Motorklang liegt im
-    # Ordner des Autos (data/cars/models/ls1-vulture-v5r/v5r-v8.wav), Lizenz wie das Auto: GPL-2+.
+    # Ordner des Autos (data/cars/models/ls1-vulture-v5r/v5r-v8.wav), Lizenz wie das Auto: Free Art License 1.3.
     # Leerlauf und Begrenzer aus der .xml des Autos.
     ('sd_v5r', 'v5r-v8.wav', 'Speed Dreams: Vulture V5.R (7,0 l V8)', 8, 1000, 6750, 0.5,
-     'Speed-Dreams-Team (ls1-vulture-v5r), GPL-2.0-or-later'),
+     'Speed-Dreams-Team (ls1-vulture-v5r), Free Art License 1.3 (artlibre.org/licence/lal/en)'),
     # v1.1.44 BESTELLT: die Lynx 220 (Jaguar XJ220) aus dem Katalog der Datenquelle, ihr eigener Sound.
     ('sd_lynx', 'sc-lynx-220.wav', 'Speed Dreams: Lynx 220 (Jaguar XJ220, 3,5 l V6 Turbo)', 6, 1000, 7200, 0.4,
      'Speed-Dreams-Team (sc-lynx-220), Free Art License 1.3 (artlibre.org/licence/lal/en)'),
     # v1.1.44 BESTELLT: zwei weitere Speed-Dreams-Autos (Ferrari F40 und Porsche 911 GT3).
     ('sd_fmc', 'sc-fmc-gt4.wav', 'Speed Dreams: FMC GT4 (Ferrari F40, 4,7 l V8)', 8, 1000, 7000, 0.45,
-     'Speed-Dreams-Team (sc-fmc-gt4), GPL-2.0-or-later'),
+     'Speed-Dreams-Team (sc-fmc-gt4), Free Art License 1.3 (artlibre.org/licence/lal/en)'),
     ('sd_boxer', 'sc-boxer-96.wav', 'Speed Dreams: Boxer 96 (Porsche 911 GT3, 3,6 l Boxer-6)', 6, 2000, 8500, 0.4,
-     'Speed-Dreams-Team (sc-boxer-96), GPL-2.0-or-later'),
+     'Speed-Dreams-Team (sc-boxer-96), Free Art License 1.3 (artlibre.org/licence/lal/en)'),
     # v1.6.92 BESTELLT: die drei neuen Speed-Dreams-Autos (Cavallo 360, Murasama NSX, Spirit 300)
     # sollen ihre EIGENEN Motorklaenge bekommen statt der Ersatzmotoren. Leerlauf und Begrenzer
     # aus den .xml der Autos (Engine-Sektion: tickover, revs limiter).
     ('sd_cavallo', 'f360.wav', 'Speed Dreams: Cavallo 360 (Ferrari 360 Modena, 3,6 l V8)', 8, 900, 8500, 0.45,
-     'Speed-Dreams-Team (sc-cavallo-360), GPL-2.0-or-later'),
+     'Speed-Dreams-Team (sc-cavallo-360), Free Art License 1.3 (artlibre.org/licence/lal/en)'),
     ('sd_nsx', 'sc-murasama-nsx.wav', 'Speed Dreams: Murasama NSX (Honda NSX, 3,0 l V6)', 6, 2000, 8500, 0.35,
-     'Speed-Dreams-Team (sc-murasama-nsx), GPL-2.0-or-later'),
+     'Speed-Dreams-Team (sc-murasama-nsx), Free Art License 1.3 (artlibre.org/licence/lal/en)'),
     ('sd_spirit', 'lotus.wav', 'Speed Dreams: Spirit 300 (3,0 l V6)', 6, 2000, 8500, 0.35,
-     'Speed-Dreams-Team (sc-spirit-300), GPL-2.0-or-later'),
+     'Speed-Dreams-Team (sc-spirit-300), Free Art License 1.3 (artlibre.org/licence/lal/en)'),
     # v1.6.96 BESTELLT: der Archer R-9 (Aston Martin DBR9, 6,0 l V12) soll seinen EIGENEN Motorklang
     # bekommen statt des Ersatzmotors. Leerlauf und Begrenzer aus der .xml (Engine-Sektion).
     ('sd_archer', 'archer-r9-v12.wav', 'Speed Dreams: Archer R-9 (Aston Martin DBR9, 6,0 l V12)', 12, 900, 9000, 0.35,
-     'Speed-Dreams-Team (ls1-archer-r9), GPL-2.0-or-later'),
+     'Speed-Dreams-Team (ls1-archer-r9), Free Art License 1.3 (artlibre.org/licence/lal/en)'),
 ]
 # Wo die Aufnahme in Speed Dreams liegt, wenn nicht in data/sound/.
 QUELLORDNER = {'sd_v5r': 'data/cars/models/ls1-vulture-v5r/', 'sd_lynx': 'data/cars/models/sc-lynx-220/',

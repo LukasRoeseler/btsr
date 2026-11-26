@@ -1744,7 +1744,8 @@
   // ---- DAS AUTO AUS SPEED DREAMS (v1.1.9) ------------------------------------------------------
   // BESTELLT: "Baue das v5r Auto aus Speeddreams ein. Das Auto soll auch Lichter und Bremslichter haben
   // und sich beim Lenken, Gas geben und Bremsen entsprechend verhalten durch Neigung ueber simulierte
-  // Stossdaempfer." Der Vulture V5R (ls1-vulture-v5r, GPL-2+), umgewandelt mit tools/sd_auto.py nach
+  // Stossdaempfer." Der Vulture V5R (ls1-vulture-v5r, Free Art License 1.3 fuer Modell und Texturen,
+  // Fahrzeugdaten GPL-2.0-or-later), umgewandelt mit tools/sd_auto.py nach
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
@@ -1942,13 +1943,15 @@
     return (vfHeliErlaubt() ? [{ v: 'hubschrauber', name: t('RC Stunt Copter') + ' (' + t('nur Training') + ', WIP)' }] : []).concat([
             { v: 'v5r', name: 'Vulture V5.R (Speed Dreams)' }, { v: 'lynx220', name: 'Lynx 220 (Jaguar XJ220, Speed Dreams)' },
             { v: 'fmcgt4', name: 'FMC GT4 (Ford GT40 Mk1, Speed Dreams)' }, { v: 'boxer96', name: 'Boxer 96 (Porsche 911 GT3, Speed Dreams)' },
-            // v1.6.85 (Issue #17): die drei weiteren Speed-Dreams-Autos (GPL-2.0-or-later), umgewandelt mit
+            // v1.6.85 (Issue #17): die drei weiteren Speed-Dreams-Autos (Modell und Texturen Free Art
+            // License 1.3, Fahrzeugdaten GPL-2.0-or-later), umgewandelt mit
             // tools/sd_auto.py, siehe img/autos/<id>/LIZENZ.txt. Jeweils zwei Alternativ-Lackierungen,
             // wählbar in der Garage in der Farbwahl („Lackfarbe“) - Fahrdaten aus der .xml, kein WIP noetig.
             { v: 'cavallo360', name: 'Cavallo 360 (Ferrari 360 Modena, Speed Dreams)' },
             { v: 'nsx', name: 'Murasama NSX (Honda/Acura NSX 1991, Speed Dreams)' },
             { v: 'spirit300', name: 'Spirit 300 (Lotus M250, Speed Dreams)' },
-            // v1.6.96 BESTELLT: der Archer R-9 (Aston Martin DBR9) aus Speed Dreams, GPL-2.0-or-later,
+            // v1.6.96 BESTELLT: der Archer R-9 (Aston Martin DBR9) aus Speed Dreams, Modell und Texturen
+            // Free Art License 1.3, Fahrzeugdaten GPL-2.0-or-later,
             // umgewandelt mit tools/sd_auto.py, siehe img/autos/archerr9/LIZENZ.txt. Elf Liveries.
             { v: 'archerr9', name: 'Archer R-9 (Aston Martin DBR9, Speed Dreams)' },
             // Eigenbau von Gnen54 (CC BY 4.0), WIP: Fahrdaten geschaetzt, siehe img/autos/kaefer/LIZENZ.txt

@@ -42,43 +42,45 @@ stehen damit ebenfalls unter der Free Art License 1.3. Das Original liegt in den
 Spieldaten von Speed Dreams 2.4 (https://www.speed-dreams.net). Der Code von OmegaSim
 steht unter der GNU AGPL (Version 3 oder neuer); die Klangdateien werden nur mitgeliefert und geladen.
 
-### Vulture V5.R (GPL-2.0 oder spaeter) — seit v1.1.9
+### Vulture V5.R (Free Art License 1.3) — seit v1.1.9
 
 | Motor in der App | Datei in Speed Dreams | Quelle und Lizenz |
 |---|---|---|
-| Vulture V5.R, 7,0 l V8 (`sd_v5r_*.ogg`) | `data/cars/models/ls1-vulture-v5r/v5r-v8.wav` | Speed-Dreams-Team, mit dem Auto unter der **GNU GPL, Version 2 oder spaeter** |
+| Vulture V5.R, 7,0 l V8 (`sd_v5r_*.ogg`) | `data/cars/models/ls1-vulture-v5r/v5r-v8.wav` | Speed-Dreams-Team, mit dem Auto unter der **Free Art License 1.3** (https://artlibre.org/licence/lal/en/) |
 
-Gerechnet wie die anderen mit `tools/sd_engines.py <Ordner des Autos> sd_v5r`. Das Auto selbst (Modell,
-Texturen, Fahrzeugdaten) liegt umgewandelt in `img/autos/v5r/` mit eigener `LIZENZ.txt`
-(`tools/sd_auto.py`). Der Code von OmegaSim steht unter der GNU AGPL (Version 3 oder neuer).
+Gerechnet wie die anderen mit `tools/sd_engines.py <Ordner des Autos> sd_v5r`. Das Auto selbst liegt
+umgewandelt in `img/autos/v5r/` mit eigener `LIZENZ.txt` (`tools/sd_auto.py`): Modell und Texturen
+stehen unter der Free Art License 1.3, die Fahrzeugdaten unter GPL-2.0-or-later. Der Code von OmegaSim
+steht unter der GNU AGPL (Version 3 oder neuer).
 
-### Cavallo 360, Murasama NSX und Spirit 300 (GPL-2.0 oder spaeter) — seit v1.6.92
+### Cavallo 360, Murasama NSX und Spirit 300 (Free Art License 1.3) — seit v1.6.92
 
 | Motor in der App | Datei in Speed Dreams | Quelle und Lizenz |
 |---|---|---|
-| Cavallo 360 (Ferrari 360 Modena), 3,6 l V8 (`sd_cavallo_*.ogg`) | `data/sound/f360.wav` | Speed-Dreams-Team, mit dem Auto unter der **GNU GPL, Version 2 oder spaeter** |
-| Murasama NSX (Honda NSX), 3,0 l V6 (`sd_nsx_*.ogg`) | `data/cars/models/sc-murasama-nsx/sc-murasama-nsx.wav` | Speed-Dreams-Team, mit dem Auto unter der **GNU GPL, Version 2 oder spaeter** |
-| Spirit 300 (3,0 l V6, `sd_spirit_*.ogg`) | `data/sound/lotus.wav` | Speed-Dreams-Team, mit dem Auto unter der **GNU GPL, Version 2 oder spaeter** |
+| Cavallo 360 (Ferrari 360 Modena), 3,6 l V8 (`sd_cavallo_*.ogg`) | `data/sound/f360.wav` | Speed-Dreams-Team, mit dem Auto unter der **Free Art License 1.3** (https://artlibre.org/licence/lal/en/) |
+| Murasama NSX (Honda NSX), 3,0 l V6 (`sd_nsx_*.ogg`) | `data/cars/models/sc-murasama-nsx/sc-murasama-nsx.wav` | Speed-Dreams-Team, mit dem Auto unter der **Free Art License 1.3** (https://artlibre.org/licence/lal/en/) |
+| Spirit 300 (3,0 l V6, `sd_spirit_*.ogg`) | `data/sound/lotus.wav` | Speed-Dreams-Team, mit dem Auto unter der **Free Art License 1.3** (https://artlibre.org/licence/lal/en/) |
 
 Gerechnet wie die anderen mit `tools/sd_engines.py`; Leerlauf und Begrenzer stammen aus den
 `.xml` der Autos (`tickover` / `revs limiter`). Die drei Autos liegen umgewandelt in
-`img/autos/{cavallo360,nsx,spirit300}/` mit eigener `LIZENZ.txt` (`tools/sd_auto.py`). Die
-beiden Aufnahmen `f360.wav` und `lotus.wav` liegen in `data/sound/` und sind dort nicht
+`img/autos/{cavallo360,nsx,spirit300}/` mit eigener `LIZENZ.txt` (`tools/sd_auto.py`): Modell
+und Texturen stehen unter der Free Art License 1.3, die Fahrzeugdaten unter GPL-2.0-or-later.
+Die beiden Aufnahmen `f360.wav` und `lotus.wav` liegen in `data/sound/` und sind dort nicht
 einzeln ausgewiesen; sie sind die Klaenge dieser Autos und werden deshalb wie diese unter der
-GPL-2.0-or-later gefuehrt.
+Free Art License 1.3 gefuehrt.
 
-### Archer R-9 (GPL-2.0 oder spaeter) — seit v1.6.96
+### Archer R-9 (Free Art License 1.3) — seit v1.6.96
 
 | Motor in der App | Datei in Speed Dreams | Quelle und Lizenz |
 |---|---|---|
-| Archer R-9 (Aston Martin DBR9), 6,0 l V12 (`sd_archer_*.ogg`) | `data/cars/models/ls1-archer-r9/archer-r9-v12.wav` | Speed-Dreams-Team, mit dem Auto unter der **GNU GPL, Version 2 oder spaeter** |
+| Archer R-9 (Aston Martin DBR9), 6,0 l V12 (`sd_archer_*.ogg`) | `data/cars/models/ls1-archer-r9/archer-r9-v12.wav` | Speed-Dreams-Team, mit dem Auto unter der **Free Art License 1.3** (https://artlibre.org/licence/lal/en/) |
 
 Gerechnet wie die anderen mit `tools/sd_engines.py`; Leerlauf (900) und Begrenzer (9000)
 stammen aus der `.xml` des Autos (`tickover` / `revs limiter`). Das Auto liegt umgewandelt in
-`img/autos/archerr9/` mit eigener `LIZENZ.txt` (`tools/sd_auto.py`). Die Aufnahme
-`archer-r9-v12.wav` liegt im Ordner des Autos. Hinweis: die `readme.txt` des Ordners nennt die
-Free Art License 1.3, der Kopf der `.xml` dagegen GPL-2.0-or-later; wir folgen wie bei den
-uebrigen Speed-Dreams-Autos der `.xml`-Vorgabe (GPL-2.0-or-later).
+`img/autos/archerr9/` mit eigener `LIZENZ.txt` (`tools/sd_auto.py`): Modell und Texturen stehen
+unter der Free Art License 1.3, die Fahrzeugdaten unter GPL-2.0-or-later. Die Aufnahme
+`archer-r9-v12.wav` liegt im Ordner des Autos und ist als Teil des Autos ebenfalls unter der
+Free Art License 1.3 lizenziert.
 
 
 Nicht verwendet: `v6_raw.wav` und `rotary2.wav` (als "CC-BY" aus YouTube-Videos

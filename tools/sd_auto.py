@@ -5,8 +5,9 @@
 
 BESTELLT (v1.1.9): "Baue das v5r Auto aus Speeddreams ein. Das Auto soll auch Lichter und Bremslichter
 haben und sich beim Lenken, Gas geben und Bremsen entsprechend verhalten durch Neigung ueber simulierte
-Stossdaempfer." Quelle: der Vulture V5R (ls1-vulture-v5r) aus dem Speed-Dreams-SVN, GPL-2 oder spaeter
-(siehe den Kopf der .xml). Die Ergebnisse stehen unter derselben Lizenz; LIZENZ.txt liegt daneben.
+Stossdaempfer." Quelle: der Vulture V5R (ls1-vulture-v5r) aus dem Speed-Dreams-SVN. Modell und
+Texturen stehen unter der Free Art License 1.3 (https://artlibre.org/licence/lal/en/), die
+Fahrzeugdaten unter GPL-2.0-or-later (siehe den Kopf der .xml); LIZENZ.txt liegt daneben.
 
 Geschrieben wird nach img/autos/<Kennung>/:
   auto.bin   alle Ecken (Float32: x y z nx ny nz u v) und danach alle Indizes (Uint16)
@@ -278,18 +279,20 @@ def main(quelle, kennung):
     meta = {
         'name': re.search(r'<params name="([^"]+)"', open(os.path.join(quelle, xmls[0]), encoding='utf-8').read()).group(1),
         'kennung': kennung, 'quelle': 'Speed Dreams, data/cars/models/' + os.path.basename(os.path.normpath(quelle)),
-        'lizenz': 'GPL-2.0-or-later (Speed Dreams)', 'koordinaten': 'm; +x links, +y oben, +z vorn',
+        'lizenz': 'Free Art License 1.3 (Modell, Texturen); GPL-2.0-or-later (Fahrzeugdaten)', 'koordinaten': 'm; +x links, +y oben, +z vorn',
         'ecken': len(ecken), 'indizes': len(indizes), 'indexAb': index_ab, 'schritt': 32,
         'teile': teile, 'schatten': schatten, 'lichter': lichter, 'physik': physik,
         'livree': livree,
     }
     json.dump(meta, open(os.path.join(ziel, 'auto.json'), 'w', encoding='utf-8', newline='\n'), ensure_ascii=False, indent=1)
-    lizenz_text = ('%s aus Speed Dreams (%s).\n\nModell, Texturen und Fahrzeugdaten: GNU General Public License, Version 2 oder\n'
-                   'spaeter (siehe den Kopf der Speed-Dreams-Datei %s). Umgewandelt mit tools/sd_auto.py:\nInnenraum entfernt, '
-                   'Texturen verkleinert, Koordinaten gedreht.')
+    lizenz_text = ('%s aus Speed Dreams (%s).\n\n'
+                   'Modell und Texturen: Free Art License 1.3 (https://artlibre.org/licence/lal/en/).\n'
+                   'Fahrzeugdaten: GNU General Public License, Version 2 oder spaeter (siehe den Kopf der\n'
+                   'Speed-Dreams-Datei %s). Umgewandelt mit tools/sd_auto.py: Innenraum entfernt, Texturen\n'
+                   'verkleinert, Koordinaten gedreht.')
     if livree:
         lizenz_text += ' Alternative Lackierungen (%s) beigelegt.' % ', '.join(l['id'] for l in livree['list'])
-    lizenz_text += '\nhttps://www.gnu.org/licenses/old-licenses/gpl-2.0.html\n'
+    lizenz_text += '\nhttps://artlibre.org/licence/lal/en/\nhttps://www.gnu.org/licenses/old-licenses/gpl-2.0.html\n'
     open(os.path.join(ziel, 'LIZENZ.txt'), 'w', encoding='utf-8', newline='\n').write(
         lizenz_text % (meta['name'], meta['quelle'], xmls[0]))
     print('%s: %d Teile, %d Ecken, %d Dreiecke, auto.bin %d KB, Texturen %s, Lackierungen %s'
