@@ -1979,7 +1979,9 @@
   const VF_MOTOR_FEST = { kaefer: 'boxster986', spider: 'listerstorm', caravelle: 'boxster986',
     v5r: 'c5r', fmcgt4: 'gt40', boxer96: 'p992gt3r', lynx220: 'f296gt3', audirs5: 'rs5dtm',
     // v1.6.85 (Issue #17): Ferrarireihe (V8) bzw. V6 wie der Lynx 220 / Jaguar XJ220.
-    cavallo360: 'amggt3', nsx: 'f296gt3', spirit300: 'f296gt3' };
+    // v1.6.92 BESTELLT: die drei neuen Speed-Dreams-Autos mit ihrem eigenen Motorklang
+    // (sd_cavallo/sd_nsx/sd_spirit) statt der Ersatzmotoren.
+    cavallo360: 'sd_cavallo', nsx: 'sd_nsx', spirit300: 'sd_spirit' };
   function vfMotorFest() { return VF_MOTOR_FEST[vfAutoWahl()] || ''; }
   // Die echte Neigung eines GT1 ist klein (0,5 Grad Rollen bei 1,5 g) und bei Modellgroesse unsichtbar.
   // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.

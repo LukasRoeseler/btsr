@@ -156,6 +156,9 @@
     // v1.1.45 BESTELLT: Ford GT40 Mk1 (FMC GT4, V8) und Porsche 911 GT3 (Boxer 96, Boxer-6).
     'sd_fmc',
     'sd_boxer',
+    // v1.6.92 BESTELLT: die drei neuen Speed-Dreams-Autos (virtuelle Fahrt) mit ihrem eigenen
+    // Klang statt der Ersatzmotoren: Cavallo 360 (V8), Murasama NSX (V6), Spirit 300 (V6).
+    'sd_cavallo', 'sd_nsx', 'sd_spirit',
     // ---- ZWEI AUFNAHMEN DES NUTZERS, aus photos/newaudio --------------------------
     // BESTELLT: eigene Aufnahmen; Drehzahlen aus der Video-Anzeige (siehe loops.json).
     // DIESELBE REIHENFOLGE wie im Menue (am Ende der Liste).

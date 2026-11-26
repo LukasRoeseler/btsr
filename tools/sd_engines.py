@@ -69,10 +69,20 @@ MOTOREN = [
      'Speed-Dreams-Team (sc-fmc-gt4), GPL-2.0-or-later'),
     ('sd_boxer', 'sc-boxer-96.wav', 'Speed Dreams: Boxer 96 (Porsche 911 GT3, 3,6 l Boxer-6)', 6, 2000, 8500, 0.4,
      'Speed-Dreams-Team (sc-boxer-96), GPL-2.0-or-later'),
+    # v1.6.92 BESTELLT: die drei neuen Speed-Dreams-Autos (Cavallo 360, Murasama NSX, Spirit 300)
+    # sollen ihre EIGENEN Motorklaenge bekommen statt der Ersatzmotoren. Leerlauf und Begrenzer
+    # aus den .xml der Autos (Engine-Sektion: tickover, revs limiter).
+    ('sd_cavallo', 'f360.wav', 'Speed Dreams: Cavallo 360 (Ferrari 360 Modena, 3,6 l V8)', 8, 900, 8500, 0.45,
+     'Speed-Dreams-Team (sc-cavallo-360), GPL-2.0-or-later'),
+    ('sd_nsx', 'sc-murasama-nsx.wav', 'Speed Dreams: Murasama NSX (Honda NSX, 3,0 l V6)', 6, 2000, 8500, 0.35,
+     'Speed-Dreams-Team (sc-murasama-nsx), GPL-2.0-or-later'),
+    ('sd_spirit', 'lotus.wav', 'Speed Dreams: Spirit 300 (3,0 l V6)', 6, 2000, 8500, 0.35,
+     'Speed-Dreams-Team (sc-spirit-300), GPL-2.0-or-later'),
 ]
 # Wo die Aufnahme in Speed Dreams liegt, wenn nicht in data/sound/.
 QUELLORDNER = {'sd_v5r': 'data/cars/models/ls1-vulture-v5r/', 'sd_lynx': 'data/cars/models/sc-lynx-220/',
-               'sd_fmc': 'data/cars/models/sc-fmc-gt4/', 'sd_boxer': 'data/cars/models/sc-boxer-96/'}
+               'sd_fmc': 'data/cars/models/sc-fmc-gt4/', 'sd_boxer': 'data/cars/models/sc-boxer-96/',
+               'sd_nsx': 'data/cars/models/sc-murasama-nsx/'}
 
 
 def lesen(p):

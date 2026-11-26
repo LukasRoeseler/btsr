@@ -2049,5 +2049,150 @@
   },
   "idleRpm": 850,
   "limiterRpm": 6900
+ },
+ "sd_cavallo": {
+  "label": "Speed Dreams: Cavallo 360 (Ferrari 360 Modena, 3,6 l V8)",
+  "cylinders": 8,
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/sound/f360.wav): Speed-Dreams-Team (sc-cavallo-360), GPL-2.0-or-later",
+  "crackle": 0.45,
+  "turbo": false,
+  "loops": {
+   "idle": {
+    "file": "sd_cavallo_idle.ogg",
+    "baseRpm": 900,
+    "firingHz": 60.0,
+    "seconds": 11.2964,
+    "load": 1.0
+   },
+   "low": {
+    "file": "sd_cavallo_low.ogg",
+    "baseRpm": 1578,
+    "firingHz": 105.2,
+    "seconds": 6.4428,
+    "load": 1.0
+   },
+   "low2": {
+    "file": "sd_cavallo_low2.ogg",
+    "baseRpm": 2766,
+    "firingHz": 184.4,
+    "seconds": 3.6756,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "sd_cavallo_mid.ogg",
+    "baseRpm": 4849,
+    "firingHz": 323.3,
+    "seconds": 2.0966,
+    "load": 1.0
+   },
+   "high": {
+    "file": "sd_cavallo_high.ogg",
+    "baseRpm": 8500,
+    "firingHz": 566.7,
+    "seconds": 1.1961,
+    "load": 1.0
+   },
+   "over": {
+    "file": "sd_cavallo_over.ogg",
+    "baseRpm": 2766,
+    "firingHz": 184.4,
+    "seconds": 3.6756,
+    "load": 0.0
+   }
+  },
+  "idleRpm": 900,
+  "limiterRpm": 8500
+ },
+ "sd_nsx": {
+  "label": "Speed Dreams: Murasama NSX (Honda NSX, 3,0 l V6)",
+  "cylinders": 6,
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-murasama-nsx/sc-murasama-nsx.wav): Speed-Dreams-Team (sc-murasama-nsx), GPL-2.0-or-later",
+  "crackle": 0.35,
+  "turbo": false,
+  "loops": {
+   "idle": {
+    "file": "sd_nsx_idle.ogg",
+    "baseRpm": 2000,
+    "firingHz": 100.0,
+    "seconds": 3.1633,
+    "load": 1.0
+   },
+   "low": {
+    "file": "sd_nsx_low.ogg",
+    "baseRpm": 3240,
+    "firingHz": 162.0,
+    "seconds": 1.9527,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "sd_nsx_mid.ogg",
+    "baseRpm": 5248,
+    "firingHz": 262.4,
+    "seconds": 1.2055,
+    "load": 1.0
+   },
+   "high": {
+    "file": "sd_nsx_high.ogg",
+    "baseRpm": 8500,
+    "firingHz": 425.0,
+    "seconds": 0.7443,
+    "load": 1.0
+   },
+   "over": {
+    "file": "sd_nsx_over.ogg",
+    "baseRpm": 5248,
+    "firingHz": 262.4,
+    "seconds": 1.2055,
+    "load": 0.0
+   }
+  },
+  "idleRpm": 2000,
+  "limiterRpm": 8500
+ },
+ "sd_spirit": {
+  "label": "Speed Dreams: Spirit 300 (3,0 l V6)",
+  "cylinders": 6,
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/sound/lotus.wav): Speed-Dreams-Team (sc-spirit-300), GPL-2.0-or-later",
+  "crackle": 0.35,
+  "turbo": false,
+  "loops": {
+   "idle": {
+    "file": "sd_spirit_idle.ogg",
+    "baseRpm": 2000,
+    "firingHz": 100.0,
+    "seconds": 18.0194,
+    "load": 1.0
+   },
+   "low": {
+    "file": "sd_spirit_low.ogg",
+    "baseRpm": 3240,
+    "firingHz": 162.0,
+    "seconds": 11.1231,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "sd_spirit_mid.ogg",
+    "baseRpm": 5248,
+    "firingHz": 262.4,
+    "seconds": 6.8672,
+    "load": 1.0
+   },
+   "high": {
+    "file": "sd_spirit_high.ogg",
+    "baseRpm": 8500,
+    "firingHz": 425.0,
+    "seconds": 4.2399,
+    "load": 1.0
+   },
+   "over": {
+    "file": "sd_spirit_over.ogg",
+    "baseRpm": 5248,
+    "firingHz": 262.4,
+    "seconds": 6.8672,
+    "load": 0.0
+   }
+  },
+  "idleRpm": 2000,
+  "limiterRpm": 8500
  }
 }

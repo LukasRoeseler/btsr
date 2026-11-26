@@ -52,6 +52,21 @@ Gerechnet wie die anderen mit `tools/sd_engines.py <Ordner des Autos> sd_v5r`. D
 Texturen, Fahrzeugdaten) liegt umgewandelt in `img/autos/v5r/` mit eigener `LIZENZ.txt`
 (`tools/sd_auto.py`). Der Code von OmegaSim steht unter der GNU AGPL (Version 3 oder neuer).
 
+### Cavallo 360, Murasama NSX und Spirit 300 (GPL-2.0 oder spaeter) — seit v1.6.92
+
+| Motor in der App | Datei in Speed Dreams | Quelle und Lizenz |
+|---|---|---|
+| Cavallo 360 (Ferrari 360 Modena), 3,6 l V8 (`sd_cavallo_*.ogg`) | `data/sound/f360.wav` | Speed-Dreams-Team, mit dem Auto unter der **GNU GPL, Version 2 oder spaeter** |
+| Murasama NSX (Honda NSX), 3,0 l V6 (`sd_nsx_*.ogg`) | `data/cars/models/sc-murasama-nsx/sc-murasama-nsx.wav` | Speed-Dreams-Team, mit dem Auto unter der **GNU GPL, Version 2 oder spaeter** |
+| Spirit 300 (3,0 l V6, `sd_spirit_*.ogg`) | `data/sound/lotus.wav` | Speed-Dreams-Team, mit dem Auto unter der **GNU GPL, Version 2 oder spaeter** |
+
+Gerechnet wie die anderen mit `tools/sd_engines.py`; Leerlauf und Begrenzer stammen aus den
+`.xml` der Autos (`tickover` / `revs limiter`). Die drei Autos liegen umgewandelt in
+`img/autos/{cavallo360,nsx,spirit300}/` mit eigener `LIZENZ.txt` (`tools/sd_auto.py`). Die
+beiden Aufnahmen `f360.wav` und `lotus.wav` liegen in `data/sound/` und sind dort nicht
+einzeln ausgewiesen; sie sind die Klaenge dieser Autos und werden deshalb wie diese unter der
+GPL-2.0-or-later gefuehrt.
+
 Nicht verwendet: `v6_raw.wav` und `rotary2.wav` (als "CC-BY" aus YouTube-Videos
 angegeben, Rechte unklar), `skid_metal.wav` (ohne Lizenzangabe) und die uebrigen
 aelteren Fahrzeugklaenge der Spieldaten.
