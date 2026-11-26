@@ -1749,7 +1749,7 @@
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
-  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/', cavallo360: 'img/autos/cavallo360/', nsx: 'img/autos/nsx/', spirit300: 'img/autos/spirit300/', archerr9: 'img/autos/archerr9/' };
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/', cavallo360: 'img/autos/cavallo360/', nsx: 'img/autos/nsx/', spirit300: 'img/autos/spirit300/', archerr9: 'img/autos/archerr9/', morley900: 'img/autos/morley900/', vortexgt: 'img/autos/vortexgt/', kongei: 'img/autos/kongei/', carson96: 'img/autos/carson96/', fmccentre04: 'img/autos/fmccentre04/', saxxon: 'img/autos/saxxon/' };
   // v1.6.27 (Issue #15): der RC Stunt Copter in der Garage. Er ist KEIN Auto: er hat kein
   // auto.json/auto.bin (VF_MODELL_PFADE), sondern wird als eigener Hubschrauber gebaut und
   // mit zwei Sticks geflogen. Ueberall, wo ein Auto-Modell oder ein Fahrprofil gebraucht wird,
@@ -1954,6 +1954,16 @@
             // Free Art License 1.3, Fahrzeugdaten GPL-2.0-or-later,
             // umgewandelt mit tools/sd_auto.py, siehe img/autos/archerr9/LIZENZ.txt. Elf Liveries.
             { v: 'archerr9', name: 'Archer R-9 (Aston Martin DBR9, Speed Dreams)' },
+            // v1.6.99 BESTELLT: sechs weitere Speed-Dreams-Autos (Modell und Texturen Free Art License 1.3,
+            // Fahrzeugdaten GPL-2.0-or-later; beim Kongei CC-BY fuer das Originalmodell), umgewandelt mit
+            // tools/sd_auto.py, siehe img/autos/<id>/LIZENZ.txt. Jeweils zwei Alternativ-Lackierungen beim
+            // Morley R900 und Kongei KK8S, eine beim FMC Centre RS1; Fahrdaten aus der .xml, kein WIP noetig.
+            { v: 'morley900', name: 'Morley R900 (Speed Dreams)' },
+            { v: 'vortexgt', name: 'Vortex GT (Speed Dreams)' },
+            { v: 'kongei', name: 'Kongei KK8S (Koenigsegg CC8S, Speed Dreams)' },
+            { v: 'carson96', name: 'Boxer 96 Carson Tuners Edition (Porsche 911, Speed Dreams)' },
+            { v: 'fmccentre04', name: 'FMC Centre RS1 (Speed Dreams)' },
+            { v: 'saxxon', name: 'Saxxon Hatcho RS2 (Speed Dreams)' },
             // Eigenbau von Gnen54 (CC BY 4.0), WIP: Fahrdaten geschaetzt, siehe img/autos/kaefer/LIZENZ.txt
             { v: 'kaefer', name: t('VW Käfer 1303 RS mit Boxster-Motor (Gnen54, WIP)') },
             // v1.5.104: Eigenbau von Gnen54 auf der Modiplay-MP1-Karosserie (Freigabe Sturmkind, nicht kommerziell),
@@ -1994,7 +2004,14 @@
     // (sd_cavallo/sd_nsx/sd_spirit) statt der Ersatzmotoren.
     cavallo360: 'sd_cavallo', nsx: 'sd_nsx', spirit300: 'sd_spirit',
     // v1.6.96 BESTELLT: der Archer R-9 mit seinem eigenen V12 (sd_archer).
-    archerr9: 'sd_archer' };
+    archerr9: 'sd_archer',
+    // v1.6.99 BESTELLT: sechs weitere Speed-Dreams-Autos. Der Morley R900 nennt in der .xml als engine
+    // sample v8-ears68.wav - dieselbe Aufnahme wie sd_v8muscle. Der Vortex GT, Kongei KK8S und die
+    // Carson Tuners Edition bekommen ihren eigenen Klang (sd_vortex/sd_kongei/sd_carson). FMC Centre 04
+    // und Saxxon Hatcho (2,0 l Reihen-4) haben ihre Aufnahme (ford2c.wav/206_engine.wav) nur in der
+    // geteilten data/sound, die hier nicht vorliegt - sie laufen mit dem Ford-Reihenmotor (capri_zakspeed).
+    morley900: 'sd_v8muscle', vortexgt: 'sd_vortex', kongei: 'sd_kongei', carson96: 'sd_carson',
+    fmccentre04: 'capri_zakspeed', saxxon: 'capri_zakspeed' };
   function vfMotorFest() { return VF_MOTOR_FEST[vfAutoWahl()] || ''; }
   // Die echte Neigung eines GT1 ist klein (0,5 Grad Rollen bei 1,5 g) und bei Modellgroesse unsichtbar.
   // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.

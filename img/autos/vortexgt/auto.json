@@ -1,0 +1,917 @@
+{
+ "name": "Vortex GT",
+ "kennung": "vortexgt",
+ "quelle": "Speed Dreams, data/cars/models/ls2-vortex-gt",
+ "lizenz": "Free Art License 1.3 (Modell, Texturen); GPL-2.0-or-later (Fahrzeugdaten)",
+ "koordinaten": "m; +x links, +y oben, +z vorn",
+ "ecken": 2388,
+ "indizes": 9435,
+ "indexAb": 76416,
+ "schritt": 32,
+ "teile": [
+  {
+   "name": "ACOL_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 0,
+   "ecken": 16,
+   "index0": 0,
+   "indizes": 33
+  },
+  {
+   "name": "SPOILER_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 16,
+   "ecken": 48,
+   "index0": 33,
+   "indizes": 219
+  },
+  {
+   "name": "BODY_s_8",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 64,
+   "ecken": 517,
+   "index0": 252,
+   "indizes": 2412
+  },
+  {
+   "name": "CYLINDER_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 581,
+   "ecken": 48,
+   "index0": 2664,
+   "indizes": 165
+  },
+  {
+   "name": "WIHL_s_1",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 629,
+   "ecken": 26,
+   "index0": 2829,
+   "indizes": 75
+  },
+  {
+   "name": "WI_s_6",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 655,
+   "ecken": 57,
+   "index0": 2904,
+   "indizes": 165
+  },
+  {
+   "name": "BODY30_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 712,
+   "ecken": 10,
+   "index0": 3069,
+   "indizes": 24
+  },
+  {
+   "name": "BODY71_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 722,
+   "ecken": 8,
+   "index0": 3093,
+   "indizes": 24
+  },
+  {
+   "name": "BODY70_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 730,
+   "ecken": 4,
+   "index0": 3117,
+   "indizes": 6
+  },
+  {
+   "name": "BODY69_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 734,
+   "ecken": 4,
+   "index0": 3123,
+   "indizes": 6
+  },
+  {
+   "name": "BODY68_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 738,
+   "ecken": 5,
+   "index0": 3129,
+   "indizes": 9
+  },
+  {
+   "name": "BODY67_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 743,
+   "ecken": 4,
+   "index0": 3138,
+   "indizes": 6
+  },
+  {
+   "name": "BODY66_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 747,
+   "ecken": 4,
+   "index0": 3144,
+   "indizes": 6
+  },
+  {
+   "name": "BODY65_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 751,
+   "ecken": 9,
+   "index0": 3150,
+   "indizes": 36
+  },
+  {
+   "name": "BODY64_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 760,
+   "ecken": 5,
+   "index0": 3186,
+   "indizes": 12
+  },
+  {
+   "name": "BODY63_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 765,
+   "ecken": 5,
+   "index0": 3198,
+   "indizes": 9
+  },
+  {
+   "name": "BODY61_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 770,
+   "ecken": 5,
+   "index0": 3207,
+   "indizes": 9
+  },
+  {
+   "name": "BODY60_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 775,
+   "ecken": 4,
+   "index0": 3216,
+   "indizes": 6
+  },
+  {
+   "name": "BODY59_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 779,
+   "ecken": 4,
+   "index0": 3222,
+   "indizes": 6
+  },
+  {
+   "name": "BODY58_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 783,
+   "ecken": 4,
+   "index0": 3228,
+   "indizes": 6
+  },
+  {
+   "name": "BODY57_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 787,
+   "ecken": 4,
+   "index0": 3234,
+   "indizes": 6
+  },
+  {
+   "name": "BODY55_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 791,
+   "ecken": 25,
+   "index0": 3240,
+   "indizes": 120
+  },
+  {
+   "name": "BODY54_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 816,
+   "ecken": 25,
+   "index0": 3360,
+   "indizes": 93
+  },
+  {
+   "name": "BODY53_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 841,
+   "ecken": 14,
+   "index0": 3453,
+   "indizes": 48
+  },
+  {
+   "name": "BODY52_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 855,
+   "ecken": 14,
+   "index0": 3501,
+   "indizes": 51
+  },
+  {
+   "name": "BODY51_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 869,
+   "ecken": 6,
+   "index0": 3552,
+   "indizes": 12
+  },
+  {
+   "name": "BODY50_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 875,
+   "ecken": 6,
+   "index0": 3564,
+   "indizes": 12
+  },
+  {
+   "name": "BODY49_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 881,
+   "ecken": 9,
+   "index0": 3576,
+   "indizes": 24
+  },
+  {
+   "name": "BODY48_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 890,
+   "ecken": 9,
+   "index0": 3600,
+   "indizes": 24
+  },
+  {
+   "name": "BODY46_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 899,
+   "ecken": 12,
+   "index0": 3624,
+   "indizes": 33
+  },
+  {
+   "name": "BODY45_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 911,
+   "ecken": 12,
+   "index0": 3657,
+   "indizes": 33
+  },
+  {
+   "name": "BODY44_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 923,
+   "ecken": 20,
+   "index0": 3690,
+   "indizes": 81
+  },
+  {
+   "name": "BODY43_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 943,
+   "ecken": 6,
+   "index0": 3771,
+   "indizes": 15
+  },
+  {
+   "name": "BODY42_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 949,
+   "ecken": 6,
+   "index0": 3786,
+   "indizes": 12
+  },
+  {
+   "name": "BODY41_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 955,
+   "ecken": 88,
+   "index0": 3798,
+   "indizes": 498
+  },
+  {
+   "name": "BODY37_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1043,
+   "ecken": 4,
+   "index0": 4296,
+   "indizes": 6
+  },
+  {
+   "name": "BODY36_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1047,
+   "ecken": 8,
+   "index0": 4302,
+   "indizes": 27
+  },
+  {
+   "name": "BODY34_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1055,
+   "ecken": 8,
+   "index0": 4329,
+   "indizes": 21
+  },
+  {
+   "name": "BODY32_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1063,
+   "ecken": 6,
+   "index0": 4350,
+   "indizes": 12
+  },
+  {
+   "name": "BODY31_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1069,
+   "ecken": 6,
+   "index0": 4362,
+   "indizes": 15
+  },
+  {
+   "name": "BODY29_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1075,
+   "ecken": 4,
+   "index0": 4377,
+   "indizes": 6
+  },
+  {
+   "name": "BODY27_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1079,
+   "ecken": 8,
+   "index0": 4383,
+   "indizes": 24
+  },
+  {
+   "name": "BODY25_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1087,
+   "ecken": 9,
+   "index0": 4407,
+   "indizes": 33
+  },
+  {
+   "name": "BODY24_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1096,
+   "ecken": 9,
+   "index0": 4440,
+   "indizes": 36
+  },
+  {
+   "name": "BODY22_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1105,
+   "ecken": 22,
+   "index0": 4476,
+   "indizes": 63
+  },
+  {
+   "name": "BODY21_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1127,
+   "ecken": 27,
+   "index0": 4539,
+   "indizes": 93
+  },
+  {
+   "name": "BODY20_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1154,
+   "ecken": 4,
+   "index0": 4632,
+   "indizes": 6
+  },
+  {
+   "name": "BODY19_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1158,
+   "ecken": 4,
+   "index0": 4638,
+   "indizes": 6
+  },
+  {
+   "name": "BODY18_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1162,
+   "ecken": 4,
+   "index0": 4644,
+   "indizes": 6
+  },
+  {
+   "name": "BODY17_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1166,
+   "ecken": 4,
+   "index0": 4650,
+   "indizes": 6
+  },
+  {
+   "name": "BODY16_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1170,
+   "ecken": 4,
+   "index0": 4656,
+   "indizes": 6
+  },
+  {
+   "name": "BODY15_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1174,
+   "ecken": 5,
+   "index0": 4662,
+   "indizes": 12
+  },
+  {
+   "name": "BODY14_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1179,
+   "ecken": 4,
+   "index0": 4674,
+   "indizes": 6
+  },
+  {
+   "name": "BODY13_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1183,
+   "ecken": 4,
+   "index0": 4680,
+   "indizes": 6
+  },
+  {
+   "name": "BODY12_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1187,
+   "ecken": 4,
+   "index0": 4686,
+   "indizes": 6
+  },
+  {
+   "name": "BODY11_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1191,
+   "ecken": 4,
+   "index0": 4692,
+   "indizes": 6
+  },
+  {
+   "name": "BODY10_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1195,
+   "ecken": 4,
+   "index0": 4698,
+   "indizes": 6
+  },
+  {
+   "name": "BODY9_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1199,
+   "ecken": 5,
+   "index0": 4704,
+   "indizes": 9
+  },
+  {
+   "name": "BODY8_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1204,
+   "ecken": 6,
+   "index0": 4713,
+   "indizes": 18
+  },
+  {
+   "name": "BODY7_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1210,
+   "ecken": 4,
+   "index0": 4731,
+   "indizes": 9
+  },
+  {
+   "name": "BODY6_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1214,
+   "ecken": 5,
+   "index0": 4740,
+   "indizes": 12
+  },
+  {
+   "name": "BODY5_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1219,
+   "ecken": 4,
+   "index0": 4752,
+   "indizes": 9
+  },
+  {
+   "name": "BODY4_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1223,
+   "ecken": 5,
+   "index0": 4761,
+   "indizes": 9
+  },
+  {
+   "name": "CAGE_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1228,
+   "ecken": 112,
+   "index0": 4770,
+   "indizes": 414
+  },
+  {
+   "name": "BODY3_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1340,
+   "ecken": 9,
+   "index0": 5184,
+   "indizes": 36
+  },
+  {
+   "name": "BODY1_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1349,
+   "ecken": 56,
+   "index0": 5220,
+   "indizes": 288
+  },
+  {
+   "name": "DULLDASH2_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1405,
+   "ecken": 31,
+   "index0": 5508,
+   "indizes": 108
+  },
+  {
+   "name": "DULLDASH_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1436,
+   "ecken": 87,
+   "index0": 5616,
+   "indizes": 375
+  },
+  {
+   "name": "DULLROOF_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1523,
+   "ecken": 50,
+   "index0": 5991,
+   "indizes": 195
+  },
+  {
+   "name": "DULLINT_s_8",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1573,
+   "ecken": 201,
+   "index0": 6186,
+   "indizes": 987
+  },
+  {
+   "name": "DULLDIFFUSER_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1774,
+   "ecken": 35,
+   "index0": 7173,
+   "indizes": 225
+  },
+  {
+   "name": "DULLBODY38_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1809,
+   "ecken": 16,
+   "index0": 7398,
+   "indizes": 48
+  },
+  {
+   "name": "DULLBODY23_s_18",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 1825,
+   "ecken": 251,
+   "index0": 7446,
+   "indizes": 768
+  },
+  {
+   "name": "DULLUNDER_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 2076,
+   "ecken": 102,
+   "index0": 8214,
+   "indizes": 528
+  },
+  {
+   "name": "DULLBODY62_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 2178,
+   "ecken": 6,
+   "index0": 8742,
+   "indizes": 15
+  },
+  {
+   "name": "DULLGASCAP_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 2184,
+   "ecken": 8,
+   "index0": 8757,
+   "indizes": 12
+  },
+  {
+   "name": "DULLHDL3_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 2192,
+   "ecken": 50,
+   "index0": 8769,
+   "indizes": 174
+  },
+  {
+   "name": "DULLHDL1_s_6",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 2242,
+   "ecken": 54,
+   "index0": 8943,
+   "indizes": 159
+  },
+  {
+   "name": "DULLHDL2_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-vortex-gt.png",
+   "ecke0": 2296,
+   "ecken": 92,
+   "index0": 9102,
+   "indizes": 333
+  }
+ ],
+ "schatten": null,
+ "lichter": {
+  "brems": [
+   [
+    0.57,
+    0.55,
+    -2.07,
+    0.18
+   ],
+   [
+    -0.57,
+    0.55,
+    -2.07,
+    0.18
+   ]
+  ],
+  "rueck": [
+   [
+    0.57,
+    0.55,
+    -2.07,
+    0.1
+   ],
+   [
+    -0.57,
+    0.55,
+    -2.07,
+    0.1
+   ]
+  ],
+  "front": [
+   [
+    0.72,
+    0.51,
+    1.72,
+    0.16
+   ],
+   [
+    -0.72,
+    0.51,
+    1.72,
+    0.16
+   ],
+   [
+    0.58,
+    0.51,
+    1.72,
+    0.1
+   ],
+   [
+    -0.58,
+    0.51,
+    1.72,
+    0.1
+   ]
+  ]
+ },
+ "physik": {
+  "masse": 1070.0,
+  "schwerpunktHoehe": 0.28,
+  "radstand": 2.49,
+  "a": 1.4442,
+  "b": 1.0458,
+  "vorderachse": 1.16,
+  "hinterachse": -1.33,
+  "laenge": 4.2,
+  "breite": 2.0,
+  "hoehe": 1.1,
+  "massenVerteilung": 0.75,
+  "lenkGrad": 21.0,
+  "bremsVorn": 0.56,
+  "cx": 0.34,
+  "stirnflaeche": 1.97,
+  "auftriebVorn": 0.25,
+  "auftriebHinten": 0.2,
+  "fluegelVorn": 0.14239150568688286,
+  "fluegelHinten": 0.3337383539249432,
+  "leerlauf": 1000.0,
+  "begrenzer": 7000.0,
+  "reifen": {
+   "vorn": {
+    "radius": 0.3357,
+    "breite": 0.255,
+    "spur": 1.66,
+    "bodenfreiheit": 0.085,
+    "mu": 1.214
+   },
+   "hinten": {
+    "radius": 0.3639,
+    "breite": 0.33,
+    "spur": 1.64,
+    "bodenfreiheit": 0.085,
+    "mu": 1.214
+   }
+  },
+  "feder": {
+   "vorn": {
+    "k": 125000.0,
+    "druck": 15000.0,
+    "zug": 20000.0,
+    "weg": 0.14,
+    "stab": 60000.0
+   },
+   "hinten": {
+    "k": 95000.0,
+    "druck": 12000.0,
+    "zug": 15000.0,
+    "weg": 0.15,
+    "stab": 30000.0
+   }
+  },
+  "gefedert": 970.0
+ },
+ "livree": null
+}

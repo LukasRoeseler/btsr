@@ -82,11 +82,25 @@ MOTOREN = [
     # bekommen statt des Ersatzmotors. Leerlauf und Begrenzer aus der .xml (Engine-Sektion).
     ('sd_archer', 'archer-r9-v12.wav', 'Speed Dreams: Archer R-9 (Aston Martin DBR9, 6,0 l V12)', 12, 900, 9000, 0.35,
      'Speed-Dreams-Team (ls1-archer-r9), Free Art License 1.3 (artlibre.org/licence/lal/en)'),
+    # v1.6.99 BESTELLT: sechs weitere Speed-Dreams-Autos (Morley R900, Vortex GT, Kongei KK8S,
+    # Boxer 96 Carson Tuners Edition, FMC Centre 04, Saxxon Hatcho). Der Morley R900 nennt in der .xml
+    # als engine sample v8-ears68.wav - dieselbe Aufnahme wie sd_v8muscle, also kein neuer Motor noetig.
+    # Fuer FMC Centre 04 (ford2c.wav) und Saxxon Hatcho (206_engine.wav) liegt die Aufnahme nicht im
+    # Auto-Ordner (geteilte data/sound) und ist hier nicht verfuegbar; die beiden werden auf den
+    # Ford-Reihenmotor (capri_zakspeed) abgebildet. Leerlauf und Begrenzer aus der .xml.
+    ('sd_vortex', 'venturi.wav', 'Speed Dreams: Vortex GT (3,2 l V6)', 6, 1000, 7000, 0.4,
+     'Speed-Dreams-Team (ls2-vortex-gt), Free Art License 1.3 (artlibre.org/licence/lal/en)'),
+    ('sd_kongei', 'cc8s.wav', 'Speed Dreams: Kongei KK8S (Koenigsegg CC8S, 4,7 l V8)', 8, 3000, 7300, 0.5,
+     'Speed-Dreams-Team (sc-kongei-kk8s), Free Art License 1.3 (artlibre.org/licence/lal/en)'),
+    ('sd_carson', '996.wav', 'Speed Dreams: Boxer 96 Carson Tuners Edition (3,6 l Boxer-6)', 6, 900, 8500, 0.4,
+     'Speed-Dreams-Team (sc-carson-96), Free Art License 1.3 (artlibre.org/licence/lal/en)'),
 ]
 # Wo die Aufnahme in Speed Dreams liegt, wenn nicht in data/sound/.
 QUELLORDNER = {'sd_v5r': 'data/cars/models/ls1-vulture-v5r/', 'sd_lynx': 'data/cars/models/sc-lynx-220/',
                'sd_fmc': 'data/cars/models/sc-fmc-gt4/', 'sd_boxer': 'data/cars/models/sc-boxer-96/',
-               'sd_nsx': 'data/cars/models/sc-murasama-nsx/', 'sd_archer': 'data/cars/models/ls1-archer-r9/'}
+               'sd_nsx': 'data/cars/models/sc-murasama-nsx/', 'sd_archer': 'data/cars/models/ls1-archer-r9/',
+               'sd_vortex': 'data/cars/models/ls2-vortex-gt/', 'sd_kongei': 'data/cars/models/sc-kongei-kk8s/',
+               'sd_carson': 'data/cars/models/sc-carson-96/'}
 
 
 def lesen(p):
@@ -238,7 +252,8 @@ def main(quelle, nur=None):
         ref, ref_sr = lesen(tmp)
     ziel_rms = float(np.sqrt(np.mean(ref ** 2)))
     # Dieselben Bandnamen wie die gerechneten Motoren (die Klang-Doku und ihr Selbsttest
-    # kennen genau diese): 4 Stufen idle/low/mid/high, 5 Stufen mit low2 dazwischen.
+    # kennen genau diese): 3 Stufen idle/mid/high, 4 Stufen idle/low/mid/high, 5 Stufen mit low2 dazwischen.
+    namen3 = ['idle', 'mid', 'high']
     namen4 = ['idle', 'low', 'mid', 'high']
     namen5 = ['idle', 'low', 'low2', 'mid', 'high']
     for mid, datei, label, zyl, leer, begr, knall, herkunft in MOTOREN:
@@ -258,7 +273,9 @@ def main(quelle, nur=None):
         stufen = leiter(leer, begr)
         loops = {}
         for k, rpm in enumerate(stufen):
-            if len(stufen) == 4:
+            if len(stufen) == 3:
+                band = namen3[k]
+            elif len(stufen) == 4:
                 band = namen4[k]
             elif len(stufen) == 5:
                 band = namen5[k]

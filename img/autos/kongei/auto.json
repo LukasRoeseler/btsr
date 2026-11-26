@@ -1,0 +1,491 @@
+{
+ "name": "Kongei KK8S",
+ "kennung": "kongei",
+ "quelle": "Speed Dreams, data/cars/models/sc-kongei-kk8s",
+ "lizenz": "CC-BY (Originalmodell Alex P/ANP), Free Art License 1.3 (Speed-Dreams-Adaption, Texturen); GPL-2.0-or-later (Fahrzeugdaten)",
+ "koordinaten": "m; +x links, +y oben, +z vorn",
+ "ecken": 5127,
+ "indizes": 27876,
+ "indexAb": 164064,
+ "schritt": 32,
+ "teile": [
+  {
+   "name": "WIGLASS_s_4",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 0,
+   "ecken": 94,
+   "index0": 0,
+   "indizes": 363
+  },
+  {
+   "name": "WINDOWBORDER_s_0",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 94,
+   "ecken": 108,
+   "index0": 363,
+   "indizes": 360
+  },
+  {
+   "name": "WINDOW_s_0",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 202,
+   "ecken": 49,
+   "index0": 723,
+   "indizes": 198
+  },
+  {
+   "name": "UNDER_s_6",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 251,
+   "ecken": 176,
+   "index0": 921,
+   "indizes": 822
+  },
+  {
+   "name": "PIPE_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 427,
+   "ecken": 76,
+   "index0": 1743,
+   "indizes": 453
+  },
+  {
+   "name": "MIRRORS_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 503,
+   "ecken": 160,
+   "index0": 2196,
+   "indizes": 852
+  },
+  {
+   "name": "INNERBODY_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 663,
+   "ecken": 52,
+   "index0": 3048,
+   "indizes": 153
+  },
+  {
+   "name": "GRID_s_9",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 715,
+   "ecken": 112,
+   "index0": 3201,
+   "indizes": 480
+  },
+  {
+   "name": "FRONTLIGHTS_s_7",
+   "rolle": "scheinwerfer",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 827,
+   "ecken": 300,
+   "index0": 3681,
+   "indizes": 1275
+  },
+  {
+   "name": "FLIGHTS_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 1127,
+   "ecken": 78,
+   "index0": 4956,
+   "indizes": 381
+  },
+  {
+   "name": "CLEANER_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 1205,
+   "ecken": 69,
+   "index0": 5337,
+   "indizes": 366
+  },
+  {
+   "name": "CARBON_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 1274,
+   "ecken": 213,
+   "index0": 5703,
+   "indizes": 1236
+  },
+  {
+   "name": "BODY_s_22",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 1487,
+   "ecken": 1525,
+   "index0": 6939,
+   "indizes": 9135
+  },
+  {
+   "name": "BLIGHTS_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 3012,
+   "ecken": 78,
+   "index0": 16074,
+   "indizes": 387
+  },
+  {
+   "name": "BACKMIRROR_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s.png",
+   "ecke0": 3090,
+   "ecken": 45,
+   "index0": 16461,
+   "indizes": 234
+  },
+  {
+   "name": "TURNSIGNAL_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 3135,
+   "ecken": 60,
+   "index0": 16695,
+   "indizes": 414
+  },
+  {
+   "name": "GUAGES_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 3195,
+   "ecken": 72,
+   "index0": 17109,
+   "indizes": 201
+  },
+  {
+   "name": "PEDALBASE_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 3267,
+   "ecken": 34,
+   "index0": 17310,
+   "indizes": 279
+  },
+  {
+   "name": "BEZZLES_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 3301,
+   "ecken": 192,
+   "index0": 17589,
+   "indizes": 1074
+  },
+  {
+   "name": "SEATS01_s_6",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 3493,
+   "ecken": 108,
+   "index0": 18663,
+   "indizes": 438
+  },
+  {
+   "name": "PEDALS_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 3601,
+   "ecken": 54,
+   "index0": 19101,
+   "indizes": 240
+  },
+  {
+   "name": "HOUSINGS_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 3655,
+   "ecken": 350,
+   "index0": 19341,
+   "indizes": 2067
+  },
+  {
+   "name": "SHIFTER_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 4005,
+   "ecken": 144,
+   "index0": 21408,
+   "indizes": 1146
+  },
+  {
+   "name": "SEATS02_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 4149,
+   "ecken": 134,
+   "index0": 22554,
+   "indizes": 885
+  },
+  {
+   "name": "POST_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 4283,
+   "ecken": 36,
+   "index0": 23439,
+   "indizes": 249
+  },
+  {
+   "name": "HEADLINER_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 4319,
+   "ecken": 74,
+   "index0": 23688,
+   "indizes": 291
+  },
+  {
+   "name": "KNOBS01_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 4393,
+   "ecken": 48,
+   "index0": 23979,
+   "indizes": 234
+  },
+  {
+   "name": "PARKINGBRAKE_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 4441,
+   "ecken": 88,
+   "index0": 24213,
+   "indizes": 723
+  },
+  {
+   "name": "RADIO_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 4529,
+   "ecken": 8,
+   "index0": 24936,
+   "indizes": 36
+  },
+  {
+   "name": "KNOBS02_s_13",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 4537,
+   "ecken": 444,
+   "index0": 24972,
+   "indizes": 1995
+  },
+  {
+   "name": "HANDLES_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 4981,
+   "ecken": 50,
+   "index0": 26967,
+   "indizes": 294
+  },
+  {
+   "name": "DIAL_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "sc-kongei-kk8s-int.jpg",
+   "ecke0": 5031,
+   "ecken": 96,
+   "index0": 27261,
+   "indizes": 615
+  }
+ ],
+ "schatten": "shadow.png",
+ "lichter": {
+  "brems": [
+   [
+    0.66,
+    0.67,
+    -1.94,
+    0.15
+   ],
+   [
+    -0.66,
+    0.67,
+    -1.94,
+    0.15
+   ],
+   [
+    0.0,
+    0.87,
+    -0.51,
+    0.05
+   ],
+   [
+    -0.075,
+    0.87,
+    -0.51,
+    0.05
+   ],
+   [
+    0.075,
+    0.87,
+    -0.51,
+    0.05
+   ]
+  ],
+  "rueck": [
+   [
+    -0.66,
+    0.67,
+    -1.93,
+    0.15
+   ],
+   [
+    0.66,
+    0.67,
+    -1.93,
+    0.15
+   ],
+   [
+    -0.78,
+    0.67,
+    -1.92,
+    0.15
+   ],
+   [
+    0.78,
+    0.67,
+    -1.92,
+    0.15
+   ]
+  ],
+  "front": [
+   [
+    0.67,
+    0.44,
+    1.92,
+    0.2
+   ],
+   [
+    -0.67,
+    0.44,
+    1.92,
+    0.2
+   ],
+   [
+    0.54,
+    0.42,
+    1.92,
+    0.12
+   ],
+   [
+    -0.54,
+    0.42,
+    1.92,
+    0.12
+   ]
+  ]
+ },
+ "physik": {
+  "masse": 1348.0,
+  "schwerpunktHoehe": 0.3,
+  "radstand": 2.68,
+  "a": 1.5276,
+  "b": 1.1524,
+  "vorderachse": 1.26,
+  "hinterachse": -1.42,
+  "laenge": 4.195,
+  "breite": 2.0,
+  "hoehe": 1.07,
+  "massenVerteilung": 0.8,
+  "lenkGrad": 30.0,
+  "bremsVorn": 0.6,
+  "cx": 0.297,
+  "stirnflaeche": 1.825,
+  "auftriebVorn": 0.5,
+  "auftriebHinten": 0.7,
+  "fluegelVorn": 0.0,
+  "fluegelHinten": 0.0,
+  "leerlauf": 3000.0,
+  "begrenzer": 7300.0,
+  "reifen": {
+   "vorn": {
+    "radius": 0.3178,
+    "breite": 0.255,
+    "spur": 1.68,
+    "bodenfreiheit": 0.1,
+    "mu": 1.2
+   },
+   "hinten": {
+    "radius": 0.353,
+    "breite": 0.33,
+    "spur": 1.66,
+    "bodenfreiheit": 0.1,
+    "mu": 1.2
+   }
+  },
+  "feder": {
+   "vorn": {
+    "k": 1400000.0,
+    "druck": 310000.0,
+    "zug": 330000.0,
+    "weg": 0.14,
+    "stab": 0.0
+   },
+   "hinten": {
+    "k": 1400000.0,
+    "druck": 320000.0,
+    "zug": 300000.0,
+    "weg": 0.135,
+    "stab": 0.0
+   }
+  },
+  "gefedert": 1248.0
+ },
+ "livree": {
+  "paint": "sc-kongei-kk8s-int.jpg",
+  "list": [
+   {
+    "id": "furia",
+    "name": "furia",
+    "tex": "sc-kongei-kk8s-furia.png"
+   },
+   {
+    "id": "rs",
+    "name": "rs",
+    "tex": "sc-kongei-kk8s-rs.png"
+   }
+  ]
+ }
+}

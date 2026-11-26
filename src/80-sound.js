@@ -161,6 +161,9 @@
     'sd_cavallo', 'sd_nsx', 'sd_spirit',
     // v1.6.96 BESTELLT: der Archer R-9 (Aston Martin DBR9, V12) aus Speed Dreams, sein eigener Klang.
     'sd_archer',
+    // v1.6.99 BESTELLT: drei weitere Speed-Dreams-Motoren (virtuelle Fahrt) mit ihrem eigenen
+    // Klang: Vortex GT (V6), Kongei KK8S (V8) und Boxer 96 Carson Tuners Edition (Boxer-6).
+    'sd_vortex', 'sd_kongei', 'sd_carson',
     // ---- ZWEI AUFNAHMEN DES NUTZERS, aus photos/newaudio --------------------------
     // BESTELLT: eigene Aufnahmen; Drehzahlen aus der Video-Anzeige (siehe loops.json).
     // DIESELBE REIHENFOLGE wie im Menue (am Ende der Liste).

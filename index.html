@@ -6093,7 +6093,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.98</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.99</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -7382,7 +7382,7 @@
       <p class="dank-quelle" data-i18n-skip><a href="https://github.com/ange-yaghi/engine-sim"
          target="_blank" rel="noopener noreferrer">github.com/ange-yaghi/engine-sim</a> &middot; audio/CREDITS.md</p>
       <h3 style="font-size:14px; margin:18px 0 6px 0">Woher die 3D-Modelle kommen</h3>
-      <p class="muted">Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4, Boxer 96, Cavallo 360, Murasama NSX, Spirit 300 und Archer R-9. Modelle und Texturen stehen unter der Free Art License 1.3, die Fahrzeugdaten unter der GNU General Public License, Version 2 oder sp&auml;ter. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.</p>
+      <p class="muted">Die Autos der virtuellen Fahrt stammen aus dem freien Rennspiel Speed Dreams: Vulture V5.R, Lynx 220, FMC GT4, Boxer 96, Cavallo 360, Murasama NSX, Spirit 300, Archer R-9, Morley R900, Vortex GT, Kongei KK8S, Boxer 96 Carson Tuners Edition, FMC Centre RS1 und Saxxon Hatcho RS2. Modelle und Texturen stehen unter der Free Art License 1.3 (beim Kongei KK8S mit CC-BY fuer das Originalmodell), die Fahrzeugdaten unter der GNU General Public License, Version 2 oder sp&auml;ter. Umgewandelt mit tools/sd_auto.py (Innenraum entfernt, Texturen verkleinert); die Lizenz- und Quellenangabe liegt im Ordner des jeweiligen Autos.</p>
       <p class="muted">Der VW K&auml;fer 1303 RS ist eine eigene Konstruktion von Gnen54 (OmegaSim CAD) und steht unter Creative Commons Namensnennung 4.0 (CC BY 4.0).</p>
       <p class="muted">Spider NG1: Aufbau von Gnen54 (OmegaSim CAD) auf der Karosserie MODIplay MP-1 Spider von Sturmkind, 3D-Daten f&uuml;r HYBRID von Thomas Strobel (FREAKPALACE Customs). Freigabe von Sturmkind am 16.11.2026: Verwendung erlaubt, solange die Karosserien nicht kommerziell verkauft werden. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.</p>
       <p class="muted">VW Caravelle (Bulli): Aufbau von Gnen54 (OmegaSim CAD) auf einer Karosserie von Vehicle World (Designerin Revantika), mit schriftlicher Erlaubnis von Vehicle World zur Weitergabe an die Carrera-Hybrid-Community. Eigene Teile, Farben und Fahrzeugdaten: Gnen54, CC BY 4.0.</p>
@@ -7419,6 +7419,7 @@
       <h2>Patchnotes</h2>
       <p class="muted"><b><span data-i18n-skip>1.6</span></b></p>
       <ul class="muted" id="patchnotes-16" style="padding-left:20px; line-height:1.7">
+        <li>Virtuell fahren: sechs neue Autos aus Speed Dreams (Free Art License 1.3, beim Kongei KK8S mit CC-BY f&uuml;r das Originalmodell) in der Garage, umgewandelt mit tools/sd_auto.py: Morley R900 (7,0 l V8), Vortex GT (3,2 l V6), Kongei KK8S (Koenigsegg CC8S, 4,7 l V8), Boxer 96 Carson Tuners Edition (Porsche 911 GT3, 3,6 l Boxer-6), FMC Centre RS1 (Ford Focus WRC, 2,0 l Reihen-4) und Saxxon Hatcho RS2 (2,0 l Reihen-4). Morley R900 und Kongei KK8S haben je zwei Alternativ-Lackierungen, der FMC Centre RS1 eine; w&auml;hlbar in der Farbwahl (&#8222;Lackfarbe&#8220;). Fahrdaten, Federn, Reifen und Lichter kommen aus der .xml; die Vorschaubilder sind neu gezeichnet. Den Motorklang liefern die Aufnahmen der Autos aus Speed Dreams (sd_vortex, sd_kongei, sd_carson); der Morley R900 spielt sd_v8muscle (dieselbe Aufnahme), FMC Centre RS1 und Saxxon Hatcho RS2 den gerechneten Ford-Reihenmotor (capri_zakspeed).</li>
         <li>Virtuell fahren: ein neues Auto aus Speed Dreams (Free Art License 1.3) in der Garage, umgewandelt mit tools/sd_auto.py: der Archer R-9 (Aston Martin DBR9, 6,0 l V12). Er hat elf Alternativ-Lackierungen aus Speed Dreams, die in der Garage in der Farbwahl (&#8222;Lackfarbe&#8220;) mit den Pfeilen w&auml;hlbar sind (die Lackierung ersetzt die Karosserietextur; Farbe und Lackierung schlie&szlig;en sich gegenseitig aus). Fahrdaten, Federn, Reifen und Lichter kommen aus der .xml; das Vorschaubild ist neu gezeichnet. Den Motorklang liefert die V12-Aufnahme des Autos aus Speed Dreams (statt des Ersatzmotors).</li>
         <li>Virtuell fahren: Tank und Reifen sind zu Rennbeginn immer voll bzw. frisch &#8211; im virtuellen Fahren geht es ums Fahren, nicht um Sprit- und Reifenmanagement (bei jedem Start werden Tank und Reifen zur&#252;ckgesetzt). Das Reifenquietschen ist im Fahrgef&#252;hl Drift aus. Umf&#228;rben f&#228;rbt jetzt nur noch die Karosserie: Auspuff, Scheinwerfer, R&#252;cklichter, K&#252;hlergrill, Scheibenwischer und Motor bleiben unver&#228;ndert. Neue Kamera &#8222;Fahrer am Rand (Zoom)&#8220; (WIP, Kamera-Knopf oder R3): dieselbe Position wie &#8222;Fahrer am Rand&#8220;, aber mit deutlich engerem Sichtfeld. Die TV-Kamera f&#228;hrt jetzt wie bei librecorsa.org als Dolly die Strecke entlang, der Blick eilt dem Auto voraus (Vorhalt), und das Sichtfeld ist ein Tele-Objektiv, das das Auto etwa gleich gro&#223; h&#228;lt.</li>
         <li>Virtuell fahren, Fahrgef&#252;hl Drift: ein 5-Gang-Automatikgetriebe. Es schaltet nach der Drehzahl (wie die Getriebe beim echten Fahren), und im Drift h&#228;lt es den Gang: solange das Auto quer liegt, schaltet es nicht hoch, damit der Drift nicht abbricht. Der Tacho zeigt Gang und Drehzahl aus dem Getriebe (die Drehzahl steigt mit dem Tempo und f&#228;llt beim Hochschalten).</li>
@@ -9789,6 +9790,22 @@
         <div class="snd-row"><audio controls preload="none" src="audio/sd_archer_mid.ogg"></audio><div><b>Speed Dreams: Archer R-9 (Aston Martin DBR9, 6,0 l V12), Mittelband (5061/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls1-archer-r9/archer-r9-v12.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_archer_high.ogg"></audio><div><b>Speed Dreams: Archer R-9 (Aston Martin DBR9, 6,0 l V12), oberes Band (9000/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls1-archer-r9/archer-r9-v12.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/sd_archer_over.ogg"></audio><div><b>Speed Dreams: Archer R-9 (Aston Martin DBR9, 6,0 l V12), Schub (2846/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls1-archer-r9/archer-r9-v12.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_vortex_idle.ogg"></audio><div><b>Speed Dreams: Vortex GT (3,2 l V6), Leerlauf (1000/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls2-vortex-gt/venturi.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_vortex_low.ogg"></audio><div><b>Speed Dreams: Vortex GT (3,2 l V6), Zwischenband (1627/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls2-vortex-gt/venturi.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_vortex_low2.ogg"></audio><div><b>Speed Dreams: Vortex GT (3,2 l V6), zweites Zwischenband (2646/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls2-vortex-gt/venturi.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_vortex_mid.ogg"></audio><div><b>Speed Dreams: Vortex GT (3,2 l V6), Mittelband (4304/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls2-vortex-gt/venturi.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_vortex_high.ogg"></audio><div><b>Speed Dreams: Vortex GT (3,2 l V6), oberes Band (7000/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls2-vortex-gt/venturi.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_vortex_over.ogg"></audio><div><b>Speed Dreams: Vortex GT (3,2 l V6), Schub (2646/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls2-vortex-gt/venturi.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_kongei_idle.ogg"></audio><div><b>Speed Dreams: Kongei KK8S (Koenigsegg CC8S, 4,7 l V8), Leerlauf (3000/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-kongei-kk8s/cc8s.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_kongei_mid.ogg"></audio><div><b>Speed Dreams: Kongei KK8S (Koenigsegg CC8S, 4,7 l V8), Mittelband (4680/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-kongei-kk8s/cc8s.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_kongei_high.ogg"></audio><div><b>Speed Dreams: Kongei KK8S (Koenigsegg CC8S, 4,7 l V8), oberes Band (7300/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-kongei-kk8s/cc8s.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_kongei_over.ogg"></audio><div><b>Speed Dreams: Kongei KK8S (Koenigsegg CC8S, 4,7 l V8), Schub (4680/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-kongei-kk8s/cc8s.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_carson_idle.ogg"></audio><div><b>Speed Dreams: Boxer 96 Carson Tuners Edition (Porsche 911 GT3, 3,6 l Boxer-6), Leerlauf (900/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-carson-96/996.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_carson_low.ogg"></audio><div><b>Speed Dreams: Boxer 96 Carson Tuners Edition (Porsche 911 GT3, 3,6 l Boxer-6), Zwischenband (1578/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-carson-96/996.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_carson_low2.ogg"></audio><div><b>Speed Dreams: Boxer 96 Carson Tuners Edition (Porsche 911 GT3, 3,6 l Boxer-6), zweites Zwischenband (2766/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-carson-96/996.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_carson_mid.ogg"></audio><div><b>Speed Dreams: Boxer 96 Carson Tuners Edition (Porsche 911 GT3, 3,6 l Boxer-6), Mittelband (4849/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-carson-96/996.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_carson_high.ogg"></audio><div><b>Speed Dreams: Boxer 96 Carson Tuners Edition (Porsche 911 GT3, 3,6 l Boxer-6), oberes Band (8500/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-carson-96/996.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
+        <div class="snd-row"><audio controls preload="none" src="audio/sd_carson_over.ogg"></audio><div><b>Speed Dreams: Boxer 96 Carson Tuners Edition (Porsche 911 GT3, 3,6 l Boxer-6), Schub (2766/min)</b><br><span class="muted" style="font-size:11px">Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-carson-96/996.wav): Speed-Dreams-Team, Free Art License 1.3 (artlibre.org/licence/lal/en), nicht nach Geh&ouml;r gepr&uuml;ft</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amg_gt3_idle.ogg"></audio><div><b>AMG GT3 (V8, Cross-Plane), Leerlauf (2000/min)</b><br><span class="muted" style="font-size:11px">Aufnahme des Nutzers (photos/newaudio/amg_gt3.mp4), Drehzahl aus der Video-Anzeige</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amg_gt3_low.ogg"></audio><div><b>AMG GT3 (V8, Cross-Plane), Zwischenband (3700/min)</b><br><span class="muted" style="font-size:11px">Aufnahme des Nutzers (photos/newaudio/amg_gt3.mp4), Drehzahl aus der Video-Anzeige</span></div></div>
         <div class="snd-row"><audio controls preload="none" src="audio/amg_gt3_mid.ogg"></audio><div><b>AMG GT3 (V8, Cross-Plane), Mittelband (5700/min)</b><br><span class="muted" style="font-size:11px">Aufnahme des Nutzers (photos/newaudio/amg_gt3.mp4), Drehzahl aus der Video-Anzeige</span></div></div>
@@ -12500,6 +12517,9 @@
           <option value="sd_nsx">Murasama NSX / Honda NSX (Speed Dreams): 3,0 l V6</option>
           <option value="sd_spirit">Spirit 300 (Speed Dreams): 3,0 l V6</option>
           <option value="sd_archer">Archer R-9 / Aston Martin DBR9 (Speed Dreams): 6,0 l V12</option>
+          <option value="sd_vortex">Vortex GT (Speed Dreams): 3,2 l V6</option>
+          <option value="sd_kongei">Kongei KK8S / Koenigsegg CC8S (Speed Dreams): 4,7 l V8</option>
+          <option value="sd_carson">Boxer 96 Carson Tuners Edition / Porsche 911 GT3 (Speed Dreams): 3,6 l Boxer-6</option>
           </optgroup>
           <!-- BESTELLT: eigene Aufnahmen des Nutzers aus photos/newaudio; Drehzahlen aus der
                Video-Anzeige. tools/sd_engines.py-Verfahren, audio/loops.json. -->
@@ -45360,7 +45380,7 @@
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
-  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/', cavallo360: 'img/autos/cavallo360/', nsx: 'img/autos/nsx/', spirit300: 'img/autos/spirit300/', archerr9: 'img/autos/archerr9/' };
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/', cavallo360: 'img/autos/cavallo360/', nsx: 'img/autos/nsx/', spirit300: 'img/autos/spirit300/', archerr9: 'img/autos/archerr9/', morley900: 'img/autos/morley900/', vortexgt: 'img/autos/vortexgt/', kongei: 'img/autos/kongei/', carson96: 'img/autos/carson96/', fmccentre04: 'img/autos/fmccentre04/', saxxon: 'img/autos/saxxon/' };
   // v1.6.27 (Issue #15): der RC Stunt Copter in der Garage. Er ist KEIN Auto: er hat kein
   // auto.json/auto.bin (VF_MODELL_PFADE), sondern wird als eigener Hubschrauber gebaut und
   // mit zwei Sticks geflogen. Ueberall, wo ein Auto-Modell oder ein Fahrprofil gebraucht wird,
@@ -45565,6 +45585,16 @@
             // Free Art License 1.3, Fahrzeugdaten GPL-2.0-or-later,
             // umgewandelt mit tools/sd_auto.py, siehe img/autos/archerr9/LIZENZ.txt. Elf Liveries.
             { v: 'archerr9', name: 'Archer R-9 (Aston Martin DBR9, Speed Dreams)' },
+            // v1.6.99 BESTELLT: sechs weitere Speed-Dreams-Autos (Modell und Texturen Free Art License 1.3,
+            // Fahrzeugdaten GPL-2.0-or-later; beim Kongei CC-BY fuer das Originalmodell), umgewandelt mit
+            // tools/sd_auto.py, siehe img/autos/<id>/LIZENZ.txt. Jeweils zwei Alternativ-Lackierungen beim
+            // Morley R900 und Kongei KK8S, eine beim FMC Centre RS1; Fahrdaten aus der .xml, kein WIP noetig.
+            { v: 'morley900', name: 'Morley R900 (Speed Dreams)' },
+            { v: 'vortexgt', name: 'Vortex GT (Speed Dreams)' },
+            { v: 'kongei', name: 'Kongei KK8S (Koenigsegg CC8S, Speed Dreams)' },
+            { v: 'carson96', name: 'Boxer 96 Carson Tuners Edition (Porsche 911, Speed Dreams)' },
+            { v: 'fmccentre04', name: 'FMC Centre RS1 (Speed Dreams)' },
+            { v: 'saxxon', name: 'Saxxon Hatcho RS2 (Speed Dreams)' },
             // Eigenbau von Gnen54 (CC BY 4.0), WIP: Fahrdaten geschaetzt, siehe img/autos/kaefer/LIZENZ.txt
             { v: 'kaefer', name: t('VW Käfer 1303 RS mit Boxster-Motor (Gnen54, WIP)') },
             // v1.5.104: Eigenbau von Gnen54 auf der Modiplay-MP1-Karosserie (Freigabe Sturmkind, nicht kommerziell),
@@ -45605,7 +45635,14 @@
     // (sd_cavallo/sd_nsx/sd_spirit) statt der Ersatzmotoren.
     cavallo360: 'sd_cavallo', nsx: 'sd_nsx', spirit300: 'sd_spirit',
     // v1.6.96 BESTELLT: der Archer R-9 mit seinem eigenen V12 (sd_archer).
-    archerr9: 'sd_archer' };
+    archerr9: 'sd_archer',
+    // v1.6.99 BESTELLT: sechs weitere Speed-Dreams-Autos. Der Morley R900 nennt in der .xml als engine
+    // sample v8-ears68.wav - dieselbe Aufnahme wie sd_v8muscle. Der Vortex GT, Kongei KK8S und die
+    // Carson Tuners Edition bekommen ihren eigenen Klang (sd_vortex/sd_kongei/sd_carson). FMC Centre 04
+    // und Saxxon Hatcho (2,0 l Reihen-4) haben ihre Aufnahme (ford2c.wav/206_engine.wav) nur in der
+    // geteilten data/sound, die hier nicht vorliegt - sie laufen mit dem Ford-Reihenmotor (capri_zakspeed).
+    morley900: 'sd_v8muscle', vortexgt: 'sd_vortex', kongei: 'sd_kongei', carson96: 'sd_carson',
+    fmccentre04: 'capri_zakspeed', saxxon: 'capri_zakspeed' };
   function vfMotorFest() { return VF_MOTOR_FEST[vfAutoWahl()] || ''; }
   // Die echte Neigung eines GT1 ist klein (0,5 Grad Rollen bei 1,5 g) und bei Modellgroesse unsichtbar.
   // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.
@@ -68329,6 +68366,9 @@
     'sd_cavallo', 'sd_nsx', 'sd_spirit',
     // v1.6.96 BESTELLT: der Archer R-9 (Aston Martin DBR9, V12) aus Speed Dreams, sein eigener Klang.
     'sd_archer',
+    // v1.6.99 BESTELLT: drei weitere Speed-Dreams-Motoren (virtuelle Fahrt) mit ihrem eigenen
+    // Klang: Vortex GT (V6), Kongei KK8S (V8) und Boxer 96 Carson Tuners Edition (Boxer-6).
+    'sd_vortex', 'sd_kongei', 'sd_carson',
     // ---- ZWEI AUFNAHMEN DES NUTZERS, aus photos/newaudio --------------------------
     // BESTELLT: eigene Aufnahmen; Drehzahlen aus der Video-Anzeige (siehe loops.json).
     // DIESELBE REIHENFOLGE wie im Menue (am Ende der Liste).

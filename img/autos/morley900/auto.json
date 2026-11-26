@@ -1,0 +1,1121 @@
+{
+ "name": "Morley R900",
+ "kennung": "morley900",
+ "quelle": "Speed Dreams, data/cars/models/ls2-morley-r900",
+ "lizenz": "Free Art License 1.3 (Modell, Texturen); GPL-2.0-or-later (Fahrzeugdaten)",
+ "koordinaten": "m; +x links, +y oben, +z vorn",
+ "ecken": 3621,
+ "indizes": 16308,
+ "indexAb": 115872,
+ "schritt": 32,
+ "teile": [
+  {
+   "name": "UNDERSPLIT1_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 0,
+   "ecken": 116,
+   "index0": 0,
+   "indizes": 522
+  },
+  {
+   "name": "UNDERARCHES_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 116,
+   "ecken": 38,
+   "index0": 522,
+   "indizes": 123
+  },
+  {
+   "name": "POLY_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 154,
+   "ecken": 36,
+   "index0": 645,
+   "indizes": 129
+  },
+  {
+   "name": "POLY1_s_11",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 190,
+   "ecken": 128,
+   "index0": 774,
+   "indizes": 381
+  },
+  {
+   "name": "POLY2_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 318,
+   "ecken": 26,
+   "index0": 1155,
+   "indizes": 126
+  },
+  {
+   "name": "CYLINDER_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 344,
+   "ecken": 44,
+   "index0": 1281,
+   "indizes": 153
+  },
+  {
+   "name": "CYLINDER1_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 388,
+   "ecken": 44,
+   "index0": 1434,
+   "indizes": 153
+  },
+  {
+   "name": "OBJECT1_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 432,
+   "ecken": 10,
+   "index0": 1587,
+   "indizes": 27
+  },
+  {
+   "name": "STEERINGWH_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 442,
+   "ecken": 81,
+   "index0": 1614,
+   "indizes": 432
+  },
+  {
+   "name": "CYLINDER2_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 523,
+   "ecken": 38,
+   "index0": 2046,
+   "indizes": 144
+  },
+  {
+   "name": "DRIVERHAND_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 561,
+   "ecken": 38,
+   "index0": 2190,
+   "indizes": 270
+  },
+  {
+   "name": "DRIVER_s_9",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 599,
+   "ecken": 83,
+   "index0": 2460,
+   "indizes": 351
+  },
+  {
+   "name": "HEAD_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 682,
+   "ecken": 51,
+   "index0": 2811,
+   "indizes": 300
+  },
+  {
+   "name": "OBJECT11_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 733,
+   "ecken": 142,
+   "index0": 3111,
+   "indizes": 828
+  },
+  {
+   "name": "UNDER_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 875,
+   "ecken": 18,
+   "index0": 3939,
+   "indizes": 81
+  },
+  {
+   "name": "OBJECT111_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 893,
+   "ecken": 60,
+   "index0": 4020,
+   "indizes": 270
+  },
+  {
+   "name": "OBJECT2_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 953,
+   "ecken": 14,
+   "index0": 4290,
+   "indizes": 51
+  },
+  {
+   "name": "OBJECT3_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 967,
+   "ecken": 18,
+   "index0": 4341,
+   "indizes": 78
+  },
+  {
+   "name": "OBJECT4_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 985,
+   "ecken": 18,
+   "index0": 4419,
+   "indizes": 72
+  },
+  {
+   "name": "OBJECT5_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1003,
+   "ecken": 4,
+   "index0": 4491,
+   "indizes": 9
+  },
+  {
+   "name": "OBJECT6_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1007,
+   "ecken": 4,
+   "index0": 4500,
+   "indizes": 9
+  },
+  {
+   "name": "OBJECT7_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1011,
+   "ecken": 4,
+   "index0": 4509,
+   "indizes": 9
+  },
+  {
+   "name": "OBJECT8_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1015,
+   "ecken": 4,
+   "index0": 4518,
+   "indizes": 9
+  },
+  {
+   "name": "OBJECT9_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1019,
+   "ecken": 6,
+   "index0": 4527,
+   "indizes": 18
+  },
+  {
+   "name": "OBJECT10_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1025,
+   "ecken": 6,
+   "index0": 4545,
+   "indizes": 18
+  },
+  {
+   "name": "OBJECT12_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1031,
+   "ecken": 6,
+   "index0": 4563,
+   "indizes": 18
+  },
+  {
+   "name": "OBJECT13_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1037,
+   "ecken": 8,
+   "index0": 4581,
+   "indizes": 12
+  },
+  {
+   "name": "OBJECT14_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1045,
+   "ecken": 8,
+   "index0": 4593,
+   "indizes": 27
+  },
+  {
+   "name": "OBJECT15_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1053,
+   "ecken": 8,
+   "index0": 4620,
+   "indizes": 24
+  },
+  {
+   "name": "OBJECT18_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1061,
+   "ecken": 29,
+   "index0": 4644,
+   "indizes": 126
+  },
+  {
+   "name": "OBJECT19_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1090,
+   "ecken": 28,
+   "index0": 4770,
+   "indizes": 126
+  },
+  {
+   "name": "OBJECT21_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1118,
+   "ecken": 371,
+   "index0": 4896,
+   "indizes": 1881
+  },
+  {
+   "name": "OBJECT22_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1489,
+   "ecken": 29,
+   "index0": 6777,
+   "indizes": 141
+  },
+  {
+   "name": "OBJECT24_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1518,
+   "ecken": 40,
+   "index0": 6918,
+   "indizes": 129
+  },
+  {
+   "name": "OBJECT25_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1558,
+   "ecken": 28,
+   "index0": 7047,
+   "indizes": 126
+  },
+  {
+   "name": "OBJECT27_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1586,
+   "ecken": 6,
+   "index0": 7173,
+   "indizes": 18
+  },
+  {
+   "name": "UNDER1_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1592,
+   "ecken": 60,
+   "index0": 7191,
+   "indizes": 429
+  },
+  {
+   "name": "UNDER2_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1652,
+   "ecken": 44,
+   "index0": 7620,
+   "indizes": 168
+  },
+  {
+   "name": "OBJECT29_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1696,
+   "ecken": 8,
+   "index0": 7788,
+   "indizes": 18
+  },
+  {
+   "name": "UNDER3_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1704,
+   "ecken": 32,
+   "index0": 7806,
+   "indizes": 117
+  },
+  {
+   "name": "UNDER4_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1736,
+   "ecken": 16,
+   "index0": 7923,
+   "indizes": 63
+  },
+  {
+   "name": "UNDER5_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1752,
+   "ecken": 16,
+   "index0": 7986,
+   "indizes": 63
+  },
+  {
+   "name": "OBJECT_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1768,
+   "ecken": 50,
+   "index0": 8049,
+   "indizes": 201
+  },
+  {
+   "name": "OBJECT31_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1818,
+   "ecken": 67,
+   "index0": 8250,
+   "indizes": 249
+  },
+  {
+   "name": "OBJECT81_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1885,
+   "ecken": 7,
+   "index0": 8499,
+   "indizes": 18
+  },
+  {
+   "name": "OBJECT91_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1892,
+   "ecken": 7,
+   "index0": 8517,
+   "indizes": 15
+  },
+  {
+   "name": "OBJECT101_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1899,
+   "ecken": 14,
+   "index0": 8532,
+   "indizes": 39
+  },
+  {
+   "name": "OBJECT121_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1913,
+   "ecken": 14,
+   "index0": 8571,
+   "indizes": 39
+  },
+  {
+   "name": "OBJECT131_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1927,
+   "ecken": 6,
+   "index0": 8610,
+   "indizes": 15
+  },
+  {
+   "name": "OBJECT141_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1933,
+   "ecken": 6,
+   "index0": 8625,
+   "indizes": 12
+  },
+  {
+   "name": "OBJECT151_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1939,
+   "ecken": 14,
+   "index0": 8637,
+   "indizes": 36
+  },
+  {
+   "name": "OBJECT17_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1953,
+   "ecken": 14,
+   "index0": 8673,
+   "indizes": 42
+  },
+  {
+   "name": "OBJECT26_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1967,
+   "ecken": 24,
+   "index0": 8715,
+   "indizes": 84
+  },
+  {
+   "name": "OBJECT271_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 1991,
+   "ecken": 24,
+   "index0": 8799,
+   "indizes": 84
+  },
+  {
+   "name": "OBJECT281_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2015,
+   "ecken": 24,
+   "index0": 8883,
+   "indizes": 81
+  },
+  {
+   "name": "OBJECT291_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2039,
+   "ecken": 24,
+   "index0": 8964,
+   "indizes": 87
+  },
+  {
+   "name": "OBJECT32_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2063,
+   "ecken": 12,
+   "index0": 9051,
+   "indizes": 30
+  },
+  {
+   "name": "OBJECT33_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2075,
+   "ecken": 12,
+   "index0": 9081,
+   "indizes": 33
+  },
+  {
+   "name": "OBJECT34_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2087,
+   "ecken": 38,
+   "index0": 9114,
+   "indizes": 99
+  },
+  {
+   "name": "OBJECT37_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2125,
+   "ecken": 125,
+   "index0": 9213,
+   "indizes": 609
+  },
+  {
+   "name": "OBJECT113_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2250,
+   "ecken": 16,
+   "index0": 9822,
+   "indizes": 39
+  },
+  {
+   "name": "OBJECT114_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2266,
+   "ecken": 6,
+   "index0": 9861,
+   "indizes": 15
+  },
+  {
+   "name": "OBJECT115_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2272,
+   "ecken": 14,
+   "index0": 9876,
+   "indizes": 42
+  },
+  {
+   "name": "OBJECT116_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2286,
+   "ecken": 6,
+   "index0": 9918,
+   "indizes": 15
+  },
+  {
+   "name": "OBJECT117_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2292,
+   "ecken": 11,
+   "index0": 9933,
+   "indizes": 33
+  },
+  {
+   "name": "OBJECT118_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2303,
+   "ecken": 16,
+   "index0": 9966,
+   "indizes": 54
+  },
+  {
+   "name": "OBJECT119_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2319,
+   "ecken": 16,
+   "index0": 10020,
+   "indizes": 105
+  },
+  {
+   "name": "OBJECT1110_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2335,
+   "ecken": 76,
+   "index0": 10125,
+   "indizes": 417
+  },
+  {
+   "name": "CYLINDER3_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2411,
+   "ecken": 50,
+   "index0": 10542,
+   "indizes": 195
+  },
+  {
+   "name": "OBJECT36_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2461,
+   "ecken": 69,
+   "index0": 10737,
+   "indizes": 255
+  },
+  {
+   "name": "OBJECT35_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2530,
+   "ecken": 58,
+   "index0": 10992,
+   "indizes": 216
+  },
+  {
+   "name": "OBJECT30_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2588,
+   "ecken": 41,
+   "index0": 11208,
+   "indizes": 168
+  },
+  {
+   "name": "OBJECT251_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2629,
+   "ecken": 86,
+   "index0": 11376,
+   "indizes": 405
+  },
+  {
+   "name": "OBJECT241_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2715,
+   "ecken": 14,
+   "index0": 11781,
+   "indizes": 39
+  },
+  {
+   "name": "OBJECT231_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2729,
+   "ecken": 14,
+   "index0": 11820,
+   "indizes": 39
+  },
+  {
+   "name": "OBJECT221_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2743,
+   "ecken": 14,
+   "index0": 11859,
+   "indizes": 39
+  },
+  {
+   "name": "OBJECT211_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2757,
+   "ecken": 14,
+   "index0": 11898,
+   "indizes": 39
+  },
+  {
+   "name": "OBJECT201_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2771,
+   "ecken": 14,
+   "index0": 11937,
+   "indizes": 39
+  },
+  {
+   "name": "OBJECT191_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2785,
+   "ecken": 14,
+   "index0": 11976,
+   "indizes": 39
+  },
+  {
+   "name": "OBJECT181_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2799,
+   "ecken": 14,
+   "index0": 12015,
+   "indizes": 39
+  },
+  {
+   "name": "OBJECT16_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2813,
+   "ecken": 14,
+   "index0": 12054,
+   "indizes": 48
+  },
+  {
+   "name": "OBJECT112_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2827,
+   "ecken": 14,
+   "index0": 12102,
+   "indizes": 45
+  },
+  {
+   "name": "OBJECT71_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2841,
+   "ecken": 12,
+   "index0": 12147,
+   "indizes": 48
+  },
+  {
+   "name": "OBJECT61_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2853,
+   "ecken": 123,
+   "index0": 12195,
+   "indizes": 549
+  },
+  {
+   "name": "OBJECT51_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2976,
+   "ecken": 18,
+   "index0": 12744,
+   "indizes": 54
+  },
+  {
+   "name": "OBJECT41_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 2994,
+   "ecken": 18,
+   "index0": 12798,
+   "indizes": 57
+  },
+  {
+   "name": "VENTL_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 3012,
+   "ecken": 138,
+   "index0": 12855,
+   "indizes": 900
+  },
+  {
+   "name": "VENTR_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 3150,
+   "ecken": 139,
+   "index0": 13755,
+   "indizes": 921
+  },
+  {
+   "name": "OBJECT28_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 3289,
+   "ecken": 12,
+   "index0": 14676,
+   "indizes": 42
+  },
+  {
+   "name": "OBJECT23_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 3301,
+   "ecken": 22,
+   "index0": 14718,
+   "indizes": 102
+  },
+  {
+   "name": "OBJECT20_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 3323,
+   "ecken": 22,
+   "index0": 14820,
+   "indizes": 108
+  },
+  {
+   "name": "WI_s_2",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 3345,
+   "ecken": 38,
+   "index0": 14928,
+   "indizes": 138
+  },
+  {
+   "name": "WIH_s_1",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 3383,
+   "ecken": 18,
+   "index0": 15066,
+   "indizes": 45
+  },
+  {
+   "name": "BLANVAVRL3_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 3401,
+   "ecken": 10,
+   "index0": 15111,
+   "indizes": 21
+  },
+  {
+   "name": "BLANVAVRL2_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 3411,
+   "ecken": 8,
+   "index0": 15132,
+   "indizes": 21
+  },
+  {
+   "name": "BLANVAVRL1_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 3419,
+   "ecken": 8,
+   "index0": 15153,
+   "indizes": 18
+  },
+  {
+   "name": "BODY_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 3427,
+   "ecken": 158,
+   "index0": 15171,
+   "indizes": 969
+  },
+  {
+   "name": "BLANVAVRL_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "ls2-morley-r900.png",
+   "ecke0": 3585,
+   "ecken": 36,
+   "index0": 16140,
+   "indizes": 168
+  }
+ ],
+ "schatten": null,
+ "lichter": {
+  "brems": [
+   [
+    0.47,
+    0.67,
+    -2.28,
+    0.2
+   ],
+   [
+    -0.47,
+    0.67,
+    -2.28,
+    0.2
+   ]
+  ],
+  "rueck": [
+   [
+    0.71,
+    0.67,
+    -2.28,
+    0.12
+   ],
+   [
+    -0.71,
+    0.67,
+    -2.28,
+    0.12
+   ]
+  ],
+  "front": [
+   [
+    0.67,
+    0.44,
+    1.93,
+    0.17
+   ],
+   [
+    -0.67,
+    0.44,
+    1.93,
+    0.17
+   ],
+   [
+    0.77,
+    0.44,
+    1.93,
+    0.1
+   ],
+   [
+    -0.77,
+    0.44,
+    1.93,
+    0.1
+   ]
+  ]
+ },
+ "physik": {
+  "masse": 1220.0,
+  "schwerpunktHoehe": 0.24,
+  "radstand": 3.0,
+  "a": 1.74,
+  "b": 1.26,
+  "vorderachse": 1.46,
+  "hinterachse": -1.54,
+  "laenge": 4.8,
+  "breite": 2.1,
+  "hoehe": 1.1,
+  "massenVerteilung": 0.75,
+  "lenkGrad": 25.0,
+  "bremsVorn": 0.55,
+  "cx": 0.33,
+  "stirnflaeche": 1.97,
+  "auftriebVorn": 0.21,
+  "auftriebHinten": 0.2,
+  "fluegelVorn": 0.14239150568688286,
+  "fluegelHinten": 0.3090169943749474,
+  "leerlauf": 900.0,
+  "begrenzer": 7500.0,
+  "reifen": {
+   "vorn": {
+    "radius": 0.3346,
+    "breite": 0.265,
+    "spur": 1.76,
+    "bodenfreiheit": 0.065,
+    "mu": 1.214
+   },
+   "hinten": {
+    "radius": 0.354,
+    "breite": 0.295,
+    "spur": 1.7,
+    "bodenfreiheit": 0.075,
+    "mu": 1.214
+   }
+  },
+  "feder": {
+   "vorn": {
+    "k": 150000.0,
+    "druck": 10000.0,
+    "zug": 15000.0,
+    "weg": 0.1,
+    "stab": 75000.0
+   },
+   "hinten": {
+    "k": 140000.0,
+    "druck": 9000.0,
+    "zug": 12000.0,
+    "weg": 0.1,
+    "stab": 20000.0
+   }
+  },
+  "gefedert": 1106.6
+ },
+ "livree": {
+  "paint": "ls2-morley-r900.png",
+  "list": [
+   {
+    "id": "aitronics",
+    "name": "aitronics",
+    "tex": "ls2-morley-r900-aitronics.png"
+   },
+   {
+    "id": "socata",
+    "name": "socata",
+    "tex": "ls2-morley-r900-socata.png"
+   }
+  ]
+ }
+}

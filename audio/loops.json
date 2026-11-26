@@ -2247,5 +2247,150 @@
   },
   "idleRpm": 900,
   "limiterRpm": 9000
+ },
+ "sd_vortex": {
+  "label": "Speed Dreams: Vortex GT (3,2 l V6)",
+  "cylinders": 6,
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls2-vortex-gt/venturi.wav): Speed-Dreams-Team (ls2-vortex-gt), Free Art License 1.3 (artlibre.org/licence/lal/en)",
+  "crackle": 0.4,
+  "turbo": false,
+  "loops": {
+   "idle": {
+    "file": "sd_vortex_idle.ogg",
+    "baseRpm": 1000,
+    "firingHz": 50.0,
+    "seconds": 21.7744,
+    "load": 1.0
+   },
+   "low": {
+    "file": "sd_vortex_low.ogg",
+    "baseRpm": 1627,
+    "firingHz": 81.3,
+    "seconds": 13.3832,
+    "load": 1.0
+   },
+   "low2": {
+    "file": "sd_vortex_low2.ogg",
+    "baseRpm": 2646,
+    "firingHz": 132.3,
+    "seconds": 8.2292,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "sd_vortex_mid.ogg",
+    "baseRpm": 4304,
+    "firingHz": 215.2,
+    "seconds": 5.0591,
+    "load": 1.0
+   },
+   "high": {
+    "file": "sd_vortex_high.ogg",
+    "baseRpm": 7000,
+    "firingHz": 350.0,
+    "seconds": 3.1106,
+    "load": 1.0
+   },
+   "over": {
+    "file": "sd_vortex_over.ogg",
+    "baseRpm": 2646,
+    "firingHz": 132.3,
+    "seconds": 8.2292,
+    "load": 0.0
+   }
+  },
+  "idleRpm": 1000,
+  "limiterRpm": 7000
+ },
+ "sd_carson": {
+  "label": "Speed Dreams: Boxer 96 Carson Tuners Edition (3,6 l Boxer-6)",
+  "cylinders": 6,
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-carson-96/996.wav): Speed-Dreams-Team (sc-carson-96), Free Art License 1.3 (artlibre.org/licence/lal/en)",
+  "crackle": 0.4,
+  "turbo": false,
+  "loops": {
+   "idle": {
+    "file": "sd_carson_idle.ogg",
+    "baseRpm": 900,
+    "firingHz": 45.0,
+    "seconds": 9.6136,
+    "load": 1.0
+   },
+   "low": {
+    "file": "sd_carson_low.ogg",
+    "baseRpm": 1578,
+    "firingHz": 78.9,
+    "seconds": 5.483,
+    "load": 1.0
+   },
+   "low2": {
+    "file": "sd_carson_low2.ogg",
+    "baseRpm": 2766,
+    "firingHz": 138.3,
+    "seconds": 3.1281,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "sd_carson_mid.ogg",
+    "baseRpm": 4849,
+    "firingHz": 242.4,
+    "seconds": 1.7843,
+    "load": 1.0
+   },
+   "high": {
+    "file": "sd_carson_high.ogg",
+    "baseRpm": 8500,
+    "firingHz": 425.0,
+    "seconds": 1.0179,
+    "load": 1.0
+   },
+   "over": {
+    "file": "sd_carson_over.ogg",
+    "baseRpm": 2766,
+    "firingHz": 138.3,
+    "seconds": 3.1281,
+    "load": 0.0
+   }
+  },
+  "idleRpm": 900,
+  "limiterRpm": 8500
+ },
+ "sd_kongei": {
+  "label": "Speed Dreams: Kongei KK8S (Koenigsegg CC8S, 4,7 l V8)",
+  "cylinders": 8,
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/sc-kongei-kk8s/cc8s.wav): Speed-Dreams-Team (sc-kongei-kk8s), Free Art License 1.3 (artlibre.org/licence/lal/en)",
+  "crackle": 0.5,
+  "turbo": false,
+  "loops": {
+   "idle": {
+    "file": "sd_kongei_idle.ogg",
+    "baseRpm": 3000,
+    "firingHz": 200.0,
+    "seconds": 2.0461,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "sd_kongei_mid.ogg",
+    "baseRpm": 4680,
+    "firingHz": 312.0,
+    "seconds": 1.3116,
+    "load": 1.0
+   },
+   "high": {
+    "file": "sd_kongei_high.ogg",
+    "baseRpm": 7300,
+    "firingHz": 486.7,
+    "seconds": 0.8409,
+    "load": 1.0
+   },
+   "over": {
+    "file": "sd_kongei_over.ogg",
+    "baseRpm": 4680,
+    "firingHz": 312.0,
+    "seconds": 1.3116,
+    "load": 0.0
+   }
+  },
+  "idleRpm": 3000,
+  "limiterRpm": 7300
  }
 }

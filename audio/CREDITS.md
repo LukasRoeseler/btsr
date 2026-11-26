@@ -82,6 +82,30 @@ unter der Free Art License 1.3, die Fahrzeugdaten unter GPL-2.0-or-later. Die Au
 `archer-r9-v12.wav` liegt im Ordner des Autos und ist als Teil des Autos ebenfalls unter der
 Free Art License 1.3 lizenziert.
 
+### Vortex GT, Kongei KK8S und Boxer 96 Carson Tuners Edition (Free Art License 1.3) — seit v1.6.99
+
+| Motor in der App | Datei in Speed Dreams | Quelle und Lizenz |
+|---|---|---|
+| Vortex GT, 3,2 l V6 (`sd_vortex_*.ogg`) | `data/cars/models/ls2-vortex-gt/venturi.wav` | Speed-Dreams-Team, mit dem Auto unter der **Free Art License 1.3** (https://artlibre.org/licence/lal/en/) |
+| Kongei KK8S (Koenigsegg CC8S), 4,7 l V8 (`sd_kongei_*.ogg`) | `data/cars/models/sc-kongei-kk8s/cc8s.wav` | Speed-Dreams-Team, mit dem Auto unter der **Free Art License 1.3** (https://artlibre.org/licence/lal/en/) |
+| Boxer 96 Carson Tuners Edition (Porsche 911 GT3), 3,6 l Boxer-6 (`sd_carson_*.ogg`) | `data/cars/models/sc-carson-96/996.wav` | Speed-Dreams-Team, mit dem Auto unter der **Free Art License 1.3** (https://artlibre.org/licence/lal/en/) |
+
+Gerechnet wie die anderen mit `tools/sd_engines.py`; Leerlauf und Begrenzer stammen aus den
+`.xml` der Autos (`tickover` / `revs limiter`). Die Autos liegen umgewandelt in
+`img/autos/{vortexgt,kongei,carson96}/` mit eigener `LIZENZ.txt` (`tools/sd_auto.py`): Modell
+und Texturen stehen unter der Free Art License 1.3, die Fahrzeugdaten unter GPL-2.0-or-later
+(beim Kongei kommt CC-BY fuer das Originalmodell von Alex P/ANP hinzu). Die Aufnahmen
+`venturi.wav`, `cc8s.wav` und `996.wav` liegen im Ordner des jeweiligen Autos und sind als
+Teil des Autos ebenfalls unter der Free Art License 1.3 lizenziert.
+
+Der **Morley R900** (7,0 l V8) nennt in seiner `.xml` als `engine sample` `v8-ears68.wav` -
+dieselbe Aufnahme, aus der `sd_v8muscle` gerechnet wurde (siehe oben, CC0). Er bekommt deshalb
+keinen eigenen Motor, sondern spielt `sd_v8muscle`. **FMC Centre RS1** (Ford Focus WRC, 2,0 l
+Reihen-4) und **Saxxon Hatcho RS2** (2,0 l Reihen-4) haben ihre Aufnahme (`ford2c.wav` bzw.
+`206_engine.wav`) nur in der geteilten `data/sound`; sie liegt hier nicht vor. Beide laufen
+mit dem gerechneten Ford-Reihenmotor `capri_zakspeed` (siehe den Abschnitt der synthetischen
+Motoren).
+
 
 Nicht verwendet: `v6_raw.wav` und `rotary2.wav` (als "CC-BY" aus YouTube-Videos
 angegeben, Rechte unklar), `skid_metal.wav` (ohne Lizenzangabe) und die uebrigen

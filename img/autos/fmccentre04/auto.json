@@ -1,0 +1,571 @@
+{
+ "name": "FMC Centre RS1",
+ "kennung": "fmccentre04",
+ "quelle": "Speed Dreams, data/cars/models/rs1-fmc-centre04",
+ "lizenz": "Free Art License 1.3 (Modell, Texturen); GPL-2.0-or-later (Fahrzeugdaten)",
+ "koordinaten": "m; +x links, +y oben, +z vorn",
+ "ecken": 4477,
+ "indizes": 18543,
+ "indexAb": 143264,
+ "schritt": 32,
+ "teile": [
+  {
+   "name": "RVMIRROR_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 0,
+   "ecken": 238,
+   "index0": 0,
+   "indizes": 1431
+  },
+  {
+   "name": "FENDER_s_7",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 238,
+   "ecken": 124,
+   "index0": 1431,
+   "indizes": 453
+  },
+  {
+   "name": "WHEELARCH_s_13",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 362,
+   "ecken": 192,
+   "index0": 1884,
+   "indizes": 573
+  },
+  {
+   "name": "FBMPP2_s_15",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 554,
+   "ecken": 271,
+   "index0": 2457,
+   "indizes": 957
+  },
+  {
+   "name": "HOOD_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 825,
+   "ecken": 163,
+   "index0": 3414,
+   "indizes": 780
+  },
+  {
+   "name": "HOODCREASE_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 988,
+   "ecken": 64,
+   "index0": 4194,
+   "indizes": 210
+  },
+  {
+   "name": "WISUNSHADE_s_0",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1052,
+   "ecken": 31,
+   "index0": 4404,
+   "indizes": 156
+  },
+  {
+   "name": "WIFLGT_s_1",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1083,
+   "ecken": 52,
+   "index0": 4560,
+   "indizes": 261
+  },
+  {
+   "name": "WILOGOFRONT_s_0",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1135,
+   "ecken": 4,
+   "index0": 4821,
+   "indizes": 9
+  },
+  {
+   "name": "WIGRILLEHATCH_s_2",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1139,
+   "ecken": 39,
+   "index0": 4830,
+   "indizes": 153
+  },
+  {
+   "name": "WIFRONT_s_0",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1178,
+   "ecken": 34,
+   "index0": 4983,
+   "indizes": 135
+  },
+  {
+   "name": "WISIDEFRONT_s_1",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1212,
+   "ecken": 22,
+   "index0": 5118,
+   "indizes": 69
+  },
+  {
+   "name": "WIREAR_s_2",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1234,
+   "ecken": 23,
+   "index0": 5187,
+   "indizes": 96
+  },
+  {
+   "name": "WISIDEREAR_s_1",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1257,
+   "ecken": 40,
+   "index0": 5283,
+   "indizes": 147
+  },
+  {
+   "name": "WIRLGT_s_5",
+   "rolle": "scheibe",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1297,
+   "ecken": 44,
+   "index0": 5430,
+   "indizes": 123
+  },
+  {
+   "name": "RLGTCASE_s_3",
+   "rolle": "ruecklicht",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1341,
+   "ecken": 36,
+   "index0": 5553,
+   "indizes": 141
+  },
+  {
+   "name": "BODYCREASE_s_6",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1377,
+   "ecken": 42,
+   "index0": 5694,
+   "indizes": 144
+  },
+  {
+   "name": "SPACER_s_9",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1419,
+   "ecken": 102,
+   "index0": 5838,
+   "indizes": 297
+  },
+  {
+   "name": "BODYF_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1521,
+   "ecken": 108,
+   "index0": 6135,
+   "indizes": 426
+  },
+  {
+   "name": "BODY_s_13",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1629,
+   "ecken": 342,
+   "index0": 6561,
+   "indizes": 1539
+  },
+  {
+   "name": "RUBBERWISIDER_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 1971,
+   "ecken": 70,
+   "index0": 8100,
+   "indizes": 249
+  },
+  {
+   "name": "RUBBERWIREAR_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 2041,
+   "ecken": 44,
+   "index0": 8349,
+   "indizes": 216
+  },
+  {
+   "name": "TOPAIRDAM_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 2085,
+   "ecken": 120,
+   "index0": 8565,
+   "indizes": 630
+  },
+  {
+   "name": "RWINGBIGP3_s_17",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 2205,
+   "ecken": 112,
+   "index0": 9195,
+   "indizes": 288
+  },
+  {
+   "name": "RWINGBIGP2_s_17",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 2317,
+   "ecken": 247,
+   "index0": 9483,
+   "indizes": 873
+  },
+  {
+   "name": "RWINGBIGP1_s_8",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 2564,
+   "ecken": 199,
+   "index0": 10356,
+   "indizes": 834
+  },
+  {
+   "name": "BODYSPACER_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 2763,
+   "ecken": 114,
+   "index0": 11190,
+   "indizes": 381
+  },
+  {
+   "name": "FLGT2_s_7",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 2877,
+   "ecken": 116,
+   "index0": 11571,
+   "indizes": 522
+  },
+  {
+   "name": "FLGT1A_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 2993,
+   "ecken": 34,
+   "index0": 12093,
+   "indizes": 108
+  },
+  {
+   "name": "FLGT1_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 3027,
+   "ecken": 172,
+   "index0": 12201,
+   "indizes": 882
+  },
+  {
+   "name": "FBMPP3_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 3199,
+   "ecken": 134,
+   "index0": 13083,
+   "indizes": 468
+  },
+  {
+   "name": "FBMPP1_s_5",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 3333,
+   "ecken": 235,
+   "index0": 13551,
+   "indizes": 912
+  },
+  {
+   "name": "EXHAUST_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 3568,
+   "ecken": 62,
+   "index0": 14463,
+   "indizes": 231
+  },
+  {
+   "name": "HANDLE_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 3630,
+   "ecken": 32,
+   "index0": 14694,
+   "indizes": 222
+  },
+  {
+   "name": "REARBUMPER_s_4",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 3662,
+   "ecken": 150,
+   "index0": 14916,
+   "indizes": 783
+  },
+  {
+   "name": "BOOT_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 3812,
+   "ecken": 61,
+   "index0": 15699,
+   "indizes": 306
+  },
+  {
+   "name": "RUBBERWIFRONT_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 3873,
+   "ecken": 75,
+   "index0": 16005,
+   "indizes": 306
+  },
+  {
+   "name": "DOORCREASE1_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 3948,
+   "ecken": 12,
+   "index0": 16311,
+   "indizes": 27
+  },
+  {
+   "name": "RUBBERWISIDEF_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 3960,
+   "ecken": 44,
+   "index0": 16338,
+   "indizes": 141
+  },
+  {
+   "name": "DOOR_s_3",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 4004,
+   "ecken": 92,
+   "index0": 16479,
+   "indizes": 360
+  },
+  {
+   "name": "BOOTHANDLE_s_2",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 4096,
+   "ecken": 37,
+   "index0": 16839,
+   "indizes": 237
+  },
+  {
+   "name": "LPCOVE_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 4133,
+   "ecken": 24,
+   "index0": 17076,
+   "indizes": 123
+  },
+  {
+   "name": "WIPER1_s_33",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 4157,
+   "ecken": 148,
+   "index0": 17199,
+   "indizes": 600
+  },
+  {
+   "name": "REARAIRDAM_s_1",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 4305,
+   "ecken": 36,
+   "index0": 17799,
+   "indizes": 192
+  },
+  {
+   "name": "EXHAUSTBAY_s_0",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 4341,
+   "ecken": 14,
+   "index0": 17991,
+   "indizes": 66
+  },
+  {
+   "name": "FAIRDAMIN_s_10",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "rs1-fmc-centre04.png",
+   "ecke0": 4355,
+   "ecken": 122,
+   "index0": 18057,
+   "indizes": 486
+  }
+ ],
+ "schatten": "shadow.png",
+ "lichter": {
+  "brems": [],
+  "rueck": [
+   [
+    0.55,
+    1.14,
+    -1.75,
+    0.12
+   ],
+   [
+    -0.55,
+    1.14,
+    -1.75,
+    0.12
+   ]
+  ],
+  "front": [
+   [
+    -0.57,
+    0.65,
+    1.74,
+    0.3
+   ],
+   [
+    0.57,
+    0.62,
+    1.74,
+    0.3
+   ]
+  ]
+ },
+ "physik": {
+  "masse": 1230.0,
+  "schwerpunktHoehe": 0.2,
+  "radstand": 2.65,
+  "a": 1.272,
+  "b": 1.378,
+  "vorderachse": 1.22,
+  "hinterachse": -1.43,
+  "laenge": 4.25,
+  "breite": 1.82,
+  "hoehe": 1.3,
+  "massenVerteilung": 0.75,
+  "lenkGrad": 35.0,
+  "bremsVorn": 0.65,
+  "cx": 0.35,
+  "stirnflaeche": 2.2,
+  "auftriebVorn": 0.3,
+  "auftriebHinten": 0.2,
+  "fluegelVorn": 0.08362277061412277,
+  "fluegelHinten": 0.6945927106677213,
+  "leerlauf": 2000.0,
+  "begrenzer": 6500.0,
+  "reifen": {
+   "vorn": {
+    "radius": 0.3237,
+    "breite": 0.205,
+    "spur": 1.56,
+    "bodenfreiheit": 0.12,
+    "mu": 1.1
+   },
+   "hinten": {
+    "radius": 0.3237,
+    "breite": 0.205,
+    "spur": 1.58,
+    "bodenfreiheit": 0.12,
+    "mu": 1.1
+   }
+  },
+  "feder": {
+   "vorn": {
+    "k": 85000.0,
+    "druck": 8500.0,
+    "zug": 9000.0,
+    "weg": 0.2,
+    "stab": 35000.0
+   },
+   "hinten": {
+    "k": 45000.0,
+    "druck": 8500.0,
+    "zug": 9000.0,
+    "weg": 0.2,
+    "stab": 30000.0
+   }
+  },
+  "gefedert": 1130.0
+ },
+ "livree": {
+  "paint": "rs1-fmc-centre04.png",
+  "list": [
+   {
+    "id": "No7",
+    "name": "No7",
+    "tex": "rs1-fmc-centre04-No7.png"
+   }
+  ]
+ }
+}

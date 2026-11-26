@@ -100,16 +100,22 @@ def acc_lesen(pfad):
 
 
 def xml_lesen(pfad):
+    # Manche aelteren Speed-Dreams-Fahrzeugdaten (z. B. die RS-Klasse) schreiben die Attribute
+    # mit max=/min= VOR name=; der Parser darf die Reihenfolge nicht voraussetzen.
     s = re.sub(r'<!--.*?-->', '', open(pfad, encoding='utf-8').read(), flags=re.S)
     werte, pfadteile = {}, []
-    for m in re.finditer(r'<section name="([^"]+)">|</section>|<att(num|str) name="([^"]+)"([^>]*)/>', s):
+    for m in re.finditer(r'<section name="([^"]+)">|</section>|<att(num|str)\b[^>]*?/>', s):
         if m.group(1):
             pfadteile.append(m.group(1))
         elif m.group(0) == '</section>':
             pfadteile.pop()
         else:
-            v = re.search(r'val="([^"]*)"', m.group(4))
-            werte['/'.join(pfadteile + [m.group(3)])] = v.group(1) if v else ''
+            tag = m.group(0)
+            nm = re.search(r'\bname="([^"]+)"', tag)
+            if not nm:
+                continue
+            v = re.search(r'\bval="([^"]*)"', tag)
+            werte['/'.join(pfadteile + [nm.group(1)])] = v.group(1) if v else ''
     return werte
 
 
