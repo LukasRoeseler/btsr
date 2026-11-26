@@ -1,0 +1,12 @@
+Porsche 992 GT3 R (img/autos/p992gt3r/) - Modell fuer die virtuelle Fahrt in OmegaSim
+
+"Porsche 992 GT3 R" (https://skfb.ly/pIJOp) by vecarz, Sketchfab, is licensed under Creative Commons
+Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0),
+http://creativecommons.org/licenses/by-nc-sa/4.0/
+
+Aenderungen (OmegaSim, 26.11.2026): aus der .glb umgewandelt mit tools/glb_auto.py - Format der App (auto.json,
+auto.bin), Texturen verkleinert (hoechstens 1024 px), auf Metergroesse skaliert (--skal), grosser Innenraumteil,
+Anzeigen, unscharfe Felge, Bremsen und Bremsscheiben weggelassen, je Achse ein Rad als Einheitsrad, Lichter
+vorn/hinten getrennt, Schattenfleck (shadow.png) und Vorschaubild (vorschau.png) neu gezeichnet. Die Fahrdaten in
+auto.json (physik) sind geschaetzt (WIP) und nicht Teil des Modells. Marken und Logos auf der Lackierung gehoeren
+ihren Inhabern.

@@ -1,0 +1,705 @@
+{
+ "name": "Porsche 992 GT3 R (vecarz)",
+ "kennung": "p992gt3r",
+ "quelle": "\\",
+ "lizenz": "CC BY-NC-SA 4.0, siehe LIZENZ.txt",
+ "koordinaten": "m; +x links, +y oben, +z vorn",
+ "ecken": 173028,
+ "indizes": 699435,
+ "indexAb": 5536896,
+ "schritt": 32,
+ "schatten": "shadow.png",
+ "lichter": {
+  "front": [
+   [
+    0.715,
+    0.635,
+    1.819,
+    0.14
+   ],
+   [
+    -0.704,
+    0.635,
+    1.819,
+    0.14
+   ]
+  ],
+  "rueck": [
+   [
+    0.504,
+    0.669,
+    -2.103,
+    0.14
+   ],
+   [
+    -0.493,
+    0.669,
+    -2.103,
+    0.14
+   ]
+  ],
+  "brems": [
+   [
+    0.504,
+    0.669,
+    -2.103,
+    0.16
+   ],
+   [
+    -0.493,
+    0.669,
+    -2.103,
+    0.16
+   ]
+  ]
+ },
+ "haube": {
+  "vor": 0.62,
+  "hoch": 1.02
+ },
+ "physik": {
+  "masse": 1250.0,
+  "schwerpunktHoehe": 0.27,
+  "radstand": 2.4587,
+  "a": 1.4,
+  "b": 1.06,
+  "vorderachse": 1.2714,
+  "hinterachse": -1.1873,
+  "laenge": 4.658,
+  "breite": 2.002,
+  "hoehe": 1.169,
+  "massenVerteilung": 0.7,
+  "lenkGrad": 45.0,
+  "bremsVorn": 0.5,
+  "cx": 0.5,
+  "stirnflaeche": 1.9,
+  "auftriebVorn": 0.45,
+  "auftriebHinten": 0.5,
+  "fluegelVorn": 0.3,
+  "fluegelHinten": 0.55,
+  "leerlauf": 1500.0,
+  "begrenzer": 9000.0,
+  "reifen": {
+   "vorn": {
+    "radius": 0.3326,
+    "breite": 0.3263,
+    "spur": 1.6435,
+    "bodenfreiheit": 0.05,
+    "mu": 1.3
+   },
+   "hinten": {
+    "radius": 0.3441,
+    "breite": 0.346,
+    "spur": 1.6306,
+    "bodenfreiheit": 0.05,
+    "mu": 1.3
+   }
+  },
+  "feder": {
+   "vorn": {
+    "k": 120000.0,
+    "druck": 11000.0,
+    "zug": 17000.0,
+    "weg": 0.08,
+    "stab": 50000.0
+   },
+   "hinten": {
+    "k": 110000.0,
+    "druck": 10000.0,
+    "zug": 16000.0,
+    "weg": 0.08,
+    "stab": 30000.0
+   }
+  },
+  "gefedert": 1150.0
+ },
+ "teile": [
+  {
+   "name": "EXT_Mechanics_1",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_mechanics_1.jpg",
+   "ecke0": 0,
+   "ecken": 952,
+   "index0": 0,
+   "indizes": 3432
+  },
+  {
+   "name": "EXT_Mechanics_0",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_mechanics_0.jpg",
+   "ecke0": 952,
+   "ecken": 517,
+   "index0": 3432,
+   "indizes": 1674
+  },
+  {
+   "name": "MIRROR",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_mirror.jpg",
+   "ecke0": 1469,
+   "ecken": 34,
+   "index0": 5106,
+   "indizes": 96
+  },
+  {
+   "name": "INT_Carbon_1",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_int_carbon_1.jpg",
+   "ecke0": 1503,
+   "ecken": 20723,
+   "index0": 5202,
+   "indizes": 92187
+  },
+  {
+   "name": "INT_Steer",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_int_steer.jpg",
+   "ecke0": 22226,
+   "ecken": 12137,
+   "index0": 97389,
+   "indizes": 43062
+  },
+  {
+   "name": "INT_Steer_Carbon",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_int_steer_carbon.jpg",
+   "ecke0": 34363,
+   "ecken": 4474,
+   "index0": 140451,
+   "indizes": 21096
+  },
+  {
+   "name": "MIRROR",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_mirror.jpg",
+   "ecke0": 38837,
+   "ecken": 59,
+   "index0": 161547,
+   "indizes": 174
+  },
+  {
+   "name": "EXT_Details_1",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_details_1.jpg",
+   "ecke0": 38896,
+   "ecken": 32,
+   "index0": 161721,
+   "indizes": 48
+  },
+  {
+   "name": "EXT_Windows_0",
+   "rolle": "glas",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_windows_0.png",
+   "ecke0": 38928,
+   "ecken": 79,
+   "index0": 161769,
+   "indizes": 288
+  },
+  {
+   "name": "EXT_Carpaint_Inst",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_carpaint_inst.jpg",
+   "ecke0": 39007,
+   "ecken": 3572,
+   "index0": 162057,
+   "indizes": 17634
+  },
+  {
+   "name": "INT_Carbon_0",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_int_carbon_0.jpg",
+   "ecke0": 42579,
+   "ecken": 3088,
+   "index0": 179691,
+   "indizes": 14982
+  },
+  {
+   "name": "MIRROR",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_mirror.jpg",
+   "ecke0": 45667,
+   "ecken": 59,
+   "index0": 194673,
+   "indizes": 174
+  },
+  {
+   "name": "INT_Carbon",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_int_carbon.jpg",
+   "ecke0": 45726,
+   "ecken": 3088,
+   "index0": 194847,
+   "indizes": 14982
+  },
+  {
+   "name": "EXT_Details_1",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_details_1.jpg",
+   "ecke0": 48814,
+   "ecken": 32,
+   "index0": 209829,
+   "indizes": 48
+  },
+  {
+   "name": "EXT_Windows_0",
+   "rolle": "glas",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_windows_0.png",
+   "ecke0": 48846,
+   "ecken": 79,
+   "index0": 209877,
+   "indizes": 288
+  },
+  {
+   "name": "EXT_Carpaint_Inst",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_carpaint_inst.jpg",
+   "ecke0": 48925,
+   "ecken": 3406,
+   "index0": 210165,
+   "indizes": 16656
+  },
+  {
+   "name": "EXT_Details_1",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_details_1.jpg",
+   "ecke0": 52331,
+   "ecken": 18,
+   "index0": 226821,
+   "indizes": 48
+  },
+  {
+   "name": "EXT_CALIPER_1",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_caliper_1.jpg",
+   "ecke0": 52349,
+   "ecken": 1236,
+   "index0": 226869,
+   "indizes": 3756
+  },
+  {
+   "name": "EXT_Details_1",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_details_1.jpg",
+   "ecke0": 53585,
+   "ecken": 12,
+   "index0": 230625,
+   "indizes": 30
+  },
+  {
+   "name": "EXT_CALIPER_1",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_caliper_1.jpg",
+   "ecke0": 53597,
+   "ecken": 1247,
+   "index0": 230655,
+   "indizes": 4095
+  },
+  {
+   "name": "EXT_CALIPER_0",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_caliper_0.jpg",
+   "ecke0": 54844,
+   "ecken": 1247,
+   "index0": 234750,
+   "indizes": 4095
+  },
+  {
+   "name": "EXT_Details_1",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_details_1.jpg",
+   "ecke0": 56091,
+   "ecken": 12,
+   "index0": 238845,
+   "indizes": 30
+  },
+  {
+   "name": "EXT_CALIPER",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_caliper.jpg",
+   "ecke0": 56103,
+   "ecken": 1236,
+   "index0": 238875,
+   "indizes": 3756
+  },
+  {
+   "name": "EXT_Details_0",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_details_0.jpg",
+   "ecke0": 57339,
+   "ecken": 18,
+   "index0": 242631,
+   "indizes": 48
+  },
+  {
+   "name": "EXT_TAMP_FUEL",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_tamp_fuel.jpg",
+   "ecke0": 57357,
+   "ecken": 1254,
+   "index0": 242679,
+   "indizes": 5022
+  },
+  {
+   "name": "Scheinwerfer",
+   "rolle": "scheinwerfer",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_emissive_light_front_0.jpg",
+   "ecke0": 58611,
+   "ecken": 424,
+   "index0": 247701,
+   "indizes": 1728
+  },
+  {
+   "name": "Scheinwerfer",
+   "rolle": "scheinwerfer",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_emissive_light_front_0.jpg",
+   "ecke0": 59035,
+   "ecken": 3100,
+   "index0": 249429,
+   "indizes": 12624
+  },
+  {
+   "name": "Ruecklichter",
+   "rolle": "ruecklicht",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_emissive_light_rear_0.jpg",
+   "ecke0": 62135,
+   "ecken": 231,
+   "index0": 262053,
+   "indizes": 1158
+  },
+  {
+   "name": "EXT_EXALTS",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_exalts.jpg",
+   "ecke0": 62366,
+   "ecken": 7083,
+   "index0": 263211,
+   "indizes": 25854
+  },
+  {
+   "name": "EXT_RADIATOR",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_radiator.jpg",
+   "ecke0": 69449,
+   "ecken": 88,
+   "index0": 289065,
+   "indizes": 234
+  },
+  {
+   "name": "AUX_LIGHT_Porsche992",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_aux_light_porsche992.jpg",
+   "ecke0": 69537,
+   "ecken": 155,
+   "index0": 289299,
+   "indizes": 540
+  },
+  {
+   "name": "AUX_LIGHT_Porsche992",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_aux_light_porsche992.jpg",
+   "ecke0": 69692,
+   "ecken": 272,
+   "index0": 289839,
+   "indizes": 1104
+  },
+  {
+   "name": "AUX_LIGHT_Porsche992",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_aux_light_porsche992.jpg",
+   "ecke0": 69964,
+   "ecken": 96,
+   "index0": 290943,
+   "indizes": 390
+  },
+  {
+   "name": "AUX_LIGHT_Porsche992",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_aux_light_porsche992.jpg",
+   "ecke0": 70060,
+   "ecken": 32,
+   "index0": 291333,
+   "indizes": 102
+  },
+  {
+   "name": "AUX_LIGHT_Porsche992",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_aux_light_porsche992.jpg",
+   "ecke0": 70092,
+   "ecken": 32,
+   "index0": 291435,
+   "indizes": 102
+  },
+  {
+   "name": "AUX_LIGHT_Porsche992",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_aux_light_porsche992.jpg",
+   "ecke0": 70124,
+   "ecken": 92,
+   "index0": 291537,
+   "indizes": 372
+  },
+  {
+   "name": "Ruecklichter",
+   "rolle": "ruecklicht",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_emissive_light_rear_0.jpg",
+   "ecke0": 70216,
+   "ecken": 50,
+   "index0": 291909,
+   "indizes": 144
+  },
+  {
+   "name": "Ruecklichter",
+   "rolle": "ruecklicht",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_emissive_light_rear_0.jpg",
+   "ecke0": 70266,
+   "ecken": 50,
+   "index0": 292053,
+   "indizes": 144
+  },
+  {
+   "name": "Ruecklichter",
+   "rolle": "ruecklicht",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_emissive_light_rear_0.jpg",
+   "ecke0": 70316,
+   "ecken": 72,
+   "index0": 292197,
+   "indizes": 180
+  },
+  {
+   "name": "AUX_LIGHT_Porsche992",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_aux_light_porsche992.jpg",
+   "ecke0": 70388,
+   "ecken": 128,
+   "index0": 292377,
+   "indizes": 312
+  },
+  {
+   "name": "AUX_LIGHT_Porsche992",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_aux_light_porsche992.jpg",
+   "ecke0": 70516,
+   "ecken": 128,
+   "index0": 292689,
+   "indizes": 312
+  },
+  {
+   "name": "Ruecklichter",
+   "rolle": "ruecklicht",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_emissive_light_rear_0.jpg",
+   "ecke0": 70644,
+   "ecken": 363,
+   "index0": 293001,
+   "indizes": 1584
+  },
+  {
+   "name": "EXT_Carpaint_Inst",
+   "rolle": "karosserie",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_carpaint_inst.jpg",
+   "ecke0": 71007,
+   "ecken": 46913,
+   "index0": 294585,
+   "indizes": 218019
+  },
+  {
+   "name": "EXT_Mechanics",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_mechanics.jpg",
+   "ecke0": 117920,
+   "ecken": 14421,
+   "index0": 512604,
+   "indizes": 46371
+  },
+  {
+   "name": "EXT_Details",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_details.jpg",
+   "ecke0": 132341,
+   "ecken": 4492,
+   "index0": 558975,
+   "indizes": 12528
+  },
+  {
+   "name": "EXT_Grid_2",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_grid_2.png",
+   "ecke0": 136833,
+   "ecken": 222,
+   "index0": 571503,
+   "indizes": 744
+  },
+  {
+   "name": "EXT_Banner",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_banner.jpg",
+   "ecke0": 137055,
+   "ecken": 1600,
+   "index0": 572247,
+   "indizes": 6840
+  },
+  {
+   "name": "EXT_Windows",
+   "rolle": "glas",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_windows.png",
+   "ecke0": 138655,
+   "ecken": 1112,
+   "index0": 579087,
+   "indizes": 4002
+  },
+  {
+   "name": "Scheinwerfer",
+   "rolle": "scheinwerfer",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_emissive_light_front.jpg",
+   "ecke0": 139767,
+   "ecken": 8824,
+   "index0": 583089,
+   "indizes": 22392
+  },
+  {
+   "name": "Ruecklichter",
+   "rolle": "ruecklicht",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_emissive_light_rear.jpg",
+   "ecke0": 148591,
+   "ecken": 2458,
+   "index0": 605481,
+   "indizes": 7482
+  },
+  {
+   "name": "EXT_Glass_Emissive_Front",
+   "rolle": "glas",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_glass_emissive_front.png",
+   "ecke0": 151049,
+   "ecken": 2208,
+   "index0": 612963,
+   "indizes": 6210
+  },
+  {
+   "name": "EXT_Glass_Emissive_Rear",
+   "rolle": "glas",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_glass_emissive_rear.png",
+   "ecke0": 153257,
+   "ecken": 1087,
+   "index0": 619173,
+   "indizes": 5370
+  },
+  {
+   "name": "MI_Tyre_Flex_Dry_R_0 hinten",
+   "rolle": "rad",
+   "gruppe": "rad",
+   "tex": "p992gt3r_mi_tyre_flex_dry_r_0.jpg",
+   "ecke0": 154344,
+   "ecken": 1547,
+   "index0": 624543,
+   "indizes": 8640,
+   "achse": "hinten"
+  },
+  {
+   "name": "EXT_RIM_2 hinten",
+   "rolle": "rad",
+   "gruppe": "rad",
+   "tex": "p992gt3r_ext_rim_2.jpg",
+   "ecke0": 155891,
+   "ecken": 4796,
+   "index0": 633183,
+   "indizes": 19206,
+   "achse": "hinten"
+  },
+  {
+   "name": "EXT_RIM_1 hinten",
+   "rolle": "rad",
+   "gruppe": "rad",
+   "tex": "p992gt3r_ext_rim_1.jpg",
+   "ecke0": 160687,
+   "ecken": 2999,
+   "index0": 652389,
+   "indizes": 9600,
+   "achse": "hinten"
+  },
+  {
+   "name": "MI_Tyre_Flex_Dry_R vorn",
+   "rolle": "rad",
+   "gruppe": "rad",
+   "tex": "p992gt3r_mi_tyre_flex_dry_r.jpg",
+   "ecke0": 163686,
+   "ecken": 1547,
+   "index0": 661989,
+   "indizes": 8640,
+   "achse": "vorn"
+  },
+  {
+   "name": "EXT_RIM_0 vorn",
+   "rolle": "rad",
+   "gruppe": "rad",
+   "tex": "p992gt3r_ext_rim_0.jpg",
+   "ecke0": 165233,
+   "ecken": 4796,
+   "index0": 670629,
+   "indizes": 19206,
+   "achse": "vorn"
+  },
+  {
+   "name": "EXT_RIM vorn",
+   "rolle": "rad",
+   "gruppe": "rad",
+   "tex": "p992gt3r_ext_rim.jpg",
+   "ecke0": 170029,
+   "ecken": 2999,
+   "index0": 689835,
+   "indizes": 9600,
+   "achse": "vorn"
+  }
+ ],
+ "perf": "auto_perf"
+}
