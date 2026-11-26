@@ -1749,7 +1749,7 @@
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
-  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/', cavallo360: 'img/autos/cavallo360/', nsx: 'img/autos/nsx/', spirit300: 'img/autos/spirit300/', archerr9: 'img/autos/archerr9/', morley900: 'img/autos/morley900/', vortexgt: 'img/autos/vortexgt/', kongei: 'img/autos/kongei/', carson96: 'img/autos/carson96/', fmccentre04: 'img/autos/fmccentre04/', saxxon: 'img/autos/saxxon/' };
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/', cavallo360: 'img/autos/cavallo360/', nsx: 'img/autos/nsx/', spirit300: 'img/autos/spirit300/', archerr9: 'img/autos/archerr9/', morley900: 'img/autos/morley900/', vortexgt: 'img/autos/vortexgt/', kongei: 'img/autos/kongei/', carson96: 'img/autos/carson96/', fmccentre04: 'img/autos/fmccentre04/', saxxon: 'img/autos/saxxon/', vorcette: 'img/autos/vorcette/' };
   // v1.6.27 (Issue #15): der RC Stunt Copter in der Garage. Er ist KEIN Auto: er hat kein
   // auto.json/auto.bin (VF_MODELL_PFADE), sondern wird als eigener Hubschrauber gebaut und
   // mit zwei Sticks geflogen. Ueberall, wo ein Auto-Modell oder ein Fahrprofil gebraucht wird,
@@ -1974,7 +1974,10 @@
             { v: 'caravelle', name: t('VW Caravelle Oettinger (Gnen54, WIP)') },
             // v1.6.27: "2019 Audi RS5 DTM" von Dave Love (Sketchfab, CC BY 4.0), umgewandelt mit tools/glb_auto.py, siehe
             // img/autos/audirs5/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
-            { v: 'audirs5', name: t('Audi RS5 DTM 2019 (Dave Love, WIP)') }]);
+            { v: 'audirs5', name: t('Audi RS5 DTM 2019 (Dave Love, WIP)') },
+            // v1.6.100: "Vorcette C6R" - eigenes KI-Modell des Corvette C6.R GT2 (Free Art License 1.3),
+            // umgewandelt mit tools/glb_auto.py, siehe img/autos/vorcette/LIZENZ.txt. WIP: Fahrdaten geschaetzt.
+            { v: 'vorcette', name: t('Vorcette C6R (Corvette C6.R GT2, WIP)') }]);
   }
   function vfAutoName(id) { const a = vfAutoListe().find((x) => x.v === id); return a ? a.name : id; }
   // Name der gewaehlten Strecke der virtuellen Fahrt (freie Strecke oder die gebaute Bahn).
@@ -1997,6 +2000,7 @@
   // v1.6.39 BESTELLT: "Bitte virtuelle Autos mit den Motorsounds fest verknuepfen mit passenden Sounds." Jetzt jedes Auto:
   // Vulture V5.R = Corvette C5-R (das Vorbild), FMC GT4 = Ford GT40, Boxer 96 = Porsche 911 GT3 (Boxer-6), Lynx 220 =
   // Jaguar XJ220 mit V6-Biturbo (naechster Klang: Ferrari 296 GT3, V6), Audi RS5 DTM = sein eigener Reihen-4-Turbo.
+  // v1.6.100: Vorcette C6R = Corvette C6.R (LS7.R 7.0 V8, Cross-Plane).
   const VF_MOTOR_FEST = { kaefer: 'boxster986', spider: 'listerstorm', caravelle: 'boxster986',
     v5r: 'c5r', fmcgt4: 'gt40', boxer96: 'p992gt3r', lynx220: 'f296gt3', audirs5: 'rs5dtm',
     // v1.6.85 (Issue #17): Ferrarireihe (V8) bzw. V6 wie der Lynx 220 / Jaguar XJ220.
@@ -2011,7 +2015,10 @@
     // und Saxxon Hatcho (2,0 l Reihen-4) haben ihre Aufnahme (ford2c.wav/206_engine.wav) nur in der
     // geteilten data/sound, die hier nicht vorliegt - sie laufen mit dem Ford-Reihenmotor (capri_zakspeed).
     morley900: 'sd_v8muscle', vortexgt: 'sd_vortex', kongei: 'sd_kongei', carson96: 'sd_carson',
-    fmccentre04: 'capri_zakspeed', saxxon: 'capri_zakspeed' };
+    fmccentre04: 'capri_zakspeed', saxxon: 'capri_zakspeed',
+    // v1.6.100: der Vorcette C6R (Corvette C6.R GT2) bekommt den passenden V8-Klang der Corvette C6.R
+    // (LS7.R 7.0 V8, Cross-Plane, Leerlauf 1100/min, Begrenzer 7200/min) - derselbe wie beim C6.R.
+    vorcette: 'c6r' };
   function vfMotorFest() { return VF_MOTOR_FEST[vfAutoWahl()] || ''; }
   // Die echte Neigung eines GT1 ist klein (0,5 Grad Rollen bei 1,5 g) und bei Modellgroesse unsichtbar.
   // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.

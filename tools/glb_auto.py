@@ -2,23 +2,31 @@
 """Ein Auto aus einer glTF-Binaerdatei (.glb, z. B. von Sketchfab) fuer die virtuelle Fahrt umwandeln.
 
     python tools/glb_auto.py <datei.glb> <Kennung> [--name "Anzeigename"] [--lack <skin.png>]
+                          [--drehen y180] [--quelle "Herkunftsbeschreibung"] [--physik <json>]
 
 v1.6.27: zuerst fuer den "2019 Audi RS5 DTM" von Dave Love (Sketchfab, CC BY 4.0, siehe
-img/autos/audirs5/LIZENZ.txt). Geschrieben wird nach img/autos/<Kennung>/ im selben Format wie tools/sd_auto.py:
+img/autos/audirs5/LIZENZ.txt). v1.6.100: auch fuer den "Vorcette C6R" (eigenes KI-Modell, Free Art License 1.3).
+Geschrieben wird nach img/autos/<Kennung>/ im selben Format wie tools/sd_auto.py:
   auto.bin   alle Ecken (Float32: x y z nx ny nz u v) und danach alle Indizes (Uint16, je Teil ab dessen ecke0)
   auto.json  Teile (Rolle, Textur, Bereiche in auto.bin), Lichter, Haube, Fahrzeugdaten (geschaetzt, WIP)
   *.jpg/png  die Texturen, verkleinert (hoechstens MAX_TEX Pixel; JPG, wenn sie keinen Alphakanal brauchen)
   shadow.png ein weicher Schattenfleck (selbst gezeichnet)
 
-KOORDINATEN: glTF hat +y oben und (bei diesem Modell) +z vorn; rechtshaendig zeigt +x dann nach links - genau die
-Konvention der App (+x links, +y oben, +z vorn). Es wird also nichts gedreht, nur in Metern belassen.
+KOORDINATEN: glTF hat +y oben. Die App hat +x links, +y oben, +z vorn. Ein Modell mit +z vorn (Audi RS5) wird
+nicht gedreht. Ein Modell mit -z vorn (Vorcette C6R: Frontscheinwerfer bei -z) wird mit --drehen y180 um 180 Grad
+um die Y-Achse gedreht, damit die Nase nach +z zeigt (x und z kehren ihr Vorzeichen, y bleibt).
 
 RAEDER: Die App zeichnet je Achse EIN Rad (gruppe 'rad', achse 'vorn'/'hinten') als Einheitsrad: Breite 1 laengs x,
 Durchmesser 1 in y und z, Mitte im Ursprung, Aussenseite bei +x (das rechte Rad wird gespiegelt). Genommen wird das
 linke Rad (x > 0) jeder Achse aus Felge, Nabe, Reifen und Lauffläche; Bremse und Scheibe drehen nicht und fallen weg.
+Die Achsenmasse werden aus den Teilen gemessen, deren Materialname "tire" enthaelt (das aeußere Reifenband).
 
 WEGGELASSEN: der grosse Innenraum-Teil (Cockpit), Anzeigen, Fahrerschild und die unscharfe Felge (Rim_Blur) -
 von aussen kaum zu sehen und gut ein Drittel aller Dreiecke.
+
+--physik <json>: ueberschreibt die geschaetzten Fahrdaten (masse, feder, a/b, ...) mit einer JSON-Datei.
+Die aus dem Modell gemessenen Werte (laenge, breite, hoehe, radstand, vorderachse/hinterachse, reifen) bleiben
+davon unberuehrt.
 """
 import io
 import json
@@ -42,6 +50,10 @@ ROLLEN = [
     ('INT_Carbon', 'anbau'), ('INT_Cage', 'anbau'), ('INT_Dash', 'anbau'), ('INT_Steer', 'anbau'),
     ('EXT_Rims', 'rad'), ('EXT_Rim_Hub', 'rad'), ('EXT_Tire_Tread', 'rad'), ('EXT_Tire_Inside', 'rad'), ('EXT_Tire', 'rad'),
     ('EXT_Rim_Blur', None), ('EXT_Disc', None), ('EXT_Brakes', None), ('INT_', None), ('T5_', None),
+    # Vorcette C6R (Corvette C6.R GT2, eigenes KI-Modell): Materialnamen aus dem Asset.
+    ('c6r_yellow', 'karosserie'), ('c6r_carbon', 'anbau'), ('c6r_glass', 'glas'),
+    ('c6r_tire', 'rad'), ('c6r_wheel', 'rad'), ('c6r_metal', 'anbau'),
+    ('c6r_headlight', 'licht'), ('c6r_taillight', 'licht'),
 ]
 
 
@@ -53,6 +65,10 @@ def rolle_fuer(mat):
 
 
 LACK = None   # --lack <png>: eigene Lackierung (Skin) statt der Grundfarbe des Lackmaterials
+DREHEN = None  # --drehen y180: 180 Grad um die Y-Achse (fuer -z-vorn-Modelle)
+QUELLE = None  # --quelle: Herkunftsbeschreibung fuer auto.json
+LIZENZ = None  # --lizenz: Kurzangabe der Lizenz fuer auto.json
+PHYSIK = None  # --physik <json>: ueberschreibt die geschaetzten Fahrdaten
 
 
 def textur_speichern(mat, ziel, kennung, schon):
@@ -100,8 +116,12 @@ def main():
         sys.exit(1)
     quelle, kennung = sys.argv[1], sys.argv[2]
     anzeige = sys.argv[sys.argv.index('--name') + 1] if '--name' in sys.argv else kennung
-    global LACK
+    global LACK, DREHEN, QUELLE, LIZENZ, PHYSIK
     LACK = sys.argv[sys.argv.index('--lack') + 1] if '--lack' in sys.argv else None
+    DREHEN = sys.argv[sys.argv.index('--drehen') + 1] if '--drehen' in sys.argv else None
+    QUELLE = sys.argv[sys.argv.index('--quelle') + 1] if '--quelle' in sys.argv else None
+    LIZENZ = sys.argv[sys.argv.index('--lizenz') + 1] if '--lizenz' in sys.argv else None
+    PHYSIK = json.load(open(sys.argv[sys.argv.index('--physik') + 1], encoding='utf-8')) if '--physik' in sys.argv else None
     ziel = os.path.join(REPO, 'img', 'autos', kennung)
     os.makedirs(ziel, exist_ok=True)
     sc = trimesh.load(quelle, force='scene')
@@ -118,12 +138,17 @@ def main():
         v = trimesh.transform_points(m.vertices, T)
         n = m.vertex_normals @ T[:3, :3].T
         n = n / np.maximum(1e-9, np.linalg.norm(n, axis=1, keepdims=True))
+        if DREHEN == 'y180':
+            # -z-vorn-Modell (Vorcette C6R): Nase nach +z drehen (x und z kehren das Vorzeichen).
+            v = np.column_stack((-v[:, 0], v[:, 1], -v[:, 2]))
+            n = np.column_stack((-n[:, 0], n[:, 1], -n[:, 2]))
         uv = m.visual.uv if getattr(m.visual, 'uv', None) is not None else np.zeros((len(v), 2))
         stuecke.append({'mat': mat, 'rolle': r, 'v': v, 'n': n, 'uv': np.asarray(uv, dtype=np.float64), 'f': np.asarray(m.faces)})
 
     # Raeder: Reifen links vorn/hinten bestimmen (Mitte, Radius, Breite).
-    # Masse aus Reifen, Laufflaeche und Innenseite zusammen (der Teil EXT_Tire allein ist nur die Flanke).
-    rv = np.vstack([s['v'] for s in stuecke if s['mat'].name.startswith('EXT_Tire')])
+    # Masse aus den Teilen, deren Materialname "tire" enthaelt (das aeußere Reifenband; bei der
+    # Vorcette C6R heisst es c6r_tire, beim Audi EXT_Tire/EXT_Tire_Tread/EXT_Tire_Inside).
+    rv = np.vstack([s['v'] for s in stuecke if 'tire' in s['mat'].name.lower()])
     achsen = {}
     for ax, sel in (('vorn', (rv[:, 0] > 0) & (rv[:, 2] > 0)), ('hinten', (rv[:, 0] > 0) & (rv[:, 2] < 0))):
         p = rv[sel]
@@ -189,7 +214,9 @@ def main():
     radstand = vz - hz
 
     # Lichter aus den Lichtteilen: je Seite die Mitte der vorderen bzw. hinteren Leuchten.
-    lv = next(s for s in stuecke if s['rolle'] == 'licht')['v']
+    # Alle Lichtteile zusammen (beim Audi ist das ein Teil, bei der Vorcette sind Scheinwerfer
+    # und Ruecklichter je links/rechts getrennte Knoten).
+    lv = np.vstack([s['v'] for s in stuecke if s['rolle'] == 'licht'])
 
     def leuchten(maske, r):
         out = []
@@ -202,33 +229,36 @@ def main():
     front, rueck = leuchten(lv[:, 2] > 0, 1), leuchten(lv[:, 2] <= 0, -1)
 
     rv_, rh_ = achsen['vorn'], achsen['hinten']
+    physik = {
+        'masse': 1190.0, 'schwerpunktHoehe': 0.3, 'radstand': round(radstand, 4),
+        'a': round(radstand * 0.5, 4), 'b': round(radstand * 0.5, 4),
+        'vorderachse': round(vz, 4), 'hinterachse': round(hz, 4),
+        'laenge': round(laenge, 3), 'breite': round(breite, 3), 'hoehe': round(hoehe, 3),
+        'massenVerteilung': 0.8, 'lenkGrad': 30.0, 'bremsVorn': 0.57, 'cx': 0.42, 'stirnflaeche': 1.9,
+        'auftriebVorn': 0.45, 'auftriebHinten': 0.5, 'fluegelVorn': 0.3, 'fluegelHinten': 0.55,
+        'leerlauf': 1500.0, 'begrenzer': 9500.0,
+        'reifen': {
+            'vorn': {'radius': round(rv_['radius'], 4), 'breite': round(rv_['breite'], 4), 'spur': round(2 * float(rv_['mitte'][0]), 4), 'bodenfreiheit': 0.05, 'mu': 1.3},
+            'hinten': {'radius': round(rh_['radius'], 4), 'breite': round(rh_['breite'], 4), 'spur': round(2 * float(rh_['mitte'][0]), 4), 'bodenfreiheit': 0.05, 'mu': 1.3},
+        },
+        'feder': {'vorn': {'k': 140000.0, 'druck': 12500.0, 'zug': 19000.0, 'weg': 0.07, 'stab': 60000.0},
+                  'hinten': {'k': 130000.0, 'druck': 11000.0, 'zug': 18000.0, 'weg': 0.07, 'stab': 30000.0}},
+        'gefedert': 1080.0,
+    }
+    if PHYSIK:
+        # --physik: nur die geschaetzten Werte ueberschreiben; laenge/breite/hoehe/radstand/
+        # vorderachse/hinterachse/reifen bleiben aus dem Modell gemessen.
+        physik.update(PHYSIK)
     meta = {
         'name': anzeige, 'kennung': kennung,
-        'quelle': '"2019 Audi RS5 DTM" (https://skfb.ly/pMuFP) von Dave Love, Sketchfab; umgewandelt mit tools/glb_auto.py',
-        'lizenz': 'CC BY 4.0, siehe LIZENZ.txt',
+        'quelle': QUELLE or '"2019 Audi RS5 DTM" (https://skfb.ly/pMuFP) von Dave Love, Sketchfab; umgewandelt mit tools/glb_auto.py',
+        'lizenz': LIZENZ or 'CC BY 4.0, siehe LIZENZ.txt',
         'koordinaten': 'm; +x links, +y oben, +z vorn',
         'ecken': len(ecken), 'indizes': len(indizes), 'indexAb': len(ecken) * 32, 'schritt': 32,
         'schatten': 'shadow.png',
         'lichter': {'front': front, 'rueck': rueck, 'brems': [l[:3] + [0.16] for l in rueck]},
         'haube': {'vor': 0.62, 'hoch': 1.02},
-        # Fahrdaten GESCHAETZT (WIP): DTM 2019 (Class One) nach oeffentlichen Eckdaten - ~1115 kg ohne Fahrer, Radstand
-        # aus dem Modell, Turbo-Vierzylinder bis ~9500/min, grosser Front- und Heckfluegel. Federn wie beim Spider NG1.
-        'physik': {
-            'masse': 1190.0, 'schwerpunktHoehe': 0.3, 'radstand': round(radstand, 4),
-            'a': round(radstand * 0.5, 4), 'b': round(radstand * 0.5, 4),
-            'vorderachse': round(vz, 4), 'hinterachse': round(hz, 4),
-            'laenge': round(laenge, 3), 'breite': round(breite, 3), 'hoehe': round(hoehe, 3),
-            'massenVerteilung': 0.8, 'lenkGrad': 30.0, 'bremsVorn': 0.57, 'cx': 0.42, 'stirnflaeche': 1.9,
-            'auftriebVorn': 0.45, 'auftriebHinten': 0.5, 'fluegelVorn': 0.3, 'fluegelHinten': 0.55,
-            'leerlauf': 1500.0, 'begrenzer': 9500.0,
-            'reifen': {
-                'vorn': {'radius': round(rv_['radius'], 4), 'breite': round(rv_['breite'], 4), 'spur': round(2 * float(rv_['mitte'][0]), 4), 'bodenfreiheit': 0.05, 'mu': 1.3},
-                'hinten': {'radius': round(rh_['radius'], 4), 'breite': round(rh_['breite'], 4), 'spur': round(2 * float(rh_['mitte'][0]), 4), 'bodenfreiheit': 0.05, 'mu': 1.3},
-            },
-            'feder': {'vorn': {'k': 140000.0, 'druck': 12500.0, 'zug': 19000.0, 'weg': 0.07, 'stab': 60000.0},
-                      'hinten': {'k': 130000.0, 'druck': 11000.0, 'zug': 18000.0, 'weg': 0.07, 'stab': 30000.0}},
-            'gefedert': 1080.0,
-        },
+        'physik': physik,
         'teile': teile,
     }
     with open(os.path.join(ziel, 'auto.bin'), 'wb') as f:
