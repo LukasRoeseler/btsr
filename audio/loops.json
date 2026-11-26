@@ -2194,5 +2194,58 @@
   },
   "idleRpm": 2000,
   "limiterRpm": 8500
+ },
+ "sd_archer": {
+  "label": "Speed Dreams: Archer R-9 (Aston Martin DBR9, 6,0 l V12)",
+  "cylinders": 12,
+  "source": "Aufnahme aus Speed Dreams 2.4 (data/cars/models/ls1-archer-r9/archer-r9-v12.wav): Speed-Dreams-Team (ls1-archer-r9), GPL-2.0-or-later",
+  "crackle": 0.35,
+  "turbo": false,
+  "loops": {
+   "idle": {
+    "file": "sd_archer_idle.ogg",
+    "baseRpm": 900,
+    "firingHz": 90.0,
+    "seconds": 25.9722,
+    "load": 1.0
+   },
+   "low": {
+    "file": "sd_archer_low.ogg",
+    "baseRpm": 1600,
+    "firingHz": 160.0,
+    "seconds": 14.6094,
+    "load": 1.0
+   },
+   "low2": {
+    "file": "sd_archer_low2.ogg",
+    "baseRpm": 2846,
+    "firingHz": 284.6,
+    "seconds": 8.2133,
+    "load": 1.0
+   },
+   "mid": {
+    "file": "sd_archer_mid.ogg",
+    "baseRpm": 5061,
+    "firingHz": 506.1,
+    "seconds": 4.6186,
+    "load": 1.0
+   },
+   "high": {
+    "file": "sd_archer_high.ogg",
+    "baseRpm": 9000,
+    "firingHz": 900.0,
+    "seconds": 2.5972,
+    "load": 1.0
+   },
+   "over": {
+    "file": "sd_archer_over.ogg",
+    "baseRpm": 2846,
+    "firingHz": 284.6,
+    "seconds": 8.2133,
+    "load": 0.0
+   }
+  },
+  "idleRpm": 900,
+  "limiterRpm": 9000
  }
 }

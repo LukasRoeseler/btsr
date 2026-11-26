@@ -1,0 +1,6 @@
+Archer R-9 aus Speed Dreams (Speed Dreams, data/cars/models/ls1-archer-r9).
+
+Modell, Texturen und Fahrzeugdaten: GNU General Public License, Version 2 oder
+spaeter (siehe den Kopf der Speed-Dreams-Datei ls1-archer-r9.xml). Umgewandelt mit tools/sd_auto.py:
+Innenraum entfernt, Texturen verkleinert, Koordinaten gedreht. Alternative Lackierungen (dango, dearly, eclipse, imas, march, march2, taiyaki, tsubashi, tsubashi2, uguu, yuyuko) beigelegt.
+https://www.gnu.org/licenses/old-licenses/gpl-2.0.html

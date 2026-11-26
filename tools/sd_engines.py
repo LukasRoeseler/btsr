@@ -78,11 +78,15 @@ MOTOREN = [
      'Speed-Dreams-Team (sc-murasama-nsx), GPL-2.0-or-later'),
     ('sd_spirit', 'lotus.wav', 'Speed Dreams: Spirit 300 (3,0 l V6)', 6, 2000, 8500, 0.35,
      'Speed-Dreams-Team (sc-spirit-300), GPL-2.0-or-later'),
+    # v1.6.96 BESTELLT: der Archer R-9 (Aston Martin DBR9, 6,0 l V12) soll seinen EIGENEN Motorklang
+    # bekommen statt des Ersatzmotors. Leerlauf und Begrenzer aus der .xml (Engine-Sektion).
+    ('sd_archer', 'archer-r9-v12.wav', 'Speed Dreams: Archer R-9 (Aston Martin DBR9, 6,0 l V12)', 12, 900, 9000, 0.35,
+     'Speed-Dreams-Team (ls1-archer-r9), GPL-2.0-or-later'),
 ]
 # Wo die Aufnahme in Speed Dreams liegt, wenn nicht in data/sound/.
 QUELLORDNER = {'sd_v5r': 'data/cars/models/ls1-vulture-v5r/', 'sd_lynx': 'data/cars/models/sc-lynx-220/',
                'sd_fmc': 'data/cars/models/sc-fmc-gt4/', 'sd_boxer': 'data/cars/models/sc-boxer-96/',
-               'sd_nsx': 'data/cars/models/sc-murasama-nsx/'}
+               'sd_nsx': 'data/cars/models/sc-murasama-nsx/', 'sd_archer': 'data/cars/models/ls1-archer-r9/'}
 
 
 def lesen(p):

@@ -15290,9 +15290,9 @@
     } catch (e) { f.push('laedt nicht: ' + e.message); }
     return { ok: !f.length, mass: f.length ? f.join(' | ') : mass };
   });
-  stAdd('Virtuell v1.6.85: Cavallo 360, Murasama NSX und Spirit 300 (Speed Dreams, GPL) waehlbar, Modell laedt, Masse und Lackierungen da', async () => {
+  stAdd('Virtuell v1.6.85: Cavallo 360, Murasama NSX, Spirit 300 und Archer R-9 (Speed Dreams, GPL) waehlbar, Modell laedt, Masse und Lackierungen da', async () => {
     const f = [], mass = [];
-    const cars = [['cavallo360', 'img/autos/cavallo360/'], ['nsx', 'img/autos/nsx/'], ['spirit300', 'img/autos/spirit300/']];
+    const cars = [['cavallo360', 'img/autos/cavallo360/'], ['nsx', 'img/autos/nsx/'], ['spirit300', 'img/autos/spirit300/'], ['archerr9', 'img/autos/archerr9/']];
     for (const [id, pfad] of cars) {
       if (!vfAutoListe().some((a) => a.v === id)) f.push(id + ' nicht in der Liste');
       if (VF_MODELL_PFADE[id] !== pfad) f.push(id + ' Pfad fehlt');
@@ -15315,7 +15315,7 @@
   stAdd('Virtuell v1.6.86: Lackfarbe und Lackierung sind eine Auswahl (Original, Farben, Lackierungen), gegenseitig exklusiv', () => {
     const f = [];
     const nFarben = VF_LACK_FARBEN.filter((x) => x.v).length;
-    for (const id of ['cavallo360', 'nsx', 'spirit300']) {
+    for (const id of ['cavallo360', 'nsx', 'spirit300', 'archerr9']) {
       const opt = vfLackOptionen(id);
       if (opt.length !== 1 + nFarben + VF_LIVREES[id].length) f.push(id + ': ' + opt.length + ' Optionen');
       if (opt[0].v !== '' || opt[0].livree !== '' || opt[0].n !== 'Original') f.push(id + ': keine Original-Option');

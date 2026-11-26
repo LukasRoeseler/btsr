@@ -67,6 +67,20 @@ beiden Aufnahmen `f360.wav` und `lotus.wav` liegen in `data/sound/` und sind dor
 einzeln ausgewiesen; sie sind die Klaenge dieser Autos und werden deshalb wie diese unter der
 GPL-2.0-or-later gefuehrt.
 
+### Archer R-9 (GPL-2.0 oder spaeter) — seit v1.6.96
+
+| Motor in der App | Datei in Speed Dreams | Quelle und Lizenz |
+|---|---|---|
+| Archer R-9 (Aston Martin DBR9), 6,0 l V12 (`sd_archer_*.ogg`) | `data/cars/models/ls1-archer-r9/archer-r9-v12.wav` | Speed-Dreams-Team, mit dem Auto unter der **GNU GPL, Version 2 oder spaeter** |
+
+Gerechnet wie die anderen mit `tools/sd_engines.py`; Leerlauf (900) und Begrenzer (9000)
+stammen aus der `.xml` des Autos (`tickover` / `revs limiter`). Das Auto liegt umgewandelt in
+`img/autos/archerr9/` mit eigener `LIZENZ.txt` (`tools/sd_auto.py`). Die Aufnahme
+`archer-r9-v12.wav` liegt im Ordner des Autos. Hinweis: die `readme.txt` des Ordners nennt die
+Free Art License 1.3, der Kopf der `.xml` dagegen GPL-2.0-or-later; wir folgen wie bei den
+uebrigen Speed-Dreams-Autos der `.xml`-Vorgabe (GPL-2.0-or-later).
+
+
 Nicht verwendet: `v6_raw.wav` und `rotary2.wav` (als "CC-BY" aus YouTube-Videos
 angegeben, Rechte unklar), `skid_metal.wav` (ohne Lizenzangabe) und die uebrigen
 aelteren Fahrzeugklaenge der Spieldaten.

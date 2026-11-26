@@ -159,6 +159,8 @@
     // v1.6.92 BESTELLT: die drei neuen Speed-Dreams-Autos (virtuelle Fahrt) mit ihrem eigenen
     // Klang statt der Ersatzmotoren: Cavallo 360 (V8), Murasama NSX (V6), Spirit 300 (V6).
     'sd_cavallo', 'sd_nsx', 'sd_spirit',
+    // v1.6.96 BESTELLT: der Archer R-9 (Aston Martin DBR9, V12) aus Speed Dreams, sein eigener Klang.
+    'sd_archer',
     // ---- ZWEI AUFNAHMEN DES NUTZERS, aus photos/newaudio --------------------------
     // BESTELLT: eigene Aufnahmen; Drehzahlen aus der Video-Anzeige (siehe loops.json).
     // DIESELBE REIHENFOLGE wie im Menue (am Ende der Liste).

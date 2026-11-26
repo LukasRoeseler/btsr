@@ -1748,7 +1748,7 @@
   // img/autos/v5r/: Modell ohne Innenraum, Rad, Lichtorte und die Fahrzeugdaten aus der .xml. Laengen in
   // Metern, im Auto +x links, +y oben, +z vorn; gezeichnet mal VF_AUTO.L / Laenge (so lang wie der Kasten).
   const VF_AUTO_STORE = 'omegasim-vf-auto';
-  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/', cavallo360: 'img/autos/cavallo360/', nsx: 'img/autos/nsx/', spirit300: 'img/autos/spirit300/' };
+  const VF_MODELL_PFADE = { v5r: 'img/autos/v5r/', lynx220: 'img/autos/lynx220/', fmcgt4: 'img/autos/fmcgt4/', boxer96: 'img/autos/boxer96/', kaefer: 'img/autos/kaefer/', spider: 'img/autos/spider/', caravelle: 'img/autos/caravelle/', audirs5: 'img/autos/audirs5/', cavallo360: 'img/autos/cavallo360/', nsx: 'img/autos/nsx/', spirit300: 'img/autos/spirit300/', archerr9: 'img/autos/archerr9/' };
   // v1.6.27 (Issue #15): der RC Stunt Copter in der Garage. Er ist KEIN Auto: er hat kein
   // auto.json/auto.bin (VF_MODELL_PFADE), sondern wird als eigener Hubschrauber gebaut und
   // mit zwei Sticks geflogen. Ueberall, wo ein Auto-Modell oder ein Fahrprofil gebraucht wird,
@@ -1884,6 +1884,11 @@
     cavallo360: [['bee', 'Bee'], ['tsubashi', 'Tsubashi']],
     nsx: [['amami', 'Amami'], ['tribal', 'Tribal']],
     spirit300: [['GTR', 'GTR'], ['sport', 'Sport']],
+    // v1.6.96: die elf Lackierungen des Archer R-9 (Namen aus Speed Dreams, die Texturen liegen
+    // in auto.json unter "livree"; sie ersetzen die Karosserietextur).
+    archerr9: [['dango', 'Dango'], ['dearly', 'Dearly'], ['eclipse', 'Eclipse'], ['imas', 'Imas'],
+               ['march', 'March'], ['march2', 'March 2'], ['taiyaki', 'Taiyaki'], ['tsubashi', 'Tsubashi'],
+               ['tsubashi2', 'Tsubashi 2'], ['uguu', 'Uguu'], ['yuyuko', 'Yuyuko']],
   };
   // Selected livery id for a car ('' if none). Stored as "<car>:<id>" so switching cars resets it.
   function vfLivree(auto) {
@@ -1943,6 +1948,9 @@
             { v: 'cavallo360', name: 'Cavallo 360 (Ferrari 360 Modena, Speed Dreams)' },
             { v: 'nsx', name: 'Murasama NSX (Honda/Acura NSX 1991, Speed Dreams)' },
             { v: 'spirit300', name: 'Spirit 300 (Lotus M250, Speed Dreams)' },
+            // v1.6.96 BESTELLT: der Archer R-9 (Aston Martin DBR9) aus Speed Dreams, GPL-2.0-or-later,
+            // umgewandelt mit tools/sd_auto.py, siehe img/autos/archerr9/LIZENZ.txt. Elf Liveries.
+            { v: 'archerr9', name: 'Archer R-9 (Aston Martin DBR9, Speed Dreams)' },
             // Eigenbau von Gnen54 (CC BY 4.0), WIP: Fahrdaten geschaetzt, siehe img/autos/kaefer/LIZENZ.txt
             { v: 'kaefer', name: t('VW Käfer 1303 RS mit Boxster-Motor (Gnen54, WIP)') },
             // v1.5.104: Eigenbau von Gnen54 auf der Modiplay-MP1-Karosserie (Freigabe Sturmkind, nicht kommerziell),
@@ -1981,7 +1989,9 @@
     // v1.6.85 (Issue #17): Ferrarireihe (V8) bzw. V6 wie der Lynx 220 / Jaguar XJ220.
     // v1.6.92 BESTELLT: die drei neuen Speed-Dreams-Autos mit ihrem eigenen Motorklang
     // (sd_cavallo/sd_nsx/sd_spirit) statt der Ersatzmotoren.
-    cavallo360: 'sd_cavallo', nsx: 'sd_nsx', spirit300: 'sd_spirit' };
+    cavallo360: 'sd_cavallo', nsx: 'sd_nsx', spirit300: 'sd_spirit',
+    // v1.6.96 BESTELLT: der Archer R-9 mit seinem eigenen V12 (sd_archer).
+    archerr9: 'sd_archer' };
   function vfMotorFest() { return VF_MOTOR_FEST[vfAutoWahl()] || ''; }
   // Die echte Neigung eines GT1 ist klein (0,5 Grad Rollen bei 1,5 g) und bei Modellgroesse unsichtbar.
   // Der Faktor vergroessert nur den AUSSCHLAG; Federraten, Daempfer und Zeitverhalten bleiben die echten.
