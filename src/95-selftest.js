@@ -14653,7 +14653,7 @@
       if (vfZeitMerken(29000, [0, 90]) !== true) f.push('schnellere Runde nicht gemeldet');
       vfZeitMerken(31000, null);
       const e = vfZeitenAlle()[vfZeitenSchluessel()];
-      if (!e || e.beste !== 29000 || e.runden !== 3 || e.letzte[0] !== 31000 || (e.splits || [])[1] !== 90) f.push('Eintrag ' + JSON.stringify(e));
+      if (!e || e.beste !== 29000 || e.runden !== 3 || e.beste3 !== 90000 || e.letzte[0] !== 31000 || (e.splits || [])[1] !== 90) f.push('Eintrag ' + JSON.stringify(e));
       VF.gegen = true;
       if (vfZeitenAlle()[vfZeitenSchluessel()]) f.push('Gegenrichtung teilt sich die Zeiten');
       VF.gegen = false; VF.beste = null; VF.besteSplits = null;
@@ -14670,7 +14670,7 @@
       Object.assign(VF, merkVF);
       try { if (merk === null) localStorage.removeItem(VF_ZEITEN_STORE); else localStorage.setItem(VF_ZEITEN_STORE, merk); } catch (e) { /* egal */ }
     }
-    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bestzeit 29,000 s mit Zwischenzeiten, Gegenrichtung getrennt, Bestenliste, AR-Knopf ' + (vfArMoeglich() ? 'sichtbar' : 'verborgen (kein WebXR-AR)') };
+    return { ok: !f.length, mass: f.length ? f.join(' | ') : 'Bestzeit 29,000 s mit Zwischenzeiten, beste 3 Runden 90,000 s, Gegenrichtung getrennt, Bestenliste, AR-Knopf ' + (vfArMoeglich() ? 'sichtbar' : 'verborgen (kein WebXR-AR)') };
   });
   stAdd('Virtuell v1.6.81: Marker-AR - Kamerabild gehoert zur erkannten Lage, Filter folgt Bewegung schnell, Lichter in AR gedaempft', () => {
     const f = [];

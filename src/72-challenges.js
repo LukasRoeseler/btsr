@@ -1009,12 +1009,15 @@
   // v1.6.56: Kennt das Apps Script virtuelle Zeiten schon (?faehig=1 -> virtuell: true)? Ein altes Skript wuerde die
   // Angabe "fahrt" verwerfen und die Zeit in die echte Bestenliste schreiben - bis es neu bereitgestellt ist, bleiben
   // virtuelle Zeiten in der Warteschlange (Grund in der Meldung) und gehen danach von selbst hinaus.
+  // v1.6.102: zusaetzlich vstrecken verlangen - ein Skript, das virtuell:true meldet, aber kein vstrecken:true
+  // (v1.6.60 ohne den Strecken-Upload), nimmt die Zeiten trotzdem nicht an; dann lieber gleich den Hinweis
+  // "Apps Script neu bereitstellen" statt einer abgelehnten Zeit.
   const chFaehig = {};
   function chServerVirtuell(url) {
     const c = chFaehig[url];
     if (c && (c.ja || Date.now() - c.at < 10 * 60000)) return c.p;
     const p = fetch(url + (url.indexOf('?') >= 0 ? '&' : '?') + 'faehig=1', { cache: 'no-store' })
-      .then((r) => r.json()).then((j) => !!(j && j.ok && j.virtuell)).catch(() => false)
+      .then((r) => r.json()).then((j) => !!(j && j.ok && j.virtuell && j.vstrecken)).catch(() => false)
       .then((ja) => { chFaehig[url] = { p: Promise.resolve(ja), ja, at: Date.now() }; return ja; });
     chFaehig[url] = { p, ja: false, at: Date.now() };
     return p;

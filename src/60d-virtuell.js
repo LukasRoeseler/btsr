@@ -3316,11 +3316,22 @@
       showHudToast(t('Streckenbestzeit') + ': ' + vfZeitAcc(e.beste, 3));
     }
   }
-  function vfZeitMerken(ms, splits) {
+  function vfZeitMerken(ms, splits, minMs) {
     const alle = vfZeitenAlle(), k = vfZeitenSchluessel();
     const e = alle[k] || (alle[k] = { beste: null, datum: null, runden: 0, letzte: [] });
     e.runden += 1;
-    e.letzte = [Math.round(ms)].concat(e.letzte || []).slice(0, 10);
+    const neuMs = Math.round(ms);
+    // v1.6.102: die beste 3er-Serie mitfuehren (Durchschnitt der drei schnellsten aufeinanderfolgenden
+    // Runden, wie die Online-Bestenliste). Vor dem Aktualisieren stehen in e.letzte[0]/[1] die zwei
+    // Runden davor; eine Runde unter der Mindestzeit verfaelscht die Serie nicht (z. B. 1 s, weil das
+    // Auto kaum fuhr). Fuer aeltere Eintraege ohne beste3 bleibt es beim Nullwert.
+    if (e.beste3 === undefined) e.beste3 = null;
+    const p1 = e.letzte[0], p2 = e.letzte[1], m = Number(minMs) || 1000;
+    if (p1 && p2 && p1 >= m && p2 >= m && neuMs >= m) {
+      const sum3 = p2 + p1 + neuMs;
+      if (e.beste3 === null || sum3 < e.beste3) e.beste3 = sum3;
+    }
+    e.letzte = [neuMs].concat(e.letzte || []).slice(0, 10);
     const neu = !(e.beste > 0) || ms < e.beste;
     if (neu) { e.beste = Math.round(ms); e.datum = Date.now(); e.splits = splits || null; }
     try { localStorage.setItem(VF_ZEITEN_STORE, JSON.stringify(alle)); } catch (err) { /* voll */ }
@@ -3351,7 +3362,7 @@
       else if (ort.indexOf('bahn:') === 0) strecke = t('Gebaute Bahn') + (ort.slice(5) === jetztBahn ? ' (' + t('aktuell') + ')' : ' ' + ort.slice(5, 11));
       if (gegen) strecke += ' (' + t('Gegenrichtung') + ')';
       const a = autos.find((x) => x.v === auto);
-      return { strecke, auto: a ? a.name : auto, beste: e.beste, runden: e.runden || 0, datum: e.datum };
+      return { strecke, auto: a ? a.name : auto, beste: e.beste, beste3: e.beste3, datum: e.datum };
     }).sort((x, y) => x.strecke.localeCompare(y.strecke) || x.beste - y.beste);
     if (!zeilen.length) {
       const p = document.createElement('p');
@@ -3364,13 +3375,14 @@
     tab.className = 'vf-besten-tab';
     tab.style.cssText = 'width:100%;border-collapse:collapse;font-size:0.9em';
     const kopf = tab.insertRow();
-    [t('Strecke'), t('Auto'), t('Bestzeit'), t('Runden'), t('Datum')].forEach((h) => {
+    [t('Strecke'), t('Auto'), t('Bestzeit'), t('Beste 3'), t('Datum')].forEach((h) => {
       const th = document.createElement('th'); th.textContent = h; th.style.textAlign = 'left'; kopf.appendChild(th);
     });
     const spr = (typeof lang === 'string' && lang) || 'de';
     zeilen.forEach((z) => {
       const r2 = tab.insertRow();
-      [z.strecke, z.auto, vfZeitAcc(z.beste, 3), String(z.runden), z.datum ? new Date(z.datum).toLocaleDateString(spr) : '–']
+      const drei = z.beste3 ? vfZeitAcc(Math.round(z.beste3 / 3), 3) : '–';
+      [z.strecke, z.auto, vfZeitAcc(z.beste, 3), drei, z.datum ? new Date(z.datum).toLocaleDateString(spr) : '–']
         .forEach((w) => { const c = r2.insertCell(); c.textContent = w; c.style.padding = '2px 6px 2px 0'; });
     });
     box.appendChild(tab);
@@ -3386,7 +3398,7 @@
       if (best) { VF.beste = VF.letzte; VF.besteSplits = VF.splits; }
       // v1.6.60: gespeicherte Zeit (Gnen54). Die Geisterlinie wird nicht gespeichert - nach einer geladenen Bestzeit
       // nimmt der Geist deshalb die erste Runde dieser Fahrt, bis die Bestzeit faellt.
-      if (!VF.extern && !VF.studie && vfZeitMerken(VF.letzte, VF.splits)) showHudToast(t('Neue Streckenbestzeit') + ': ' + vfZeitAcc(VF.letzte, 3));
+      if (!VF.extern && !VF.studie && vfZeitMerken(VF.letzte, VF.splits, VF.zeitLauf && VF.zeitLauf.minMs)) showHudToast(t('Neue Streckenbestzeit') + ': ' + vfZeitAcc(VF.letzte, 3));
       vfGeistRunde(best || !(VF.geist && VF.geist.beste));
       // Rundenrennen: nach der Ziel-Lap ist Schluss.
       VF.runden = (VF.runden || 0) + 1;
@@ -6210,6 +6222,8 @@
     VF_BOX_SEITE = frei ? frei.seite : -1;   // freie Strecken: Box auf der Seite der DXF (boxSeite)
     const tiles = frei ? frei.tiles : (opts.tiles && opts.tiles.length >= 3 ? opts.tiles : vfTilesWaehlen());
     if (!tiles) { vfStartHinweis(t('Erst eine Strecke bauen')); return false; }
+    // v1.6.102: Mindestzeit fuer die beste 3er-Serie (freie Strecke 1 s, sonst aus dem Code).
+    try { VF.zeitLauf.minMs = freiK ? 1000 : chMinRundeMs({ code: trackToCode(tiles), runden: 1 }); } catch (e) { VF.zeitLauf.minMs = 1000; }
     VF.studie = !!opts.studie;
     // v1.6.56: extern = ein Rennen der App (Challenge, Karriere, Meisterschaft) nutzt das virtuelle Auto; die virtuelle
     // Fahrt fuehrt dann kein eigenes Rennen (Training, keine eigene Ampel) und endet mit dem Rennen.
