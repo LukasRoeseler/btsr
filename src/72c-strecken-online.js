@@ -273,7 +273,10 @@
     return '';
   }
   function skHochladen(key, e, o) {
-    const p = codeToTrack(key);
+    // Die Teilezahl kommt aus dem GEFAHRENEN Code (d.code), denn der Server zaehlt mit stTeile(d.code).
+    // Vorher aus codeToTrack(key) konnte sie bei einer Abweichung zwischen key und code (z. B. durch
+    // nicht kodierte Kacheln) vom Serverwert abweichen -> "Teilezahl passt nicht zur Strecke".
+    const p = codeToTrack(e.code || key);
     const eintrag = { art: 'strecke-zeit', strecke: key, code: e.code || key, teile: p ? p.tiles.length : 0,
       zeit_ms: Math.round(e.zeit), runden_ms: e.runden.map(Math.round), fahrer: e.fahrer, auto: String(e.auto || '').slice(0, 40),
       geraet: e.geraet, quote: e.quote, fahrgefuehl: skFgGueltig(e.fahrgefuehl), streckenname: skStreckenName(key),

@@ -6093,7 +6093,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.96</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.97</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -63515,7 +63515,10 @@
     return '';
   }
   function skHochladen(key, e, o) {
-    const p = codeToTrack(key);
+    // Die Teilezahl kommt aus dem GEFAHRENEN Code (d.code), denn der Server zaehlt mit stTeile(d.code).
+    // Vorher aus codeToTrack(key) konnte sie bei einer Abweichung zwischen key und code (z. B. durch
+    // nicht kodierte Kacheln) vom Serverwert abweichen -> "Teilezahl passt nicht zur Strecke".
+    const p = codeToTrack(e.code || key);
     const eintrag = { art: 'strecke-zeit', strecke: key, code: e.code || key, teile: p ? p.tiles.length : 0,
       zeit_ms: Math.round(e.zeit), runden_ms: e.runden.map(Math.round), fahrer: e.fahrer, auto: String(e.auto || '').slice(0, 40),
       geraet: e.geraet, quote: e.quote, fahrgefuehl: skFgGueltig(e.fahrgefuehl), streckenname: skStreckenName(key),
@@ -128584,7 +128587,9 @@ const GHOST_GRID_MAX = 0.9;   // maximale Querlage beim Selbst-Einparken (experi
       if (!r2 || !r2.gesendet) f.push('bei AN nicht gesendet');
       if (a.length !== 1 || a[0].art !== 'strecke-zeit' || a[0].strecke !== s.key) f.push('Schlange: ' + JSON.stringify(a).slice(0, 120));
       else {
-        if (a[0].teile !== codeToTrack(s.key).tiles.length) f.push('Teilezahl ' + a[0].teile);
+        // Die Teilezahl muss zum GEFAHRENEN Code passen (der Server zaehlt mit stTeile(d.code));
+        // sie darf nicht am Schluessel haengen, sonst "Teilezahl passt nicht zur Strecke".
+        if (a[0].teile !== codeToTrack(a[0].code).tiles.length) f.push('Teilezahl ' + a[0].teile + ' zu Code ' + a[0].code);
         if (!(a[0].quote >= 0.9)) f.push('Quote ' + a[0].quote);
         if (a[0].fahrgefuehl !== 'propacejka') f.push('Fahrgefuehl in der Schlange ' + a[0].fahrgefuehl);
         if (a[0].code !== s.code) f.push('Code in der Schlange ' + a[0].code);

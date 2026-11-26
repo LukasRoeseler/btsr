@@ -336,7 +336,9 @@ function streckenPost(d) {
   const teile = stTeile(code);
   if (!teile || teile.length < 3) return { ok: false, fehler: 'Streckencode unplausibel' };
   if (d.strecke && stSchluessel(d.strecke) !== stSchluessel(code)) return { ok: false, fehler: 'Strecke passt nicht zum Code' };
-  if (Number(d.teile) !== teile.length) return { ok: false, fehler: 'Teilezahl passt nicht zur Strecke' };
+  // Die Teilezahl zaehlt der Server selbst aus dem Code (teile oben). Die von der App mitgeschickte
+  // d.teile wird bewusst NICHT geprueft: Sie stammt aus codeToTrack(key) und kann bei nicht kodierten
+  // Kacheln oder einer anderen App-Version vom Serverwert abweichen -> "Teilezahl passt nicht zur Strecke".
   // Aeltere App-Versionen schicken kein Fahrgefuehl: dann 'unbekannt'. Ein unbekannter Wert wird abgelehnt.
   const fg = d.fahrgefuehl === undefined || d.fahrgefuehl === null || d.fahrgefuehl === '' ? 'unbekannt' : String(d.fahrgefuehl);
   if (ST_FAHRGEFUEHLE.indexOf(fg) < 0) return { ok: false, fehler: 'unbekanntes Fahrgefühl' };

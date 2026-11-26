@@ -29960,7 +29960,9 @@
       if (!r2 || !r2.gesendet) f.push('bei AN nicht gesendet');
       if (a.length !== 1 || a[0].art !== 'strecke-zeit' || a[0].strecke !== s.key) f.push('Schlange: ' + JSON.stringify(a).slice(0, 120));
       else {
-        if (a[0].teile !== codeToTrack(s.key).tiles.length) f.push('Teilezahl ' + a[0].teile);
+        // Die Teilezahl muss zum GEFAHRENEN Code passen (der Server zaehlt mit stTeile(d.code));
+        // sie darf nicht am Schluessel haengen, sonst "Teilezahl passt nicht zur Strecke".
+        if (a[0].teile !== codeToTrack(a[0].code).tiles.length) f.push('Teilezahl ' + a[0].teile + ' zu Code ' + a[0].code);
         if (!(a[0].quote >= 0.9)) f.push('Quote ' + a[0].quote);
         if (a[0].fahrgefuehl !== 'propacejka') f.push('Fahrgefuehl in der Schlange ' + a[0].fahrgefuehl);
         if (a[0].code !== s.code) f.push('Code in der Schlange ' + a[0].code);
