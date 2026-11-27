@@ -6093,7 +6093,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.104</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.108</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>
@@ -46430,6 +46430,11 @@
     const tv = d.reifen.vorn.spur / 2, th_ = d.reifen.hinten.spur / 2, fv = d.feder.vorn, fh = d.feder.hinten;
     // Ecken: x vom Schwerpunkt nach vorn, y nach rechts
     const ecken = [[d.a, tv, fv], [d.a, -tv, fv], [-d.b, th_, fh], [-d.b, -th_, fh]];
+    // v1.6.105: Unterteilung in 0,002-s-Schritte ist die Stabilitaetsgrenze des expliziten
+    // Euler-Schritts (Daempfung c < m/(2*hs)). Der Saxxon Hatcho RS2 und der Kongei KK8S
+    // kamen mit slow rebound 800 bzw. 330 kN/(m/s) aus Speed Dreams ueber diese Grenze; die
+    // Daempfung wurde zum Anti-Daempfer, die Federung explodierte und die Karosserie tauchte
+    // in die Raeder. Die Federwerte in img/autos/<auto>/auto.json liegen jetzt wieder darunter.
     const schritte = Math.max(1, Math.ceil(dt / 0.002)), hs = dt / schritte;
     for (let s = 0; s < schritte; s++) {
       const F = [];

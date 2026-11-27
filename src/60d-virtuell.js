@@ -2797,6 +2797,11 @@
     const tv = d.reifen.vorn.spur / 2, th_ = d.reifen.hinten.spur / 2, fv = d.feder.vorn, fh = d.feder.hinten;
     // Ecken: x vom Schwerpunkt nach vorn, y nach rechts
     const ecken = [[d.a, tv, fv], [d.a, -tv, fv], [-d.b, th_, fh], [-d.b, -th_, fh]];
+    // v1.6.105: Unterteilung in 0,002-s-Schritte ist die Stabilitaetsgrenze des expliziten
+    // Euler-Schritts (Daempfung c < m/(2*hs)). Der Saxxon Hatcho RS2 und der Kongei KK8S
+    // kamen mit slow rebound 800 bzw. 330 kN/(m/s) aus Speed Dreams ueber diese Grenze; die
+    // Daempfung wurde zum Anti-Daempfer, die Federung explodierte und die Karosserie tauchte
+    // in die Raeder. Die Federwerte in img/autos/<auto>/auto.json liegen jetzt wieder darunter.
     const schritte = Math.max(1, Math.ceil(dt / 0.002)), hs = dt / schritte;
     for (let s = 0; s < schritte; s++) {
       const F = [];

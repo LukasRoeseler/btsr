@@ -256,6 +256,17 @@ def main(quelle, kennung):
         feder[achse] = {'k': zahl(w, sek + '/spring') * kn, 'druck': zahl(w, sek + '/slow bump') * kn,
                         'zug': zahl(w, sek + '/slow rebound') * kn, 'weg': zahl(w, sek + '/suspension course', 0.1),
                         'stab': zahl(w, stab + '/spring', 0) * kn}
+    # vfFederung integriert die Federung explizit mit hs ~ 0,002 s; die Daempfung darf die
+    # Stabilitaetsgrenze c < m/(2*hs) nicht ueberschreiten, sonst wird sie zum Anti-Daempfer,
+    # die Federung explodiert und die Karosserie taucht in die Raeder (z. B. Saxxon Hatcho RS2:
+    # slow rebound = 800 kN/(m/s)). Auf die halbe Grenze begrenzen, damit auch das Nicken und
+    # Rollen stabil bleibt; normale Autos (k = 40..200 kN/m, druck/zug < 20 kN/(m/s)) bleiben
+    # unveraendert.
+    c_grenze = zahl(w, 'Car/mass') / (2 * 0.002) / 2
+    for achse in feder.values():
+        for k in ('druck', 'zug'):
+            if achse[k] > c_grenze:
+                achse[k] = round(c_grenze, 1)
     lichter = {'brems': [], 'rueck': [], 'front': []}
     for k in range(1, 40):
         p = 'Graphic Objects/Light/%d/' % k
