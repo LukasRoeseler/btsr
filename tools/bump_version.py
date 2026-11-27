@@ -60,7 +60,12 @@ PROJEKT_START = datetime.date(2026, 8, 3)
 # 19.10.2026 (v1.1.3): wieder zusammengefasst (BESTELLT: "Pushe so, dass nur die neuesten Staende da
 # sind"). Vorher standen 2 Commits in dieser Woche, der zusammengefasste ist 1.1.3 - also 2 zurueck,
 # der naechste Push wird 1.1.4.
-PUSH_VERSATZ = {datetime.date(2026, 10, 5): 27, datetime.date(2026, 10, 12): 23, datetime.date(2026, 10, 19): 2}
+# 23.11.2026 (Korrektur): 3b9e132 (Saxxon-Fix) hatte die Version von 1.6.104 auf 1.6.108 gesetzt,
+# obwohl nach 1.6.104 nur 3 Commits kamen (also 1.6.107 erwartet). Der Zaehler war damit um 1 zu hoch
+# und der naechste Push bliebe ebenfalls 1.6.108 - der Service-Worker-Cache wuerde sich nicht aendern.
+# Deshalb 1 zurueck, der naechste Push wird 1.6.109.
+PUSH_VERSATZ = {datetime.date(2026, 10, 5): 27, datetime.date(2026, 10, 12): 23, datetime.date(2026, 10, 19): 2,
+                datetime.date(2026, 11, 23): 1}
 
 
 VERSION1_WOCHE = 10
