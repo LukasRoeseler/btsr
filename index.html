@@ -4210,29 +4210,32 @@
   .vf-touch.vf-touch-heli-an .vf-touch-lenk, .vf-touch.vf-touch-heli-an .vf-touch-gas { display: none; }
   .vf-touch.vf-touch-heli-an .vf-touch-heli { display: block; }
   /* v1.6.54: Handbremse im Drift, links neben dem Gaspedal. */
-  .vf-touch-hb { display: none; position: absolute; bottom: max(12px, env(safe-area-inset-bottom));
-    right: calc(max(12px, env(safe-area-inset-right)) + min(20vw, 26vh, 120px) + 12px);
+  .vf-touch-hb { display: none; position: absolute; bottom: max(36px, calc(env(safe-area-inset-bottom) + 24px));
+    right: calc(max(12px, env(safe-area-inset-right)) + min(24vw, 30vh, 140px) + 12px);
     width: min(18vw, 22vh, 96px); height: min(18vw, 22vh, 96px); border-radius: 50%; pointer-events: auto; touch-action: none;
     background: rgba(8,10,14,.5); border: 2px solid var(--vf-linie); color: var(--vf-dim); font-weight: 700;
     font-size: calc(var(--vf-s) * .48); text-transform: uppercase; letter-spacing: .06em; }
   .vf-touch.vf-touch-drift .vf-touch-hb { display: block; }
   .vf-touch-hb.vf-an { background: var(--vf-linie); color: var(--k-blau-text, #04070c); }
+  /* v1.6.113 BESTELLT: "Lenkknopf vergroessern" - groesserer Lenk-Kreis fuer leichteres Anfassen. */
   .vf-touch-lenk { position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(12px, env(safe-area-inset-bottom));
-    width: min(34vw, 38vh, 190px); height: min(34vw, 38vh, 190px); border-radius: 50%;
+    width: min(38vw, 42vh, 220px); height: min(38vw, 42vh, 220px); border-radius: 50%;
     background: rgba(8,10,14,.5); border: 2px solid var(--vf-linie); touch-action: none; pointer-events: auto;
     display: grid; place-items: center; }
   .vf-touch-lenk::before { content: ""; position: absolute; inset: 50% auto 0 50%; width: 1px; height: 50%;
     background: rgba(255,255,255,.12); transform: translateX(-50%); }
   .vf-touch-lenk::after { content: ""; position: absolute; inset: 0 50% 0 auto; width: 50%; height: 1px;
     background: rgba(255,255,255,.12); transform: translateY(-50%); }
-  .vf-touch-gas { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
-    width: min(20vw, 26vh, 120px); height: min(34vw, 38vh, 190px); border-radius: 12px;
+  /* v1.6.113 BESTELLT: "Gas/Bremse-Rechteck vergroessern und etwas anheben, damit die Bremse nicht
+     ganz am unteren Rand liegt." Groesser und um 24px angehoben (Bremse = unteres Ende des Rechtecks). */
+  .vf-touch-gas { position: absolute; right: max(12px, env(safe-area-inset-right)); bottom: max(36px, calc(env(safe-area-inset-bottom) + 24px));
+    width: min(24vw, 30vh, 140px); height: min(40vw, 44vh, 220px); border-radius: 12px;
     background: rgba(8,10,14,.5); border: 2px solid var(--vf-linie); touch-action: none; pointer-events: auto;
     display: grid; place-items: center; }
   .vf-touch-gas::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
     background: rgba(255,255,255,.12); transform: translateX(-50%); }
   .vf-touch-knauf { pointer-events: none; background: var(--vf-linie); opacity: .85; }
-  .vf-touch-lenk .vf-touch-knauf { width: 42%; height: 42%; border-radius: 50%; }
+  .vf-touch-lenk .vf-touch-knauf { width: 48%; height: 48%; border-radius: 50%; }
   .vf-touch-gas .vf-touch-knauf { width: 70%; height: 32%; border-radius: 8px; }
   .vf-touch-hinweis { position: absolute; pointer-events: none; color: var(--vf-dim); font-size: calc(var(--vf-s) * .52);
     font-weight: 700; text-transform: uppercase; letter-spacing: .12em; text-align: center; white-space: nowrap; }
@@ -6093,7 +6096,7 @@
         <span class="home-lade-dreh" id="home-lade-dreh"></span><span class="home-lade-text" id="home-lade-text" data-i18n-skip></span>
       </div>
       <div class="k-titel-fuss">
-        <span class="foot-ver">v<span id="app-version">1.6.112</span></span>
+        <span class="foot-ver">v<span id="app-version">1.6.113</span></span>
         <span data-i18n-skip>OmegaSim &middot; AGPL-3.0</span>
         <a class="foot-code" href="https://github.com/Luuke42/omegasim"
            target="_blank" rel="noopener noreferrer">Code auf GitHub</a>

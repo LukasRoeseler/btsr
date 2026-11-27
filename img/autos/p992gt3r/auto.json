@@ -535,6 +535,16 @@
    "indizes": 1584
   },
   {
+   "name": "EXT_Carpaint_Schwarz",
+   "rolle": "anbau",
+   "gruppe": "auto",
+   "tex": "p992gt3r_ext_schwarz.jpg",
+   "ecke0": 71007,
+   "ecken": 46913,
+   "index0": 483117,
+   "indizes": 29487
+  },
+  {
    "name": "EXT_Carpaint_Inst",
    "rolle": "karosserie",
    "gruppe": "auto",
@@ -542,7 +552,7 @@
    "ecke0": 71007,
    "ecken": 46913,
    "index0": 294585,
-   "indizes": 218019
+   "indizes": 188532
   },
   {
    "name": "EXT_Mechanics",
