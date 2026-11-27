@@ -1,5 +1,5 @@
-{"version":"1.6.111","apk":2,"dateien":[
-{"p":"index.html","h":"7809f00b86dc2e7e925d6e1c0d37eef83fe273dcecce6fd01b44e6841927eac5","g":9312783},
+{"version":"1.6.112","apk":2,"dateien":[
+{"p":"index.html","h":"840a26b830339e9f2866776d89d8940e974c2f98eb28baebd6d52654883ae295","g":9312998},
 {"p":"mp-overview.html","h":"61388dad99cb805de167fe9a10b9ffdb1d4655c450f175f4eeb9ede3a24d04aa","g":9956},
 {"p":"manifest.webmanifest","h":"868416fe2c9d41ebed0b5d479f07bbd16679dd4835e9c526da9eae8046e1e36a","g":639},
 {"p":"favicon.svg","h":"bc804f771d409b0efff2f2a78238a91d843d8d02efc2c614c6bdc544763de931","g":5456},
@@ -1253,7 +1253,7 @@
 {"p":"img/autos/nsx/vorschau.png","h":"e789418123b77bcd528cdc131cb83aaa2588467efd85ad944f8b8ff12c0dffad","g":105326},
 {"p":"img/autos/p992gt3r/LIZENZ.txt","h":"d65b81d8d82da3e0e66e33360bbcfdd7dd37882633e1099117b479afaf49e1e7","g":890},
 {"p":"img/autos/p992gt3r/auto.bin","h":"aaf9e59f438975f48c6f22670788ee5f4de22a8441509a713d64c7ebf8b1df9c","g":6935766},
-{"p":"img/autos/p992gt3r/auto.json","h":"97f5750ce29ca39c292fb76ad69f45fc08664eef4f665b385eff569cd8e945bb","g":13456},
+{"p":"img/autos/p992gt3r/auto.json","h":"e17a64683baf44c8ecd92aacb21bd5305e58c720f7ddd5fdf9dcd6da4a6f695f","g":13456},
 {"p":"img/autos/p992gt3r/auto_perf.bin","h":"4c490b87dfd49f7d55b0b144769ebf6c126e5701da793561ba4d065771581b04","g":3346552},
 {"p":"img/autos/p992gt3r/auto_perf.json","h":"bb0826e4b895d5aab309679306f78f528b8606231bb4b38da86ff6211ab8120c","g":11808},
 {"p":"img/autos/p992gt3r/p992gt3r_aux_light_porsche992.jpg","h":"99b25c189d270158b53dbfd262d68141897479e99166c6f73b0490c70876d683","g":6573},

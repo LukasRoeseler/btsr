@@ -1929,8 +1929,10 @@
   }
   // Die Farbe der Karosserie: Der Shader faerbt sie um (Helligkeit des Texels mal Lackfarbe, uniform lack = 1), statt zu
   // multiplizieren - sonst wuerde Rot auf einem gelben Auto Orange. Ohne Farbe bleibt das Modell, wie es ist.
-  // v1.5.104: Beim Umfaerben ist die Helligkeit des Texels auf 0,82 begrenzt (Shader, min(...)): helle Grundlacke (gelber
-  // Kaefer und Spider) wurden sonst ausgewaschen, Rot wurde Rosa und Blau Tuerkis.
+  // v1.5.104: Beim Umfaerben ist die Helligkeit des Texels begrenzt (Shader, min(...)): helle Grundlacke (gelber
+  // Kaefer und Spider) wurden sonst ausgewaschen, Rot wurde Rosa und Blau Tuerkis. v1.6.112: die Grenze von 0,82
+  // auf 0,62 gesenkt - der Filmc-Tonemapper hob dunkle Lackfarben sonst stark an (Schwarz wurde Grau, Rot Rosa),
+  // und die Umgebungsreflexion wusch sie zusaetzlich aus.
   function vfLackTint(hex) { return hex ? vfHex(hex) : VF_WEISS; }
   // Eine gespeicherte Wahl, die es nicht mehr gibt (z. B. 'porsche', 1.3.94-1.3.131, entfernt), faellt
   // still auf den Vulture V5.R zurueck - kein 404 beim Laden und kein Absturz.
@@ -2863,7 +2865,7 @@
       gl.attachShader(p, vfShader(gl, gl.FRAGMENT_SHADER,
         'precision mediump float; varying vec2 vuv; varying vec3 vn; varying float vd; varying float vsd; uniform vec3 dunst;'
         + 'uniform sampler2D tx; uniform vec3 tint; uniform float emis; uniform float alpha; uniform float am; uniform float licht; uniform vec3 nebel; uniform float lack; uniform vec3 sonne;'
-        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(min(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7, 0.82)), lack); vec3 N = normalize(vn);'
+        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(min(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7, 0.62)), lack); vec3 N = normalize(vn);'
         + ' float d = max(dot(N, normalize(vec3(0.35, 0.9, 0.25))), 0.0); float s = pow(max(dot(N, normalize(vec3(0.2, 0.75, -0.6))), 0.0), 24.0);'
         + ' float l = mix(1.0, 0.42 + 0.66 * d, licht); vec3 c = tb * tint * (l * sonne + emis) + vec3(s * 0.35 * licht) * sonne;'
         + ' float f = clamp((vd - 250.0) / 900.0, 0.0, 1.0); gl_FragColor = vec4(mix(c, mix(nebel, dunst, vsd * vsd), f), mix(alpha, alpha * t.a, am)); }'));
@@ -2883,7 +2885,7 @@
         + 'uniform vec3 horizont; uniform vec3 zenit;'
         + 'vec3 filmic(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }'
         + 'HP float schTiefe(HP vec4 v){ return dot(v, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }'
-        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(min(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7, 0.82)), lack); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
+        + 'void main(){ vec4 t = texture2D(tx, vuv); vec3 tb = mix(t.rgb, vec3(min(dot(t.rgb, vec3(0.299, 0.587, 0.114)) * 1.7, 0.62)), lack); vec3 N = normalize(vn); vec3 L = normalize(vec3(0.35, 0.9, 0.25));'
         + ' vec3 V = normalize(vv); float d = max(dot(N, L), 0.0); vec3 R = reflect(-L, N); float rv = max(dot(R, V), 0.0);'
         + ' vec3 amb = mix(vec3(0.30, 0.27, 0.23), vec3(0.55, 0.68, 0.90), N.y * 0.5 + 0.5);'
         + ' float sheen = pow(max(dot(N, normalize(L + V)), 0.0), 64.0) * 0.45;'
@@ -2897,7 +2899,7 @@
         + ' vec3 Rv = reflect(-V, N); vec3 env = pow(mix(horizont, zenit, clamp(Rv.y * 1.5 + 0.1, 0.0, 1.0)), vec3(2.2));'
         // v1.5.94 (G2): der echte Himmel (Wolken, Sonne, Boden) aus der Umgebungskarte, leicht unscharf.
         + ' if (umwAn > 0.5) env = pow(textureCube(umw, Rv, 1.5).rgb, vec3(2.2)) * 1.15;'
-        + ' c += env * klar * (0.05 + 0.6 * pow(1.0 - max(dot(N, V), 0.0), 5.0)) * 0.9;'
+        + ' c += env * klar * (1.0 - 0.5 * lack) * (0.05 + 0.6 * pow(1.0 - max(dot(N, V), 0.0), 5.0)) * 0.9;'
         + ' c += vec3(pow(1.0 - max(dot(N, V), 0.0), 5.0) * glas * 0.9);'
         + ' c = pow(filmic(c * 1.05), vec3(1.0/2.2));'
         // v1.5.158 (Review): Die Kerngroesse k VOR der Verzweigung (fwidth ist in einer ungleichmaessigen Verzweigung
